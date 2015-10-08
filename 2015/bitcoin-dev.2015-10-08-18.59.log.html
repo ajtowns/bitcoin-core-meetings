@@ -1,0 +1,447 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:38</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Oct  8 18:59:38 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:38</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:23</span><span class="nk"> &lt;btcdrak&gt;</span> are we ready?
+<a name="l-5"></a><span class="tm">19:00:26</span><span class="nk"> &lt;wumpus&gt;</span> let's start with the action items from last time
+<a name="l-6"></a><span class="tm">19:00:38</span><span class="nk"> &lt;dstadulis&gt;</span> I have a 'Topics to be Discussed' section in meeting minutes here: https://docs.google.com/document/d/1hCDuOBNpqrZ0NLzvgrs2kDIF3g97sOv-FyneHjQellk/edit
+<a name="l-7"></a><span class="tm">19:00:51</span><span class="nk"> &lt;dstadulis&gt;</span> and action items from last meeting are in that link too
+<a name="l-8"></a><span class="tm">19:00:57</span><span class="nk"> &lt;wumpus&gt;</span> yes, thanks dstadulis
+<a name="l-9"></a><span class="tm">19:01:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Mempool limiting</span>
+<a name="l-10"></a><span class="tm">19:01:42</span><span class="nk"> &lt;sipa&gt;</span> there seem to be some comments on the proposed reduction of chain limits
+<a name="l-11"></a><span class="tm">19:02:07</span><span class="nk"> &lt;morcos&gt;</span> ok well i think we've pretty much concentrated on 6722 at this point.  matt's pull.  and it seems to be nice and simple.  i haven't reviewed his latest changes yet though, so i don't know that we're 100% there yet
+<a name="l-12"></a><span class="tm">19:02:42</span><span class="nk"> &lt;sipa&gt;</span> my mempool is 2.5G... we better get some solution!
+<a name="l-13"></a><span class="tm">19:02:49</span><span class="nk"> &lt;gmaxwell&gt;</span> We should at least mention the lowS change (and maybe small discussion on backport release schedule.)
+<a name="l-14"></a><span class="tm">19:02:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-15"></a><span class="tm">19:03:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-16"></a><span class="tm">19:03:08</span><span class="nk"> &lt;morcos&gt;</span> have others been reviewing it? i'd like to get it merged as soon as possible after its ready
+<a name="l-17"></a><span class="tm">19:03:13</span><span class="nk"> &lt;morcos&gt;</span> perhaps before next weeks meeting
+<a name="l-18"></a><span class="tm">19:03:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> do we have any theoretical upper limits on the iteration counts given certain chain limits?
+<a name="l-19"></a><span class="tm">19:03:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> I did some review of it, but not enough to say I'd ack it
+<a name="l-20"></a><span class="tm">19:03:37</span><span class="nk"> &lt;morcos&gt;</span> you mean for runtime complexity sipa?
+<a name="l-21"></a><span class="tm">19:03:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, that can come later
+<a name="l-22"></a><span class="tm">19:03:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> yes
+<a name="l-23"></a><span class="tm">19:03:55</span><span class="nk"> &lt;morcos&gt;</span> the way it works now is it just boots the first package period
+<a name="l-24"></a><span class="tm">19:03:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I just meant as a proposed agenda item.
+<a name="l-25"></a><span class="tm">19:04:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> because runtime performance is what drives the decision to reduce the chain limits?
+<a name="l-26"></a><span class="tm">19:04:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> no, not really
+<a name="l-27"></a><span class="tm">19:04:30</span><span class="nk"> &lt;coin_trader&gt;</span> <span class="hi">morcos:</span> thanks on the source file tip - reading now
+<a name="l-28"></a><span class="tm">19:04:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> also long chains bypass fees meaning anything because the tx at the end will never go in.
+<a name="l-29"></a><span class="tm">19:04:49</span><span class="nk"> &lt;morcos&gt;</span> i think run time performance is probably ok with limits as high as 100/100
+<a name="l-30"></a><span class="tm">19:05:25</span><span class="nk"> &lt;morcos&gt;</span> the concern is more that with higher limits you can create degenerate sets of txs that look like high fee rate for eviction and low fee rate for mining
+<a name="l-31"></a><span class="tm">19:05:31</span><span class="nk"> &lt;morcos&gt;</span> so they neither get mined or evicted
+<a name="l-32"></a><span class="tm">19:05:34</span><span class="nk"> &lt;sipa&gt;</span> got it
+<a name="l-33"></a><span class="tm">19:05:57</span><span class="nk"> &lt;morcos&gt;</span> to be quite honest, i'm not sure if 25/25 is safe, but perhaps this isn't the place for that discussion
+<a name="l-34"></a><span class="tm">19:06:02</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> re "never go in" is that really true?
+<a name="l-35"></a><span class="tm">19:06:16</span><span class="nk"> &lt;morcos&gt;</span> i think getting limits as small as we can reasonably get is important
+<a name="l-36"></a><span class="tm">19:06:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> with high probablity, at least.
+<a name="l-37"></a><span class="tm">19:06:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> with the current tx selection they are unlikely to go in fast, which is what matters - i think - if they don't, there's no need for them to be in the mempool yet
+<a name="l-38"></a><span class="tm">19:06:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> its also important to think about what will be mined using existing code and using code that would do CPFP.  CPFP would be way better, but may actually be worse at certain cases
+<a name="l-39"></a><span class="tm">19:07:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> right, so this is because of the current mining node, not necessarily a fundemental problem
+<a name="l-40"></a><span class="tm">19:07:25</span><span class="nk"> &lt;morcos&gt;</span> we did almost all of our attack analysis assuming CPFP mining.  we should probably do it again without, but i don't know what we'll be able to do about that
+<a name="l-41"></a><span class="tm">19:07:36</span><span class="nk"> &lt;sipa&gt;</span> so, action item: review/test #6722?
+<a name="l-42"></a><span class="tm">19:07:45</span><span class="nk"> &lt;morcos&gt;</span> yes!
+<a name="l-43"></a><span class="tm">19:07:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> e.g. (CPFP example is easiest) you have a chain with 10mb of low fee transactions, and a high fee at the end. The collection has high fee rate, but no miner cares, and the tx at the end may well get doublespent first; so they never pay their fee.
+<a name="l-44"></a><span class="tm">19:08:01</span><span class="nk"> &lt;morcos&gt;</span> and help try to get as low chain limits as possible pushed through
+<a name="l-45"></a><span class="tm">19:08:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> CPFP mining would fix that, though
+<a name="l-46"></a><span class="tm">19:08:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> re: 'in the mempool' I'd expect most of the argument there being companies want to be "messaging" people they're sending funds too, so they see the tx immediately
+<a name="l-47"></a><span class="tm">19:08:27</span><span class="nk"> &lt;bsm117532&gt;</span> Is the current malleability attack due to chains?  Or malleability?  (see http://motherboard.vice.com/read/i-broke-bitcoin) If the former, we should discuss bip62 as well.
+<a name="l-48"></a><span class="tm">19:08:40</span><span class="nk"> &lt;bsm117532&gt;</span> *is the current mempool explosion due to malleability or chains...
+<a name="l-49"></a><span class="tm">19:08:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">bsm117532:</span> yes, we will discuss that
+<a name="l-50"></a><span class="tm">19:08:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> unless the package becomes so large that it doesn't fit in a block anymore
+<a name="l-51"></a><span class="tm">19:08:57</span><span class="nk"> &lt;morcos&gt;</span> the current mempool explosion is due to a low relay rate and no mempool limiting
+<a name="l-52"></a><span class="tm">19:09:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> thats what I just described, 10mb.
+<a name="l-53"></a><span class="tm">19:09:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> oh sure, but I mean, with lower limits - ie 100, 300 byte txs I'd expect to get mined reasonably fast so long as they had reasonable fees
+<a name="l-54"></a><span class="tm">19:09:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ugh, i need to learn to read
+<a name="l-55"></a><span class="tm">19:09:14</span><span class="nk"> &lt;morcos&gt;</span> chain limited code still has very large mempools right now
+<a name="l-56"></a><span class="tm">19:09:16</span><span class="nk"> &lt;sipa&gt;</span> anything else on mempool?
+<a name="l-57"></a><span class="tm">19:09:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> total size I think matters re: "will they get mined", not # of txs, which is just a performance issue
+<a name="l-58"></a><span class="tm">19:10:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> yes total size is a bigger problem than just count of txs, and there doesn't seem to be any push back on that, except to make 100 -&gt; 101
+<a name="l-59"></a><span class="tm">19:10:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">bsm117532:</span> bit62 is still fairly far off I think; low-s fixes most of the issue at least
+<a name="l-60"></a><span class="tm">19:10:23</span><span class="nk"> &lt;wumpus&gt;</span> yes, lows will be next topic
+<a name="l-61"></a><span class="tm">19:10:29</span><span class="nk"> &lt;sipa&gt;</span> petertodd, bsm117532: anything else on mempool?
+<a name="l-62"></a><span class="tm">19:10:34</span><span class="nk"> &lt;morcos&gt;</span> but count of txs is a problem on its own
+<a name="l-63"></a><span class="tm">19:10:36</span><span class="nk"> &lt;bsm117532&gt;</span> According to the above article, the current attack is due to malleating...
+<a name="l-64"></a><span class="tm">19:10:44</span><span class="nk"> &lt;dstadulis&gt;</span> <span class="cmd">#action </span><span class="cmdline">review/test PR #6722</span>
+<a name="l-65"></a><span class="tm">19:10:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">bsm117532:</span> please stick to topic
+<a name="l-66"></a><span class="tm">19:10:47</span><span class="nk"> &lt;coin_trader&gt;</span> different attack bsm
+<a name="l-67"></a><span class="tm">19:11:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> so I'd think a 101 size limit is fine, and then base the count of txs on measured performance with a reasonable margin (which I haven't done)
+<a name="l-68"></a><span class="tm">19:11:10</span><span class="nk"> &lt;morcos&gt;</span> not just for performance reasons
+<a name="l-69"></a><span class="tm">19:11:24</span><span class="nk"> &lt;wumpus&gt;</span> malleating has nothing to do with mempool limiting, let's not get off topic
+<a name="l-70"></a><span class="tm">19:11:30</span><span class="nk"> &lt;dstadulis&gt;</span> +!
+<a name="l-71"></a><span class="tm">19:11:36</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, in general i would say that the assumption should be that miners are sorting on a strict feerate basis for transactions with no dependents
+<a name="l-72"></a><span class="tm">19:11:44</span><span class="nk"> &lt;morcos&gt;</span> its for the ability of the tx to look different when viewed as an ancestor package or a descendant package.  the structure of the package can be more complex with more txs and thus more evil almost
+<a name="l-73"></a><span class="tm">19:11:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> +1
+<a name="l-74"></a><span class="tm">19:11:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> how hard would that be to change?
+<a name="l-75"></a><span class="tm">19:12:30</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, pretty hard to change
+<a name="l-76"></a><span class="tm">19:12:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> i don't think its impossible to imagine we could have CPFP mining for 0.12, but its a stretch
+<a name="l-77"></a><span class="tm">19:12:49</span><span class="nk"> &lt;morcos&gt;</span> at least as a patch not long after maybe
+<a name="l-78"></a><span class="tm">19:12:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> if getblocktemplate would return a CPFP-aware set, isn't that enough?
+<a name="l-79"></a><span class="tm">19:12:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> RBF seems more likely, and it could help negate some of the cases where you want lots of txs in a row
+<a name="l-80"></a><span class="tm">19:13:10</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, you'd need to have multiple CreateBlock strategies and then decide which to use based on which has the highest total fees
+<a name="l-81"></a><span class="tm">19:13:20</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, it's significantly more effort than it initially seems
+<a name="l-82"></a><span class="tm">19:13:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> assume that's done
+<a name="l-83"></a><span class="tm">19:13:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> it has nothing to do with RBF or using CPFP to get txs boosted in priority
+<a name="l-84"></a><span class="tm">19:13:32</span><span class="nk"> &lt;morcos&gt;</span> it has to do with maximizing miners income
+<a name="l-85"></a><span class="tm">19:13:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> i wonder about anything outside of bitcoind
+<a name="l-86"></a><span class="tm">19:13:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> I mean, it helps make the argument that a smaller limit to total txchain depth is OK
+<a name="l-87"></a><span class="tm">19:13:55</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, the CPFP set aware getblocktemplate is going to have higher latency than the naive strategy for sure
+<a name="l-88"></a><span class="tm">19:14:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> i'm not convinced about that - i think we can do significantly better than the current GBT implementation
+<a name="l-89"></a><span class="tm">19:14:33</span><span class="nk"> &lt;gmaxwell&gt;</span> There is no reason gbt latency should have anything to do with the time CNB takes.
+<a name="l-90"></a><span class="tm">19:14:42</span><span class="nk"> &lt;phantomcircuit&gt;</span> there's also the issue that mutated transaction in the chain will cause block validation and relay to take longer
+<a name="l-91"></a><span class="tm">19:14:52</span><span class="nk"> &lt;gmaxwell&gt;</span> (because the result can be precomputed and it can return an empty template if thats the best precomputation it has right now.)
+<a name="l-92"></a><span class="tm">19:14:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">phantomcircuit:</span> also, CPFP indexing would happen ahead of time, so GBT would only iterate and assemble
+<a name="l-93"></a><span class="tm">19:14:56</span><span class="nk"> &lt;morcos&gt;</span> anyway, improving mining is a bit far off for now.  suffice it to say, i think we should consider whether there are crippling attacks with the existing mining code still possible once we have lower chain limits and 6722 merged
+<a name="l-94"></a><span class="tm">19:15:05</span><span class="nk"> &lt;morcos&gt;</span> and if so, maybe we need some short term fix for them...
+<a name="l-95"></a><span class="tm">19:15:05</span><span class="nk"> &lt;wumpus&gt;</span> how can we make progress with mempool limiting? as sipa said, it appears to be getting quite urgent, at some point we have to make a decision about strategies
+<a name="l-96"></a><span class="tm">19:15:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> agree
+<a name="l-97"></a><span class="tm">19:15:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> +1
+<a name="l-98"></a><span class="tm">19:15:19</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> +1
+<a name="l-99"></a><span class="tm">19:15:35</span><span class="nk"> &lt;sipa&gt;</span> what about those chain limits then?
+<a name="l-100"></a><span class="tm">19:15:39</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, yes
+<a name="l-101"></a><span class="tm">19:16:23</span><span class="nk"> &lt;sipa&gt;</span> are there any known use cases where 25 is not enough?
+<a name="l-102"></a><span class="tm">19:16:31</span><span class="nk"> &lt;morcos&gt;</span> lets work on trying to convince the people who are opposed to 25.  i'd feel a lot better about 25 than 100.  but can't give you a proof why its better
+<a name="l-103"></a><span class="tm">19:16:54</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, i dont believe there's any known use case for which 5 would not be enough
+<a name="l-104"></a><span class="tm">19:17:07</span><span class="nk"> &lt;morcos&gt;</span> what do you think about the possiblity that some nodes have low limits and some have high
+<a name="l-105"></a><span class="tm">19:17:22</span><span class="nk"> &lt;morcos&gt;</span> lets say you had a 50% chance of having 10/10 and a 50% chance of having 100/100
+<a name="l-106"></a><span class="tm">19:17:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> so, an interesting argument re: them, is that senders need to take into account that a receiver might respend an output, blowing up the chian limit; in short they should be able to queue txs for broadcast ontheir own
+<a name="l-107"></a><span class="tm">19:17:25</span><span class="nk"> &lt;btcdrak&gt;</span> yeah, I think the argument was not less than 5, but that 25 is plenty.
+<a name="l-108"></a><span class="tm">19:17:27</span><span class="nk"> &lt;morcos&gt;</span> as a default
+<a name="l-109"></a><span class="tm">19:17:42</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> (unless I'm completley misunderstanding this)
+<a name="l-110"></a><span class="tm">19:17:43</span><span class="nk"> &lt;morcos&gt;</span> then attacks dont' cripple relay across the network if 10 nodes are immune
+<a name="l-111"></a><span class="tm">19:17:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> inconsistency isn't great; you waste bandwidth forwardings things that get dropped.
+<a name="l-112"></a><span class="tm">19:17:53</span><span class="nk"> &lt;morcos&gt;</span> and long chains can still be relayed across the 100 nodes
+<a name="l-113"></a><span class="tm">19:18:13</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yeah, but the long chains are relatively rare
+<a name="l-114"></a><span class="tm">19:18:29</span><span class="nk"> &lt;sipa&gt;</span> well rare is not an argument for not protecting against
+<a name="l-115"></a><span class="tm">19:18:36</span><span class="nk"> &lt;gmaxwell&gt;</span> ultimately you're setting yourself up for extreme vulerablity to malleability and double spend when you make long chains; so there are plenty of other factors that limit utility of long chains as well.
+<a name="l-116"></a><span class="tm">19:18:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> rare unless you're an attacker.
+<a name="l-117"></a><span class="tm">19:18:52</span><span class="nk"> &lt;wumpus&gt;</span> +1 gmaxwell
+<a name="l-118"></a><span class="tm">19:19:10</span><span class="nk"> &lt;dstadulis&gt;</span> +1 gribble
+<a name="l-119"></a><span class="tm">19:19:10</span><span class="nk"> &lt;bsm117532&gt;</span> A chain limit only impacts mempool, not relayed blocks, correct?  (otherwise it could cause a hard fork)
+<a name="l-120"></a><span class="tm">19:19:11</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> agreed
+<a name="l-121"></a><span class="tm">19:19:15</span><span class="nk"> &lt;dstadulis&gt;</span> +1 gmaxwell
+<a name="l-122"></a><span class="tm">19:19:16</span><span class="nk"> &lt;wumpus&gt;</span> so, all in all, 25 ought to be enough for everyone, for now
+<a name="l-123"></a><span class="tm">19:19:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">bsm117532:</span> correct
+<a name="l-124"></a><span class="tm">19:19:28</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-125"></a><span class="tm">19:19:40</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> alright, aack
+<a name="l-126"></a><span class="tm">19:19:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> if the driving reason for chain limits is to not make mempool selection and mining selection diverge too much... there is no real reason why the optimal value would differ between nodes
+<a name="l-127"></a><span class="tm">19:19:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bsm117532:</span> yes, see the topic "mempool behavior"
+<a name="l-128"></a><span class="tm">19:19:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i agree for sure, but maybe we should have some more ACKs on the pull then, a decent number of comments are opposed
+<a name="l-129"></a><span class="tm">19:20:07</span><span class="nk"> &lt;gmaxwell&gt;</span> If there is too much more debate on this, I'm going to begin advancing the view that we shouldn't relay transactions spending unconfirmed inputs at all.
+<a name="l-130"></a><span class="tm">19:20:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> diverge under attack
+<a name="l-131"></a><span class="tm">19:20:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> long run I have a lot of symapthy for that view
+<a name="l-132"></a><span class="tm">19:20:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> that's the only thing that matters :)
+<a name="l-133"></a><span class="tm">19:20:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> do they mention an actual application?
+<a name="l-134"></a><span class="tm">19:20:48</span><span class="nk"> &lt;morcos&gt;</span> i'm just saying its ok if we sacrifice half the nodes in an attack.. :)
+<a name="l-135"></a><span class="tm">19:20:54</span><span class="nk"> &lt;gmaxwell&gt;</span> lets just all take homework to go look.
+<a name="l-136"></a><span class="tm">19:20:58</span><span class="nk"> &lt;coin_trader&gt;</span> yea with regards to long chains of unconfirmed, i'm ok to pre-split large coin chunks into small.. i feel other service operators can also mod their systems to accommodate this requirement. Kinda sucks, but whatever. it's not too difficult to mitigate
+<a name="l-137"></a><span class="tm">19:21:13</span><span class="nk"> &lt;sipa&gt;</span> ok, next topic?
+<a name="l-138"></a><span class="tm">19:21:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> sort of, i didn't follow exactly
+<a name="l-139"></a><span class="tm">19:21:19</span><span class="nk"> &lt;morcos&gt;</span> ack
+<a name="l-140"></a><span class="tm">19:21:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">LowS deployment</span>
+<a name="l-141"></a><span class="tm">19:21:23</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, I've yet to hear anybody articulate a strong reason for using unconfirmed inputs at all
+<a name="l-142"></a><span class="tm">19:21:40</span><span class="nk"> &lt;coin_trader&gt;</span> <span class="hi">phantomcircuit:</span> it just makes using a default node "easier" for someone with high activity
+<a name="l-143"></a><span class="tm">19:21:42</span><span class="nk"> &lt;warren&gt;</span> Who is tracking the current topic?
+<a name="l-144"></a><span class="tm">19:21:44</span><span class="nk"> &lt;coin_trader&gt;</span> that is all i can tell from personal experience
+<a name="l-145"></a><span class="tm">19:21:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">warren:</span> lightningbot`
+<a name="l-146"></a><span class="tm">19:21:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Minor OT notice: This issue https://github.com/feross/buffer/pull/81 has made most JS bitcoin software vulnerable to generating incorrect public keys.
+<a name="l-147"></a><span class="tm">19:21:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> is there anything stopping us rolling a release almost immediately?
+<a name="l-148"></a><span class="tm">19:22:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> no, we could do a 0.10.3 and 0.11.1 now
+<a name="l-149"></a><span class="tm">19:22:17</span><span class="nk"> &lt;dstadulis&gt;</span> Topics listed here: https://docs.google.com/document/d/1hCDuOBNpqrZ0NLzvgrs2kDIF3g97sOv-FyneHjQellk/edit
+<a name="l-150"></a><span class="tm">19:22:28</span><span class="nk"> &lt;dstadulis&gt;</span> and lightningbot`
+<a name="l-151"></a><span class="tm">19:22:31</span><span class="nk"> &lt;gmaxwell&gt;</span> LowS deployment. We've merged the change that makes lowS a standarness requirement. I believe this completely eliminates third party malleability annoyance attacks.
+<a name="l-152"></a><span class="tm">19:22:34</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> then I think we should release it.
+<a name="l-153"></a><span class="tm">19:22:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (obviously miners can still malleate)
+<a name="l-154"></a><span class="tm">19:22:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> a release sounds fine to me
+<a name="l-155"></a><span class="tm">19:23:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Measurements show 95% of transactions already conforming; and thats before I went and got several more things to fix themselves (including electrum).
+<a name="l-156"></a><span class="tm">19:23:14</span><span class="nk"> &lt;morcos&gt;</span> a release now and then another in a couple of weeks for soft-fork
+<a name="l-157"></a><span class="tm">19:23:17</span><span class="nk"> &lt;morcos&gt;</span> ?
+<a name="l-158"></a><span class="tm">19:23:21</span><span class="nk"> &lt;wumpus&gt;</span> right, this is about pull #6769
+<a name="l-159"></a><span class="tm">19:23:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> or for mempool limiting...
+<a name="l-160"></a><span class="tm">19:23:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> that's fine by me
+<a name="l-161"></a><span class="tm">19:23:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> sure, why not
+<a name="l-162"></a><span class="tm">19:23:26</span><span class="nk"> &lt;wumpus&gt;</span> (and its backports)
+<a name="l-163"></a><span class="tm">19:23:32</span><span class="nk"> &lt;BlueMatt&gt;</span> several people are also running https://github.com/TheBlueMatt/bitcoin/tree/seed, which malleates to low-s on mainnet
+<a name="l-164"></a><span class="tm">19:23:36</span><span class="nk"> &lt;sipa&gt;</span> i think both mempool limit and malleability are very short term concerns
+<a name="l-165"></a><span class="tm">19:23:37</span><span class="nk"> &lt;BlueMatt&gt;</span> to counter the guy malleating everything
+<a name="l-166"></a><span class="tm">19:23:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> +1
+<a name="l-167"></a><span class="tm">19:24:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> mempool limiting is not easily backportable
+<a name="l-168"></a><span class="tm">19:24:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> I'll get one spun up then
+<a name="l-169"></a><span class="tm">19:24:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> good point - and also much more likely to need fixes post merge
+<a name="l-170"></a><span class="tm">19:24:28</span><span class="nk"> &lt;gmaxwell&gt;</span> Wumpus backported the change to older versions and we need to decide when to deploy.  If we release now we stop the attacks sooner which will make people happier.  Though it might be polite to slow roll somewhat due to giving the stragglers time to upgrade. At the same time upgrades take time and as matt just mentioned there is a compatiblity hack that prevents jamming.
+<a name="l-171"></a><span class="tm">19:24:39</span><span class="nk"> &lt;coin_trader&gt;</span> <span class="hi">BlueMatt:</span> LOL that's hilarious :)
+<a name="l-172"></a><span class="tm">19:25:11</span><span class="nk"> &lt;wumpus&gt;</span> yes, mempool limiting is riskier, whereas the LowS change is straightforward (it was already in the code, it just needed to be made standard), if we want a fast release, then we should postpone that for later
+<a name="l-173"></a><span class="tm">19:25:28</span><span class="nk"> &lt;petertodd&gt;</span> and mempool limiting can be handled by just increasing the minimum relay fee too
+<a name="l-174"></a><span class="tm">19:25:30</span><span class="nk"> &lt;morcos&gt;</span> i'm all for a release, but i think it should include CLTV
+<a name="l-175"></a><span class="tm">19:25:30</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm not as concerned with low-s
+<a name="l-176"></a><span class="tm">19:25:45</span><span class="nk"> &lt;gmaxwell&gt;</span> So questions are: how comfortable are we with potentially causing blocking of up to 5% of transactions for a short window while people upgrade.
+<a name="l-177"></a><span class="tm">19:25:46</span><span class="nk"> &lt;petertodd&gt;</span> I don we can handle a decent % of nodes dropping offline
+<a name="l-178"></a><span class="tm">19:25:56</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> still not enough reviewers on the backports for CLTV
+<a name="l-179"></a><span class="tm">19:26:00</span><span class="nk"> &lt;petertodd&gt;</span> er, I don't see any reason why we can't handle a decent % of nodes dropping offline, at least temporarily
+<a name="l-180"></a><span class="tm">19:26:01</span><span class="nk"> &lt;phantomcircuit&gt;</span> possibly the lows change should be backported and we do minor releases for backported versions but not a new major release?
+<a name="l-181"></a><span class="tm">19:26:07</span><span class="nk"> &lt;gmaxwell&gt;</span> If we do a backport we could increment min relay fee.
+<a name="l-182"></a><span class="tm">19:26:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I would be, if we had auto-malleating-to-standard nodes up all over the place
+<a name="l-183"></a><span class="tm">19:26:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> wallets, not nodes...
+<a name="l-184"></a><span class="tm">19:26:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">phantomcircuit:</span> it's been backported, and right thats possible.
+<a name="l-185"></a><span class="tm">19:26:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I mean re: mempool limiting
+<a name="l-186"></a><span class="tm">19:26:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-187"></a><span class="tm">19:26:27</span><span class="nk"> &lt;wumpus&gt;</span> coupling with CLTV would be possible, although the deadline for that that was scheduled together with CSV for end of this month
+<a name="l-188"></a><span class="tm">19:26:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> like, upping minrelay fee quicly stops the attack
+<a name="l-189"></a><span class="tm">19:26:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm not a fan at all of rolling out low-s limits today
+<a name="l-190"></a><span class="tm">19:26:45</span><span class="nk"> &lt;BlueMatt&gt;</span> we can get it on a miner or two
+<a name="l-191"></a><span class="tm">19:26:48</span><span class="nk"> &lt;BlueMatt&gt;</span> to make the attack harder
+<a name="l-192"></a><span class="tm">19:26:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> why?
+<a name="l-193"></a><span class="tm">19:26:54</span><span class="nk"> &lt;BlueMatt&gt;</span> but rolling it out on the network....ehhhhh
+<a name="l-194"></a><span class="tm">19:27:10</span><span class="nk"> &lt;wumpus&gt;</span> also not sure we want to couple it with softforks, to avoid confusion between mempool policy changes and softforks
+<a name="l-195"></a><span class="tm">19:27:18</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> the attack is so bad it knocked out 1000 nodes
+<a name="l-196"></a><span class="tm">19:27:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-197"></a><span class="tm">19:27:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> Yes, another option is to just get some miners on it... has basically optimal behavior. esp as it will allow the l[Dto-ow-S malleators to do their thing.
+<a name="l-198"></a><span class="tm">19:27:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">btcdrak:</span> low-s didnt nock off nodes, mempool size did
+<a name="l-199"></a><span class="tm">19:27:55</span><span class="nk"> &lt;btcdrak&gt;</span> fair
+<a name="l-200"></a><span class="tm">19:28:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> people on reddit are totally confused and have mixed up the lowS stuff with the mempool flooding stuff. They're unrelated technically.
+<a name="l-201"></a><span class="tm">19:28:02</span><span class="nk"> &lt;wumpus&gt;</span> again, let's not confuse mempool size with LowS/malleating
+<a name="l-202"></a><span class="tm">19:28:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yea, maybe we should be convincing miners to do low-s malleating
+<a name="l-203"></a><span class="tm">19:28:28</span><span class="nk"> &lt;morcos&gt;</span> btw, its not really fair to call this mempool stuffing an attack right?
+<a name="l-204"></a><span class="tm">19:28:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> lowS enforcement is very easy to use, as the code has been around forever and requires only a trivial patch to activate it.
+<a name="l-205"></a><span class="tm">19:28:33</span><span class="nk"> &lt;morcos&gt;</span> aren't these all good txs
+<a name="l-206"></a><span class="tm">19:28:43</span><span class="nk"> &lt;morcos&gt;</span> they seem to mostly reduce the utxo 100-&gt;1
+<a name="l-207"></a><span class="tm">19:28:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> oh? lol
+<a name="l-208"></a><span class="tm">19:29:10</span><span class="nk"> &lt;coin_trader&gt;</span> technically this new attack was all 'legit' transactions with over 1 satoshi per byte
+<a name="l-209"></a><span class="tm">19:29:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> not sure in this case; I'd _assumed_ they were being created with the specific goal of knocking out nodes.
+<a name="l-210"></a><span class="tm">19:29:16</span><span class="nk"> &lt;coin_trader&gt;</span> but there was just "so many" of them...
+<a name="l-211"></a><span class="tm">19:29:36</span><span class="nk"> &lt;coin_trader&gt;</span> it's like ddos
+<a name="l-212"></a><span class="tm">19:29:45</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, it's clearly an attack, but yes it should shrink the utxo set
+<a name="l-213"></a><span class="tm">19:29:56</span><span class="nk"> &lt;gmaxwell&gt;</span> But it's hard to sort out people cheering about the effects vs the intent. Doesn't really matter what it "is", all that matters is what it does. :)
+<a name="l-214"></a><span class="tm">19:30:07</span><span class="nk"> &lt;wumpus&gt;</span> whether it's an attack or not, we need mempool limiting to protect against it (but that was last topic)
+<a name="l-215"></a><span class="tm">19:30:12</span><span class="nk"> &lt;coin_trader&gt;</span> ^ +1
+<a name="l-216"></a><span class="tm">19:30:16</span><span class="nk"> &lt;phantomcircuit&gt;</span> yup
+<a name="l-217"></a><span class="tm">19:30:18</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, is there anything more to say about lowS ? I'll go get miners to run at least lowS enforcement.
+<a name="l-218"></a><span class="tm">19:30:32</span><span class="nk"> &lt;wumpus&gt;</span> so, deploy new 0.10 and 0.11 release asap?
+<a name="l-219"></a><span class="tm">19:30:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'd prefer they do malleation
+<a name="l-220"></a><span class="tm">19:30:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ehhhh, I'd prefer not
+<a name="l-221"></a><span class="tm">19:30:44</span><span class="nk"> &lt;gmaxwell&gt;</span> And we'll not rush a release on that, but lowS enforcement will go out with whatever goes out next?
+<a name="l-222"></a><span class="tm">19:30:50</span><span class="nk"> &lt;BlueMatt&gt;</span> yea
+<a name="l-223"></a><span class="tm">19:31:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> miners doing just lowS enforcement doesnt help
+<a name="l-224"></a><span class="tm">19:31:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> After you insisted to me that I don't need to review that code... ? :P
+<a name="l-225"></a><span class="tm">19:31:05</span><span class="nk"> &lt;wumpus&gt;</span> 'whatever goes out next' will be CSV and CLTV softforks likely
+<a name="l-226"></a><span class="tm">19:31:07</span><span class="nk"> &lt;sipa&gt;</span> of the wallet software that is presumed not to produce lows... does it deal well with malleation?
+<a name="l-227"></a><span class="tm">19:31:08</span><span class="nk"> &lt;BlueMatt&gt;</span> if a tx is malleated, now they just dont mine it
+<a name="l-228"></a><span class="tm">19:31:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> it does, when coupled with other people doing lowS malleation.
+<a name="l-229"></a><span class="tm">19:31:17</span><span class="nk"> &lt;wumpus&gt;</span> so that will couple it to softfork minor releases
+<a name="l-230"></a><span class="tm">19:31:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> well now I'm changing my tune since I think it may be a good solution
+<a name="l-231"></a><span class="tm">19:31:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> but only if they're direct peers
+<a name="l-232"></a><span class="tm">19:31:31</span><span class="nk"> &lt;phantomcircuit&gt;</span> sipa, no that's the only reason there's a problem to start with
+<a name="l-233"></a><span class="tm">19:32:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> there isnt much we can do there :(
+<a name="l-234"></a><span class="tm">19:32:06</span><span class="nk"> &lt;sipa&gt;</span> well... what is worst to them? no confirmation, or malleated confrm?
+<a name="l-235"></a><span class="tm">19:32:09</span><span class="nk"> &lt;wumpus&gt;</span> which is ok with me, but as I said above it may confuse people to combine softfork backports with high-porfile other (non forking) changes
+<a name="l-236"></a><span class="tm">19:32:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> Getting people to run unreleased code is a challenge, esp if its non-trivial.
+<a name="l-237"></a><span class="tm">19:32:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm aware
+<a name="l-238"></a><span class="tm">19:32:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> they can run it on their border nodes, however
+<a name="l-239"></a><span class="tm">19:32:47</span><span class="nk"> &lt;BlueMatt&gt;</span> no need to run it on your mining node
+<a name="l-240"></a><span class="tm">19:32:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think at least its similar in kind, in that its a standardness change.
+<a name="l-241"></a><span class="tm">19:33:02</span><span class="nk"> &lt;wumpus&gt;</span> but ok - no one in favor of doing releases for lows enforcements, so that's off the map
+<a name="l-242"></a><span class="tm">19:33:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> my point is, if miners are only enforcing lowS and not changing it themselves, it is malleated
+<a name="l-243"></a><span class="tm">19:33:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i don't understand?
+<a name="l-244"></a><span class="tm">19:33:21</span><span class="nk"> &lt;BlueMatt&gt;</span> assuming someone is attacking everything, then it just means delayed + malleated confirms
+<a name="l-245"></a><span class="tm">19:33:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> consensus changes are IMO completely different from standardness changes
+<a name="l-246"></a><span class="tm">19:33:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think we can get 95% of the benefit of a short lowS release via a mix of asking a few miners to apply local fixes.
+<a name="l-247"></a><span class="tm">19:34:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> if someone is attacking and malleates a tx to highS all over the network, miners who are enforcing will reject it and not hear about the lowS version
+<a name="l-248"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> it means people running updated software (95% of transactions) become largely protected.
+<a name="l-249"></a><span class="tm">19:34:09</span><span class="nk"> &lt;BlueMatt&gt;</span> others will take it and mine it
+<a name="l-250"></a><span class="tm">19:34:26</span><span class="nk"> &lt;btcdrak&gt;</span> I agree with BlueMatt, miners should be fixing the transactions as well, it solves a lot of the disruption.
+<a name="l-251"></a><span class="tm">19:34:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> nope
+<a name="l-252"></a><span class="tm">19:34:40</span><span class="nk"> &lt;gmaxwell&gt;</span> please stop. The code to go and rewrite transactions is not trivial.
+<a name="l-253"></a><span class="tm">19:34:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> only if the miners have a peer with someone who knows the lowS version
+<a name="l-254"></a><span class="tm">19:35:15</span><span class="nk"> &lt;BlueMatt&gt;</span> that's true...ok, well at a minimum miners who are doing highS should have 1 border node that does rewriting
+<a name="l-255"></a><span class="tm">19:35:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> sure. I don't think this is a huge assumption. Esp assuming the existance of some small amount of lowS converter nodes.
+<a name="l-256"></a><span class="tm">19:35:20</span><span class="nk"> &lt;BlueMatt&gt;</span> or should addnode my node that does it
+<a name="l-257"></a><span class="tm">19:35:22</span><span class="nk"> &lt;BlueMatt&gt;</span> or something
+<a name="l-258"></a><span class="tm">19:35:24</span><span class="nk"> &lt;sipa&gt;</span> i don't think that highs-&gt;lows would be hard to add as a patch to mempool acceptance
+<a name="l-259"></a><span class="tm">19:35:27</span><span class="nk"> &lt;gmaxwell&gt;</span> Sure sure, I can suggest that.
+<a name="l-260"></a><span class="tm">19:35:27</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i have to admit i don't understand how a few miners running lowS enforcement solves the problem
+<a name="l-261"></a><span class="tm">19:35:41</span><span class="nk"> &lt;morcos&gt;</span> what about the rest of the miners?
+<a name="l-262"></a><span class="tm">19:35:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> it doesnt solve it, but means you're proportionally less likely to suffer it
+<a name="l-263"></a><span class="tm">19:36:04</span><span class="nk"> &lt;morcos&gt;</span> yeah ok
+<a name="l-264"></a><span class="tm">19:36:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> thats the 'largely'. A 'few miners' may mean 75% of the hashpower.
+<a name="l-265"></a><span class="tm">19:36:27</span><span class="nk"> &lt;gmaxwell&gt;</span> the attack is also not so interesting when its much less effective.
+<a name="l-266"></a><span class="tm">19:36:32</span><span class="nk"> &lt;bsm117532&gt;</span> A better solution is not to relay highS transactions, no?
+<a name="l-267"></a><span class="tm">19:36:43</span><span class="nk"> &lt;gmaxwell&gt;</span> And even the remaining hashpower will often hear the lowS first.
+<a name="l-268"></a><span class="tm">19:36:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> bitcoin-seednode.bluematt.me has reasonable relay/maxconnections capacity and is running it
+<a name="l-269"></a><span class="tm">19:36:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">bsm117532:</span> Git master already does this.
+<a name="l-270"></a><span class="tm">19:37:14</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, it would be just as or more effective to do minor releases of the backported lows change
+<a name="l-271"></a><span class="tm">19:37:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bsm117532:</span> that is the code that is currently merged in 0.10, 0.11, and master (pull #6769)
+<a name="l-272"></a><span class="tm">19:37:35</span><span class="nk"> &lt;wumpus&gt;</span> I was suggesting to do a release with that, but people haev other plans
+<a name="l-273"></a><span class="tm">19:37:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">bsm117532:</span> As to backports that will eventually become subsiquent releases. But that alone is not sufficient because it will still block ~5% of all transactions (at this moment), and because it is not in a release version.
+<a name="l-274"></a><span class="tm">19:38:05</span><span class="nk"> &lt;phantomcircuit&gt;</span> i dont see any reason to try to target miners
+<a name="l-275"></a><span class="tm">19:38:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> were there objections to releasing that as is?
+<a name="l-276"></a><span class="tm">19:38:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I think doing a release that just does that might be okay, but since nodes are actually going offline due to mempool stuff I feel like it's missing the forrest for the trees.
+<a name="l-277"></a><span class="tm">19:38:20</span><span class="nk"> &lt;phantomcircuit&gt;</span> that's just going to confuse people when their transactions aren't mined
+<a name="l-278"></a><span class="tm">19:38:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> yes, at least from BlueMatt and gmaxwell
+<a name="l-279"></a><span class="tm">19:38:36</span><span class="nk"> &lt;phantomcircuit&gt;</span> if they're rejected by a node they relay to at least maybe they'll figure it out
+<a name="l-280"></a><span class="tm">19:38:50</span><span class="nk"> &lt;wumpus&gt;</span> I prefer clarity too phantomcircuit
+<a name="l-281"></a><span class="tm">19:39:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I am not opposed. I do not think it is essential right now. And I am somewhat concerned about update exhaustion with what might end up being three mandatory updates in short succession.
+<a name="l-282"></a><span class="tm">19:39:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">phantomcircuit:</span> yes, that is why I was saying it must be coupled with each miner who is doing it running a malleate-to-low-s node somewhere so that they dont just reject
+<a name="l-283"></a><span class="tm">19:39:24</span><span class="nk"> &lt;BlueMatt&gt;</span> but also mine them
+<a name="l-284"></a><span class="tm">19:39:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">phantomcircuit:</span> in practice that isn't how much software works.
+<a name="l-285"></a><span class="tm">19:39:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> people can decide for themselves whether to update or not
+<a name="l-286"></a><span class="tm">19:39:33</span><span class="nk"> &lt;sipa&gt;</span> how about we do backports in the stable branches, but don't release, and instead ask around and look whether the highS wallets on the network goes down?
+<a name="l-287"></a><span class="tm">19:39:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> we can no longer measure it due to attacks.
+<a name="l-288"></a><span class="tm">19:39:52</span><span class="nk"> &lt;sipa&gt;</span> oh... i guess with a -&gt;highS malleation going on, that's harder to observe
+<a name="l-289"></a><span class="tm">19:39:54</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-290"></a><span class="tm">19:39:58</span><span class="nk"> &lt;wumpus&gt;</span> it is already backported to the stable branches
+<a name="l-291"></a><span class="tm">19:40:11</span><span class="nk"> &lt;wumpus&gt;</span> the only thing that has to be done is stage a relase (or not)
+<a name="l-292"></a><span class="tm">19:40:47</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> I dont think users are going to object to seeing more frequent security/maintenance releases. If anything it would be good PR
+<a name="l-293"></a><span class="tm">19:40:56</span><span class="nk"> &lt;morcos&gt;</span> i'd vote for doing one release before 12, with lowS enforcement, increased min relay fee and CLTV soft fork
+<a name="l-294"></a><span class="tm">19:41:03</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-295"></a><span class="tm">19:41:04</span><span class="nk"> &lt;dstadulis&gt;</span> <span class="cmd">### </span><span class="cmdline">TIMECHECK 66% through the meeting</span>
+<a name="l-296"></a><span class="tm">19:41:22</span><span class="nk"> &lt;gmaxwell&gt;</span> My preference is along the lines of what morcos suggests.
+<a name="l-297"></a><span class="tm">19:41:31</span><span class="nk"> &lt;gmaxwell&gt;</span> (actually, exactly what he suggests)
+<a name="l-298"></a><span class="tm">19:41:38</span><span class="nk"> &lt;BlueMatt&gt;</span> I dont disagree, just suggesting that we not rush into it
+<a name="l-299"></a><span class="tm">19:41:43</span><span class="nk"> &lt;wumpus&gt;</span> ok - target for the releases on 0.10.x and 0.11.x is end of this month then
+<a name="l-300"></a><span class="tm">19:41:46</span><span class="nk"> &lt;gmaxwell&gt;</span> and a little more delay does give more time for other things to updat.e
+<a name="l-301"></a><span class="tm">19:41:55</span><span class="nk"> &lt;petertodd&gt;</span> along those lines, I just rebased all the CLTV branches
+<a name="l-302"></a><span class="tm">19:42:01</span><span class="nk"> &lt;wumpus&gt;</span> then see whether CLTV and CSV make it in
+<a name="l-303"></a><span class="tm">19:42:04</span><span class="nk"> &lt;dstadulis&gt;</span> <span class="hi">wumpus:</span> Next topics: CLTV backport reviews and CSV reviews
+<a name="l-304"></a><span class="tm">19:42:06</span><span class="nk"> &lt;wumpus&gt;</span> as proposed last week
+<a name="l-305"></a><span class="tm">19:42:18</span><span class="nk"> &lt;gmaxwell&gt;</span> Basically there are wallet vendors who totally missed the first generation attacks, and the bip62 discussion, and "hey you need to lowS" was news to them..
+<a name="l-306"></a><span class="tm">19:42:45</span><span class="nk"> &lt;morcos&gt;</span> well i have to say i'm a NACK on CSV for release this month.  i just don't think they are settled and ready enough.
+<a name="l-307"></a><span class="tm">19:42:59</span><span class="nk"> &lt;morcos&gt;</span> maaku, were you considering changing the semantics to save more bits?
+<a name="l-308"></a><span class="tm">19:43:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">CLTV backport reviews and CSV reviews</span>
+<a name="l-309"></a><span class="tm">19:43:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> I was just reviewing the code today, and it struck me that there isn't even clarity on what everything looks like when all three pull-reqs are merged
+<a name="l-310"></a><span class="tm">19:43:39</span><span class="nk"> &lt;wumpus&gt;</span> I also think CSV is quite risky to deploy on such short notice
+<a name="l-311"></a><span class="tm">19:43:47</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> yeah agreed with that too.  and the bug sdaftuar found was actually just an assumption of what would be a bug when the soft fork pulls were created, which don't exist yet
+<a name="l-312"></a><span class="tm">19:43:57</span><span class="nk"> &lt;gmaxwell&gt;</span> I am concerned that the CLTV sequence restriction violations are currently not quite non-standard. (unless I've missed something)
+<a name="l-313"></a><span class="tm">19:43:57</span><span class="nk"> &lt;sipa&gt;</span> we can do mempool-only CSV/sequence
+<a name="l-314"></a><span class="tm">19:43:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> there are loads of bits free, set the MSB and remaining 31 bits are free.
+<a name="l-315"></a><span class="tm">19:44:07</span><span class="nk"> &lt;gmaxwell&gt;</span> er CSV!
+<a name="l-316"></a><span class="tm">19:44:09</span><span class="nk"> &lt;gmaxwell&gt;</span> (not CLTV)
+<a name="l-317"></a><span class="tm">19:44:19</span><span class="nk"> &lt;gmaxwell&gt;</span> (sorry, autopilot)
+<a name="l-318"></a><span class="tm">19:44:36</span><span class="nk"> &lt;morcos&gt;</span> but there are not loads of bits free if you want to keep the CSV and nSequence meaning and yet use some more of the bits for another soft fork
+<a name="l-319"></a><span class="tm">19:44:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> sure, but there's no reason to do that in an intermediate minor release
+<a name="l-320"></a><span class="tm">19:44:41</span><span class="nk"> &lt;morcos&gt;</span> it uses more than it needs to
+<a name="l-321"></a><span class="tm">19:44:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> it requires increased tx version
+<a name="l-322"></a><span class="tm">19:44:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I'm all for mempool only CSV in say, master, when it's ready to merge
+<a name="l-323"></a><span class="tm">19:45:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> sequence restriction violations?
+<a name="l-324"></a><span class="tm">19:45:06</span><span class="nk"> &lt;morcos&gt;</span> i think the semantics should change
+<a name="l-325"></a><span class="tm">19:45:07</span><span class="nk"> &lt;wumpus&gt;</span> we followed the same for CLTV
+<a name="l-326"></a><span class="tm">19:45:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> oh derp! there we go, sorry.
+<a name="l-327"></a><span class="tm">19:45:40</span><span class="nk"> &lt;gmaxwell&gt;</span> (I did know that... had just forgotten the implication)
+<a name="l-328"></a><span class="tm">19:45:41</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> afaik it's worst-case half the bits available?
+<a name="l-329"></a><span class="tm">19:45:41</span><span class="nk"> &lt;wumpus&gt;</span> ok - so CSV semantics are n't even finalized yet?
+<a name="l-330"></a><span class="tm">19:45:42</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> OP_CLTV is itself non-standard, so any tx using that behavior at all will immediately be dropped
+<a name="l-331"></a><span class="tm">19:45:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I would say no, IMO
+<a name="l-332"></a><span class="tm">19:45:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I know, I autotyped that. :P
+<a name="l-333"></a><span class="tm">19:45:57</span><span class="nk"> &lt;morcos&gt;</span> no
+<a name="l-334"></a><span class="tm">19:45:58</span><span class="nk"> &lt;btcdrak&gt;</span> indeed, softfork deploymment aside, we can get the mempool PRs for CSV merged.
+<a name="l-335"></a><span class="tm">19:46:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i think the current proposal is final by the author... things can change if there are concerns of course
+<a name="l-336"></a><span class="tm">19:46:21</span><span class="nk"> &lt;morcos&gt;</span> last i talked to maaku i believe he wanted to change the semantics
+<a name="l-337"></a><span class="tm">19:46:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> ?
+<a name="l-338"></a><span class="tm">19:46:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> afaik that's long done
+<a name="l-339"></a><span class="tm">19:46:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> well... I'm not sure that's a good thing, because it'd make changing those semantics later tricky - CLTV had the same issue, and the plan was we'd pick a new opcode if that happened
+<a name="l-340"></a><span class="tm">19:46:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I'm not sure he did want to change, he was just taking on board what you were saying.
+<a name="l-341"></a><span class="tm">19:47:05</span><span class="nk"> &lt;morcos&gt;</span> he and i discussed on IRC the other day, and he had thought it was a soft fork to change time resolution from 1s to 512s for instance and not the other way around
+<a name="l-342"></a><span class="tm">19:47:08</span><span class="nk"> &lt;petertodd&gt;</span> sorry, I need to go :(
+<a name="l-343"></a><span class="tm">19:47:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> i agree it wasn't 100% clear
+<a name="l-344"></a><span class="tm">19:47:25</span><span class="nk"> &lt;wumpus&gt;</span> meeting only has 15 minutes to go
+<a name="l-345"></a><span class="tm">19:47:28</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, so the takeaway is that this needs to get clarified.
+<a name="l-346"></a><span class="tm">19:47:31</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> CSV can similarly use a different opcode, half the bits with nSequence?
+<a name="l-347"></a><span class="tm">19:48:09</span><span class="nk"> &lt;sipa&gt;</span> CSV is a different opcode...
+<a name="l-348"></a><span class="tm">19:48:10</span><span class="nk"> &lt;morcos&gt;</span> i think its really close to good, but it just seems a bit odd to me to use 25 bits for time, when we might want to save those for something else later.
+<a name="l-349"></a><span class="tm">19:48:11</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">GreenIsMyPepper:</span> more complex than that, txver=2, msb not set, then the remaining bits are used according to bip68, otherwise all bits are free
+<a name="l-350"></a><span class="tm">19:48:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">GreenIsMyPepper:</span>  CSV has an additional constraint, becuase it is both the nlocktime and the checklocktime parts that we're discussing.
+<a name="l-351"></a><span class="tm">19:48:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> ok, let's get maaku to clarify this week
+<a name="l-352"></a><span class="tm">19:48:34</span><span class="nk"> &lt;gmaxwell&gt;</span> We cannot simply 'use another optcode' to change the nSequence interpertation.
+<a name="l-353"></a><span class="tm">19:48:36</span><span class="nk"> &lt;morcos&gt;</span> also we should all chime in on what we think
+<a name="l-354"></a><span class="tm">19:48:40</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> yes, i mean the nSequence part is more restrained, but the impact w/r/t CSV is similar to CLTV
+<a name="l-355"></a><span class="tm">19:48:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">GreenIsMyPepper:</span> yes, other than the sequence part, the two are almost the same.
+<a name="l-356"></a><span class="tm">19:49:11</span><span class="nk"> &lt;morcos&gt;</span> if we can save 14 bits of nSequence for further soft forks regardles of time/block sequence type, that seems great
+<a name="l-357"></a><span class="tm">19:49:12</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> ok
+<a name="l-358"></a><span class="tm">19:49:27</span><span class="nk"> &lt;btcdrak&gt;</span> I know a number of people are still making their way through the locktime PRs (3 of them), so we'll get more feedback this week.
+<a name="l-359"></a><span class="tm">19:49:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">GreenIsMyPepper:</span> More review efforts from you on CSV would be super helpful.
+<a name="l-360"></a><span class="tm">19:49:47</span><span class="nk"> &lt;btcdrak&gt;</span> for reference the PRs are as follows
+<a name="l-361"></a><span class="tm">19:49:52</span><span class="nk"> &lt;btcdrak&gt;</span> Mempool-only sequence number constraint verification https://github.com/bitcoin/bitcoin/pull/6312
+<a name="l-362"></a><span class="tm">19:49:52</span><span class="nk"> &lt;btcdrak&gt;</span> Mempool-only CHECKSEQUENCEVERIFY https://github.com/bitcoin/bitcoin/pull/6564
+<a name="l-363"></a><span class="tm">19:49:52</span><span class="nk"> &lt;btcdrak&gt;</span> Mempool-only Median time-past as endpoint for lock-time calculations https://github.com/bitcoin/bitcoin/pull/6566
+<a name="l-364"></a><span class="tm">19:49:58</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> <span class="hi">gmaxwell:</span> ok i've been taking a look yesterday
+<a name="l-365"></a><span class="tm">19:50:05</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> <span class="hi">btcdrak:</span> thanks
+<a name="l-366"></a><span class="tm">19:50:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">GreenIsMyPepper:</span> K.
+<a name="l-367"></a><span class="tm">19:50:57</span><span class="nk"> &lt;gmaxwell&gt;</span> Can we put my "Minor OT notice" from earlier in the notes. This is an ecosystem threat with the potential to cause millions of dollars in losses that needs higher visibility; though it's not a bitcoin core / bitcoin network issue.
+<a name="l-368"></a><span class="tm">19:51:05</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics to discuss?
+<a name="l-369"></a><span class="tm">19:51:09</span><span class="nk"> &lt;dstadulis&gt;</span> gmaxwell will do
+<a name="l-370"></a><span class="tm">19:51:25</span><span class="nk"> &lt;wumpus&gt;</span> we can make it the topic gmaxwell
+<a name="l-371"></a><span class="tm">19:51:35</span><span class="nk"> &lt;morcos&gt;</span> jgarzik isn't here i guess
+<a name="l-372"></a><span class="tm">19:51:46</span><span class="nk"> &lt;morcos&gt;</span> i'd like to make it clear who exactly are the moderators for the mailing lists
+<a name="l-373"></a><span class="tm">19:51:52</span><span class="nk"> &lt;morcos&gt;</span> and then i can hound them
+<a name="l-374"></a><span class="tm">19:51:56</span><span class="nk"> &lt;wumpus&gt;</span> if there's more to discuss about it
+<a name="l-375"></a><span class="tm">19:52:01</span><span class="nk"> &lt;btcdrak&gt;</span> ping warren:
+<a name="l-376"></a><span class="tm">19:52:12</span><span class="nk"> &lt;morcos&gt;</span> b/c i know there is not another list yet, but there is some stuff that is inapproiate for any list happening
+<a name="l-377"></a><span class="tm">19:52:27</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> has a meeting with LF today btw for the new list.
+<a name="l-378"></a><span class="tm">19:52:29</span><span class="nk"> &lt;morcos&gt;</span> i'm this clsoe to unsubscribing myself
+<a name="l-379"></a><span class="tm">19:52:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think htere is nothing more to discuss. Common, critical, JS code is broken that may cause the generation of incorrect pubkeys (among other issues). Anyone who cares for a JS implementation should read that PR.
+<a name="l-380"></a><span class="tm">19:52:47</span><span class="nk"> &lt;warren&gt;</span> Had a call with them this morning.  The plan is now:
+<a name="l-381"></a><span class="tm">19:52:52</span><span class="nk"> &lt;warren&gt;</span> 1) create bitcoin-discuss list
+<a name="l-382"></a><span class="tm">19:52:53</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> warren assures we'll have the new list this week.
+<a name="l-383"></a><span class="tm">19:53:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> +1
+<a name="l-384"></a><span class="tm">19:53:04</span><span class="nk"> &lt;warren&gt;</span> 2) we need to decide who are moderators for that and bitcoin-dev list
+<a name="l-385"></a><span class="tm">19:53:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bitcoin-discuss mailing list</span>
+<a name="l-386"></a><span class="tm">19:53:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> ok, clear
+<a name="l-387"></a><span class="tm">19:53:57</span><span class="nk"> &lt;warren&gt;</span> 3) They will also host a new domain name with a static web page simply listing all the lists, list policies and whatever other material we put there.  We maintain it in github somewhere with pull requests and they'll auto-publish whatever is signed with certain GPG sigs.
+<a name="l-388"></a><span class="tm">19:54:57</span><span class="nk"> &lt;warren&gt;</span> Previously discussed moderators was jgarzik, elombrozo, johnathan, btcdrak, are we still good with this list?
+<a name="l-389"></a><span class="tm">19:55:04</span><span class="nk"> &lt;wumpus&gt;</span> thanks for letting us know warren
+<a name="l-390"></a><span class="tm">19:55:29</span><span class="nk"> &lt;warren&gt;</span> Mailman 2 has the drawback of a shared password for moderators, this will become better in ~6 months when they upgrade to Mailman 3 where each user has their own password.
+<a name="l-391"></a><span class="tm">19:55:54</span><span class="nk"> &lt;wumpus&gt;</span> sounds good to me
+<a name="l-392"></a><span class="tm">19:56:00</span><span class="nk"> &lt;warren&gt;</span> Should be OK to allow more moderators.  We probably should agree on a moderation policy where mod actions identify who did it, otherwise there's no transparency?
+<a name="l-393"></a><span class="tm">19:56:08</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> has there been general guidelines on what will be ontopic on bitcoin-discuss? is economics-politics ontopic for instance?
+<a name="l-394"></a><span class="tm">19:56:25</span><span class="nk"> &lt;warren&gt;</span> I nominate GreenIsMyPepper as another moderator.
+<a name="l-395"></a><span class="tm">19:56:39</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> it's important moderators act with one voice. If mod A bans user B, then mod C should not undo that unilaterally
+<a name="l-396"></a><span class="tm">19:56:56</span><span class="nk"> &lt;warren&gt;</span> how about we have a separate meeting to discuss the list and moderation policy
+<a name="l-397"></a><span class="tm">19:57:02</span><span class="nk"> &lt;warren&gt;</span> don't need to spend time here
+<a name="l-398"></a><span class="tm">19:57:13</span><span class="nk"> &lt;wumpus&gt;</span> this meeting is about to end
+<a name="l-399"></a><span class="tm">19:57:18</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> agreed.
+<a name="l-400"></a><span class="tm">19:57:30</span><span class="nk"> &lt;warren&gt;</span> who else should be moderator?
+<a name="l-401"></a><span class="tm">19:57:50</span><span class="nk"> &lt;warren&gt;</span> this decision need not be made now
+<a name="l-402"></a><span class="tm">19:57:53</span><span class="nk"> &lt;wumpus&gt;</span> but I think we discussed everything there was to do, so that's good
+<a name="l-403"></a><span class="tm">19:58:24</span><span class="nk"> &lt;warren&gt;</span> Could a few of the devs agree to join the moderator meeting because it is about agreeing on list policy?
+<a name="l-404"></a><span class="tm">19:58:29</span><span class="nk"> &lt;wumpus&gt;</span> I don't know much about moderating mailinglists, but isn't this enough moderators for now?
+<a name="l-405"></a><span class="tm">19:58:45</span><span class="nk"> &lt;wumpus&gt;</span> too many will be like headless chickens
+<a name="l-406"></a><span class="tm">19:58:46</span><span class="nk"> &lt;warren&gt;</span> Sure, I'm more concerned that a few devs join the policy setting meeting.
+<a name="l-407"></a><span class="tm">19:59:03</span><span class="nk"> &lt;warren&gt;</span> Let the moderators implement the policy that is set and written down.
+<a name="l-408"></a><span class="tm">19:59:17</span><span class="nk"> &lt;wumpus&gt;</span> I'm fine with attending, depending on when it is
+<a name="l-409"></a><span class="tm">19:59:18</span><span class="nk"> &lt;morcos&gt;</span> you have several devs in your list
+<a name="l-410"></a><span class="tm">19:59:35</span><span class="nk"> &lt;warren&gt;</span> what time is good tomorrow for a list policy discussion meeting?
+<a name="l-411"></a><span class="tm">19:59:48</span><span class="nk"> &lt;btcdrak&gt;</span> I'll come whatever the time.
+<a name="l-412"></a><span class="tm">20:00:26</span><span class="nk"> &lt;warren&gt;</span> I propose same time tomorrow for the list policy meeting.
+<a name="l-413"></a><span class="tm">20:00:34</span><span class="nk"> &lt;morcos&gt;</span> oh i have one quick additional top
+<a name="l-414"></a><span class="tm">20:00:34</span><span class="nk"> &lt;warren&gt;</span> Is that bad for anyone?
+<a name="l-415"></a><span class="tm">20:00:43</span><span class="nk"> &lt;wumpus&gt;</span> hmm I don't like meetings on friday evenings
+<a name="l-416"></a><span class="tm">20:00:53</span><span class="nk"> &lt;warren&gt;</span> would you rather do this Monday?
+<a name="l-417"></a><span class="tm">20:01:16</span><span class="nk"> &lt;wumpus&gt;</span> yes, absolutely, but never mind me
+<a name="l-418"></a><span class="tm">20:01:36</span><span class="nk"> &lt;morcos&gt;</span> oh hm, petertodd left already, but i saw hes talking about resurrecting RBF again and I wanted to know what the status of opt-in RBF was.  are there any objections to that method of moving forward?  isn't it strictly superior?
+<a name="l-419"></a><span class="tm">20:01:38</span><span class="nk"> &lt;warren&gt;</span> ok Monday same time for list policy meeting, move on.
+<a name="l-420"></a><span class="tm">20:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

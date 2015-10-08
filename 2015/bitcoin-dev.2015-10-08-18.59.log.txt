@@ -1,0 +1,420 @@
+18:59:38 <wumpus> #startmeeting
+18:59:38 <lightningbot`> Meeting started Thu Oct  8 18:59:38 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:38 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:23 <btcdrak> are we ready?
+19:00:26 <wumpus> let's start with the action items from last time
+19:00:38 <dstadulis> I have a 'Topics to be Discussed' section in meeting minutes here: https://docs.google.com/document/d/1hCDuOBNpqrZ0NLzvgrs2kDIF3g97sOv-FyneHjQellk/edit
+19:00:51 <dstadulis> and action items from last meeting are in that link too
+19:00:57 <wumpus> yes, thanks dstadulis
+19:01:19 <wumpus> #topic Mempool limiting
+19:01:42 <sipa> there seem to be some comments on the proposed reduction of chain limits
+19:02:07 <morcos> ok well i think we've pretty much concentrated on 6722 at this point.  matt's pull.  and it seems to be nice and simple.  i haven't reviewed his latest changes yet though, so i don't know that we're 100% there yet
+19:02:42 <sipa> my mempool is 2.5G... we better get some solution!
+19:02:49 <gmaxwell> We should at least mention the lowS change (and maybe small discussion on backport release schedule.)
+19:02:57 <sipa> gmaxwell: ack
+19:03:04 <petertodd> gmaxwell: ack
+19:03:08 <morcos> have others been reviewing it? i'd like to get it merged as soon as possible after its ready
+19:03:13 <morcos> perhaps before next weeks meeting
+19:03:23 <sipa> morcos: do we have any theoretical upper limits on the iteration counts given certain chain limits?
+19:03:31 <petertodd> morcos: I did some review of it, but not enough to say I'd ack it
+19:03:37 <morcos> you mean for runtime complexity sipa?
+19:03:41 <wumpus> gmaxwell: yes, that can come later
+19:03:43 <sipa> morcos: yes
+19:03:55 <morcos> the way it works now is it just boots the first package period
+19:03:56 <gmaxwell> wumpus: I just meant as a proposed agenda item.
+19:04:11 <sipa> morcos: because runtime performance is what drives the decision to reduce the chain limits?
+19:04:19 <morcos> sipa: no, not really
+19:04:30 <coin_trader> morcos: thanks on the source file tip - reading now
+19:04:46 <gmaxwell> sipa: also long chains bypass fees meaning anything because the tx at the end will never go in.
+19:04:49 <morcos> i think run time performance is probably ok with limits as high as 100/100
+19:05:25 <morcos> the concern is more that with higher limits you can create degenerate sets of txs that look like high fee rate for eviction and low fee rate for mining
+19:05:31 <morcos> so they neither get mined or evicted
+19:05:34 <sipa> got it
+19:05:57 <morcos> to be quite honest, i'm not sure if 25/25 is safe, but perhaps this isn't the place for that discussion
+19:06:02 <petertodd> gmaxwell: re "never go in" is that really true?
+19:06:16 <morcos> i think getting limits as small as we can reasonably get is important
+19:06:28 <gmaxwell> petertodd: with high probablity, at least.
+19:06:42 <sipa> petertodd: with the current tx selection they are unlikely to go in fast, which is what matters - i think - if they don't, there's no need for them to be in the mempool yet
+19:06:45 <morcos> petertodd: its also important to think about what will be mined using existing code and using code that would do CPFP.  CPFP would be way better, but may actually be worse at certain cases
+19:07:21 <petertodd> sipa: right, so this is because of the current mining node, not necessarily a fundemental problem
+19:07:25 <morcos> we did almost all of our attack analysis assuming CPFP mining.  we should probably do it again without, but i don't know what we'll be able to do about that
+19:07:36 <sipa> so, action item: review/test #6722?
+19:07:45 <morcos> yes!
+19:07:46 <gmaxwell> petertodd: e.g. (CPFP example is easiest) you have a chain with 10mb of low fee transactions, and a high fee at the end. The collection has high fee rate, but no miner cares, and the tx at the end may well get doublespent first; so they never pay their fee.
+19:08:01 <morcos> and help try to get as low chain limits as possible pushed through
+19:08:09 <sipa> gmaxwell: CPFP mining would fix that, though
+19:08:10 <petertodd> sipa: re: 'in the mempool' I'd expect most of the argument there being companies want to be "messaging" people they're sending funds too, so they see the tx immediately
+19:08:27 <bsm117532> Is the current malleability attack due to chains?  Or malleability?  (see http://motherboard.vice.com/read/i-broke-bitcoin) If the former, we should discuss bip62 as well.
+19:08:40 <bsm117532> *is the current mempool explosion due to malleability or chains...
+19:08:41 <sipa> bsm117532: yes, we will discuss that
+19:08:50 <sipa> gmaxwell: unless the package becomes so large that it doesn't fit in a block anymore
+19:08:57 <morcos> the current mempool explosion is due to a low relay rate and no mempool limiting
+19:09:00 <gmaxwell> sipa: thats what I just described, 10mb.
+19:09:10 <petertodd> gmaxwell: oh sure, but I mean, with lower limits - ie 100, 300 byte txs I'd expect to get mined reasonably fast so long as they had reasonable fees
+19:09:11 <sipa> gmaxwell: ugh, i need to learn to read
+19:09:14 <morcos> chain limited code still has very large mempools right now
+19:09:16 <sipa> anything else on mempool?
+19:09:34 <petertodd> gmaxwell: total size I think matters re: "will they get mined", not # of txs, which is just a performance issue
+19:10:11 <morcos> petertodd: yes total size is a bigger problem than just count of txs, and there doesn't seem to be any push back on that, except to make 100 -> 101
+19:10:13 <petertodd> bsm117532: bit62 is still fairly far off I think; low-s fixes most of the issue at least
+19:10:23 <wumpus> yes, lows will be next topic
+19:10:29 <sipa> petertodd, bsm117532: anything else on mempool?
+19:10:34 <morcos> but count of txs is a problem on its own
+19:10:36 <bsm117532> According to the above article, the current attack is due to malleating...
+19:10:44 <dstadulis> #action review/test PR #6722
+19:10:46 <sipa> bsm117532: please stick to topic
+19:10:47 <coin_trader> different attack bsm
+19:11:04 <petertodd> morcos: so I'd think a 101 size limit is fine, and then base the count of txs on measured performance with a reasonable margin (which I haven't done)
+19:11:10 <morcos> not just for performance reasons
+19:11:24 <wumpus> malleating has nothing to do with mempool limiting, let's not get off topic
+19:11:30 <dstadulis> +!
+19:11:36 <phantomcircuit> morcos, in general i would say that the assumption should be that miners are sorting on a strict feerate basis for transactions with no dependents
+19:11:44 <morcos> its for the ability of the tx to look different when viewed as an ancestor package or a descendant package.  the structure of the package can be more complex with more txs and thus more evil almost
+19:11:45 <petertodd> phantomcircuit: +1
+19:11:58 <sipa> phantomcircuit: how hard would that be to change?
+19:12:30 <phantomcircuit> sipa, pretty hard to change
+19:12:32 <morcos> sipa: i don't think its impossible to imagine we could have CPFP mining for 0.12, but its a stretch
+19:12:49 <morcos> at least as a patch not long after maybe
+19:12:51 <sipa> phantomcircuit: if getblocktemplate would return a CPFP-aware set, isn't that enough?
+19:12:58 <petertodd> morcos: RBF seems more likely, and it could help negate some of the cases where you want lots of txs in a row
+19:13:10 <phantomcircuit> sipa, you'd need to have multiple CreateBlock strategies and then decide which to use based on which has the highest total fees
+19:13:20 <phantomcircuit> sipa, it's significantly more effort than it initially seems
+19:13:21 <sipa> phantomcircuit: assume that's done
+19:13:24 <morcos> petertodd: it has nothing to do with RBF or using CPFP to get txs boosted in priority
+19:13:32 <morcos> it has to do with maximizing miners income
+19:13:32 <sipa> phantomcircuit: i wonder about anything outside of bitcoind
+19:13:46 <petertodd> morcos: I mean, it helps make the argument that a smaller limit to total txchain depth is OK
+19:13:55 <phantomcircuit> sipa, the CPFP set aware getblocktemplate is going to have higher latency than the naive strategy for sure
+19:14:31 <sipa> phantomcircuit: i'm not convinced about that - i think we can do significantly better than the current GBT implementation
+19:14:33 <gmaxwell> There is no reason gbt latency should have anything to do with the time CNB takes.
+19:14:42 <phantomcircuit> there's also the issue that mutated transaction in the chain will cause block validation and relay to take longer
+19:14:52 <gmaxwell> (because the result can be precomputed and it can return an empty template if thats the best precomputation it has right now.)
+19:14:54 <sipa> phantomcircuit: also, CPFP indexing would happen ahead of time, so GBT would only iterate and assemble
+19:14:56 <morcos> anyway, improving mining is a bit far off for now.  suffice it to say, i think we should consider whether there are crippling attacks with the existing mining code still possible once we have lower chain limits and 6722 merged
+19:15:05 <morcos> and if so, maybe we need some short term fix for them...
+19:15:05 <wumpus> how can we make progress with mempool limiting? as sipa said, it appears to be getting quite urgent, at some point we have to make a decision about strategies
+19:15:07 <sipa> morcos: agree
+19:15:12 <btcdrak> morcos: +1
+19:15:19 <petertodd> morcos: +1
+19:15:35 <sipa> what about those chain limits then?
+19:15:39 <phantomcircuit> morcos, yes
+19:16:23 <sipa> are there any known use cases where 25 is not enough?
+19:16:31 <morcos> lets work on trying to convince the people who are opposed to 25.  i'd feel a lot better about 25 than 100.  but can't give you a proof why its better
+19:16:54 <phantomcircuit> sipa, i dont believe there's any known use case for which 5 would not be enough
+19:17:07 <morcos> what do you think about the possiblity that some nodes have low limits and some have high
+19:17:22 <morcos> lets say you had a 50% chance of having 10/10 and a 50% chance of having 100/100
+19:17:23 <petertodd> sipa: so, an interesting argument re: them, is that senders need to take into account that a receiver might respend an output, blowing up the chian limit; in short they should be able to queue txs for broadcast ontheir own
+19:17:25 <btcdrak> yeah, I think the argument was not less than 5, but that 25 is plenty.
+19:17:27 <morcos> as a default
+19:17:42 <petertodd> sipa: (unless I'm completley misunderstanding this)
+19:17:43 <morcos> then attacks dont' cripple relay across the network if 10 nodes are immune
+19:17:44 <gmaxwell> morcos: inconsistency isn't great; you waste bandwidth forwardings things that get dropped.
+19:17:53 <morcos> and long chains can still be relayed across the 100 nodes
+19:18:13 <morcos> gmaxwell: yeah, but the long chains are relatively rare
+19:18:29 <sipa> well rare is not an argument for not protecting against
+19:18:36 <gmaxwell> ultimately you're setting yourself up for extreme vulerablity to malleability and double spend when you make long chains; so there are plenty of other factors that limit utility of long chains as well.
+19:18:42 <btcdrak> morcos: rare unless you're an attacker.
+19:18:52 <wumpus> +1 gmaxwell
+19:19:10 <dstadulis> +1 gribble
+19:19:10 <bsm117532> A chain limit only impacts mempool, not relayed blocks, correct?  (otherwise it could cause a hard fork)
+19:19:11 <btcdrak> gmaxwell: agreed
+19:19:15 <dstadulis> +1 gmaxwell
+19:19:16 <wumpus> so, all in all, 25 ought to be enough for everyone, for now
+19:19:19 <morcos> bsm117532: correct
+19:19:28 <btcdrak> wumpus: ack
+19:19:40 <petertodd> wumpus: alright, aack
+19:19:40 <sipa> morcos: if the driving reason for chain limits is to not make mempool selection and mining selection diverge too much... there is no real reason why the optimal value would differ between nodes
+19:19:45 <wumpus> bsm117532: yes, see the topic "mempool behavior"
+19:19:56 <morcos> wumpus: i agree for sure, but maybe we should have some more ACKs on the pull then, a decent number of comments are opposed
+19:20:07 <gmaxwell> If there is too much more debate on this, I'm going to begin advancing the view that we shouldn't relay transactions spending unconfirmed inputs at all.
+19:20:19 <morcos> sipa: diverge under attack
+19:20:27 <petertodd> gmaxwell: long run I have a lot of symapthy for that view
+19:20:29 <sipa> morcos: that's the only thing that matters :)
+19:20:36 <wumpus> morcos: do they mention an actual application?
+19:20:48 <morcos> i'm just saying its ok if we sacrifice half the nodes in an attack.. :)
+19:20:54 <gmaxwell> lets just all take homework to go look.
+19:20:58 <coin_trader> yea with regards to long chains of unconfirmed, i'm ok to pre-split large coin chunks into small.. i feel other service operators can also mod their systems to accommodate this requirement. Kinda sucks, but whatever. it's not too difficult to mitigate
+19:21:13 <sipa> ok, next topic?
+19:21:16 <morcos> wumpus: sort of, i didn't follow exactly
+19:21:19 <morcos> ack
+19:21:20 <wumpus> #topic LowS deployment
+19:21:23 <phantomcircuit> gmaxwell, I've yet to hear anybody articulate a strong reason for using unconfirmed inputs at all
+19:21:40 <coin_trader> phantomcircuit: it just makes using a default node "easier" for someone with high activity
+19:21:42 <warren> Who is tracking the current topic?
+19:21:44 <coin_trader> that is all i can tell from personal experience
+19:21:52 <wumpus> warren: lightningbot`
+19:21:52 <gmaxwell> Minor OT notice: This issue https://github.com/feross/buffer/pull/81 has made most JS bitcoin software vulnerable to generating incorrect public keys.
+19:21:57 <btcdrak> wumpus: is there anything stopping us rolling a release almost immediately?
+19:22:14 <wumpus> btcdrak: no, we could do a 0.10.3 and 0.11.1 now
+19:22:17 <dstadulis> Topics listed here: https://docs.google.com/document/d/1hCDuOBNpqrZ0NLzvgrs2kDIF3g97sOv-FyneHjQellk/edit
+19:22:28 <dstadulis> and lightningbot`
+19:22:31 <gmaxwell> LowS deployment. We've merged the change that makes lowS a standarness requirement. I believe this completely eliminates third party malleability annoyance attacks.
+19:22:34 <btcdrak> wumpus: then I think we should release it.
+19:22:38 <gmaxwell> (obviously miners can still malleate)
+19:22:52 <petertodd> wumpus: a release sounds fine to me
+19:23:00 <gmaxwell> Measurements show 95% of transactions already conforming; and thats before I went and got several more things to fix themselves (including electrum).
+19:23:14 <morcos> a release now and then another in a couple of weeks for soft-fork
+19:23:17 <morcos> ?
+19:23:21 <wumpus> right, this is about pull #6769
+19:23:22 <sipa> morcos: or for mempool limiting...
+19:23:23 <petertodd> morcos: that's fine by me
+19:23:24 <btcdrak> morcos: sure, why not
+19:23:26 <wumpus> (and its backports)
+19:23:32 <BlueMatt> several people are also running https://github.com/TheBlueMatt/bitcoin/tree/seed, which malleates to low-s on mainnet
+19:23:36 <sipa> i think both mempool limit and malleability are very short term concerns
+19:23:37 <BlueMatt> to counter the guy malleating everything
+19:23:57 <petertodd> BlueMatt: +1
+19:24:05 <morcos> sipa: mempool limiting is not easily backportable
+19:24:09 <btcdrak> BlueMatt: I'll get one spun up then
+19:24:22 <sipa> morcos: good point - and also much more likely to need fixes post merge
+19:24:28 <gmaxwell> Wumpus backported the change to older versions and we need to decide when to deploy.  If we release now we stop the attacks sooner which will make people happier.  Though it might be polite to slow roll somewhat due to giving the stragglers time to upgrade. At the same time upgrades take time and as matt just mentioned there is a compatiblity hack that prevents jamming.
+19:24:39 <coin_trader> BlueMatt: LOL that's hilarious :)
+19:25:11 <wumpus> yes, mempool limiting is riskier, whereas the LowS change is straightforward (it was already in the code, it just needed to be made standard), if we want a fast release, then we should postpone that for later
+19:25:28 <petertodd> and mempool limiting can be handled by just increasing the minimum relay fee too
+19:25:30 <morcos> i'm all for a release, but i think it should include CLTV
+19:25:30 <BlueMatt> I'm not as concerned with low-s
+19:25:45 <gmaxwell> So questions are: how comfortable are we with potentially causing blocking of up to 5% of transactions for a short window while people upgrade.
+19:25:46 <petertodd> I don we can handle a decent % of nodes dropping offline
+19:25:56 <btcdrak> morcos: still not enough reviewers on the backports for CLTV
+19:26:00 <petertodd> er, I don't see any reason why we can't handle a decent % of nodes dropping offline, at least temporarily
+19:26:01 <phantomcircuit> possibly the lows change should be backported and we do minor releases for backported versions but not a new major release?
+19:26:07 <gmaxwell> If we do a backport we could increment min relay fee.
+19:26:09 <BlueMatt> gmaxwell: I would be, if we had auto-malleating-to-standard nodes up all over the place
+19:26:10 <sipa> petertodd: wallets, not nodes...
+19:26:18 <gmaxwell> phantomcircuit: it's been backported, and right thats possible.
+19:26:22 <petertodd> sipa: I mean re: mempool limiting
+19:26:23 <morcos> gmaxwell: +1
+19:26:27 <wumpus> coupling with CLTV would be possible, although the deadline for that that was scheduled together with CSV for end of this month
+19:26:33 <petertodd> sipa: like, upping minrelay fee quicly stops the attack
+19:26:38 <BlueMatt> gmaxwell: I'm not a fan at all of rolling out low-s limits today
+19:26:45 <BlueMatt> we can get it on a miner or two
+19:26:48 <BlueMatt> to make the attack harder
+19:26:50 <btcdrak> BlueMatt: why?
+19:26:54 <BlueMatt> but rolling it out on the network....ehhhhh
+19:27:10 <wumpus> also not sure we want to couple it with softforks, to avoid confusion between mempool policy changes and softforks
+19:27:18 <btcdrak> BlueMatt: the attack is so bad it knocked out 1000 nodes
+19:27:19 <BlueMatt> wumpus: ack
+19:27:22 <gmaxwell> BlueMatt: Yes, another option is to just get some miners on it... has basically optimal behavior. esp as it will allow the l[Dto-ow-S malleators to do their thing.
+19:27:34 <BlueMatt> btcdrak: low-s didnt nock off nodes, mempool size did
+19:27:55 <btcdrak> fair
+19:28:01 <gmaxwell> btcdrak: people on reddit are totally confused and have mixed up the lowS stuff with the mempool flooding stuff. They're unrelated technically.
+19:28:02 <wumpus> again, let's not confuse mempool size with LowS/malleating
+19:28:03 <BlueMatt> gmaxwell: yea, maybe we should be convincing miners to do low-s malleating
+19:28:28 <morcos> btw, its not really fair to call this mempool stuffing an attack right?
+19:28:32 <gmaxwell> BlueMatt: lowS enforcement is very easy to use, as the code has been around forever and requires only a trivial patch to activate it.
+19:28:33 <morcos> aren't these all good txs
+19:28:43 <morcos> they seem to mostly reduce the utxo 100->1
+19:28:56 <BlueMatt> morcos: oh? lol
+19:29:10 <coin_trader> technically this new attack was all 'legit' transactions with over 1 satoshi per byte
+19:29:13 <gmaxwell> morcos: not sure in this case; I'd _assumed_ they were being created with the specific goal of knocking out nodes.
+19:29:16 <coin_trader> but there was just "so many" of them...
+19:29:36 <coin_trader> it's like ddos
+19:29:45 <phantomcircuit> morcos, it's clearly an attack, but yes it should shrink the utxo set
+19:29:56 <gmaxwell> But it's hard to sort out people cheering about the effects vs the intent. Doesn't really matter what it "is", all that matters is what it does. :)
+19:30:07 <wumpus> whether it's an attack or not, we need mempool limiting to protect against it (but that was last topic)
+19:30:12 <coin_trader> ^ +1
+19:30:16 <phantomcircuit> yup
+19:30:18 <gmaxwell> In any case, is there anything more to say about lowS ? I'll go get miners to run at least lowS enforcement.
+19:30:32 <wumpus> so, deploy new 0.10 and 0.11 release asap?
+19:30:34 <BlueMatt> gmaxwell: I'd prefer they do malleation
+19:30:42 <BlueMatt> wumpus: ehhhh, I'd prefer not
+19:30:44 <gmaxwell> And we'll not rush a release on that, but lowS enforcement will go out with whatever goes out next?
+19:30:50 <BlueMatt> yea
+19:31:02 <BlueMatt> gmaxwell: miners doing just lowS enforcement doesnt help
+19:31:04 <gmaxwell> BlueMatt: After you insisted to me that I don't need to review that code... ? :P
+19:31:05 <wumpus> 'whatever goes out next' will be CSV and CLTV softforks likely
+19:31:07 <sipa> of the wallet software that is presumed not to produce lows... does it deal well with malleation?
+19:31:08 <BlueMatt> if a tx is malleated, now they just dont mine it
+19:31:16 <gmaxwell> BlueMatt: it does, when coupled with other people doing lowS malleation.
+19:31:17 <wumpus> so that will couple it to softfork minor releases
+19:31:18 <BlueMatt> gmaxwell: well now I'm changing my tune since I think it may be a good solution
+19:31:29 <BlueMatt> gmaxwell: but only if they're direct peers
+19:31:31 <phantomcircuit> sipa, no that's the only reason there's a problem to start with
+19:32:04 <BlueMatt> sipa: there isnt much we can do there :(
+19:32:06 <sipa> well... what is worst to them? no confirmation, or malleated confrm?
+19:32:09 <wumpus> which is ok with me, but as I said above it may confuse people to combine softfork backports with high-porfile other (non forking) changes
+19:32:11 <gmaxwell> BlueMatt: Getting people to run unreleased code is a challenge, esp if its non-trivial.
+19:32:37 <BlueMatt> gmaxwell: I'm aware
+19:32:43 <BlueMatt> gmaxwell: they can run it on their border nodes, however
+19:32:47 <BlueMatt> no need to run it on your mining node
+19:32:58 <gmaxwell> wumpus: I think at least its similar in kind, in that its a standardness change.
+19:33:02 <wumpus> but ok - no one in favor of doing releases for lows enforcements, so that's off the map
+19:33:08 <BlueMatt> sipa: my point is, if miners are only enforcing lowS and not changing it themselves, it is malleated
+19:33:19 <sipa> BlueMatt: i don't understand?
+19:33:21 <BlueMatt> assuming someone is attacking everything, then it just means delayed + malleated confirms
+19:33:23 <wumpus> gmaxwell: consensus changes are IMO completely different from standardness changes
+19:33:40 <gmaxwell> wumpus: I think we can get 95% of the benefit of a short lowS release via a mix of asking a few miners to apply local fixes.
+19:34:05 <BlueMatt> sipa: if someone is attacking and malleates a tx to highS all over the network, miners who are enforcing will reject it and not hear about the lowS version
+19:34:08 <gmaxwell> BlueMatt: it means people running updated software (95% of transactions) become largely protected.
+19:34:09 <BlueMatt> others will take it and mine it
+19:34:26 <btcdrak> I agree with BlueMatt, miners should be fixing the transactions as well, it solves a lot of the disruption.
+19:34:26 <BlueMatt> gmaxwell: nope
+19:34:40 <gmaxwell> please stop. The code to go and rewrite transactions is not trivial.
+19:34:43 <BlueMatt> gmaxwell: only if the miners have a peer with someone who knows the lowS version
+19:35:15 <BlueMatt> that's true...ok, well at a minimum miners who are doing highS should have 1 border node that does rewriting
+19:35:19 <gmaxwell> BlueMatt: sure. I don't think this is a huge assumption. Esp assuming the existance of some small amount of lowS converter nodes.
+19:35:20 <BlueMatt> or should addnode my node that does it
+19:35:22 <BlueMatt> or something
+19:35:24 <sipa> i don't think that highs->lows would be hard to add as a patch to mempool acceptance
+19:35:27 <gmaxwell> Sure sure, I can suggest that.
+19:35:27 <morcos> gmaxwell: i have to admit i don't understand how a few miners running lowS enforcement solves the problem
+19:35:41 <morcos> what about the rest of the miners?
+19:35:58 <BlueMatt> morcos: it doesnt solve it, but means you're proportionally less likely to suffer it
+19:36:04 <morcos> yeah ok
+19:36:15 <gmaxwell> morcos: thats the 'largely'. A 'few miners' may mean 75% of the hashpower.
+19:36:27 <gmaxwell> the attack is also not so interesting when its much less effective.
+19:36:32 <bsm117532> A better solution is not to relay highS transactions, no?
+19:36:43 <gmaxwell> And even the remaining hashpower will often hear the lowS first.
+19:36:44 <BlueMatt> gmaxwell: bitcoin-seednode.bluematt.me has reasonable relay/maxconnections capacity and is running it
+19:36:53 <gmaxwell> bsm117532: Git master already does this.
+19:37:14 <phantomcircuit> gmaxwell, it would be just as or more effective to do minor releases of the backported lows change
+19:37:24 <wumpus> bsm117532: that is the code that is currently merged in 0.10, 0.11, and master (pull #6769)
+19:37:35 <wumpus> I was suggesting to do a release with that, but people haev other plans
+19:37:42 <gmaxwell> bsm117532: As to backports that will eventually become subsiquent releases. But that alone is not sufficient because it will still block ~5% of all transactions (at this moment), and because it is not in a release version.
+19:38:05 <phantomcircuit> i dont see any reason to try to target miners
+19:38:13 <btcdrak> wumpus: were there objections to releasing that as is?
+19:38:15 <gmaxwell> I think doing a release that just does that might be okay, but since nodes are actually going offline due to mempool stuff I feel like it's missing the forrest for the trees.
+19:38:20 <phantomcircuit> that's just going to confuse people when their transactions aren't mined
+19:38:22 <wumpus> btcdrak: yes, at least from BlueMatt and gmaxwell
+19:38:36 <phantomcircuit> if they're rejected by a node they relay to at least maybe they'll figure it out
+19:38:50 <wumpus> I prefer clarity too phantomcircuit
+19:39:11 <gmaxwell> wumpus: I am not opposed. I do not think it is essential right now. And I am somewhat concerned about update exhaustion with what might end up being three mandatory updates in short succession.
+19:39:22 <BlueMatt> phantomcircuit: yes, that is why I was saying it must be coupled with each miner who is doing it running a malleate-to-low-s node somewhere so that they dont just reject
+19:39:24 <BlueMatt> but also mine them
+19:39:30 <gmaxwell> phantomcircuit: in practice that isn't how much software works.
+19:39:31 <wumpus> gmaxwell: people can decide for themselves whether to update or not
+19:39:33 <sipa> how about we do backports in the stable branches, but don't release, and instead ask around and look whether the highS wallets on the network goes down?
+19:39:51 <gmaxwell> sipa: we can no longer measure it due to attacks.
+19:39:52 <sipa> oh... i guess with a ->highS malleation going on, that's harder to observe
+19:39:54 <sipa> right
+19:39:58 <wumpus> it is already backported to the stable branches
+19:40:11 <wumpus> the only thing that has to be done is stage a relase (or not)
+19:40:47 <btcdrak> gmaxwell: I dont think users are going to object to seeing more frequent security/maintenance releases. If anything it would be good PR
+19:40:56 <morcos> i'd vote for doing one release before 12, with lowS enforcement, increased min relay fee and CLTV soft fork
+19:41:03 <wumpus> any other topics?
+19:41:04 <dstadulis> ### TIMECHECK 66% through the meeting
+19:41:22 <gmaxwell> My preference is along the lines of what morcos suggests.
+19:41:31 <gmaxwell> (actually, exactly what he suggests)
+19:41:38 <BlueMatt> I dont disagree, just suggesting that we not rush into it
+19:41:43 <wumpus> ok - target for the releases on 0.10.x and 0.11.x is end of this month then
+19:41:46 <gmaxwell> and a little more delay does give more time for other things to updat.e
+19:41:55 <petertodd> along those lines, I just rebased all the CLTV branches
+19:42:01 <wumpus> then see whether CLTV and CSV make it in
+19:42:04 <dstadulis> wumpus: Next topics: CLTV backport reviews and CSV reviews
+19:42:06 <wumpus> as proposed last week
+19:42:18 <gmaxwell> Basically there are wallet vendors who totally missed the first generation attacks, and the bip62 discussion, and "hey you need to lowS" was news to them..
+19:42:45 <morcos> well i have to say i'm a NACK on CSV for release this month.  i just don't think they are settled and ready enough.
+19:42:59 <morcos> maaku, were you considering changing the semantics to save more bits?
+19:43:07 <wumpus> #topic CLTV backport reviews and CSV reviews
+19:43:11 <petertodd> morcos: I was just reviewing the code today, and it struck me that there isn't even clarity on what everything looks like when all three pull-reqs are merged
+19:43:39 <wumpus> I also think CSV is quite risky to deploy on such short notice
+19:43:47 <morcos> petertodd: yeah agreed with that too.  and the bug sdaftuar found was actually just an assumption of what would be a bug when the soft fork pulls were created, which don't exist yet
+19:43:57 <gmaxwell> I am concerned that the CLTV sequence restriction violations are currently not quite non-standard. (unless I've missed something)
+19:43:57 <sipa> we can do mempool-only CSV/sequence
+19:43:58 <btcdrak> morcos: there are loads of bits free, set the MSB and remaining 31 bits are free.
+19:44:07 <gmaxwell> er CSV!
+19:44:09 <gmaxwell> (not CLTV)
+19:44:19 <gmaxwell> (sorry, autopilot)
+19:44:36 <morcos> but there are not loads of bits free if you want to keep the CSV and nSequence meaning and yet use some more of the bits for another soft fork
+19:44:37 <wumpus> sipa: sure, but there's no reason to do that in an intermediate minor release
+19:44:41 <morcos> it uses more than it needs to
+19:44:52 <morcos> gmaxwell: it requires increased tx version
+19:44:53 <wumpus> sipa: I'm all for mempool only CSV in say, master, when it's ready to merge
+19:45:04 <petertodd> gmaxwell: sequence restriction violations?
+19:45:06 <morcos> i think the semantics should change
+19:45:07 <wumpus> we followed the same for CLTV
+19:45:09 <gmaxwell> morcos: oh derp! there we go, sorry.
+19:45:40 <gmaxwell> (I did know that... had just forgotten the implication)
+19:45:41 <GreenIsMyPepper> afaik it's worst-case half the bits available?
+19:45:41 <wumpus> ok - so CSV semantics are n't even finalized yet?
+19:45:42 <petertodd> gmaxwell: OP_CLTV is itself non-standard, so any tx using that behavior at all will immediately be dropped
+19:45:52 <petertodd> wumpus: I would say no, IMO
+19:45:56 <gmaxwell> petertodd: I know, I autotyped that. :P
+19:45:57 <morcos> no
+19:45:58 <btcdrak> indeed, softfork deploymment aside, we can get the mempool PRs for CSV merged.
+19:46:21 <sipa> wumpus: i think the current proposal is final by the author... things can change if there are concerns of course
+19:46:21 <morcos> last i talked to maaku i believe he wanted to change the semantics
+19:46:25 <sipa> morcos: ?
+19:46:32 <sipa> morcos: afaik that's long done
+19:46:44 <petertodd> btcdrak: well... I'm not sure that's a good thing, because it'd make changing those semantics later tricky - CLTV had the same issue, and the plan was we'd pick a new opcode if that happened
+19:46:50 <btcdrak> morcos: I'm not sure he did want to change, he was just taking on board what you were saying.
+19:47:05 <morcos> he and i discussed on IRC the other day, and he had thought it was a soft fork to change time resolution from 1s to 512s for instance and not the other way around
+19:47:08 <petertodd> sorry, I need to go :(
+19:47:16 <morcos> btcdrak: i agree it wasn't 100% clear
+19:47:25 <wumpus> meeting only has 15 minutes to go
+19:47:28 <gmaxwell> okay, so the takeaway is that this needs to get clarified.
+19:47:31 <GreenIsMyPepper> CSV can similarly use a different opcode, half the bits with nSequence?
+19:48:09 <sipa> CSV is a different opcode...
+19:48:10 <morcos> i think its really close to good, but it just seems a bit odd to me to use 25 bits for time, when we might want to save those for something else later.
+19:48:11 <btcdrak> GreenIsMyPepper: more complex than that, txver=2, msb not set, then the remaining bits are used according to bip68, otherwise all bits are free
+19:48:12 <gmaxwell> GreenIsMyPepper:  CSV has an additional constraint, becuase it is both the nlocktime and the checklocktime parts that we're discussing.
+19:48:26 <btcdrak> morcos: ok, let's get maaku to clarify this week
+19:48:34 <gmaxwell> We cannot simply 'use another optcode' to change the nSequence interpertation.
+19:48:36 <morcos> also we should all chime in on what we think
+19:48:40 <GreenIsMyPepper> yes, i mean the nSequence part is more restrained, but the impact w/r/t CSV is similar to CLTV
+19:48:55 <gmaxwell> GreenIsMyPepper: yes, other than the sequence part, the two are almost the same.
+19:49:11 <morcos> if we can save 14 bits of nSequence for further soft forks regardles of time/block sequence type, that seems great
+19:49:12 <GreenIsMyPepper> ok
+19:49:27 <btcdrak> I know a number of people are still making their way through the locktime PRs (3 of them), so we'll get more feedback this week.
+19:49:38 <gmaxwell> GreenIsMyPepper: More review efforts from you on CSV would be super helpful.
+19:49:47 <btcdrak> for reference the PRs are as follows
+19:49:52 <btcdrak> Mempool-only sequence number constraint verification https://github.com/bitcoin/bitcoin/pull/6312
+19:49:52 <btcdrak> Mempool-only CHECKSEQUENCEVERIFY https://github.com/bitcoin/bitcoin/pull/6564
+19:49:52 <btcdrak> Mempool-only Median time-past as endpoint for lock-time calculations https://github.com/bitcoin/bitcoin/pull/6566
+19:49:58 <GreenIsMyPepper> gmaxwell: ok i've been taking a look yesterday
+19:50:05 <GreenIsMyPepper> btcdrak: thanks
+19:50:08 <gmaxwell> GreenIsMyPepper: K.
+19:50:57 <gmaxwell> Can we put my "Minor OT notice" from earlier in the notes. This is an ecosystem threat with the potential to cause millions of dollars in losses that needs higher visibility; though it's not a bitcoin core / bitcoin network issue.
+19:51:05 <wumpus> ok, any other topics to discuss?
+19:51:09 <dstadulis> gmaxwell will do
+19:51:25 <wumpus> we can make it the topic gmaxwell
+19:51:35 <morcos> jgarzik isn't here i guess
+19:51:46 <morcos> i'd like to make it clear who exactly are the moderators for the mailing lists
+19:51:52 <morcos> and then i can hound them
+19:51:56 <wumpus> if there's more to discuss about it
+19:52:01 <btcdrak> ping warren:
+19:52:12 <morcos> b/c i know there is not another list yet, but there is some stuff that is inapproiate for any list happening
+19:52:27 <btcdrak> warren: has a meeting with LF today btw for the new list.
+19:52:29 <morcos> i'm this clsoe to unsubscribing myself
+19:52:43 <gmaxwell> wumpus: I think htere is nothing more to discuss. Common, critical, JS code is broken that may cause the generation of incorrect pubkeys (among other issues). Anyone who cares for a JS implementation should read that PR.
+19:52:47 <warren> Had a call with them this morning.  The plan is now:
+19:52:52 <warren> 1) create bitcoin-discuss list
+19:52:53 <btcdrak> morcos: warren assures we'll have the new list this week.
+19:53:03 <wumpus> morcos: +1
+19:53:04 <warren> 2) we need to decide who are moderators for that and bitcoin-dev list
+19:53:17 <wumpus> #topic bitcoin-discuss mailing list
+19:53:48 <wumpus> gmaxwell: ok, clear
+19:53:57 <warren> 3) They will also host a new domain name with a static web page simply listing all the lists, list policies and whatever other material we put there.  We maintain it in github somewhere with pull requests and they'll auto-publish whatever is signed with certain GPG sigs.
+19:54:57 <warren> Previously discussed moderators was jgarzik, elombrozo, johnathan, btcdrak, are we still good with this list?
+19:55:04 <wumpus> thanks for letting us know warren
+19:55:29 <warren> Mailman 2 has the drawback of a shared password for moderators, this will become better in ~6 months when they upgrade to Mailman 3 where each user has their own password.
+19:55:54 <wumpus> sounds good to me
+19:56:00 <warren> Should be OK to allow more moderators.  We probably should agree on a moderation policy where mod actions identify who did it, otherwise there's no transparency?
+19:56:08 <GreenIsMyPepper> has there been general guidelines on what will be ontopic on bitcoin-discuss? is economics-politics ontopic for instance?
+19:56:25 <warren> I nominate GreenIsMyPepper as another moderator.
+19:56:39 <btcdrak> warren: it's important moderators act with one voice. If mod A bans user B, then mod C should not undo that unilaterally
+19:56:56 <warren> how about we have a separate meeting to discuss the list and moderation policy
+19:57:02 <warren> don't need to spend time here
+19:57:13 <wumpus> this meeting is about to end
+19:57:18 <btcdrak> warren: agreed.
+19:57:30 <warren> who else should be moderator?
+19:57:50 <warren> this decision need not be made now
+19:57:53 <wumpus> but I think we discussed everything there was to do, so that's good
+19:58:24 <warren> Could a few of the devs agree to join the moderator meeting because it is about agreeing on list policy?
+19:58:29 <wumpus> I don't know much about moderating mailinglists, but isn't this enough moderators for now?
+19:58:45 <wumpus> too many will be like headless chickens
+19:58:46 <warren> Sure, I'm more concerned that a few devs join the policy setting meeting.
+19:59:03 <warren> Let the moderators implement the policy that is set and written down.
+19:59:17 <wumpus> I'm fine with attending, depending on when it is
+19:59:18 <morcos> you have several devs in your list
+19:59:35 <warren> what time is good tomorrow for a list policy discussion meeting?
+19:59:48 <btcdrak> I'll come whatever the time.
+20:00:26 <warren> I propose same time tomorrow for the list policy meeting.
+20:00:34 <morcos> oh i have one quick additional top
+20:00:34 <warren> Is that bad for anyone?
+20:00:43 <wumpus> hmm I don't like meetings on friday evenings
+20:00:53 <warren> would you rather do this Monday?
+20:01:16 <wumpus> yes, absolutely, but never mind me
+20:01:36 <morcos> oh hm, petertodd left already, but i saw hes talking about resurrecting RBF again and I wanted to know what the status of opt-in RBF was.  are there any objections to that method of moving forward?  isn't it strictly superior?
+20:01:38 <warren> ok Monday same time for list policy meeting, move on.
+20:01:43 <wumpus> #endmeeting
