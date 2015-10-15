@@ -1,0 +1,324 @@
+19:01:00 <wumpus> #startmeeting
+19:01:00 <lightningbot> Meeting started Thu Oct 15 19:01:00 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:00 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:09 <sipa> evening all
+19:01:15 <btcdrak> evening all
+19:01:23 <GreenIsMyPepper> morning all
+19:01:27 <GreenIsMyPepper> afternoon
+19:01:27 <sipa> do we have topics?
+19:02:02 <wumpus> mempool limiting, as usual, I suppose
+19:02:10 <BlueMatt> not much to discuss there
+19:02:14 <BlueMatt> but, sure....
+19:02:14 <wumpus> ok
+19:02:19 <sipa> i'm benchmarking BlueMatt's current patch
+19:02:22 <sdaftuar> i'd like to get direction for the sendheaders BIP so i can move forward with the related pull
+19:02:34 <wumpus> #topic mempool limiting
+19:02:38 <btcdrak> maaku posted a question to the list about BIP68 which could be discussed, it's easy too
+19:02:39 <BlueMatt> #6722 is looking for review
+19:02:52 <wumpus> #action review #6722
+19:02:53 <morcos> BlueMatt: s/review/merge/ :)
+19:02:55 <sdaftuar> i'm close to ACKing :)  running some final tests
+19:02:56 <BlueMatt> those who had avoided it previously because it was still churning should go ahead and do that
+19:03:07 <sipa> i'm seeing transactions that take 200ms to accept into the mempool
+19:03:19 <sipa> but it seems those may just be very large transactions
+19:03:20 <BlueMatt> sipa: oh? I didnt see anything that bad when i was looking? :(
+19:03:20 <morcos> whoa
+19:03:37 <sipa> BlueMatt: i don't think it's because of your pull - i never benchmarked mempool acceptance before
+19:03:42 <sipa> but i'd like to know for sure
+19:03:46 <sdaftuar> hm. could it be the package code?
+19:03:47 <morcos> ok to be honest i never benchmarked 6722, but nothing in it should be slower than other things i benchmarked
+19:03:51 <btcdrak> sipa: dont see how it could be related to that pull
+19:03:57 <morcos> 2ms is appropriate amount of time to be accepted to mempool
+19:04:09 <BlueMatt> dunno, when i looked at it it was 100% sig checking
+19:04:12 <BlueMatt> well, 95
+19:04:48 <morcos> ok, i can do some performance testing of it.., sipa, you saw like a few outliers taking that long or what?  either way thats bad
+19:04:58 <gmaxwell> No gdoc today?
+19:05:05 <sipa> the average is around 4ms, but very strong outliers
+19:05:09 <btcdrak> gmaxwell: just meetbot
+19:05:23 <sipa> this is with libsecp validation merged
+19:05:41 <morcos> yeah me too
+19:05:49 <sipa> i'll benchmark more and comment on the pr
+19:05:57 <CodeShark> is there a list of the topics for discussion?
+19:06:15 <btcdrak> CodeShark: ad hoc today
+19:07:15 <btcdrak> my only comment/nit on 6722 was I wasnt sure why we should revert the minrelay in that particular PR.
+19:07:41 <jonasschnelli> If there are non *important* topics i would be interested to brainstorm additional services on the p2p network protected over ECDH. But only if it makes sense to discuss it off-mailing-list
+19:07:43 <sipa> i understand that it reverts it, because the raising of it was a temporary measure
+19:07:50 <BlueMatt> btcdrak: well 5000 no longer makes sense, and to avoid having a huge discussion on the proper value, I just picked the previous one
+19:08:21 <sipa> but i do think that the relayfee which influences dust should be floating as well, or the dust limit becomes ineffective
+19:09:01 <wumpus> CodeShark: if you have any suggestions, go ahead
+19:10:00 <CodeShark> regarding mempool limiting? or regarding topics?
+19:10:04 <btcdrak> Can we discuss this today: http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011555.html (or hear any objections)
+19:10:09 <gmaxwell> jonasschnelli: could we talk about it after the meeting? I'd like to understand what you're thinking.
+19:10:12 <wumpus> #topic sdaftuar's sendheaders BIP
+19:10:50 <sdaftuar> so i don't feel strongly about how to move forward.  theuni proposed extending the version message; seems like that's not a popular idea though
+19:11:10 <sdaftuar> i think the "flags" message idea that gmaxwell suggested has the same synchronization problem as anything else
+19:11:11 <wumpus> I'd prefere not extending the version message
+19:11:11 <sipa> i am pretty strongly opposed to overloading the version message further
+19:11:21 <gmaxwell> I do not think extending the version message is good.
+19:11:25 <btcdrak> ditto
+19:11:27 <CodeShark> agreed
+19:11:28 <wumpus> what was wrong with using a special message to signal support for it?
+19:11:49 <sdaftuar> perhaps nothing?  i think the objection was having network messages that change state
+19:12:14 <sdaftuar> but as the state only changes once, and the way it's implemented, it only chnages right after the verack's are sent i think,
+19:12:15 <sipa> i don't understand that concern
+19:12:22 <gmaxwell> We could however add an "options" message that can send flags. I wouldn't be opposed to that. But I don't see a strong advantage over just having a message.
+19:12:23 <sipa> the protocol is already badly stateless
+19:12:26 <sipa> eh, statefull
+19:12:37 <wumpus> well you can require that it happens between version and any other messages
+19:12:44 <gmaxwell> Also, the message is advisory, so if its handled out of order thats okay.
+19:12:56 <sdaftuar> gmaxwell: yes, i agree
+19:13:00 <wumpus> to prevent it from becoming a 'change state' message
+19:13:01 <sipa> can we require the message be sent between version and verack?
+19:13:29 <sipa> or would this trip up older clients that expect nothing in between
+19:13:45 <davec> that would probably break older clients
+19:13:46 <sdaftuar> well we only send it if the recipient's version is high enough
+19:13:46 <wumpus> I think that will cause potential problems
+19:14:02 <wumpus> just require that it happens before getheaders
+19:14:04 <wumpus> problem solved.
+19:14:27 <sipa> is there a problem even with it being a state change?
+19:14:38 <sdaftuar> i don't think there is, from the perspective of the code change that implements it
+19:14:52 <sipa> receiving the message and understanding it sets a bit 'this peer supports X'. there is no way to unset it
+19:14:54 <wumpus> it's not nice to have it possible to change the state back and forth
+19:15:03 <sdaftuar> it can't go the other way
+19:15:08 <sdaftuar> ie you can enable it, but you can't disable it
+19:15:22 <sipa> exactly
+19:15:23 <wumpus> a connection should have well-defined propreties, ideally negotiated in the beginning
+19:15:25 <wumpus> ok
+19:15:29 <gmaxwell> sipa: I think as long as it's clear that it doesn't necessarily have immediate effect, then the concern there is moot. Though we might want to consider uniformity with future optional extensions.
+19:15:39 <sipa> gmaxwell: fair enough
+19:16:03 <wumpus> what do you mean with 'immediate effect'? I think it can be required that it applies to messages sent after it?
+19:16:11 <sipa> just say that 'optional feature negotiation' happens immediately after verack, and before any 'data' messages
+19:16:14 <sipa> ?
+19:16:23 <wumpus> what would be the point in having it, say, take effect 5 seconds later?
+19:16:31 <sdaftuar> wumpus: announcing via headers isn
+19:16:37 <davec> I'd rather have it one way as well.  Otherwise it adds a bunch of complexity for something that, in my opinion, wouldn't even be very useful
+19:16:47 <btcdrak> for the log, sendheaders link on the ML http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-September/011184.html
+19:16:49 <sdaftuar> 't guaranteed to happen.  there are situations where it falls back to inv (eg if you don't know where your peer is)
+19:16:52 <gmaxwell> wumpus: it doesn't matter if it takes effect 5 seconds later.
+19:17:01 <sipa> davec: well it would be optional!
+19:17:03 <wumpus> gmaxwell: ok
+19:17:25 <davec> I meant in regards to toggling it back off after it has been enabled
+19:17:29 <wumpus> yes, it would be optional, so if you don't think it is useful, don't implement it
+19:17:33 <gmaxwell> I think it should be one way.
+19:17:57 <sipa> davec: i don't think that should be supported at all; either just a message to enable it at any time, or even stricter and require that it happens during some early handshake
+19:18:07 <davec> we agree
+19:18:09 <sipa> but no disabling
+19:18:19 <sipa> #agree no unsetting sendheaders
+19:18:19 <wumpus> that's already what is in the BIP
+19:18:36 <gmaxwell> I think it might be polte to require it be up front, but take care that it doesn't interact poorly with other optional things like it.
+19:19:06 <sipa> sdaftuar: what do you think about requiring sendheaders be sent right after verack, and before anything else?
+19:19:09 <gmaxwell> e.g. if you expect it to be up front but in the future you get  ver/verak sendfrogs sendheaders ... you shouldn't reject the send headers because it came after the sendfrogs that you don't understand.
+19:19:11 <morcos> i think we're over constraining this
+19:19:30 <sipa> morcos: maybe
+19:19:38 <wumpus> sipa: how wil that interact with future messages?
+19:19:49 <morcos> its entirely possible some future optimization may say, i want to send sendheaders to these peers b/c they announce a lot of new stuff to me and not these others b/c they don't
+19:20:05 <wumpus> sipa: I don't think being toos trict there is a good idea, especially as it crosses between concerns
+19:20:16 <morcos> maybe you want to wait and send it later once you have some data
+19:20:17 <wumpus> sipa: e.g. who cares if it is sent before or after an 'alert' message
+19:20:29 <sipa> ok, so no problem with state changing, as long as it's unidirection, but we don't care when it happens?
+19:20:42 <sipa> fine by me
+19:21:00 <gmaxwell> Yea, it's unidirection and no proposes when it happens or if it happens at all.
+19:21:01 <morcos> ok, and to be clear why does it have to be unidirectional?
+19:21:14 <morcos> i mean i don't see any reason for bidirectionality now
+19:21:18 <morcos> but why impose it?
+19:21:19 <wumpus> unless there would be some clear negotiation phase in which *all* extra negotiation happens, but I don't think it's worth locking that down for this
+19:21:26 <CodeShark> you mean add another message donotsendheaders?
+19:21:29 <wumpus> I think this topic is done
+19:21:33 <sipa> ok
+19:21:42 <CodeShark> can we throw in versionbits as a topic?
+19:21:43 <morcos> ok sure
+19:21:44 <sdaftuar> it sounds like everyone is ok with the BIP as drafted then?
+19:21:57 <wumpus> yes
+19:21:59 <gmaxwell> I think so.
+19:22:02 <davec> yes
+19:22:08 <wumpus> it's uncontroversial and clear
+19:22:11 <sdaftuar> ok great
+19:22:12 <btcdrak> yes
+19:22:24 <gmaxwell> PR the BIP for number assignment.
+19:22:28 <sdaftuar> will do
+19:22:33 <sipa> well, the only person with concerns was cfields, who doesn't seem to be here :)
+19:22:44 <gmaxwell> sipa: he can raise concerns later too!
+19:22:46 <cfields> dammit!
+19:22:49 <wumpus> #topic versionbits
+19:22:53 <sipa> cfields: too late!
+19:22:54 <gmaxwell> ha
+19:23:07 <cfields> did i really miss my third one of these in a row?
+19:23:22 <btcdrak> CodeShark: you have the floor.
+19:23:24 <gmaxwell> I have not read the versionbits implementation yet.
+19:23:30 <gmaxwell> (sorry)
+19:23:34 <cfields> sorry all
+19:23:39 <wumpus> me neither
+19:23:46 <sipa> i have looked at it briefly, but i'd like to see how it integrates with the consensus code in main
+19:23:57 <wumpus> #action review versionbits implementation
+19:23:58 <sipa> though i'll review the code that is there
+19:24:06 <CodeShark> so right now it's just a unit that implements the versionbits logic but does not demonstrate its usage
+19:24:21 <CodeShark> I thought it would be better to actually integrate in a separate PR, but I can add a demonstration
+19:24:25 <btcdrak> versionbits PR is https://github.com/bitcoin/bitcoin/pull/6816
+19:24:53 <sipa> CodeShark: separate commit, same PR - i think we need something that's mergable as a whole, to be able to see whether the whole thing easily backports
+19:25:03 <btcdrak> sipa: agree
+19:25:19 <sipa> (is my preference, i don't feel very strongly)
+19:25:19 <warren> Proposed for last topic: dev/discuss list policy followup
+19:25:51 <wumpus> #topic dev/discuss list policy followup
+19:26:18 <CodeShark> well, the integration I was envisioning also depends on $5747
+19:26:19 <CodeShark> err
+19:26:23 <CodeShark> #6747
+19:27:08 <wumpus> what is the state there warren?
+19:27:19 <CodeShark> err, are we done with versionbits?
+19:27:21 <CodeShark> I still had more
+19:27:34 <CodeShark> sorry, crappy keyboard hard to type
+19:27:37 <wumpus> CodeShark: no one has apparanetly reviewed it yet, so I don't think there's much more to discuss
+19:27:49 <CodeShark> I just wanted to address sipa's concern
+19:27:52 <btcdrak> The new list was created bitcoin-discuss, warren was supposed to distribute the admin password to jgarzik and someone else.
+19:27:53 <warren> We had a sort of meeting Monday to discuss this, jgarzik couldn't make it, we came to some rough consensus on some points, but since then I've seen mention of 2+ other proposals and I've been too busy with other things to follow what is happening.  My fault.
+19:28:22 <warren> Was jgarzik's list post the result of some other discussion?
+19:28:35 <warren> There was also mention that rusty had a separate proposal, did that happen?
+19:28:51 <btcdrak> warren: I think we are at risk of bikeshedding the issue. We have discussed moderation a lot over the last weeks and jeff seemed pretty keen and willing to pick up the bat. We just need to see how it plays out from now imo.
+19:28:53 <maaku> rusty (who is in australia where it is early AM) had a separate proposal for moderation of bitcoin-dev
+19:29:10 <CodeShark> fwiw, we should probably NOT state policy in a message on the ML but post it on some site and just provide the link on the ML
+19:29:17 <maaku> jgarzik is not here either so it's hard to confirm, but I think these are separate proposals
+19:29:32 <btcdrak> my recollection of things was that we'll only set the moderate bit on someone who fails to comply with moderator wishes.
+19:29:55 <warren> Yes, a neutrally hosted website for list policy with github pull requests to update it will happen soon.  Asked LF to host it as a neutral entity.
+19:30:40 <warren> It may be prudent to see rusty and jgarzik's proposal and to collectively reconvene after all the options are on the table.
+19:31:03 <btcdrak> warren: have you distributed the administration passwords yet?
+19:31:12 <warren> btcdrak: when policy isn't decided on?
+19:31:21 <btcdrak> when are we going to accounce bitcoin-discuss@ ?
+19:31:25 <morcos> too much bureaucracy, lets let jeff do it, if he does a bad job, we'll fire him
+19:31:38 <warren> morcos: who decides? =)
+19:31:41 <btcdrak> warren: I'm really not keen on this bureaucracy.
+19:31:44 <wumpus> tend to agree morcos... see to be overthinking this
+19:32:07 <btcdrak> if jeff falls out of line, we're going to beat him with a stick, so let's just get going
+19:32:17 <BlueMatt> lets let jeff and rusty and anyone else who is talking about this discuss between themselves and let them decide
+19:32:23 <morcos> we are all deciding right now, jeff is the maintainer of list moderation policy and personnel
+19:32:26 <BlueMatt> since none of them are even there
+19:32:27 <btcdrak> BlueMatt: agreed
+19:32:27 <sipa> BlueMatt: sgtm
+19:32:36 <warren> If the devs decide in their meeting "just let jeff decide" then fine, that's simple.  You folks decide that now, or maybe wait and see what rusty's proposal is first?
+19:32:37 <BlueMatt> here*
+19:32:51 <morcos> yes, we'll tell jeff he should take into account rusty's proposal
+19:33:00 <warren> BlueMatt: +1
+19:33:17 <CodeShark> this policy thing mostly became such a huge issue this year because of certain specific events...and I think it is somewhat of a mistake to try to generalize from this specific experience
+19:33:19 <warren> Isn't BlueMatt's approach reasonable?
+19:33:20 <GreenIsMyPepper> yes, interested parties can discuss and results posted publicly, agreed
+19:33:33 <morcos> someone has to take responsibility or nothing happens
+19:33:37 <btcdrak> I vote we let jeff decide with rusty's input. They both have greater experience of lkm and stuff.
+19:33:40 <BlueMatt> morcos: I think multiple people are?
+19:33:53 <CodeShark> or at least, I think the real causes for the fundamental problems had little to do with the ML
+19:33:54 <BlueMatt> morcos: both jeff and rusty (and others?) are working on proposals and want to move forward
+19:33:56 <GreenIsMyPepper> also, it's assumed -dev policy should be discussed in -discuss, correct?
+19:33:57 <BlueMatt> no reason to cut that off now?
+19:33:58 <wumpus> BlueMatt: they're just not here
+19:34:09 <warren> GreenIsMyPepper: wha?
+19:34:19 <BlueMatt> wumpus: I dunno about jeff, but rusty cannot reasonably be awake at this hour
+19:34:22 <morcos> i find the ML unusable now
+19:34:32 <morcos> i don't feel like we should wait for action
+19:34:39 <morcos> nothing is undoable
+19:34:47 <btcdrak> morcos: I propose we vote on "let jeff decide" now
+19:35:07 <btcdrak> if that doesnt work in a few weeks we can revisit it.
+19:35:12 <BlueMatt> morcos: meh, will we really die if we wait a week?
+19:35:13 <GreenIsMyPepper> warren: it's a common behavior for metadiscussion to be on a different channel, i think metafilter was one of the earliest uses of this and it makes tending the garden far easier, i assume a sepearate ml is unnecessary. but i don't mind either way just wondering?
+19:35:23 <warren> rusty and jeff are both very reasonable people with a lot of experience, I'd like to see what they can come up with together.  If they can't agree quickly then we just decide shortly after.
+19:35:38 <morcos> ok, well i will unsubscribe in the meantime
+19:35:40 <morcos> moving on
+19:35:45 <warren> sigh
+19:35:58 <btcdrak> warren: if you think they are reasonable, let them get on with it. We dont need to have all this bureaucracy
+19:36:03 <wumpus> ok, any more topics? this seems not to be constructive with the people involved here
+19:36:08 <btcdrak> I'm also considering unsubscribing at this rate.
+19:36:22 <warren> btcdrak: if the decision today is "let the TWO of them decide" that's fine with me
+19:36:27 <wumpus> #action rusty and jgarzik should discuss this, who are not here
+19:36:43 <btcdrak> wumpus: I'd like to discuss http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011555.html
+19:37:07 <wumpus> #topic CHECKSEQUENCEVERIFY - We need more usecases to motivate the change
+19:37:46 <CodeShark> lol - I don't think that subject is accurate anymore
+19:37:51 <CodeShark> the usecases are not the issue
+19:37:55 <morcos> my opinion is we just need to settle on exact semantics, i think moving forwad is justified
+19:37:58 <CodeShark> it's the format of the nSequence field that's at issue
+19:38:12 <btcdrak> wumpus: lots of usecases were added to the CSV BIP https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki#Motivation
+19:38:41 <btcdrak> I think BIP68 is pretty much done (implementation). We changed things to account for concerns last week
+19:39:29 <btcdrak> maaku was suggesting moving one of the bits to allow for other implementations, like sidechains to have better granularity
+19:39:54 <btcdrak> there doesnt appear to be any downside that I can see, but he wanted to know if anyone had objections (see the ML post)
+19:40:25 <maaku> yeah it's just moving a bit around
+19:40:39 <btcdrak> implementation code is here: https://github.com/bitcoin/bitcoin/pull/6312/files
+19:40:45 <maaku> #6312 is done (modulo moving the bit)
+19:41:08 <sipa> maaku: did you see my comment?
+19:41:14 <sipa> about it breaking the wallet
+19:41:32 <CodeShark> can't sidechains use an entirely different mechanism designed from the start into the protocol? Why should sidechains limit themselves to the fields in the original satoshi protocol?
+19:41:44 <gmaxwell> I don't think anyone cares about the nsequence semantics in gretat details; except that it's preferable to use as few a bits as can be used without impact.
+19:41:49 <btcdrak> maaku: this was sipa's two comments: https://github.com/bitcoin/bitcoin/pull/6312/files#r41899674
+19:42:41 <btcdrak> gmaxwell: I agree. I think we've nailed using as few bits as possible and that should be enough. The semantics are less important
+19:42:49 <maaku> sipa: does the wallet filter out non-final transactions from display?
+19:42:50 <sipa> CodeShark: they shouldn't limit themselves to anything, but being able to reuse code (and having clients being able to reuse their code!) is useful
+19:42:58 <GreenIsMyPepper> gmaxwell: +1
+19:42:58 <sipa> maaku: yes
+19:42:58 <gmaxwell> CodeShark: because the bitcoin ecosystem stinks. The problem is that every application reimplements the protocol on its own, so every divergence or change is like walking on a bed of glass. I don't really think its a consideration here; but I do think that if its something we'd want to change in a sidechain thats a sign that its flexibility that might eventually be wanted in bitcoin.
+19:43:27 <maaku> sipa: interesting. ok then honestly I'd rather revert to the prior skip-not-found-inputs behavior
+19:43:41 <maaku> (the breakage was your suggestion btw ;) )
+19:43:46 <sipa> maaku: i would really really prefer a pass-heights-and-times in...
+19:44:02 <maaku> sipa: that's what the view is
+19:44:17 <maaku> but that's not backportable change anyway
+19:44:26 <maaku> so it's something work work on separately
+19:44:37 <gmaxwell> having non-confirmed tx not show up in the wallet right away isn't a big deal, I think.
+19:44:50 <maaku> gmaxwell: this is about confirmed tx with spent outputs
+19:44:53 <jonasschnelli> It's mainly that part that needs adaption: https://github.com/bitcoin/bitcoin/blob/b94ae81576c199c9a44453b8c9b17e8303f67b72/src/wallet/wallet.cpp#L1319
+19:45:52 <gmaxwell> Though seperately, I think CSV is not on target for the end of the month. The amount of activity and progress has been tremendous and positive; but also demonstrating that the semantics were not quite as mature as we'd hoped.
+19:46:34 <sipa> maaku: view currently isn't adequate, but you only need a few pieces of data from it... i think it's much simpler to just pass those in
+19:46:37 <morcos> gmaxwell: yes i think thats clear
+19:47:27 <wumpus> tend to agree
+19:47:34 <BlueMatt> yup, sadly :(
+19:48:10 <gmaxwell> Well its good news that we made this progress, not bad news.
+19:48:37 <maaku> what's the topic to be decided here?
+19:49:10 <btcdrak> maaku: whether anyone cares about you moving bits: the answer seems to be go for it
+19:49:12 <gmaxwell> maaku: dunno, btcdrak wanted to talk about it. I don't think there is any decision point on this right now.
+19:49:12 <maaku> I would appreciate reviews and explicit ACK/NACK of the code in #6312
+19:49:13 <wumpus> nothing to be decided AFAIK, people just wanted to discuss it
+19:49:52 <maaku> I will revert lack-of-utxo to be a pass-though again, to address sipa's nit
+19:49:58 <morcos> maaku: but can you tell us when you're done changing it
+19:49:59 <CodeShark> the short-term benefits of a relative time lock (regardless of semantics) outweighs the long-term concerns I have about eating up bits since I'm hoping eventually we'll have better upgrade mechanisms in the long run :)
+19:50:02 <CodeShark> but perhaps I'm too optimistic
+19:50:07 <gmaxwell> maaku: I can go post that I'm fine with the semantics changes you propose. I think I will be fine with _any_ minor changes to the semantics.
+19:50:10 <maaku> what is the decision point / deadline for BIPS 68, 112, 113?
+19:50:17 <btcdrak> maaku: i's say make the change you suggested on the ML, fix the bug from sipa and then let's review the code again.
+19:50:24 <morcos> for end of oct release, id say we're well past that
+19:50:33 <gmaxwell> So this might be modulated slightly by the recent emergency software updates.
+19:50:44 <btcdrak> gmaxwell: please do post that
+19:50:46 <morcos> maaku: I'm leaning towards sipa's suggested manner of fixing it
+19:51:12 <maaku> morcos: i strongly oppose but it's a moot point: that's not back portable
+19:51:18 <maaku> for the soft-fork it has to be a simple back port
+19:51:25 <maaku> we can fix the api for 0.13
+19:51:49 <gmaxwell> Basically, our prior tennative plan as I understood it was that we were going to look to do a CLTV soft fork prior to 0.12 with end of oct as a close date; with a hope of perhaps getting the other locktime changes in.
+19:51:55 <btcdrak> OT: if we are sure CSV wont make it for the Oct release, I'd say we should proceed with CLTV softfork.
+19:52:27 <sipa> maaku: i don't think it's specifically hard to back port - it would just add some functions
+19:52:42 <sipa> adding function is easy - changing many calls is hard
+19:52:46 <btcdrak> gmaxwell: it's unrealistic because we need to get backports to 0.11 and 0.10 and also review those, and we dont have any ACKs yet at all on BIP113's implementation sadyly
+19:52:52 <gmaxwell> I think that CSV/friends is almost certantly off for that right now;  but I also think that last weeks emergency update may have also modulated the plan slightly for CLTV.  (My concern is related to tolerance for revision cycling).
+19:52:53 <wumpus> btcdrak: agree, but let's first wait a bit for 0.11.1 rollout
+19:52:54 <morcos> I think that it makes sense for the semantics and code to be finalized for at least a month before release for consensus code.  We still need fixes before we can review again.
+19:53:23 <maaku> if we could at least get 113 in for CLTV that would be great
+19:53:29 <maaku> but no one has reviewed it
+19:53:30 <wumpus> gmaxwell: though the softfork was never meant as a 'normal' revision, it should be softfork only
+19:54:12 <morcos> maaku: that's a good point, has there been any objection at all to 113?
+19:54:14 <btcdrak> Would people be willing to review BIP113's implementation for this week? https://github.com/bitcoin/bitcoin/pull/6566 median-past locktime
+19:54:16 <wumpus> but yes, not right now immediately
+19:54:20 <gmaxwell> wumpus: I agree sure, but its still a software upgrade for miners.
+19:54:36 <gmaxwell> I think 113 is really great.
+19:54:56 <maaku> I can rebase #6566 to not depend on #6312
+19:54:59 <morcos> gmaxwell partied here
+19:55:00 <wumpus> #action review https://github.com/bitcoin/bitcoin/pull/6566 median-past locktime
+19:55:10 <BlueMatt> 5 minutes remaining?
+19:55:11 <sipa> maaku: of the 6 commits in 6566, only the last two are unique to bip113?
+19:55:12 <btcdrak> maaku: do it
+19:55:23 <gmaxwell> I hard stop on the hour, fwiw.
+19:55:28 <BlueMatt> same
+19:55:28 <maaku> morcos: to my knowledge noone except me has even looked at #6566
+19:55:50 <gmaxwell> (unfortunately the same day we set this meeting time another reoccuring meeting was booked for me immediately after it)
+19:55:58 <sipa> maaku: i wasn't aware it was independent; i'll look now
+19:55:59 <morcos> i reviewed it, but need to again, because i forgot how closely
+19:56:24 <btcdrak> maaku: please rebase it to be independent of 6312
+19:56:28 <maaku> ok
+19:56:58 <wumpus> gmaxwell: well the point is to keep the meeting within the hour so that should be no problem
+19:57:14 <wumpus> any last topic?
+19:57:47 <BlueMatt> i think we're out of time
+19:57:49 <BlueMatt> thanks all
+19:57:51 <wumpus> #meetingexit
+19:57:56 <wumpus> #exitmeeting
+19:57:58 <wumpus> eh
+19:58:13 <maaku> sipa: well BIP 113 is independent: "locktime checks have an endpoint of GetMedianTimePast() of the prior block"
+19:58:14 <wumpus> #endmeeting

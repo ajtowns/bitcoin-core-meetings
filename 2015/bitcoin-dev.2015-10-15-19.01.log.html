@@ -1,0 +1,351 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:00</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Oct 15 19:01:00 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:00</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:09</span><span class="nk"> &lt;sipa&gt;</span> evening all
+<a name="l-5"></a><span class="tm">19:01:15</span><span class="nk"> &lt;btcdrak&gt;</span> evening all
+<a name="l-6"></a><span class="tm">19:01:23</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> morning all
+<a name="l-7"></a><span class="tm">19:01:27</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> afternoon
+<a name="l-8"></a><span class="tm">19:01:27</span><span class="nk"> &lt;sipa&gt;</span> do we have topics?
+<a name="l-9"></a><span class="tm">19:02:02</span><span class="nk"> &lt;wumpus&gt;</span> mempool limiting, as usual, I suppose
+<a name="l-10"></a><span class="tm">19:02:10</span><span class="nk"> &lt;BlueMatt&gt;</span> not much to discuss there
+<a name="l-11"></a><span class="tm">19:02:14</span><span class="nk"> &lt;BlueMatt&gt;</span> but, sure....
+<a name="l-12"></a><span class="tm">19:02:14</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-13"></a><span class="tm">19:02:19</span><span class="nk"> &lt;sipa&gt;</span> i'm benchmarking BlueMatt's current patch
+<a name="l-14"></a><span class="tm">19:02:22</span><span class="nk"> &lt;sdaftuar&gt;</span> i'd like to get direction for the sendheaders BIP so i can move forward with the related pull
+<a name="l-15"></a><span class="tm">19:02:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">mempool limiting</span>
+<a name="l-16"></a><span class="tm">19:02:38</span><span class="nk"> &lt;btcdrak&gt;</span> maaku posted a question to the list about BIP68 which could be discussed, it's easy too
+<a name="l-17"></a><span class="tm">19:02:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#6722 </span><span class="cmdline">is looking for review</span>
+<a name="l-18"></a><span class="tm">19:02:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #6722</span>
+<a name="l-19"></a><span class="tm">19:02:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> s/review/merge/ :)
+<a name="l-20"></a><span class="tm">19:02:55</span><span class="nk"> &lt;sdaftuar&gt;</span> i'm close to ACKing :)  running some final tests
+<a name="l-21"></a><span class="tm">19:02:56</span><span class="nk"> &lt;BlueMatt&gt;</span> those who had avoided it previously because it was still churning should go ahead and do that
+<a name="l-22"></a><span class="tm">19:03:07</span><span class="nk"> &lt;sipa&gt;</span> i'm seeing transactions that take 200ms to accept into the mempool
+<a name="l-23"></a><span class="tm">19:03:19</span><span class="nk"> &lt;sipa&gt;</span> but it seems those may just be very large transactions
+<a name="l-24"></a><span class="tm">19:03:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> oh? I didnt see anything that bad when i was looking? :(
+<a name="l-25"></a><span class="tm">19:03:20</span><span class="nk"> &lt;morcos&gt;</span> whoa
+<a name="l-26"></a><span class="tm">19:03:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i don't think it's because of your pull - i never benchmarked mempool acceptance before
+<a name="l-27"></a><span class="tm">19:03:42</span><span class="nk"> &lt;sipa&gt;</span> but i'd like to know for sure
+<a name="l-28"></a><span class="tm">19:03:46</span><span class="nk"> &lt;sdaftuar&gt;</span> hm. could it be the package code?
+<a name="l-29"></a><span class="tm">19:03:47</span><span class="nk"> &lt;morcos&gt;</span> ok to be honest i never benchmarked 6722, but nothing in it should be slower than other things i benchmarked
+<a name="l-30"></a><span class="tm">19:03:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> dont see how it could be related to that pull
+<a name="l-31"></a><span class="tm">19:03:57</span><span class="nk"> &lt;morcos&gt;</span> 2ms is appropriate amount of time to be accepted to mempool
+<a name="l-32"></a><span class="tm">19:04:09</span><span class="nk"> &lt;BlueMatt&gt;</span> dunno, when i looked at it it was 100% sig checking
+<a name="l-33"></a><span class="tm">19:04:12</span><span class="nk"> &lt;BlueMatt&gt;</span> well, 95
+<a name="l-34"></a><span class="tm">19:04:48</span><span class="nk"> &lt;morcos&gt;</span> ok, i can do some performance testing of it.., sipa, you saw like a few outliers taking that long or what?  either way thats bad
+<a name="l-35"></a><span class="tm">19:04:58</span><span class="nk"> &lt;gmaxwell&gt;</span> No gdoc today?
+<a name="l-36"></a><span class="tm">19:05:05</span><span class="nk"> &lt;sipa&gt;</span> the average is around 4ms, but very strong outliers
+<a name="l-37"></a><span class="tm">19:05:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> just meetbot
+<a name="l-38"></a><span class="tm">19:05:23</span><span class="nk"> &lt;sipa&gt;</span> this is with libsecp validation merged
+<a name="l-39"></a><span class="tm">19:05:41</span><span class="nk"> &lt;morcos&gt;</span> yeah me too
+<a name="l-40"></a><span class="tm">19:05:49</span><span class="nk"> &lt;sipa&gt;</span> i'll benchmark more and comment on the pr
+<a name="l-41"></a><span class="tm">19:05:57</span><span class="nk"> &lt;CodeShark&gt;</span> is there a list of the topics for discussion?
+<a name="l-42"></a><span class="tm">19:06:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">CodeShark:</span> ad hoc today
+<a name="l-43"></a><span class="tm">19:07:15</span><span class="nk"> &lt;btcdrak&gt;</span> my only comment/nit on 6722 was I wasnt sure why we should revert the minrelay in that particular PR.
+<a name="l-44"></a><span class="tm">19:07:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> If there are non *important* topics i would be interested to brainstorm additional services on the p2p network protected over ECDH. But only if it makes sense to discuss it off-mailing-list
+<a name="l-45"></a><span class="tm">19:07:43</span><span class="nk"> &lt;sipa&gt;</span> i understand that it reverts it, because the raising of it was a temporary measure
+<a name="l-46"></a><span class="tm">19:07:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">btcdrak:</span> well 5000 no longer makes sense, and to avoid having a huge discussion on the proper value, I just picked the previous one
+<a name="l-47"></a><span class="tm">19:08:21</span><span class="nk"> &lt;sipa&gt;</span> but i do think that the relayfee which influences dust should be floating as well, or the dust limit becomes ineffective
+<a name="l-48"></a><span class="tm">19:09:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> if you have any suggestions, go ahead
+<a name="l-49"></a><span class="tm">19:10:00</span><span class="nk"> &lt;CodeShark&gt;</span> regarding mempool limiting? or regarding topics?
+<a name="l-50"></a><span class="tm">19:10:04</span><span class="nk"> &lt;btcdrak&gt;</span> Can we discuss this today: http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011555.html (or hear any objections)
+<a name="l-51"></a><span class="tm">19:10:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> could we talk about it after the meeting? I'd like to understand what you're thinking.
+<a name="l-52"></a><span class="tm">19:10:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">sdaftuar's sendheaders BIP</span>
+<a name="l-53"></a><span class="tm">19:10:50</span><span class="nk"> &lt;sdaftuar&gt;</span> so i don't feel strongly about how to move forward.  theuni proposed extending the version message; seems like that's not a popular idea though
+<a name="l-54"></a><span class="tm">19:11:10</span><span class="nk"> &lt;sdaftuar&gt;</span> i think the "flags" message idea that gmaxwell suggested has the same synchronization problem as anything else
+<a name="l-55"></a><span class="tm">19:11:11</span><span class="nk"> &lt;wumpus&gt;</span> I'd prefere not extending the version message
+<a name="l-56"></a><span class="tm">19:11:11</span><span class="nk"> &lt;sipa&gt;</span> i am pretty strongly opposed to overloading the version message further
+<a name="l-57"></a><span class="tm">19:11:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I do not think extending the version message is good.
+<a name="l-58"></a><span class="tm">19:11:25</span><span class="nk"> &lt;btcdrak&gt;</span> ditto
+<a name="l-59"></a><span class="tm">19:11:27</span><span class="nk"> &lt;CodeShark&gt;</span> agreed
+<a name="l-60"></a><span class="tm">19:11:28</span><span class="nk"> &lt;wumpus&gt;</span> what was wrong with using a special message to signal support for it?
+<a name="l-61"></a><span class="tm">19:11:49</span><span class="nk"> &lt;sdaftuar&gt;</span> perhaps nothing?  i think the objection was having network messages that change state
+<a name="l-62"></a><span class="tm">19:12:14</span><span class="nk"> &lt;sdaftuar&gt;</span> but as the state only changes once, and the way it's implemented, it only chnages right after the verack's are sent i think,
+<a name="l-63"></a><span class="tm">19:12:15</span><span class="nk"> &lt;sipa&gt;</span> i don't understand that concern
+<a name="l-64"></a><span class="tm">19:12:22</span><span class="nk"> &lt;gmaxwell&gt;</span> We could however add an "options" message that can send flags. I wouldn't be opposed to that. But I don't see a strong advantage over just having a message.
+<a name="l-65"></a><span class="tm">19:12:23</span><span class="nk"> &lt;sipa&gt;</span> the protocol is already badly stateless
+<a name="l-66"></a><span class="tm">19:12:26</span><span class="nk"> &lt;sipa&gt;</span> eh, statefull
+<a name="l-67"></a><span class="tm">19:12:37</span><span class="nk"> &lt;wumpus&gt;</span> well you can require that it happens between version and any other messages
+<a name="l-68"></a><span class="tm">19:12:44</span><span class="nk"> &lt;gmaxwell&gt;</span> Also, the message is advisory, so if its handled out of order thats okay.
+<a name="l-69"></a><span class="tm">19:12:56</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yes, i agree
+<a name="l-70"></a><span class="tm">19:13:00</span><span class="nk"> &lt;wumpus&gt;</span> to prevent it from becoming a 'change state' message
+<a name="l-71"></a><span class="tm">19:13:01</span><span class="nk"> &lt;sipa&gt;</span> can we require the message be sent between version and verack?
+<a name="l-72"></a><span class="tm">19:13:29</span><span class="nk"> &lt;sipa&gt;</span> or would this trip up older clients that expect nothing in between
+<a name="l-73"></a><span class="tm">19:13:45</span><span class="nk"> &lt;davec&gt;</span> that would probably break older clients
+<a name="l-74"></a><span class="tm">19:13:46</span><span class="nk"> &lt;sdaftuar&gt;</span> well we only send it if the recipient's version is high enough
+<a name="l-75"></a><span class="tm">19:13:46</span><span class="nk"> &lt;wumpus&gt;</span> I think that will cause potential problems
+<a name="l-76"></a><span class="tm">19:14:02</span><span class="nk"> &lt;wumpus&gt;</span> just require that it happens before getheaders
+<a name="l-77"></a><span class="tm">19:14:04</span><span class="nk"> &lt;wumpus&gt;</span> problem solved.
+<a name="l-78"></a><span class="tm">19:14:27</span><span class="nk"> &lt;sipa&gt;</span> is there a problem even with it being a state change?
+<a name="l-79"></a><span class="tm">19:14:38</span><span class="nk"> &lt;sdaftuar&gt;</span> i don't think there is, from the perspective of the code change that implements it
+<a name="l-80"></a><span class="tm">19:14:52</span><span class="nk"> &lt;sipa&gt;</span> receiving the message and understanding it sets a bit 'this peer supports X'. there is no way to unset it
+<a name="l-81"></a><span class="tm">19:14:54</span><span class="nk"> &lt;wumpus&gt;</span> it's not nice to have it possible to change the state back and forth
+<a name="l-82"></a><span class="tm">19:15:03</span><span class="nk"> &lt;sdaftuar&gt;</span> it can't go the other way
+<a name="l-83"></a><span class="tm">19:15:08</span><span class="nk"> &lt;sdaftuar&gt;</span> ie you can enable it, but you can't disable it
+<a name="l-84"></a><span class="tm">19:15:22</span><span class="nk"> &lt;sipa&gt;</span> exactly
+<a name="l-85"></a><span class="tm">19:15:23</span><span class="nk"> &lt;wumpus&gt;</span> a connection should have well-defined propreties, ideally negotiated in the beginning
+<a name="l-86"></a><span class="tm">19:15:25</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-87"></a><span class="tm">19:15:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I think as long as it's clear that it doesn't necessarily have immediate effect, then the concern there is moot. Though we might want to consider uniformity with future optional extensions.
+<a name="l-88"></a><span class="tm">19:15:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> fair enough
+<a name="l-89"></a><span class="tm">19:16:03</span><span class="nk"> &lt;wumpus&gt;</span> what do you mean with 'immediate effect'? I think it can be required that it applies to messages sent after it?
+<a name="l-90"></a><span class="tm">19:16:11</span><span class="nk"> &lt;sipa&gt;</span> just say that 'optional feature negotiation' happens immediately after verack, and before any 'data' messages
+<a name="l-91"></a><span class="tm">19:16:14</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-92"></a><span class="tm">19:16:23</span><span class="nk"> &lt;wumpus&gt;</span> what would be the point in having it, say, take effect 5 seconds later?
+<a name="l-93"></a><span class="tm">19:16:31</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> announcing via headers isn
+<a name="l-94"></a><span class="tm">19:16:37</span><span class="nk"> &lt;davec&gt;</span> I'd rather have it one way as well.  Otherwise it adds a bunch of complexity for something that, in my opinion, wouldn't even be very useful
+<a name="l-95"></a><span class="tm">19:16:47</span><span class="nk"> &lt;btcdrak&gt;</span> for the log, sendheaders link on the ML http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-September/011184.html
+<a name="l-96"></a><span class="tm">19:16:49</span><span class="nk"> &lt;sdaftuar&gt;</span> 't guaranteed to happen.  there are situations where it falls back to inv (eg if you don't know where your peer is)
+<a name="l-97"></a><span class="tm">19:16:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it doesn't matter if it takes effect 5 seconds later.
+<a name="l-98"></a><span class="tm">19:17:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">davec:</span> well it would be optional!
+<a name="l-99"></a><span class="tm">19:17:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> ok
+<a name="l-100"></a><span class="tm">19:17:25</span><span class="nk"> &lt;davec&gt;</span> I meant in regards to toggling it back off after it has been enabled
+<a name="l-101"></a><span class="tm">19:17:29</span><span class="nk"> &lt;wumpus&gt;</span> yes, it would be optional, so if you don't think it is useful, don't implement it
+<a name="l-102"></a><span class="tm">19:17:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it should be one way.
+<a name="l-103"></a><span class="tm">19:17:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">davec:</span> i don't think that should be supported at all; either just a message to enable it at any time, or even stricter and require that it happens during some early handshake
+<a name="l-104"></a><span class="tm">19:18:07</span><span class="nk"> &lt;davec&gt;</span> we agree
+<a name="l-105"></a><span class="tm">19:18:09</span><span class="nk"> &lt;sipa&gt;</span> but no disabling
+<a name="l-106"></a><span class="tm">19:18:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#agree </span><span class="cmdline">no unsetting sendheaders</span>
+<a name="l-107"></a><span class="tm">19:18:19</span><span class="nk"> &lt;wumpus&gt;</span> that's already what is in the BIP
+<a name="l-108"></a><span class="tm">19:18:36</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it might be polte to require it be up front, but take care that it doesn't interact poorly with other optional things like it.
+<a name="l-109"></a><span class="tm">19:19:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> what do you think about requiring sendheaders be sent right after verack, and before anything else?
+<a name="l-110"></a><span class="tm">19:19:09</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. if you expect it to be up front but in the future you get  ver/verak sendfrogs sendheaders ... you shouldn't reject the send headers because it came after the sendfrogs that you don't understand.
+<a name="l-111"></a><span class="tm">19:19:11</span><span class="nk"> &lt;morcos&gt;</span> i think we're over constraining this
+<a name="l-112"></a><span class="tm">19:19:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> maybe
+<a name="l-113"></a><span class="tm">19:19:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> how wil that interact with future messages?
+<a name="l-114"></a><span class="tm">19:19:49</span><span class="nk"> &lt;morcos&gt;</span> its entirely possible some future optimization may say, i want to send sendheaders to these peers b/c they announce a lot of new stuff to me and not these others b/c they don't
+<a name="l-115"></a><span class="tm">19:20:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I don't think being toos trict there is a good idea, especially as it crosses between concerns
+<a name="l-116"></a><span class="tm">19:20:16</span><span class="nk"> &lt;morcos&gt;</span> maybe you want to wait and send it later once you have some data
+<a name="l-117"></a><span class="tm">19:20:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> e.g. who cares if it is sent before or after an 'alert' message
+<a name="l-118"></a><span class="tm">19:20:29</span><span class="nk"> &lt;sipa&gt;</span> ok, so no problem with state changing, as long as it's unidirection, but we don't care when it happens?
+<a name="l-119"></a><span class="tm">19:20:42</span><span class="nk"> &lt;sipa&gt;</span> fine by me
+<a name="l-120"></a><span class="tm">19:21:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Yea, it's unidirection and no proposes when it happens or if it happens at all.
+<a name="l-121"></a><span class="tm">19:21:01</span><span class="nk"> &lt;morcos&gt;</span> ok, and to be clear why does it have to be unidirectional?
+<a name="l-122"></a><span class="tm">19:21:14</span><span class="nk"> &lt;morcos&gt;</span> i mean i don't see any reason for bidirectionality now
+<a name="l-123"></a><span class="tm">19:21:18</span><span class="nk"> &lt;morcos&gt;</span> but why impose it?
+<a name="l-124"></a><span class="tm">19:21:19</span><span class="nk"> &lt;wumpus&gt;</span> unless there would be some clear negotiation phase in which *all* extra negotiation happens, but I don't think it's worth locking that down for this
+<a name="l-125"></a><span class="tm">19:21:26</span><span class="nk"> &lt;CodeShark&gt;</span> you mean add another message donotsendheaders?
+<a name="l-126"></a><span class="tm">19:21:29</span><span class="nk"> &lt;wumpus&gt;</span> I think this topic is done
+<a name="l-127"></a><span class="tm">19:21:33</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-128"></a><span class="tm">19:21:42</span><span class="nk"> &lt;CodeShark&gt;</span> can we throw in versionbits as a topic?
+<a name="l-129"></a><span class="tm">19:21:43</span><span class="nk"> &lt;morcos&gt;</span> ok sure
+<a name="l-130"></a><span class="tm">19:21:44</span><span class="nk"> &lt;sdaftuar&gt;</span> it sounds like everyone is ok with the BIP as drafted then?
+<a name="l-131"></a><span class="tm">19:21:57</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-132"></a><span class="tm">19:21:59</span><span class="nk"> &lt;gmaxwell&gt;</span> I think so.
+<a name="l-133"></a><span class="tm">19:22:02</span><span class="nk"> &lt;davec&gt;</span> yes
+<a name="l-134"></a><span class="tm">19:22:08</span><span class="nk"> &lt;wumpus&gt;</span> it's uncontroversial and clear
+<a name="l-135"></a><span class="tm">19:22:11</span><span class="nk"> &lt;sdaftuar&gt;</span> ok great
+<a name="l-136"></a><span class="tm">19:22:12</span><span class="nk"> &lt;btcdrak&gt;</span> yes
+<a name="l-137"></a><span class="tm">19:22:24</span><span class="nk"> &lt;gmaxwell&gt;</span> PR the BIP for number assignment.
+<a name="l-138"></a><span class="tm">19:22:28</span><span class="nk"> &lt;sdaftuar&gt;</span> will do
+<a name="l-139"></a><span class="tm">19:22:33</span><span class="nk"> &lt;sipa&gt;</span> well, the only person with concerns was cfields, who doesn't seem to be here :)
+<a name="l-140"></a><span class="tm">19:22:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> he can raise concerns later too!
+<a name="l-141"></a><span class="tm">19:22:46</span><span class="nk"> &lt;cfields&gt;</span> dammit!
+<a name="l-142"></a><span class="tm">19:22:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">versionbits</span>
+<a name="l-143"></a><span class="tm">19:22:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> too late!
+<a name="l-144"></a><span class="tm">19:22:54</span><span class="nk"> &lt;gmaxwell&gt;</span> ha
+<a name="l-145"></a><span class="tm">19:23:07</span><span class="nk"> &lt;cfields&gt;</span> did i really miss my third one of these in a row?
+<a name="l-146"></a><span class="tm">19:23:22</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">CodeShark:</span> you have the floor.
+<a name="l-147"></a><span class="tm">19:23:24</span><span class="nk"> &lt;gmaxwell&gt;</span> I have not read the versionbits implementation yet.
+<a name="l-148"></a><span class="tm">19:23:30</span><span class="nk"> &lt;gmaxwell&gt;</span> (sorry)
+<a name="l-149"></a><span class="tm">19:23:34</span><span class="nk"> &lt;cfields&gt;</span> sorry all
+<a name="l-150"></a><span class="tm">19:23:39</span><span class="nk"> &lt;wumpus&gt;</span> me neither
+<a name="l-151"></a><span class="tm">19:23:46</span><span class="nk"> &lt;sipa&gt;</span> i have looked at it briefly, but i'd like to see how it integrates with the consensus code in main
+<a name="l-152"></a><span class="tm">19:23:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review versionbits implementation</span>
+<a name="l-153"></a><span class="tm">19:23:58</span><span class="nk"> &lt;sipa&gt;</span> though i'll review the code that is there
+<a name="l-154"></a><span class="tm">19:24:06</span><span class="nk"> &lt;CodeShark&gt;</span> so right now it's just a unit that implements the versionbits logic but does not demonstrate its usage
+<a name="l-155"></a><span class="tm">19:24:21</span><span class="nk"> &lt;CodeShark&gt;</span> I thought it would be better to actually integrate in a separate PR, but I can add a demonstration
+<a name="l-156"></a><span class="tm">19:24:25</span><span class="nk"> &lt;btcdrak&gt;</span> versionbits PR is https://github.com/bitcoin/bitcoin/pull/6816
+<a name="l-157"></a><span class="tm">19:24:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> separate commit, same PR - i think we need something that's mergable as a whole, to be able to see whether the whole thing easily backports
+<a name="l-158"></a><span class="tm">19:25:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> agree
+<a name="l-159"></a><span class="tm">19:25:19</span><span class="nk"> &lt;sipa&gt;</span> (is my preference, i don't feel very strongly)
+<a name="l-160"></a><span class="tm">19:25:19</span><span class="nk"> &lt;warren&gt;</span> Proposed for last topic: dev/discuss list policy followup
+<a name="l-161"></a><span class="tm">19:25:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">dev/discuss list policy followup</span>
+<a name="l-162"></a><span class="tm">19:26:18</span><span class="nk"> &lt;CodeShark&gt;</span> well, the integration I was envisioning also depends on $5747
+<a name="l-163"></a><span class="tm">19:26:19</span><span class="nk"> &lt;CodeShark&gt;</span> err
+<a name="l-164"></a><span class="tm">19:26:23</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="cmd">#6747</span><span class="cmdline"></span>
+<a name="l-165"></a><span class="tm">19:27:08</span><span class="nk"> &lt;wumpus&gt;</span> what is the state there warren?
+<a name="l-166"></a><span class="tm">19:27:19</span><span class="nk"> &lt;CodeShark&gt;</span> err, are we done with versionbits?
+<a name="l-167"></a><span class="tm">19:27:21</span><span class="nk"> &lt;CodeShark&gt;</span> I still had more
+<a name="l-168"></a><span class="tm">19:27:34</span><span class="nk"> &lt;CodeShark&gt;</span> sorry, crappy keyboard hard to type
+<a name="l-169"></a><span class="tm">19:27:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> no one has apparanetly reviewed it yet, so I don't think there's much more to discuss
+<a name="l-170"></a><span class="tm">19:27:49</span><span class="nk"> &lt;CodeShark&gt;</span> I just wanted to address sipa's concern
+<a name="l-171"></a><span class="tm">19:27:52</span><span class="nk"> &lt;btcdrak&gt;</span> The new list was created bitcoin-discuss, warren was supposed to distribute the admin password to jgarzik and someone else.
+<a name="l-172"></a><span class="tm">19:27:53</span><span class="nk"> &lt;warren&gt;</span> We had a sort of meeting Monday to discuss this, jgarzik couldn't make it, we came to some rough consensus on some points, but since then I've seen mention of 2+ other proposals and I've been too busy with other things to follow what is happening.  My fault.
+<a name="l-173"></a><span class="tm">19:28:22</span><span class="nk"> &lt;warren&gt;</span> Was jgarzik's list post the result of some other discussion?
+<a name="l-174"></a><span class="tm">19:28:35</span><span class="nk"> &lt;warren&gt;</span> There was also mention that rusty had a separate proposal, did that happen?
+<a name="l-175"></a><span class="tm">19:28:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> I think we are at risk of bikeshedding the issue. We have discussed moderation a lot over the last weeks and jeff seemed pretty keen and willing to pick up the bat. We just need to see how it plays out from now imo.
+<a name="l-176"></a><span class="tm">19:28:53</span><span class="nk"> &lt;maaku&gt;</span> rusty (who is in australia where it is early AM) had a separate proposal for moderation of bitcoin-dev
+<a name="l-177"></a><span class="tm">19:29:10</span><span class="nk"> &lt;CodeShark&gt;</span> fwiw, we should probably NOT state policy in a message on the ML but post it on some site and just provide the link on the ML
+<a name="l-178"></a><span class="tm">19:29:17</span><span class="nk"> &lt;maaku&gt;</span> jgarzik is not here either so it's hard to confirm, but I think these are separate proposals
+<a name="l-179"></a><span class="tm">19:29:32</span><span class="nk"> &lt;btcdrak&gt;</span> my recollection of things was that we'll only set the moderate bit on someone who fails to comply with moderator wishes.
+<a name="l-180"></a><span class="tm">19:29:55</span><span class="nk"> &lt;warren&gt;</span> Yes, a neutrally hosted website for list policy with github pull requests to update it will happen soon.  Asked LF to host it as a neutral entity.
+<a name="l-181"></a><span class="tm">19:30:40</span><span class="nk"> &lt;warren&gt;</span> It may be prudent to see rusty and jgarzik's proposal and to collectively reconvene after all the options are on the table.
+<a name="l-182"></a><span class="tm">19:31:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> have you distributed the administration passwords yet?
+<a name="l-183"></a><span class="tm">19:31:12</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">btcdrak:</span> when policy isn't decided on?
+<a name="l-184"></a><span class="tm">19:31:21</span><span class="nk"> &lt;btcdrak&gt;</span> when are we going to accounce bitcoin-discuss@ ?
+<a name="l-185"></a><span class="tm">19:31:25</span><span class="nk"> &lt;morcos&gt;</span> too much bureaucracy, lets let jeff do it, if he does a bad job, we'll fire him
+<a name="l-186"></a><span class="tm">19:31:38</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">morcos:</span> who decides? =)
+<a name="l-187"></a><span class="tm">19:31:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> I'm really not keen on this bureaucracy.
+<a name="l-188"></a><span class="tm">19:31:44</span><span class="nk"> &lt;wumpus&gt;</span> tend to agree morcos... see to be overthinking this
+<a name="l-189"></a><span class="tm">19:32:07</span><span class="nk"> &lt;btcdrak&gt;</span> if jeff falls out of line, we're going to beat him with a stick, so let's just get going
+<a name="l-190"></a><span class="tm">19:32:17</span><span class="nk"> &lt;BlueMatt&gt;</span> lets let jeff and rusty and anyone else who is talking about this discuss between themselves and let them decide
+<a name="l-191"></a><span class="tm">19:32:23</span><span class="nk"> &lt;morcos&gt;</span> we are all deciding right now, jeff is the maintainer of list moderation policy and personnel
+<a name="l-192"></a><span class="tm">19:32:26</span><span class="nk"> &lt;BlueMatt&gt;</span> since none of them are even there
+<a name="l-193"></a><span class="tm">19:32:27</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> agreed
+<a name="l-194"></a><span class="tm">19:32:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> sgtm
+<a name="l-195"></a><span class="tm">19:32:36</span><span class="nk"> &lt;warren&gt;</span> If the devs decide in their meeting "just let jeff decide" then fine, that's simple.  You folks decide that now, or maybe wait and see what rusty's proposal is first?
+<a name="l-196"></a><span class="tm">19:32:37</span><span class="nk"> &lt;BlueMatt&gt;</span> here*
+<a name="l-197"></a><span class="tm">19:32:51</span><span class="nk"> &lt;morcos&gt;</span> yes, we'll tell jeff he should take into account rusty's proposal
+<a name="l-198"></a><span class="tm">19:33:00</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">BlueMatt:</span> +1
+<a name="l-199"></a><span class="tm">19:33:17</span><span class="nk"> &lt;CodeShark&gt;</span> this policy thing mostly became such a huge issue this year because of certain specific events...and I think it is somewhat of a mistake to try to generalize from this specific experience
+<a name="l-200"></a><span class="tm">19:33:19</span><span class="nk"> &lt;warren&gt;</span> Isn't BlueMatt's approach reasonable?
+<a name="l-201"></a><span class="tm">19:33:20</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> yes, interested parties can discuss and results posted publicly, agreed
+<a name="l-202"></a><span class="tm">19:33:33</span><span class="nk"> &lt;morcos&gt;</span> someone has to take responsibility or nothing happens
+<a name="l-203"></a><span class="tm">19:33:37</span><span class="nk"> &lt;btcdrak&gt;</span> I vote we let jeff decide with rusty's input. They both have greater experience of lkm and stuff.
+<a name="l-204"></a><span class="tm">19:33:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I think multiple people are?
+<a name="l-205"></a><span class="tm">19:33:53</span><span class="nk"> &lt;CodeShark&gt;</span> or at least, I think the real causes for the fundamental problems had little to do with the ML
+<a name="l-206"></a><span class="tm">19:33:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> both jeff and rusty (and others?) are working on proposals and want to move forward
+<a name="l-207"></a><span class="tm">19:33:56</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> also, it's assumed -dev policy should be discussed in -discuss, correct?
+<a name="l-208"></a><span class="tm">19:33:57</span><span class="nk"> &lt;BlueMatt&gt;</span> no reason to cut that off now?
+<a name="l-209"></a><span class="tm">19:33:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> they're just not here
+<a name="l-210"></a><span class="tm">19:34:09</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">GreenIsMyPepper:</span> wha?
+<a name="l-211"></a><span class="tm">19:34:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I dunno about jeff, but rusty cannot reasonably be awake at this hour
+<a name="l-212"></a><span class="tm">19:34:22</span><span class="nk"> &lt;morcos&gt;</span> i find the ML unusable now
+<a name="l-213"></a><span class="tm">19:34:32</span><span class="nk"> &lt;morcos&gt;</span> i don't feel like we should wait for action
+<a name="l-214"></a><span class="tm">19:34:39</span><span class="nk"> &lt;morcos&gt;</span> nothing is undoable
+<a name="l-215"></a><span class="tm">19:34:47</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I propose we vote on "let jeff decide" now
+<a name="l-216"></a><span class="tm">19:35:07</span><span class="nk"> &lt;btcdrak&gt;</span> if that doesnt work in a few weeks we can revisit it.
+<a name="l-217"></a><span class="tm">19:35:12</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> meh, will we really die if we wait a week?
+<a name="l-218"></a><span class="tm">19:35:13</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> <span class="hi">warren:</span> it's a common behavior for metadiscussion to be on a different channel, i think metafilter was one of the earliest uses of this and it makes tending the garden far easier, i assume a sepearate ml is unnecessary. but i don't mind either way just wondering?
+<a name="l-219"></a><span class="tm">19:35:23</span><span class="nk"> &lt;warren&gt;</span> rusty and jeff are both very reasonable people with a lot of experience, I'd like to see what they can come up with together.  If they can't agree quickly then we just decide shortly after.
+<a name="l-220"></a><span class="tm">19:35:38</span><span class="nk"> &lt;morcos&gt;</span> ok, well i will unsubscribe in the meantime
+<a name="l-221"></a><span class="tm">19:35:40</span><span class="nk"> &lt;morcos&gt;</span> moving on
+<a name="l-222"></a><span class="tm">19:35:45</span><span class="nk"> &lt;warren&gt;</span> sigh
+<a name="l-223"></a><span class="tm">19:35:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> if you think they are reasonable, let them get on with it. We dont need to have all this bureaucracy
+<a name="l-224"></a><span class="tm">19:36:03</span><span class="nk"> &lt;wumpus&gt;</span> ok, any more topics? this seems not to be constructive with the people involved here
+<a name="l-225"></a><span class="tm">19:36:08</span><span class="nk"> &lt;btcdrak&gt;</span> I'm also considering unsubscribing at this rate.
+<a name="l-226"></a><span class="tm">19:36:22</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">btcdrak:</span> if the decision today is "let the TWO of them decide" that's fine with me
+<a name="l-227"></a><span class="tm">19:36:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">rusty and jgarzik should discuss this, who are not here</span>
+<a name="l-228"></a><span class="tm">19:36:43</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I'd like to discuss http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011555.html
+<a name="l-229"></a><span class="tm">19:37:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">CHECKSEQUENCEVERIFY - We need more usecases to motivate the change</span>
+<a name="l-230"></a><span class="tm">19:37:46</span><span class="nk"> &lt;CodeShark&gt;</span> lol - I don't think that subject is accurate anymore
+<a name="l-231"></a><span class="tm">19:37:51</span><span class="nk"> &lt;CodeShark&gt;</span> the usecases are not the issue
+<a name="l-232"></a><span class="tm">19:37:55</span><span class="nk"> &lt;morcos&gt;</span> my opinion is we just need to settle on exact semantics, i think moving forwad is justified
+<a name="l-233"></a><span class="tm">19:37:58</span><span class="nk"> &lt;CodeShark&gt;</span> it's the format of the nSequence field that's at issue
+<a name="l-234"></a><span class="tm">19:38:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> lots of usecases were added to the CSV BIP https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki#Motivation
+<a name="l-235"></a><span class="tm">19:38:41</span><span class="nk"> &lt;btcdrak&gt;</span> I think BIP68 is pretty much done (implementation). We changed things to account for concerns last week
+<a name="l-236"></a><span class="tm">19:39:29</span><span class="nk"> &lt;btcdrak&gt;</span> maaku was suggesting moving one of the bits to allow for other implementations, like sidechains to have better granularity
+<a name="l-237"></a><span class="tm">19:39:54</span><span class="nk"> &lt;btcdrak&gt;</span> there doesnt appear to be any downside that I can see, but he wanted to know if anyone had objections (see the ML post)
+<a name="l-238"></a><span class="tm">19:40:25</span><span class="nk"> &lt;maaku&gt;</span> yeah it's just moving a bit around
+<a name="l-239"></a><span class="tm">19:40:39</span><span class="nk"> &lt;btcdrak&gt;</span> implementation code is here: https://github.com/bitcoin/bitcoin/pull/6312/files
+<a name="l-240"></a><span class="tm">19:40:45</span><span class="nk"> &lt;maaku&gt;</span> <span class="cmd">#6312 </span><span class="cmdline">is done (modulo moving the bit)</span>
+<a name="l-241"></a><span class="tm">19:41:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> did you see my comment?
+<a name="l-242"></a><span class="tm">19:41:14</span><span class="nk"> &lt;sipa&gt;</span> about it breaking the wallet
+<a name="l-243"></a><span class="tm">19:41:32</span><span class="nk"> &lt;CodeShark&gt;</span> can't sidechains use an entirely different mechanism designed from the start into the protocol? Why should sidechains limit themselves to the fields in the original satoshi protocol?
+<a name="l-244"></a><span class="tm">19:41:44</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think anyone cares about the nsequence semantics in gretat details; except that it's preferable to use as few a bits as can be used without impact.
+<a name="l-245"></a><span class="tm">19:41:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> this was sipa's two comments: https://github.com/bitcoin/bitcoin/pull/6312/files#r41899674
+<a name="l-246"></a><span class="tm">19:42:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> I agree. I think we've nailed using as few bits as possible and that should be enough. The semantics are less important
+<a name="l-247"></a><span class="tm">19:42:49</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">sipa:</span> does the wallet filter out non-final transactions from display?
+<a name="l-248"></a><span class="tm">19:42:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> they shouldn't limit themselves to anything, but being able to reuse code (and having clients being able to reuse their code!) is useful
+<a name="l-249"></a><span class="tm">19:42:58</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-250"></a><span class="tm">19:42:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> yes
+<a name="l-251"></a><span class="tm">19:42:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> because the bitcoin ecosystem stinks. The problem is that every application reimplements the protocol on its own, so every divergence or change is like walking on a bed of glass. I don't really think its a consideration here; but I do think that if its something we'd want to change in a sidechain thats a sign that its flexibility that might eventually be wanted in bitcoin.
+<a name="l-252"></a><span class="tm">19:43:27</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">sipa:</span> interesting. ok then honestly I'd rather revert to the prior skip-not-found-inputs behavior
+<a name="l-253"></a><span class="tm">19:43:41</span><span class="nk"> &lt;maaku&gt;</span> (the breakage was your suggestion btw ;) )
+<a name="l-254"></a><span class="tm">19:43:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> i would really really prefer a pass-heights-and-times in...
+<a name="l-255"></a><span class="tm">19:44:02</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">sipa:</span> that's what the view is
+<a name="l-256"></a><span class="tm">19:44:17</span><span class="nk"> &lt;maaku&gt;</span> but that's not backportable change anyway
+<a name="l-257"></a><span class="tm">19:44:26</span><span class="nk"> &lt;maaku&gt;</span> so it's something work work on separately
+<a name="l-258"></a><span class="tm">19:44:37</span><span class="nk"> &lt;gmaxwell&gt;</span> having non-confirmed tx not show up in the wallet right away isn't a big deal, I think.
+<a name="l-259"></a><span class="tm">19:44:50</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">gmaxwell:</span> this is about confirmed tx with spent outputs
+<a name="l-260"></a><span class="tm">19:44:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's mainly that part that needs adaption: https://github.com/bitcoin/bitcoin/blob/b94ae81576c199c9a44453b8c9b17e8303f67b72/src/wallet/wallet.cpp#L1319
+<a name="l-261"></a><span class="tm">19:45:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Though seperately, I think CSV is not on target for the end of the month. The amount of activity and progress has been tremendous and positive; but also demonstrating that the semantics were not quite as mature as we'd hoped.
+<a name="l-262"></a><span class="tm">19:46:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> view currently isn't adequate, but you only need a few pieces of data from it... i think it's much simpler to just pass those in
+<a name="l-263"></a><span class="tm">19:46:37</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes i think thats clear
+<a name="l-264"></a><span class="tm">19:47:27</span><span class="nk"> &lt;wumpus&gt;</span> tend to agree
+<a name="l-265"></a><span class="tm">19:47:34</span><span class="nk"> &lt;BlueMatt&gt;</span> yup, sadly :(
+<a name="l-266"></a><span class="tm">19:48:10</span><span class="nk"> &lt;gmaxwell&gt;</span> Well its good news that we made this progress, not bad news.
+<a name="l-267"></a><span class="tm">19:48:37</span><span class="nk"> &lt;maaku&gt;</span> what's the topic to be decided here?
+<a name="l-268"></a><span class="tm">19:49:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> whether anyone cares about you moving bits: the answer seems to be go for it
+<a name="l-269"></a><span class="tm">19:49:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> dunno, btcdrak wanted to talk about it. I don't think there is any decision point on this right now.
+<a name="l-270"></a><span class="tm">19:49:12</span><span class="nk"> &lt;maaku&gt;</span> I would appreciate reviews and explicit ACK/NACK of the code in #6312
+<a name="l-271"></a><span class="tm">19:49:13</span><span class="nk"> &lt;wumpus&gt;</span> nothing to be decided AFAIK, people just wanted to discuss it
+<a name="l-272"></a><span class="tm">19:49:52</span><span class="nk"> &lt;maaku&gt;</span> I will revert lack-of-utxo to be a pass-though again, to address sipa's nit
+<a name="l-273"></a><span class="tm">19:49:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">maaku:</span> but can you tell us when you're done changing it
+<a name="l-274"></a><span class="tm">19:49:59</span><span class="nk"> &lt;CodeShark&gt;</span> the short-term benefits of a relative time lock (regardless of semantics) outweighs the long-term concerns I have about eating up bits since I'm hoping eventually we'll have better upgrade mechanisms in the long run :)
+<a name="l-275"></a><span class="tm">19:50:02</span><span class="nk"> &lt;CodeShark&gt;</span> but perhaps I'm too optimistic
+<a name="l-276"></a><span class="tm">19:50:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> I can go post that I'm fine with the semantics changes you propose. I think I will be fine with _any_ minor changes to the semantics.
+<a name="l-277"></a><span class="tm">19:50:10</span><span class="nk"> &lt;maaku&gt;</span> what is the decision point / deadline for BIPS 68, 112, 113?
+<a name="l-278"></a><span class="tm">19:50:17</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> i's say make the change you suggested on the ML, fix the bug from sipa and then let's review the code again.
+<a name="l-279"></a><span class="tm">19:50:24</span><span class="nk"> &lt;morcos&gt;</span> for end of oct release, id say we're well past that
+<a name="l-280"></a><span class="tm">19:50:33</span><span class="nk"> &lt;gmaxwell&gt;</span> So this might be modulated slightly by the recent emergency software updates.
+<a name="l-281"></a><span class="tm">19:50:44</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> please do post that
+<a name="l-282"></a><span class="tm">19:50:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">maaku:</span> I'm leaning towards sipa's suggested manner of fixing it
+<a name="l-283"></a><span class="tm">19:51:12</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">morcos:</span> i strongly oppose but it's a moot point: that's not back portable
+<a name="l-284"></a><span class="tm">19:51:18</span><span class="nk"> &lt;maaku&gt;</span> for the soft-fork it has to be a simple back port
+<a name="l-285"></a><span class="tm">19:51:25</span><span class="nk"> &lt;maaku&gt;</span> we can fix the api for 0.13
+<a name="l-286"></a><span class="tm">19:51:49</span><span class="nk"> &lt;gmaxwell&gt;</span> Basically, our prior tennative plan as I understood it was that we were going to look to do a CLTV soft fork prior to 0.12 with end of oct as a close date; with a hope of perhaps getting the other locktime changes in.
+<a name="l-287"></a><span class="tm">19:51:55</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">OT:</span> if we are sure CSV wont make it for the Oct release, I'd say we should proceed with CLTV softfork.
+<a name="l-288"></a><span class="tm">19:52:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> i don't think it's specifically hard to back port - it would just add some functions
+<a name="l-289"></a><span class="tm">19:52:42</span><span class="nk"> &lt;sipa&gt;</span> adding function is easy - changing many calls is hard
+<a name="l-290"></a><span class="tm">19:52:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> it's unrealistic because we need to get backports to 0.11 and 0.10 and also review those, and we dont have any ACKs yet at all on BIP113's implementation sadyly
+<a name="l-291"></a><span class="tm">19:52:52</span><span class="nk"> &lt;gmaxwell&gt;</span> I think that CSV/friends is almost certantly off for that right now;  but I also think that last weeks emergency update may have also modulated the plan slightly for CLTV.  (My concern is related to tolerance for revision cycling).
+<a name="l-292"></a><span class="tm">19:52:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> agree, but let's first wait a bit for 0.11.1 rollout
+<a name="l-293"></a><span class="tm">19:52:54</span><span class="nk"> &lt;morcos&gt;</span> I think that it makes sense for the semantics and code to be finalized for at least a month before release for consensus code.  We still need fixes before we can review again.
+<a name="l-294"></a><span class="tm">19:53:23</span><span class="nk"> &lt;maaku&gt;</span> if we could at least get 113 in for CLTV that would be great
+<a name="l-295"></a><span class="tm">19:53:29</span><span class="nk"> &lt;maaku&gt;</span> but no one has reviewed it
+<a name="l-296"></a><span class="tm">19:53:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> though the softfork was never meant as a 'normal' revision, it should be softfork only
+<a name="l-297"></a><span class="tm">19:54:12</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">maaku:</span> that's a good point, has there been any objection at all to 113?
+<a name="l-298"></a><span class="tm">19:54:14</span><span class="nk"> &lt;btcdrak&gt;</span> Would people be willing to review BIP113's implementation for this week? https://github.com/bitcoin/bitcoin/pull/6566 median-past locktime
+<a name="l-299"></a><span class="tm">19:54:16</span><span class="nk"> &lt;wumpus&gt;</span> but yes, not right now immediately
+<a name="l-300"></a><span class="tm">19:54:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I agree sure, but its still a software upgrade for miners.
+<a name="l-301"></a><span class="tm">19:54:36</span><span class="nk"> &lt;gmaxwell&gt;</span> I think 113 is really great.
+<a name="l-302"></a><span class="tm">19:54:56</span><span class="nk"> &lt;maaku&gt;</span> I can rebase #6566 to not depend on #6312
+<a name="l-303"></a><span class="tm">19:54:59</span><span class="nk"> &lt;morcos&gt;</span> gmaxwell partied here
+<a name="l-304"></a><span class="tm">19:55:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review https://github.com/bitcoin/bitcoin/pull/6566 median-past locktime</span>
+<a name="l-305"></a><span class="tm">19:55:10</span><span class="nk"> &lt;BlueMatt&gt;</span> 5 minutes remaining?
+<a name="l-306"></a><span class="tm">19:55:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> of the 6 commits in 6566, only the last two are unique to bip113?
+<a name="l-307"></a><span class="tm">19:55:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> do it
+<a name="l-308"></a><span class="tm">19:55:23</span><span class="nk"> &lt;gmaxwell&gt;</span> I hard stop on the hour, fwiw.
+<a name="l-309"></a><span class="tm">19:55:28</span><span class="nk"> &lt;BlueMatt&gt;</span> same
+<a name="l-310"></a><span class="tm">19:55:28</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">morcos:</span> to my knowledge noone except me has even looked at #6566
+<a name="l-311"></a><span class="tm">19:55:50</span><span class="nk"> &lt;gmaxwell&gt;</span> (unfortunately the same day we set this meeting time another reoccuring meeting was booked for me immediately after it)
+<a name="l-312"></a><span class="tm">19:55:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> i wasn't aware it was independent; i'll look now
+<a name="l-313"></a><span class="tm">19:55:59</span><span class="nk"> &lt;morcos&gt;</span> i reviewed it, but need to again, because i forgot how closely
+<a name="l-314"></a><span class="tm">19:56:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> please rebase it to be independent of 6312
+<a name="l-315"></a><span class="tm">19:56:28</span><span class="nk"> &lt;maaku&gt;</span> ok
+<a name="l-316"></a><span class="tm">19:56:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well the point is to keep the meeting within the hour so that should be no problem
+<a name="l-317"></a><span class="tm">19:57:14</span><span class="nk"> &lt;wumpus&gt;</span> any last topic?
+<a name="l-318"></a><span class="tm">19:57:47</span><span class="nk"> &lt;BlueMatt&gt;</span> i think we're out of time
+<a name="l-319"></a><span class="tm">19:57:49</span><span class="nk"> &lt;BlueMatt&gt;</span> thanks all
+<a name="l-320"></a><span class="tm">19:57:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingexit</span><span class="cmdline"></span>
+<a name="l-321"></a><span class="tm">19:57:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#exitmeeting</span><span class="cmdline"></span>
+<a name="l-322"></a><span class="tm">19:57:58</span><span class="nk"> &lt;wumpus&gt;</span> eh
+<a name="l-323"></a><span class="tm">19:58:13</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">sipa:</span> well BIP 113 is independent: "locktime checks have an endpoint of GetMedianTimePast() of the prior block"
+<a name="l-324"></a><span class="tm">19:58:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
