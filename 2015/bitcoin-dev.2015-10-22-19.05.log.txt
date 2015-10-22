@@ -1,0 +1,316 @@
+19:05:11 <btcdrak> #startmeeting
+19:05:11 <lightningbot`> Meeting started Thu Oct 22 19:05:11 2015 UTC.  The chair is btcdrak. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:05:11 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:05:50 <jgarzik> gmaxwell, just note
+19:06:10 <jonasschnelli> replacement for leveldb is a good topic IMO
+19:06:13 <jgarzik> Just letting devs know to resubscribe :)     (unless someone wants to discuss)
+19:06:43 <jonasschnelli> so. Topics?
+19:07:03 <btcdrak> let's start with mempool memory usage
+19:07:13 <btcdrak> #topic mempool memory usage
+19:07:16 <sipa> so
+19:07:25 <sipa> a few things that BlueMatt and i discovered
+19:07:26 <jgarzik> paste wumpus's gist
+19:07:48 <sipa> there is a discrepancy between the mempool limit that is configured and actual memory usage
+19:08:08 <sipa> investigating turned up that just transaction processing can pull in large amounts of utxo cache data
+19:08:15 <sipa> which is only flushed after block processing
+19:08:24 <sipa> so it can temporarily exceed the limit
+19:08:52 <sipa> also, -checkmempool pulls in all mempool dependencies into the utxo cache, which also can blow it out of bounds
+19:09:02 <morcos> sipa: to be clear there are two limits, utxo dbcache limit and mempool limit and the utxo dbcache limit is exceeded right?
+19:09:07 <sipa> morcos: correct
+19:09:22 <sipa> there is an obvious solution to this, namely just enforcing the utxo limit the whole time
+19:09:45 <sipa> however, that means that if you misconfigure your mempool limit, an attack can basically blow away your utxo cache
+19:09:51 <BlueMatt> well, there are two obvious solutions: always flush utxo cache, or limit mempool in parallel with utxo cache
+19:09:56 <BlueMatt> eg https://github.com/TheBlueMatt/bitcoin/commit/2315cbca8b74197aac022126f0dc0527024c64c9
+19:09:58 <sipa> which has a significant impact on block validation/propagation
+19:10:17 <BlueMatt> (but this opens you up to txn in mempool eating WAY more "space" than others, allowing then to more easily kick out other txn)
+19:10:44 <morcos> aren't there in between answers
+19:10:45 <gmaxwell> sipa: since the utxo cache impact of a mempool transaction can be larger than the transaction itself; do we have an issue that strictly enforcing that limit would slow block verification by resulting in not all mempool txn being cached?
+19:11:02 <morcos> such as not putting into pcoinstip cache utxos for txs which weren't actually accepted into the mempool
+19:11:04 <BlueMatt> morcos: yes
+19:11:30 <morcos> also if the mempool limit and utxo limit are closer to the same size... then it should be hard for the actual mempool to blow up the utxo limit, modulo eviction
+19:11:33 <sipa> gmaxwell: indeed.. basically... we want the chainstate cache to closely match what is in the mempool as an expectation of the next block
+19:11:36 <sdaftuar> we could also be smarter about what we flush, based on what is in the mempool/likelhiood of being mined?
+19:11:43 <sipa> so it makes sense to only have one limit that governs both
+19:12:07 <gmaxwell> morcos: though if we reject them and they are still mined, that again will result in lower block verification speed.  (though I agree they're second class citizens for sure)
+19:12:11 <morcos> sdaftuar: yes, exactly.  first approx, whats actually in the mempool (and not things that got checked but didn't make it) .  next remove things that are evicted
+19:12:18 <BlueMatt> morcos: well, yes, you can do thinks like only kick out cache entries as the txn leave mempool (eg https://github.com/TheBlueMatt/bitcoin/commit/5b90ba0da0e6bb086bf5e793634bd105b2bc45ca )
+19:12:31 <sipa> two ideas so far for getting closer to that: when a tx is evicted from the mempool, also kick them out of the chainstate cache (if they are not dirty)
+19:12:50 <BlueMatt> the above commit does that
+19:13:05 <gmaxwell> BlueMatt: what about ones that never go in?
+19:13:05 <sipa> and not letting failed-to-accept-to-mempool's dependencies go into the cache
+19:13:12 <BlueMatt> gmaxwell: dont think so
+19:13:14 <BlueMatt> fixing now
+19:13:46 <sipa> i think a better solution is to turn the chainstate cache into a LRU, and be able to on the fly evict things from it
+19:13:55 <sipa> when there are better things to put in
+19:13:59 <BlueMatt> ehhh, i dont think that fixes it?
+19:14:03 <sipa> it's part of it
+19:14:08 <BlueMatt> you dont care about lru here, you care about used-in-high-feerate-txn
+19:14:15 <sdaftuar> BlueMatt: agreed
+19:14:22 <sipa> right, that's independent
+19:14:22 <morcos> BlueMatt: by defniniton that will be LRU
+19:14:26 <morcos> otherwise it'll be mined
+19:14:30 <BlueMatt> morcos: huh? no
+19:14:41 <sipa> you want to give priority to the cache for things in the mempool
+19:14:45 <BlueMatt> morcos: over long timespans, sure, but what about something that barely doesnt get mined for a while
+19:14:57 <BlueMatt> we want to keep it, because its more likely than something for which there is a lot of churn at the bottom of the mempool
+19:14:59 <sipa> but outside of that, you want to be able to evict things from the cache when more space in it is needed for mempool txn
+19:15:01 <BlueMatt> but it may be a while before its mined
+19:15:25 <morcos> how much of a practical problem is this right now
+19:15:53 <morcos> lets say you set dbcache to 2x mempool limit
+19:16:06 <BlueMatt> right now utxo cache is unlimited
+19:16:12 <morcos> do you really get much of a problem, i think there might be more low hanging fruit
+19:16:19 <morcos> only unlimited between blocks though
+19:16:22 <BlueMatt> sure
+19:16:24 <sipa> the problem is that the utxo cache is per tx
+19:16:25 <sipa> not per txout
+19:16:43 <sipa> so if you are spending outputs from large transactions, the impact on the cache is proportionally way larger
+19:16:44 <BlueMatt> but if you create a tx that spends 100 txos from different very-large-txo-set txn, you can pull in a lot of memory
+19:17:06 <morcos> i think if we could do the simple thing of not letting non-accepted txs populated the utxo cache, we'll have closed most of the problem
+19:17:10 <sipa> i believe i've seen single transactions pull in over 10 MB of chainstate cache
+19:17:29 <sipa> though i need to investigate further
+19:17:36 <morcos> still, i mean what kind of attack is that
+19:18:06 <morcos> its pretty tough to do that with a big chunk of txs from the mempool
+19:18:53 <morcos> anyway, i should rebase #5967, as i think it might be good for doing some of this
+19:19:03 <morcos> that allows the intermediate cache to be flushed
+19:19:24 <sipa> ok
+19:19:25 <morcos> so pcoinstip doesn't need to have coins just b/c viewmempool does
+19:20:08 <jgarzik> ### 1/3 of meeting complete
+19:20:29 <btcdrak> so are there any action points for this topic?
+19:20:41 <gmaxwell> okay I think people are going to continue existing work to research and optimize here.
+19:20:49 <BlueMatt> yea, lets move forward
+19:20:52 <btcdrak> #action continue research
+19:20:57 <btcdrak> next topic
+19:21:03 <btcdrak> #topic leveldb replacement
+19:21:12 <CodeShark> is that really a topic? :)
+19:21:21 <sipa> being discussed in #bitcoin-core-dev now
+19:21:25 <sipa> it's more a mention
+19:21:28 <CodeShark> I know - lol
+19:21:37 <sipa> seems several people are interested in investigating this
+19:21:52 <gmaxwell> This is pretty bitcoin core specific. Leveldb durrability is not good, and we also suffer from its performance... it is also not (apparently) actively maintained anymore (and the FS layer stuff seems to have not really been maintained for sometime).
+19:21:55 <sipa> not sure there is much to say about it any more
+19:21:57 <gmaxwell> People are investigating alternatives.
+19:21:58 <btcdrak> jeff is researching sqlite as an option
+19:22:03 <jgarzik> Argument - leveldb not so well maintained.     I should have a patch for sqlite by the end of the day.
+19:22:12 <CodeShark> SQLite is a fine replacement for bdb for the wallet stuff - but for a blockchain store, not sure
+19:22:17 <sipa> i look forward to benchmarking
+19:22:25 <kanzure_> so would that be sqlite + leveldb?
+19:22:30 <sipa> without benchmark results, any discussing is probably worthless
+19:22:37 <btcdrak> the problem is leveldb is not being maintained.
+19:22:41 <gmaxwell> (also I vind the leveldb code to be very difficult to review :) )
+19:22:41 <kanzure_> and also, would there be an automatic migration from leveldb to sqlite
+19:22:45 <BlueMatt> so i think the action is benchmark lots of things, come back and report (in -core-dev) with results
+19:22:46 <jgarzik> sqlite appears to perform better than bdb for large numbers of records, according to the sqlite key/value store wiki benchmarks page.
+19:23:02 <jcorgan> it's pretty much a guarantee that sqlite perf will be much lower than leveldb, but i'd be happy to be surprised
+19:23:08 <luke-jr_> UTXO storage db is part of the consensus protocol, so it really isn't Core-specific
+19:23:10 <gmaxwell> btcdrak: I don't really agree there, in any case. I think all we need to do is note this is being discussed and explorered.
+19:23:16 <jgarzik> jcorgan, the benchmarks pages disagrees
+19:23:24 <kanzure_> sqlite also has in-memory database which could be strangely useful for unit testing (sqlite://:memory:)
+19:23:32 <sipa> sqlite is better for synchronous storage, slower for batch updates, faster for random-access reads
+19:23:41 <sipa> all of which are things we rely on very heavily
+19:23:45 <jonasschnelli> sqlite seems not to be the type we'd like to have for a leveldb replace. What about other non-sql solutions?
+19:23:46 <sipa> so i don't know the result
+19:23:49 <jgarzik> kanzure_, yes.  that is easily wrapped into the current wrapper, newly s/CLevelDBWrapper/CDBWrapper/
+19:23:54 <maaku> sipa: benchmarks https://www.sqlite.org/cvstrac/wiki?p=KeyValueDatabase
+19:23:54 <jcorgan> as i mentioned before, my main reason for advocating sqlite is to be able to use the sqlcipher fork for full db encryption
+19:24:04 <maaku> (sqlite is crazy slow compared with bdb)
+19:24:17 <kanzure_> jcorgan: and where would the keys go?
+19:24:20 <kanzure_> oh, wallet. nevermind.
+19:24:25 <jgarzik> maaku, except for large numbers of records, as shown on that page
+19:24:37 <sipa> jcorgan: encryption for public data seems pointless
+19:25:03 <kanzure_> well maybe for watches or something..
+19:25:11 <jonasschnelli> I agree with sipa: first we need some research, there are other solutions like RocksDB, etc. We need an overview with benchmarks to evaluate more
+19:25:19 <sipa> ok
+19:25:22 <sipa> next topic?
+19:25:23 <btcdrak> #action continue research and benchmarking
+19:25:34 <btcdrak> #topic versionbits
+19:25:42 <btcdrak> CodeShark wanted to discuss his implementation
+19:25:58 <CodeShark> #6816 needs more reviews :)
+19:26:05 <kanzure_> gmaxwell: how much better is sqlite source code for legibility?
+19:26:37 <btcdrak> CodeShark, are you planning to add some RPC tests?
+19:26:41 <gmaxwell> kanzure_: we're on a new topic. will respond later.
+19:27:00 <CodeShark> btcdrak: I added versionbits info to the getblockchaininfo RPC
+19:27:01 <btcdrak> Also, for the record, what's the status of the implementation?
+19:27:21 <CodeShark> the implementation should be ready for integration barring any issues I'm unaware of
+19:28:06 <btcdrak> ok is there anything else to discuss on this topic?
+19:28:17 <sipa> we should review implementation
+19:28:25 <btcdrak> #action review versionbits implementation https://github.com/bitcoin/bitcoin/pull/6816
+19:28:25 <sipa> that includes me
+19:28:43 <btcdrak> next topic?
+19:28:51 <btcdrak> I'd like to mention the mailing list for the record
+19:28:58 <btcdrak> #topic mailing list
+19:29:15 <kanzure_> have users been moved to bitcoin-discuss, or is that voluntary sign-up only?
+19:29:20 <btcdrak> We finalised the moderation rules for bitcoin-dev
+19:29:27 <btcdrak> and have started a 3 month moderation period
+19:29:38 <CodeShark> have those rules been posted anywhere?
+19:29:39 <btcdrak> We#d encourage devs to join again
+19:29:46 <btcdrak> #info http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011591.html
+19:29:46 <petertodd> btcdrak: by moderation, does this mean posts have to be manually approved?
+19:29:59 <CodeShark> is there a white list?
+19:30:01 <btcdrak> see the link above
+19:30:09 <gmaxwell> On the subject of "take note" -- bitcoin.org had incorrect release notes for 0.11.1.  It's corrected now. They had posted the release notes for the initial RC and not updated them. Process wise it would be good to watch out for that in the future.
+19:30:11 <kanzure_> petertodd: yes, i have had to manually approve email today
+19:30:21 <jcorgan> only the first
+19:30:29 <petertodd> btcdrak: Ah, I missed the "mod bit" part of that message, thanks.
+19:30:32 <jcorgan> then we take the mod bit off that user
+19:30:57 <btcdrak> ok next topic, anyone?
+19:31:03 <Luke-Jr> gmaxwell: my bad for not bringing it up. I had assumed the only difference was minor, but I should have compared when I noticed it was not identical. :/
+19:31:25 <kanzure_> if we want to have actively used bitcoin-discuss there should be someone who currates content for that mailing list, otherwise i doubt people will use it
+19:31:32 <kanzure_> actually what is the status, has traffic actually been redirected there
+19:31:45 <kanzure_> "No messages have been posted to this list yet, so the archives are currently empty."
+19:31:46 <btcdrak> kanzure_ please see the posted link
+19:31:49 <sipa> note: there is still a discuss mailing list on SF
+19:31:59 <gmaxwell> Luke-Jr: in particular it did not have the relay fee bump.
+19:32:01 <sipa> there have been several messages sent there this year
+19:32:01 <kanzure_> which discuss mailing list should have priority?
+19:32:06 <btcdrak> sipa: the new official list is now bitcoin-discuss at LF
+19:32:12 <kanzure_> linuxfoundation has been working well afaik
+19:32:15 <kanzure_> for mailing list hosting
+19:32:34 <jgarzik> #action tell SF list about new lists
+19:32:38 <btcdrak> #link lists.linuxfoundation.org/mailman/listinfo/bitcoin-discuss
+19:32:47 <kanzure_> we should find someone who wants to actively run -discuss or something
+19:32:52 <sipa> i did hide the old dev list from SF
+19:32:54 <kanzure_> or replay old -dev messages to -discuss that would have otherwise been moderated
+19:33:07 <sipa> i haven't deleted it yet should we want its archives for whatever reason
+19:33:33 <kanzure_> (for the record i am not interested in running or moderating -discuss, but "go here where nobody is sending email/reading" is not likely to win anyone over)
+19:33:34 <btcdrak> ok I think next topic. I've got one ;)
+19:33:50 <btcdrak> #topic Median Past locktime
+19:34:00 <btcdrak> #link PR https://github.com/bitcoin/bitcoin/pull/6566
+19:34:13 <btcdrak> Reviews have been good since last week
+19:34:42 <btcdrak> maaku: there are a couple of nits from wumpus and gmaxwell. Has anyone else got concerns for this PR?
+19:34:54 <sipa> concept ack
+19:34:57 <gmaxwell> I am a strong concept ack.
+19:35:04 <gmaxwell> (which I'll also go make clear there)
+19:35:09 <kanzure_> yes same with sipa please
+19:35:26 <Luke-Jr> I'll try to finish reviewing it ASAP
+19:36:11 <btcdrak> #action review https://github.com/bitcoin/bitcoin/pull/6566
+19:36:12 <gmaxwell> There is lots going on in lots of PRs, but I can't think of any that need to be elevated to here.
+19:36:32 <btcdrak> I only bring up 6566 because we talked about adding it to the CLTV softfork
+19:36:44 <btcdrak> we're getting close to that now
+19:36:53 <gmaxwell> Topic suggestion: Where are we on CLTV soft-fork deployment?
+19:37:03 <btcdrak> #topic CLTV softfork deployment
+19:37:16 <petertodd> btcdrak: re: CLTV softfork, I'm likely not going to have time to be doing more rebasing/rework on that going forward, so either merge it or someone else should be prepared to take over
+19:37:20 <gmaxwell> btcdrak: that PR is just mempool behavior.
+19:37:29 <petertodd> (I no longer have funding for bitcoin core work)
+19:38:05 <CodeShark> fwiw, #6816 will make merging the soft fork logic itself pretty straightforward ;)
+19:38:33 <btcdrak> We agreed to roll out the CLTV softfork at the end of October.
+19:39:16 <gmaxwell> btcdrak: no one forgets what the objective was there, but what is the status?
+19:39:34 <btcdrak> I believe for master the PR is ready to merge
+19:39:35 <sipa> what needs to be done?
+19:39:45 <btcdrak> there are 0.10 and 0.11 PRs for the packports also
+19:39:51 <btcdrak> so they just need to be merged.
+19:39:57 <sipa> merge PR, do v4 block ISM softwarez done?
+19:40:06 <btcdrak> sipa: yes
+19:40:07 <sipa> i will review then
+19:40:15 <sipa> but i expect i will be fine
+19:40:24 <sipa> this is the sort of thing to discuss on the ML though
+19:40:28 <btcdrak> https://github.com/bitcoin/bitcoin/pull/6707
+19:40:35 <btcdrak> https://github.com/bitcoin/bitcoin/pull/6706
+19:40:53 <btcdrak> https://github.com/bitcoin/bitcoin/pull/6351
+19:41:11 <btcdrak> Those are the PRs. If petertodd isnt around to rebase, one of us can just do it.
+19:41:20 <sipa> yeah
+19:41:36 <btcdrak> if we want to add media-past-locktime then there is still time
+19:42:02 <gmaxwell> #action review #6707 #6706 #6351 for CLTV deployment.
+19:42:25 <gmaxwell> Has code even been writeen for MPL enforcement as part of that soft fork? if not, someone needs to take the task of doing it.
+19:42:28 <btcdrak> do we want to try for median-past-locktime with this or just wait?
+19:42:52 <btcdrak> I would have assume maaku would do it, he was just waiting for the mempool PR to be merged
+19:42:52 <petertodd> btcdrak: median past is the type of boring change that'd be an excellent way to deploy versionbits actually
+19:43:11 <gmaxwell> btcdrak: there are three possibilities in my mind.
+19:43:16 <petertodd> btcdrak: there's no rush to do it and it's uncontroversial
+19:43:24 <gmaxwell> no MPL. MPL mempool only. MPL in softfork.
+19:43:32 <gmaxwell> I strongly believe we should not do the first.
+19:43:46 <gmaxwell> well somewhat strongly.
+19:43:59 <kanzure> so short-term median-past-locktime mempool only, then median-past-locktime soft-fork using versionbits?
+19:44:00 <btcdrak> gmaxwell: at the least, I would love MPL as mempool together with BIP68 and OP_CSV as mempool.
+19:44:11 <maaku> gmaxwell: the MPL pull is specifically written to not require further code for soft-fork, just setting a flag bit undre a ISM condition
+19:44:20 <gmaxwell> actually, for same reason, MPL-mempool only should be done instead of the softfork. Rational: right now miners will currently mine MPL violations.
+19:44:25 <btcdrak> deployment is easy
+19:44:40 <sipa> yes, MPL should be deployed mempool-only first
+19:44:56 <petertodd> gmaxwell: oh right, that's a good point... further delays MPL deployment, which again is an argument to do it with versionbit
+19:45:04 <gmaxwell> maaku: I know I read the code. But there is no patch to actually set the flag and enforce it. But thats okay at the moment. We should mempool only it first.
+19:45:15 <sipa> same with BIP68, no?
+19:45:27 <gmaxwell> sipa: CSV enforcement is flagged.
+19:45:31 <sipa> current miners will accept bip68 violations
+19:45:46 <sdaftuar> BIP68 is only active for higher tx version right?
+19:45:48 <petertodd> sipa: requires nVersion=2
+19:45:49 <gmaxwell> sipa: no, requires a tx version flag.
+19:45:55 <sipa> right, separate tx version
+19:46:00 <sipa> which is already nonstandard
+19:46:01 <sipa> nvm!
+19:46:06 <maaku> gmaxwell: there's no patch because it'd presumably be part of #6351 if rolled out together, so I didn't create a separate PR
+19:46:36 <gmaxwell> maaku: thats okay, I think based on the observation that miners would currently mine violations we'll only do mempool only immediately.
+19:47:08 <gmaxwell> (which also still has the positive effect of stopping new CLTV locktime users from depending on the to-be-replaced behavior.
+19:47:13 <gmaxwell> )
+19:47:33 <btcdrak> how about we merge all three mempool PRs and release them with the CLTV deployment to get them out in the wild. We can then consider another ISM or versionbits deployment after?
+19:47:57 <gmaxwell> btcdrak: the mempool related PRs are more or less 0.12 only.
+19:48:23 <btcdrak> gmaxwell: but we can backport?
+19:48:26 <gmaxwell> They depend on git master exclusive major changes to the mempool code.
+19:48:31 <gmaxwell> btcdrak: I don't think that would be prudent.
+19:48:40 <btcdrak> we have to backport for softfork deployments anyway
+19:48:40 <Luke-Jr> we can release backported policy patches
+19:48:49 <Luke-Jr> btcdrak: consensus and policy are not the same
+19:48:56 <gmaxwell> I would recommend 'backporting' TCP_NODELAY.  (which I will gladly do, of course) :P  if you're looking for upgrade sweetener.
+19:48:58 <btcdrak> Luke-Jr: ah, I understand
+19:49:05 <CodeShark> should I start working on #6816 backports?
+19:49:25 <btcdrak> CodeShark I would get #6816 merged first.
+19:49:39 <gmaxwell> CodeShark: perhaps wait until the first round of review unless you're itching and won't mind redoing it if you get asked to change the design?
+19:50:14 <CodeShark> the backports should be pretty easy, I think - so it can wait
+19:50:15 <kanzure> does median-past-locktime mempool-only also require lots of master-only 0.12 mempool changes that are not in the older versions? re: backporting
+19:50:28 <CodeShark> the backports can wait, that is - the reviews can't ;)
+19:50:46 <gmaxwell> Kireji: no.
+19:50:48 <gmaxwell> er
+19:50:50 <gmaxwell> kanzure: no.
+19:50:58 <gmaxwell> are there any in flight backportable bug fixes which we should hammer down before we do backport updates for the CLTV soft-fork?
+19:51:17 <sipa> gmaxwell: which "mempool related PRs" are not backportable?
+19:51:55 <gmaxwell> sipa: I assume btcdrak is mostly talking about matt's limiter, which depends on the major data structure changes in the mempool.  Do you think we should actually backport all that?
+19:52:08 <sipa> gmaxwell: hell no
+19:52:14 <petertodd> sipa: +1
+19:52:14 <sipa> but we're talking about softforks here
+19:52:27 <btcdrak> I think the point is, if we get the mempool PRs merged in master, then we can start working on backporting them. The actual softfork deployment can be done at any time thereafter at our convenience.
+19:52:42 <gmaxwell> oh dear! okay. I was wires crossed. I thought btcdrap was talking about mempool capacity management.
+19:52:45 <btcdrak> this way we're doing a pure CLTV release first.
+19:52:54 <sipa> i think that btcdrak is referring to the BIP68/112/113 mempool-only changes with "mempool PRs"
+19:52:56 <btcdrak> gmaxwell: no :)
+19:52:58 <maaku> kanzure: I don't believe any of #6312, #6564 or #6566 depend on master changes
+19:53:02 <petertodd> also, if a backport is going to take a lot of work, you might want to ask miners first if they really want it...
+19:53:11 <maaku> I'm not sure what gmaxwell is referring to
+19:53:12 <btcdrak> yes, sorry that's my mistake, I was referring to BIUP68/112/113
+19:53:49 <gmaxwell> as I said, I thought he was referring to the mempool limits and friends.
+19:53:53 <sipa> OK
+19:53:56 <btcdrak> thing is MPL is quite a trivial patch, it would easily backport and be part of the CLTV softfork...
+19:54:14 <gmaxwell> I do not think there is a reason to mempool only any of them except median right now, as they're already non-standard.
+19:54:33 <gmaxwell> The concern I have is that if we deploy a mempool only CSV then now we have a problem if the interperation of the field changes.
+19:54:52 <gmaxwell> (because we may need to first make it non-standard again)
+19:54:55 <maaku> do we have reason to believe the interpretation of the field will change?
+19:55:18 <CodeShark> maaku: the last few weeks :p
+19:55:30 <gmaxwell> Deploying it as mempool only in the soft fork backport when its already non-standard carries basically only risk.
+19:55:35 <btcdrak> BIP68 has been refined.
+19:56:02 <btcdrak> I think everyone nits were addressed for BIP68, so itr should be considered final
+19:56:10 <petertodd> gmaxwell: w/ CLTV, the plan was to s/OP_NOP2/OP_NOP3/ - the equivalent for CSV's redefinition of what nSequence means might be to use nVersion>=3 rather than nVersion>=2
+19:57:05 <gmaxwell> petertodd: indeed, thats true.
+19:57:14 <gmaxwell> But again, I do not see the gain.
+19:57:26 <gmaxwell> At least in the context of the CLTV softfork release.
+19:57:39 <petertodd> gmaxwell: it's not a gain, just a backup plan if a mempool-only release turns out to need to be changed because the behavior was wrong
+19:57:42 <btcdrak> gmaxwell: so you're suggesting we properly softfork MPL, and bip68/CSV right off the bat
+19:58:08 <gmaxwell> petertodd: I meant I do not see the gain in putting out CSV mempool only at the same time as CLTV softfork.
+19:58:16 <petertodd> gmaxwell: ah, yeah, neither do I
+19:58:18 <gmaxwell> But I agree with your backup plan, good observation.
+19:58:26 <btcdrak> gmaxwell: the original discussion is to have CLTV + MPL
+19:58:33 <gmaxwell> btcdrak: No. backup.
+19:58:50 <gmaxwell> btcdrak: I am saying, there will be a CLTV soft fork release which also has mempool only MPL.
+19:59:14 <btcdrak> gmaxwell: ok, understood.
+19:59:15 <gmaxwell> The latter because MPL violates current 'standard' behavior, so we would prefer to have that violation dead in the network before MPL soft-fork moves forward.
+19:59:30 <gmaxwell> For CSV mempool it's already non-standard, so the same argument doesn't apply.
+19:59:46 <btcdrak> in that case, maaku needs to work on backporting MPL to 0.11 and 0.10 asap.
+20:00:05 <gmaxwell> And we're awfully close right now to the last semantic changes, so I'd rather hold for that. (could still go in mempool only first, but just not in the CLTV soft fork release)
+20:00:18 <kanzure> was the mempool limiting stuff something that needs to be discussed? the thing that was misconfused above.
+20:00:19 <gmaxwell> btcdrak: fortunate those backports will be trivial code copying, I believe.
+20:00:35 <btcdrak> ok so I'll log that as an action point then
+20:00:46 <gmaxwell> kanzure: my wires were crossed, I thought btcdrak brought them up as deployment sweetener for CLTV.
+20:00:52 <kanzure> right
+20:00:59 <kanzure> it was wrong, but does that need to be discussed anyway
+20:01:02 <btcdrak> #action backport MPL to 0.10 and 0.11
+20:01:03 <jgarzik> ###
+20:01:13 <sipa> time's up
+20:01:17 <gmaxwell> we are past time. Thanks everyone!
+20:01:21 <jgarzik> meeting fini
+20:01:24 <btcdrak> #endmeeting

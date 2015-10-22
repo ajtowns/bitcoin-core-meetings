@@ -1,0 +1,343 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:05:11</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:05:11</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Oct 22 19:05:11 2015 UTC.  The chair is btcdrak. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:05:11</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:05:50</span><span class="nk"> &lt;jgarzik&gt;</span> gmaxwell, just note
+<a name="l-5"></a><span class="tm">19:06:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> replacement for leveldb is a good topic IMO
+<a name="l-6"></a><span class="tm">19:06:13</span><span class="nk"> &lt;jgarzik&gt;</span> Just letting devs know to resubscribe :)     (unless someone wants to discuss)
+<a name="l-7"></a><span class="tm">19:06:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> so. Topics?
+<a name="l-8"></a><span class="tm">19:07:03</span><span class="nk"> &lt;btcdrak&gt;</span> let's start with mempool memory usage
+<a name="l-9"></a><span class="tm">19:07:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">mempool memory usage</span>
+<a name="l-10"></a><span class="tm">19:07:16</span><span class="nk"> &lt;sipa&gt;</span> so
+<a name="l-11"></a><span class="tm">19:07:25</span><span class="nk"> &lt;sipa&gt;</span> a few things that BlueMatt and i discovered
+<a name="l-12"></a><span class="tm">19:07:26</span><span class="nk"> &lt;jgarzik&gt;</span> paste wumpus's gist
+<a name="l-13"></a><span class="tm">19:07:48</span><span class="nk"> &lt;sipa&gt;</span> there is a discrepancy between the mempool limit that is configured and actual memory usage
+<a name="l-14"></a><span class="tm">19:08:08</span><span class="nk"> &lt;sipa&gt;</span> investigating turned up that just transaction processing can pull in large amounts of utxo cache data
+<a name="l-15"></a><span class="tm">19:08:15</span><span class="nk"> &lt;sipa&gt;</span> which is only flushed after block processing
+<a name="l-16"></a><span class="tm">19:08:24</span><span class="nk"> &lt;sipa&gt;</span> so it can temporarily exceed the limit
+<a name="l-17"></a><span class="tm">19:08:52</span><span class="nk"> &lt;sipa&gt;</span> also, -checkmempool pulls in all mempool dependencies into the utxo cache, which also can blow it out of bounds
+<a name="l-18"></a><span class="tm">19:09:02</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> to be clear there are two limits, utxo dbcache limit and mempool limit and the utxo dbcache limit is exceeded right?
+<a name="l-19"></a><span class="tm">19:09:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> correct
+<a name="l-20"></a><span class="tm">19:09:22</span><span class="nk"> &lt;sipa&gt;</span> there is an obvious solution to this, namely just enforcing the utxo limit the whole time
+<a name="l-21"></a><span class="tm">19:09:45</span><span class="nk"> &lt;sipa&gt;</span> however, that means that if you misconfigure your mempool limit, an attack can basically blow away your utxo cache
+<a name="l-22"></a><span class="tm">19:09:51</span><span class="nk"> &lt;BlueMatt&gt;</span> well, there are two obvious solutions: always flush utxo cache, or limit mempool in parallel with utxo cache
+<a name="l-23"></a><span class="tm">19:09:56</span><span class="nk"> &lt;BlueMatt&gt;</span> eg https://github.com/TheBlueMatt/bitcoin/commit/2315cbca8b74197aac022126f0dc0527024c64c9
+<a name="l-24"></a><span class="tm">19:09:58</span><span class="nk"> &lt;sipa&gt;</span> which has a significant impact on block validation/propagation
+<a name="l-25"></a><span class="tm">19:10:17</span><span class="nk"> &lt;BlueMatt&gt;</span> (but this opens you up to txn in mempool eating WAY more "space" than others, allowing then to more easily kick out other txn)
+<a name="l-26"></a><span class="tm">19:10:44</span><span class="nk"> &lt;morcos&gt;</span> aren't there in between answers
+<a name="l-27"></a><span class="tm">19:10:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> since the utxo cache impact of a mempool transaction can be larger than the transaction itself; do we have an issue that strictly enforcing that limit would slow block verification by resulting in not all mempool txn being cached?
+<a name="l-28"></a><span class="tm">19:11:02</span><span class="nk"> &lt;morcos&gt;</span> such as not putting into pcoinstip cache utxos for txs which weren't actually accepted into the mempool
+<a name="l-29"></a><span class="tm">19:11:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yes
+<a name="l-30"></a><span class="tm">19:11:30</span><span class="nk"> &lt;morcos&gt;</span> also if the mempool limit and utxo limit are closer to the same size... then it should be hard for the actual mempool to blow up the utxo limit, modulo eviction
+<a name="l-31"></a><span class="tm">19:11:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> indeed.. basically... we want the chainstate cache to closely match what is in the mempool as an expectation of the next block
+<a name="l-32"></a><span class="tm">19:11:36</span><span class="nk"> &lt;sdaftuar&gt;</span> we could also be smarter about what we flush, based on what is in the mempool/likelhiood of being mined?
+<a name="l-33"></a><span class="tm">19:11:43</span><span class="nk"> &lt;sipa&gt;</span> so it makes sense to only have one limit that governs both
+<a name="l-34"></a><span class="tm">19:12:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> though if we reject them and they are still mined, that again will result in lower block verification speed.  (though I agree they're second class citizens for sure)
+<a name="l-35"></a><span class="tm">19:12:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> yes, exactly.  first approx, whats actually in the mempool (and not things that got checked but didn't make it) .  next remove things that are evicted
+<a name="l-36"></a><span class="tm">19:12:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> well, yes, you can do thinks like only kick out cache entries as the txn leave mempool (eg https://github.com/TheBlueMatt/bitcoin/commit/5b90ba0da0e6bb086bf5e793634bd105b2bc45ca )
+<a name="l-37"></a><span class="tm">19:12:31</span><span class="nk"> &lt;sipa&gt;</span> two ideas so far for getting closer to that: when a tx is evicted from the mempool, also kick them out of the chainstate cache (if they are not dirty)
+<a name="l-38"></a><span class="tm">19:12:50</span><span class="nk"> &lt;BlueMatt&gt;</span> the above commit does that
+<a name="l-39"></a><span class="tm">19:13:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> what about ones that never go in?
+<a name="l-40"></a><span class="tm">19:13:05</span><span class="nk"> &lt;sipa&gt;</span> and not letting failed-to-accept-to-mempool's dependencies go into the cache
+<a name="l-41"></a><span class="tm">19:13:12</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> dont think so
+<a name="l-42"></a><span class="tm">19:13:14</span><span class="nk"> &lt;BlueMatt&gt;</span> fixing now
+<a name="l-43"></a><span class="tm">19:13:46</span><span class="nk"> &lt;sipa&gt;</span> i think a better solution is to turn the chainstate cache into a LRU, and be able to on the fly evict things from it
+<a name="l-44"></a><span class="tm">19:13:55</span><span class="nk"> &lt;sipa&gt;</span> when there are better things to put in
+<a name="l-45"></a><span class="tm">19:13:59</span><span class="nk"> &lt;BlueMatt&gt;</span> ehhh, i dont think that fixes it?
+<a name="l-46"></a><span class="tm">19:14:03</span><span class="nk"> &lt;sipa&gt;</span> it's part of it
+<a name="l-47"></a><span class="tm">19:14:08</span><span class="nk"> &lt;BlueMatt&gt;</span> you dont care about lru here, you care about used-in-high-feerate-txn
+<a name="l-48"></a><span class="tm">19:14:15</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> agreed
+<a name="l-49"></a><span class="tm">19:14:22</span><span class="nk"> &lt;sipa&gt;</span> right, that's independent
+<a name="l-50"></a><span class="tm">19:14:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> by defniniton that will be LRU
+<a name="l-51"></a><span class="tm">19:14:26</span><span class="nk"> &lt;morcos&gt;</span> otherwise it'll be mined
+<a name="l-52"></a><span class="tm">19:14:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> huh? no
+<a name="l-53"></a><span class="tm">19:14:41</span><span class="nk"> &lt;sipa&gt;</span> you want to give priority to the cache for things in the mempool
+<a name="l-54"></a><span class="tm">19:14:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> over long timespans, sure, but what about something that barely doesnt get mined for a while
+<a name="l-55"></a><span class="tm">19:14:57</span><span class="nk"> &lt;BlueMatt&gt;</span> we want to keep it, because its more likely than something for which there is a lot of churn at the bottom of the mempool
+<a name="l-56"></a><span class="tm">19:14:59</span><span class="nk"> &lt;sipa&gt;</span> but outside of that, you want to be able to evict things from the cache when more space in it is needed for mempool txn
+<a name="l-57"></a><span class="tm">19:15:01</span><span class="nk"> &lt;BlueMatt&gt;</span> but it may be a while before its mined
+<a name="l-58"></a><span class="tm">19:15:25</span><span class="nk"> &lt;morcos&gt;</span> how much of a practical problem is this right now
+<a name="l-59"></a><span class="tm">19:15:53</span><span class="nk"> &lt;morcos&gt;</span> lets say you set dbcache to 2x mempool limit
+<a name="l-60"></a><span class="tm">19:16:06</span><span class="nk"> &lt;BlueMatt&gt;</span> right now utxo cache is unlimited
+<a name="l-61"></a><span class="tm">19:16:12</span><span class="nk"> &lt;morcos&gt;</span> do you really get much of a problem, i think there might be more low hanging fruit
+<a name="l-62"></a><span class="tm">19:16:19</span><span class="nk"> &lt;morcos&gt;</span> only unlimited between blocks though
+<a name="l-63"></a><span class="tm">19:16:22</span><span class="nk"> &lt;BlueMatt&gt;</span> sure
+<a name="l-64"></a><span class="tm">19:16:24</span><span class="nk"> &lt;sipa&gt;</span> the problem is that the utxo cache is per tx
+<a name="l-65"></a><span class="tm">19:16:25</span><span class="nk"> &lt;sipa&gt;</span> not per txout
+<a name="l-66"></a><span class="tm">19:16:43</span><span class="nk"> &lt;sipa&gt;</span> so if you are spending outputs from large transactions, the impact on the cache is proportionally way larger
+<a name="l-67"></a><span class="tm">19:16:44</span><span class="nk"> &lt;BlueMatt&gt;</span> but if you create a tx that spends 100 txos from different very-large-txo-set txn, you can pull in a lot of memory
+<a name="l-68"></a><span class="tm">19:17:06</span><span class="nk"> &lt;morcos&gt;</span> i think if we could do the simple thing of not letting non-accepted txs populated the utxo cache, we'll have closed most of the problem
+<a name="l-69"></a><span class="tm">19:17:10</span><span class="nk"> &lt;sipa&gt;</span> i believe i've seen single transactions pull in over 10 MB of chainstate cache
+<a name="l-70"></a><span class="tm">19:17:29</span><span class="nk"> &lt;sipa&gt;</span> though i need to investigate further
+<a name="l-71"></a><span class="tm">19:17:36</span><span class="nk"> &lt;morcos&gt;</span> still, i mean what kind of attack is that
+<a name="l-72"></a><span class="tm">19:18:06</span><span class="nk"> &lt;morcos&gt;</span> its pretty tough to do that with a big chunk of txs from the mempool
+<a name="l-73"></a><span class="tm">19:18:53</span><span class="nk"> &lt;morcos&gt;</span> anyway, i should rebase #5967, as i think it might be good for doing some of this
+<a name="l-74"></a><span class="tm">19:19:03</span><span class="nk"> &lt;morcos&gt;</span> that allows the intermediate cache to be flushed
+<a name="l-75"></a><span class="tm">19:19:24</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-76"></a><span class="tm">19:19:25</span><span class="nk"> &lt;morcos&gt;</span> so pcoinstip doesn't need to have coins just b/c viewmempool does
+<a name="l-77"></a><span class="tm">19:20:08</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">### </span><span class="cmdline">1/3 of meeting complete</span>
+<a name="l-78"></a><span class="tm">19:20:29</span><span class="nk"> &lt;btcdrak&gt;</span> so are there any action points for this topic?
+<a name="l-79"></a><span class="tm">19:20:41</span><span class="nk"> &lt;gmaxwell&gt;</span> okay I think people are going to continue existing work to research and optimize here.
+<a name="l-80"></a><span class="tm">19:20:49</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, lets move forward
+<a name="l-81"></a><span class="tm">19:20:52</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#action </span><span class="cmdline">continue research</span>
+<a name="l-82"></a><span class="tm">19:20:57</span><span class="nk"> &lt;btcdrak&gt;</span> next topic
+<a name="l-83"></a><span class="tm">19:21:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">leveldb replacement</span>
+<a name="l-84"></a><span class="tm">19:21:12</span><span class="nk"> &lt;CodeShark&gt;</span> is that really a topic? :)
+<a name="l-85"></a><span class="tm">19:21:21</span><span class="nk"> &lt;sipa&gt;</span> being discussed in #bitcoin-core-dev now
+<a name="l-86"></a><span class="tm">19:21:25</span><span class="nk"> &lt;sipa&gt;</span> it's more a mention
+<a name="l-87"></a><span class="tm">19:21:28</span><span class="nk"> &lt;CodeShark&gt;</span> I know - lol
+<a name="l-88"></a><span class="tm">19:21:37</span><span class="nk"> &lt;sipa&gt;</span> seems several people are interested in investigating this
+<a name="l-89"></a><span class="tm">19:21:52</span><span class="nk"> &lt;gmaxwell&gt;</span> This is pretty bitcoin core specific. Leveldb durrability is not good, and we also suffer from its performance... it is also not (apparently) actively maintained anymore (and the FS layer stuff seems to have not really been maintained for sometime).
+<a name="l-90"></a><span class="tm">19:21:55</span><span class="nk"> &lt;sipa&gt;</span> not sure there is much to say about it any more
+<a name="l-91"></a><span class="tm">19:21:57</span><span class="nk"> &lt;gmaxwell&gt;</span> People are investigating alternatives.
+<a name="l-92"></a><span class="tm">19:21:58</span><span class="nk"> &lt;btcdrak&gt;</span> jeff is researching sqlite as an option
+<a name="l-93"></a><span class="tm">19:22:03</span><span class="nk"> &lt;jgarzik&gt;</span> Argument - leveldb not so well maintained.     I should have a patch for sqlite by the end of the day.
+<a name="l-94"></a><span class="tm">19:22:12</span><span class="nk"> &lt;CodeShark&gt;</span> SQLite is a fine replacement for bdb for the wallet stuff - but for a blockchain store, not sure
+<a name="l-95"></a><span class="tm">19:22:17</span><span class="nk"> &lt;sipa&gt;</span> i look forward to benchmarking
+<a name="l-96"></a><span class="tm">19:22:25</span><span class="nk"> &lt;kanzure_&gt;</span> so would that be sqlite + leveldb?
+<a name="l-97"></a><span class="tm">19:22:30</span><span class="nk"> &lt;sipa&gt;</span> without benchmark results, any discussing is probably worthless
+<a name="l-98"></a><span class="tm">19:22:37</span><span class="nk"> &lt;btcdrak&gt;</span> the problem is leveldb is not being maintained.
+<a name="l-99"></a><span class="tm">19:22:41</span><span class="nk"> &lt;gmaxwell&gt;</span> (also I vind the leveldb code to be very difficult to review :) )
+<a name="l-100"></a><span class="tm">19:22:41</span><span class="nk"> &lt;kanzure_&gt;</span> and also, would there be an automatic migration from leveldb to sqlite
+<a name="l-101"></a><span class="tm">19:22:45</span><span class="nk"> &lt;BlueMatt&gt;</span> so i think the action is benchmark lots of things, come back and report (in -core-dev) with results
+<a name="l-102"></a><span class="tm">19:22:46</span><span class="nk"> &lt;jgarzik&gt;</span> sqlite appears to perform better than bdb for large numbers of records, according to the sqlite key/value store wiki benchmarks page.
+<a name="l-103"></a><span class="tm">19:23:02</span><span class="nk"> &lt;jcorgan&gt;</span> it's pretty much a guarantee that sqlite perf will be much lower than leveldb, but i'd be happy to be surprised
+<a name="l-104"></a><span class="tm">19:23:08</span><span class="nk"> &lt;luke-jr_&gt;</span> UTXO storage db is part of the consensus protocol, so it really isn't Core-specific
+<a name="l-105"></a><span class="tm">19:23:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> I don't really agree there, in any case. I think all we need to do is note this is being discussed and explorered.
+<a name="l-106"></a><span class="tm">19:23:16</span><span class="nk"> &lt;jgarzik&gt;</span> jcorgan, the benchmarks pages disagrees
+<a name="l-107"></a><span class="tm">19:23:24</span><span class="nk"> &lt;kanzure_&gt;</span> sqlite also has in-memory database which could be strangely useful for unit testing (sqlite://:memory:)
+<a name="l-108"></a><span class="tm">19:23:32</span><span class="nk"> &lt;sipa&gt;</span> sqlite is better for synchronous storage, slower for batch updates, faster for random-access reads
+<a name="l-109"></a><span class="tm">19:23:41</span><span class="nk"> &lt;sipa&gt;</span> all of which are things we rely on very heavily
+<a name="l-110"></a><span class="tm">19:23:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> sqlite seems not to be the type we'd like to have for a leveldb replace. What about other non-sql solutions?
+<a name="l-111"></a><span class="tm">19:23:46</span><span class="nk"> &lt;sipa&gt;</span> so i don't know the result
+<a name="l-112"></a><span class="tm">19:23:49</span><span class="nk"> &lt;jgarzik&gt;</span> kanzure_, yes.  that is easily wrapped into the current wrapper, newly s/CLevelDBWrapper/CDBWrapper/
+<a name="l-113"></a><span class="tm">19:23:54</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">sipa:</span> benchmarks https://www.sqlite.org/cvstrac/wiki?p=KeyValueDatabase
+<a name="l-114"></a><span class="tm">19:23:54</span><span class="nk"> &lt;jcorgan&gt;</span> as i mentioned before, my main reason for advocating sqlite is to be able to use the sqlcipher fork for full db encryption
+<a name="l-115"></a><span class="tm">19:24:04</span><span class="nk"> &lt;maaku&gt;</span> (sqlite is crazy slow compared with bdb)
+<a name="l-116"></a><span class="tm">19:24:17</span><span class="nk"> &lt;kanzure_&gt;</span> <span class="hi">jcorgan:</span> and where would the keys go?
+<a name="l-117"></a><span class="tm">19:24:20</span><span class="nk"> &lt;kanzure_&gt;</span> oh, wallet. nevermind.
+<a name="l-118"></a><span class="tm">19:24:25</span><span class="nk"> &lt;jgarzik&gt;</span> maaku, except for large numbers of records, as shown on that page
+<a name="l-119"></a><span class="tm">19:24:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jcorgan:</span> encryption for public data seems pointless
+<a name="l-120"></a><span class="tm">19:25:03</span><span class="nk"> &lt;kanzure_&gt;</span> well maybe for watches or something..
+<a name="l-121"></a><span class="tm">19:25:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> I agree with sipa: first we need some research, there are other solutions like RocksDB, etc. We need an overview with benchmarks to evaluate more
+<a name="l-122"></a><span class="tm">19:25:19</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-123"></a><span class="tm">19:25:22</span><span class="nk"> &lt;sipa&gt;</span> next topic?
+<a name="l-124"></a><span class="tm">19:25:23</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#action </span><span class="cmdline">continue research and benchmarking</span>
+<a name="l-125"></a><span class="tm">19:25:34</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">versionbits</span>
+<a name="l-126"></a><span class="tm">19:25:42</span><span class="nk"> &lt;btcdrak&gt;</span> CodeShark wanted to discuss his implementation
+<a name="l-127"></a><span class="tm">19:25:58</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="cmd">#6816 </span><span class="cmdline">needs more reviews :)</span>
+<a name="l-128"></a><span class="tm">19:26:05</span><span class="nk"> &lt;kanzure_&gt;</span> <span class="hi">gmaxwell:</span> how much better is sqlite source code for legibility?
+<a name="l-129"></a><span class="tm">19:26:37</span><span class="nk"> &lt;btcdrak&gt;</span> CodeShark, are you planning to add some RPC tests?
+<a name="l-130"></a><span class="tm">19:26:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure_:</span> we're on a new topic. will respond later.
+<a name="l-131"></a><span class="tm">19:27:00</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">btcdrak:</span> I added versionbits info to the getblockchaininfo RPC
+<a name="l-132"></a><span class="tm">19:27:01</span><span class="nk"> &lt;btcdrak&gt;</span> Also, for the record, what's the status of the implementation?
+<a name="l-133"></a><span class="tm">19:27:21</span><span class="nk"> &lt;CodeShark&gt;</span> the implementation should be ready for integration barring any issues I'm unaware of
+<a name="l-134"></a><span class="tm">19:28:06</span><span class="nk"> &lt;btcdrak&gt;</span> ok is there anything else to discuss on this topic?
+<a name="l-135"></a><span class="tm">19:28:17</span><span class="nk"> &lt;sipa&gt;</span> we should review implementation
+<a name="l-136"></a><span class="tm">19:28:25</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#action </span><span class="cmdline">review versionbits implementation https://github.com/bitcoin/bitcoin/pull/6816</span>
+<a name="l-137"></a><span class="tm">19:28:25</span><span class="nk"> &lt;sipa&gt;</span> that includes me
+<a name="l-138"></a><span class="tm">19:28:43</span><span class="nk"> &lt;btcdrak&gt;</span> next topic?
+<a name="l-139"></a><span class="tm">19:28:51</span><span class="nk"> &lt;btcdrak&gt;</span> I'd like to mention the mailing list for the record
+<a name="l-140"></a><span class="tm">19:28:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">mailing list</span>
+<a name="l-141"></a><span class="tm">19:29:15</span><span class="nk"> &lt;kanzure_&gt;</span> have users been moved to bitcoin-discuss, or is that voluntary sign-up only?
+<a name="l-142"></a><span class="tm">19:29:20</span><span class="nk"> &lt;btcdrak&gt;</span> We finalised the moderation rules for bitcoin-dev
+<a name="l-143"></a><span class="tm">19:29:27</span><span class="nk"> &lt;btcdrak&gt;</span> and have started a 3 month moderation period
+<a name="l-144"></a><span class="tm">19:29:38</span><span class="nk"> &lt;CodeShark&gt;</span> have those rules been posted anywhere?
+<a name="l-145"></a><span class="tm">19:29:39</span><span class="nk"> &lt;btcdrak&gt;</span> We#d encourage devs to join again
+<a name="l-146"></a><span class="tm">19:29:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#info </span><span class="cmdline">http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011591.html</span>
+<a name="l-147"></a><span class="tm">19:29:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> by moderation, does this mean posts have to be manually approved?
+<a name="l-148"></a><span class="tm">19:29:59</span><span class="nk"> &lt;CodeShark&gt;</span> is there a white list?
+<a name="l-149"></a><span class="tm">19:30:01</span><span class="nk"> &lt;btcdrak&gt;</span> see the link above
+<a name="l-150"></a><span class="tm">19:30:09</span><span class="nk"> &lt;gmaxwell&gt;</span> On the subject of "take note" -- bitcoin.org had incorrect release notes for 0.11.1.  It's corrected now. They had posted the release notes for the initial RC and not updated them. Process wise it would be good to watch out for that in the future.
+<a name="l-151"></a><span class="tm">19:30:11</span><span class="nk"> &lt;kanzure_&gt;</span> <span class="hi">petertodd:</span> yes, i have had to manually approve email today
+<a name="l-152"></a><span class="tm">19:30:21</span><span class="nk"> &lt;jcorgan&gt;</span> only the first
+<a name="l-153"></a><span class="tm">19:30:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> Ah, I missed the "mod bit" part of that message, thanks.
+<a name="l-154"></a><span class="tm">19:30:32</span><span class="nk"> &lt;jcorgan&gt;</span> then we take the mod bit off that user
+<a name="l-155"></a><span class="tm">19:30:57</span><span class="nk"> &lt;btcdrak&gt;</span> ok next topic, anyone?
+<a name="l-156"></a><span class="tm">19:31:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> my bad for not bringing it up. I had assumed the only difference was minor, but I should have compared when I noticed it was not identical. :/
+<a name="l-157"></a><span class="tm">19:31:25</span><span class="nk"> &lt;kanzure_&gt;</span> if we want to have actively used bitcoin-discuss there should be someone who currates content for that mailing list, otherwise i doubt people will use it
+<a name="l-158"></a><span class="tm">19:31:32</span><span class="nk"> &lt;kanzure_&gt;</span> actually what is the status, has traffic actually been redirected there
+<a name="l-159"></a><span class="tm">19:31:45</span><span class="nk"> &lt;kanzure_&gt;</span> "No messages have been posted to this list yet, so the archives are currently empty."
+<a name="l-160"></a><span class="tm">19:31:46</span><span class="nk"> &lt;btcdrak&gt;</span> kanzure_ please see the posted link
+<a name="l-161"></a><span class="tm">19:31:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">note:</span> there is still a discuss mailing list on SF
+<a name="l-162"></a><span class="tm">19:31:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> in particular it did not have the relay fee bump.
+<a name="l-163"></a><span class="tm">19:32:01</span><span class="nk"> &lt;sipa&gt;</span> there have been several messages sent there this year
+<a name="l-164"></a><span class="tm">19:32:01</span><span class="nk"> &lt;kanzure_&gt;</span> which discuss mailing list should have priority?
+<a name="l-165"></a><span class="tm">19:32:06</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> the new official list is now bitcoin-discuss at LF
+<a name="l-166"></a><span class="tm">19:32:12</span><span class="nk"> &lt;kanzure_&gt;</span> linuxfoundation has been working well afaik
+<a name="l-167"></a><span class="tm">19:32:15</span><span class="nk"> &lt;kanzure_&gt;</span> for mailing list hosting
+<a name="l-168"></a><span class="tm">19:32:34</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">#action </span><span class="cmdline">tell SF list about new lists</span>
+<a name="l-169"></a><span class="tm">19:32:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">lists.linuxfoundation.org/mailman/listinfo/bitcoin-discuss</span>
+<a name="l-170"></a><span class="tm">19:32:47</span><span class="nk"> &lt;kanzure_&gt;</span> we should find someone who wants to actively run -discuss or something
+<a name="l-171"></a><span class="tm">19:32:52</span><span class="nk"> &lt;sipa&gt;</span> i did hide the old dev list from SF
+<a name="l-172"></a><span class="tm">19:32:54</span><span class="nk"> &lt;kanzure_&gt;</span> or replay old -dev messages to -discuss that would have otherwise been moderated
+<a name="l-173"></a><span class="tm">19:33:07</span><span class="nk"> &lt;sipa&gt;</span> i haven't deleted it yet should we want its archives for whatever reason
+<a name="l-174"></a><span class="tm">19:33:33</span><span class="nk"> &lt;kanzure_&gt;</span> (for the record i am not interested in running or moderating -discuss, but "go here where nobody is sending email/reading" is not likely to win anyone over)
+<a name="l-175"></a><span class="tm">19:33:34</span><span class="nk"> &lt;btcdrak&gt;</span> ok I think next topic. I've got one ;)
+<a name="l-176"></a><span class="tm">19:33:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">Median Past locktime</span>
+<a name="l-177"></a><span class="tm">19:34:00</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">PR https://github.com/bitcoin/bitcoin/pull/6566</span>
+<a name="l-178"></a><span class="tm">19:34:13</span><span class="nk"> &lt;btcdrak&gt;</span> Reviews have been good since last week
+<a name="l-179"></a><span class="tm">19:34:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> there are a couple of nits from wumpus and gmaxwell. Has anyone else got concerns for this PR?
+<a name="l-180"></a><span class="tm">19:34:54</span><span class="nk"> &lt;sipa&gt;</span> concept ack
+<a name="l-181"></a><span class="tm">19:34:57</span><span class="nk"> &lt;gmaxwell&gt;</span> I am a strong concept ack.
+<a name="l-182"></a><span class="tm">19:35:04</span><span class="nk"> &lt;gmaxwell&gt;</span> (which I'll also go make clear there)
+<a name="l-183"></a><span class="tm">19:35:09</span><span class="nk"> &lt;kanzure_&gt;</span> yes same with sipa please
+<a name="l-184"></a><span class="tm">19:35:26</span><span class="nk"> &lt;Luke-Jr&gt;</span> I'll try to finish reviewing it ASAP
+<a name="l-185"></a><span class="tm">19:36:11</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#action </span><span class="cmdline">review https://github.com/bitcoin/bitcoin/pull/6566</span>
+<a name="l-186"></a><span class="tm">19:36:12</span><span class="nk"> &lt;gmaxwell&gt;</span> There is lots going on in lots of PRs, but I can't think of any that need to be elevated to here.
+<a name="l-187"></a><span class="tm">19:36:32</span><span class="nk"> &lt;btcdrak&gt;</span> I only bring up 6566 because we talked about adding it to the CLTV softfork
+<a name="l-188"></a><span class="tm">19:36:44</span><span class="nk"> &lt;btcdrak&gt;</span> we're getting close to that now
+<a name="l-189"></a><span class="tm">19:36:53</span><span class="nk"> &lt;gmaxwell&gt;</span> Topic suggestion: Where are we on CLTV soft-fork deployment?
+<a name="l-190"></a><span class="tm">19:37:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">CLTV softfork deployment</span>
+<a name="l-191"></a><span class="tm">19:37:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> re: CLTV softfork, I'm likely not going to have time to be doing more rebasing/rework on that going forward, so either merge it or someone else should be prepared to take over
+<a name="l-192"></a><span class="tm">19:37:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> that PR is just mempool behavior.
+<a name="l-193"></a><span class="tm">19:37:29</span><span class="nk"> &lt;petertodd&gt;</span> (I no longer have funding for bitcoin core work)
+<a name="l-194"></a><span class="tm">19:38:05</span><span class="nk"> &lt;CodeShark&gt;</span> fwiw, #6816 will make merging the soft fork logic itself pretty straightforward ;)
+<a name="l-195"></a><span class="tm">19:38:33</span><span class="nk"> &lt;btcdrak&gt;</span> We agreed to roll out the CLTV softfork at the end of October.
+<a name="l-196"></a><span class="tm">19:39:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> no one forgets what the objective was there, but what is the status?
+<a name="l-197"></a><span class="tm">19:39:34</span><span class="nk"> &lt;btcdrak&gt;</span> I believe for master the PR is ready to merge
+<a name="l-198"></a><span class="tm">19:39:35</span><span class="nk"> &lt;sipa&gt;</span> what needs to be done?
+<a name="l-199"></a><span class="tm">19:39:45</span><span class="nk"> &lt;btcdrak&gt;</span> there are 0.10 and 0.11 PRs for the packports also
+<a name="l-200"></a><span class="tm">19:39:51</span><span class="nk"> &lt;btcdrak&gt;</span> so they just need to be merged.
+<a name="l-201"></a><span class="tm">19:39:57</span><span class="nk"> &lt;sipa&gt;</span> merge PR, do v4 block ISM softwarez done?
+<a name="l-202"></a><span class="tm">19:40:06</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-203"></a><span class="tm">19:40:07</span><span class="nk"> &lt;sipa&gt;</span> i will review then
+<a name="l-204"></a><span class="tm">19:40:15</span><span class="nk"> &lt;sipa&gt;</span> but i expect i will be fine
+<a name="l-205"></a><span class="tm">19:40:24</span><span class="nk"> &lt;sipa&gt;</span> this is the sort of thing to discuss on the ML though
+<a name="l-206"></a><span class="tm">19:40:28</span><span class="nk"> &lt;btcdrak&gt;</span> https://github.com/bitcoin/bitcoin/pull/6707
+<a name="l-207"></a><span class="tm">19:40:35</span><span class="nk"> &lt;btcdrak&gt;</span> https://github.com/bitcoin/bitcoin/pull/6706
+<a name="l-208"></a><span class="tm">19:40:53</span><span class="nk"> &lt;btcdrak&gt;</span> https://github.com/bitcoin/bitcoin/pull/6351
+<a name="l-209"></a><span class="tm">19:41:11</span><span class="nk"> &lt;btcdrak&gt;</span> Those are the PRs. If petertodd isnt around to rebase, one of us can just do it.
+<a name="l-210"></a><span class="tm">19:41:20</span><span class="nk"> &lt;sipa&gt;</span> yeah
+<a name="l-211"></a><span class="tm">19:41:36</span><span class="nk"> &lt;btcdrak&gt;</span> if we want to add media-past-locktime then there is still time
+<a name="l-212"></a><span class="tm">19:42:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #6707 #6706 #6351 for CLTV deployment.</span>
+<a name="l-213"></a><span class="tm">19:42:25</span><span class="nk"> &lt;gmaxwell&gt;</span> Has code even been writeen for MPL enforcement as part of that soft fork? if not, someone needs to take the task of doing it.
+<a name="l-214"></a><span class="tm">19:42:28</span><span class="nk"> &lt;btcdrak&gt;</span> do we want to try for median-past-locktime with this or just wait?
+<a name="l-215"></a><span class="tm">19:42:52</span><span class="nk"> &lt;btcdrak&gt;</span> I would have assume maaku would do it, he was just waiting for the mempool PR to be merged
+<a name="l-216"></a><span class="tm">19:42:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> median past is the type of boring change that'd be an excellent way to deploy versionbits actually
+<a name="l-217"></a><span class="tm">19:43:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> there are three possibilities in my mind.
+<a name="l-218"></a><span class="tm">19:43:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> there's no rush to do it and it's uncontroversial
+<a name="l-219"></a><span class="tm">19:43:24</span><span class="nk"> &lt;gmaxwell&gt;</span> no MPL. MPL mempool only. MPL in softfork.
+<a name="l-220"></a><span class="tm">19:43:32</span><span class="nk"> &lt;gmaxwell&gt;</span> I strongly believe we should not do the first.
+<a name="l-221"></a><span class="tm">19:43:46</span><span class="nk"> &lt;gmaxwell&gt;</span> well somewhat strongly.
+<a name="l-222"></a><span class="tm">19:43:59</span><span class="nk"> &lt;kanzure&gt;</span> so short-term median-past-locktime mempool only, then median-past-locktime soft-fork using versionbits?
+<a name="l-223"></a><span class="tm">19:44:00</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> at the least, I would love MPL as mempool together with BIP68 and OP_CSV as mempool.
+<a name="l-224"></a><span class="tm">19:44:11</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">gmaxwell:</span> the MPL pull is specifically written to not require further code for soft-fork, just setting a flag bit undre a ISM condition
+<a name="l-225"></a><span class="tm">19:44:20</span><span class="nk"> &lt;gmaxwell&gt;</span> actually, for same reason, MPL-mempool only should be done instead of the softfork. Rational: right now miners will currently mine MPL violations.
+<a name="l-226"></a><span class="tm">19:44:25</span><span class="nk"> &lt;btcdrak&gt;</span> deployment is easy
+<a name="l-227"></a><span class="tm">19:44:40</span><span class="nk"> &lt;sipa&gt;</span> yes, MPL should be deployed mempool-only first
+<a name="l-228"></a><span class="tm">19:44:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> oh right, that's a good point... further delays MPL deployment, which again is an argument to do it with versionbit
+<a name="l-229"></a><span class="tm">19:45:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> I know I read the code. But there is no patch to actually set the flag and enforce it. But thats okay at the moment. We should mempool only it first.
+<a name="l-230"></a><span class="tm">19:45:15</span><span class="nk"> &lt;sipa&gt;</span> same with BIP68, no?
+<a name="l-231"></a><span class="tm">19:45:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> CSV enforcement is flagged.
+<a name="l-232"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sipa&gt;</span> current miners will accept bip68 violations
+<a name="l-233"></a><span class="tm">19:45:46</span><span class="nk"> &lt;sdaftuar&gt;</span> BIP68 is only active for higher tx version right?
+<a name="l-234"></a><span class="tm">19:45:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> requires nVersion=2
+<a name="l-235"></a><span class="tm">19:45:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> no, requires a tx version flag.
+<a name="l-236"></a><span class="tm">19:45:55</span><span class="nk"> &lt;sipa&gt;</span> right, separate tx version
+<a name="l-237"></a><span class="tm">19:46:00</span><span class="nk"> &lt;sipa&gt;</span> which is already nonstandard
+<a name="l-238"></a><span class="tm">19:46:01</span><span class="nk"> &lt;sipa&gt;</span> nvm!
+<a name="l-239"></a><span class="tm">19:46:06</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">gmaxwell:</span> there's no patch because it'd presumably be part of #6351 if rolled out together, so I didn't create a separate PR
+<a name="l-240"></a><span class="tm">19:46:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> thats okay, I think based on the observation that miners would currently mine violations we'll only do mempool only immediately.
+<a name="l-241"></a><span class="tm">19:47:08</span><span class="nk"> &lt;gmaxwell&gt;</span> (which also still has the positive effect of stopping new CLTV locktime users from depending on the to-be-replaced behavior.
+<a name="l-242"></a><span class="tm">19:47:13</span><span class="nk"> &lt;gmaxwell&gt;</span> )
+<a name="l-243"></a><span class="tm">19:47:33</span><span class="nk"> &lt;btcdrak&gt;</span> how about we merge all three mempool PRs and release them with the CLTV deployment to get them out in the wild. We can then consider another ISM or versionbits deployment after?
+<a name="l-244"></a><span class="tm">19:47:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> the mempool related PRs are more or less 0.12 only.
+<a name="l-245"></a><span class="tm">19:48:23</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> but we can backport?
+<a name="l-246"></a><span class="tm">19:48:26</span><span class="nk"> &lt;gmaxwell&gt;</span> They depend on git master exclusive major changes to the mempool code.
+<a name="l-247"></a><span class="tm">19:48:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> I don't think that would be prudent.
+<a name="l-248"></a><span class="tm">19:48:40</span><span class="nk"> &lt;btcdrak&gt;</span> we have to backport for softfork deployments anyway
+<a name="l-249"></a><span class="tm">19:48:40</span><span class="nk"> &lt;Luke-Jr&gt;</span> we can release backported policy patches
+<a name="l-250"></a><span class="tm">19:48:49</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">btcdrak:</span> consensus and policy are not the same
+<a name="l-251"></a><span class="tm">19:48:56</span><span class="nk"> &lt;gmaxwell&gt;</span> I would recommend 'backporting' TCP_NODELAY.  (which I will gladly do, of course) :P  if you're looking for upgrade sweetener.
+<a name="l-252"></a><span class="tm">19:48:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">Luke-Jr:</span> ah, I understand
+<a name="l-253"></a><span class="tm">19:49:05</span><span class="nk"> &lt;CodeShark&gt;</span> should I start working on #6816 backports?
+<a name="l-254"></a><span class="tm">19:49:25</span><span class="nk"> &lt;btcdrak&gt;</span> CodeShark I would get #6816 merged first.
+<a name="l-255"></a><span class="tm">19:49:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> perhaps wait until the first round of review unless you're itching and won't mind redoing it if you get asked to change the design?
+<a name="l-256"></a><span class="tm">19:50:14</span><span class="nk"> &lt;CodeShark&gt;</span> the backports should be pretty easy, I think - so it can wait
+<a name="l-257"></a><span class="tm">19:50:15</span><span class="nk"> &lt;kanzure&gt;</span> does median-past-locktime mempool-only also require lots of master-only 0.12 mempool changes that are not in the older versions? re: backporting
+<a name="l-258"></a><span class="tm">19:50:28</span><span class="nk"> &lt;CodeShark&gt;</span> the backports can wait, that is - the reviews can't ;)
+<a name="l-259"></a><span class="tm">19:50:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Kireji:</span> no.
+<a name="l-260"></a><span class="tm">19:50:48</span><span class="nk"> &lt;gmaxwell&gt;</span> er
+<a name="l-261"></a><span class="tm">19:50:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> no.
+<a name="l-262"></a><span class="tm">19:50:58</span><span class="nk"> &lt;gmaxwell&gt;</span> are there any in flight backportable bug fixes which we should hammer down before we do backport updates for the CLTV soft-fork?
+<a name="l-263"></a><span class="tm">19:51:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> which "mempool related PRs" are not backportable?
+<a name="l-264"></a><span class="tm">19:51:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I assume btcdrak is mostly talking about matt's limiter, which depends on the major data structure changes in the mempool.  Do you think we should actually backport all that?
+<a name="l-265"></a><span class="tm">19:52:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> hell no
+<a name="l-266"></a><span class="tm">19:52:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-267"></a><span class="tm">19:52:14</span><span class="nk"> &lt;sipa&gt;</span> but we're talking about softforks here
+<a name="l-268"></a><span class="tm">19:52:27</span><span class="nk"> &lt;btcdrak&gt;</span> I think the point is, if we get the mempool PRs merged in master, then we can start working on backporting them. The actual softfork deployment can be done at any time thereafter at our convenience.
+<a name="l-269"></a><span class="tm">19:52:42</span><span class="nk"> &lt;gmaxwell&gt;</span> oh dear! okay. I was wires crossed. I thought btcdrap was talking about mempool capacity management.
+<a name="l-270"></a><span class="tm">19:52:45</span><span class="nk"> &lt;btcdrak&gt;</span> this way we're doing a pure CLTV release first.
+<a name="l-271"></a><span class="tm">19:52:54</span><span class="nk"> &lt;sipa&gt;</span> i think that btcdrak is referring to the BIP68/112/113 mempool-only changes with "mempool PRs"
+<a name="l-272"></a><span class="tm">19:52:56</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> no :)
+<a name="l-273"></a><span class="tm">19:52:58</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">kanzure:</span> I don't believe any of #6312, #6564 or #6566 depend on master changes
+<a name="l-274"></a><span class="tm">19:53:02</span><span class="nk"> &lt;petertodd&gt;</span> also, if a backport is going to take a lot of work, you might want to ask miners first if they really want it...
+<a name="l-275"></a><span class="tm">19:53:11</span><span class="nk"> &lt;maaku&gt;</span> I'm not sure what gmaxwell is referring to
+<a name="l-276"></a><span class="tm">19:53:12</span><span class="nk"> &lt;btcdrak&gt;</span> yes, sorry that's my mistake, I was referring to BIUP68/112/113
+<a name="l-277"></a><span class="tm">19:53:49</span><span class="nk"> &lt;gmaxwell&gt;</span> as I said, I thought he was referring to the mempool limits and friends.
+<a name="l-278"></a><span class="tm">19:53:53</span><span class="nk"> &lt;sipa&gt;</span> OK
+<a name="l-279"></a><span class="tm">19:53:56</span><span class="nk"> &lt;btcdrak&gt;</span> thing is MPL is quite a trivial patch, it would easily backport and be part of the CLTV softfork...
+<a name="l-280"></a><span class="tm">19:54:14</span><span class="nk"> &lt;gmaxwell&gt;</span> I do not think there is a reason to mempool only any of them except median right now, as they're already non-standard.
+<a name="l-281"></a><span class="tm">19:54:33</span><span class="nk"> &lt;gmaxwell&gt;</span> The concern I have is that if we deploy a mempool only CSV then now we have a problem if the interperation of the field changes.
+<a name="l-282"></a><span class="tm">19:54:52</span><span class="nk"> &lt;gmaxwell&gt;</span> (because we may need to first make it non-standard again)
+<a name="l-283"></a><span class="tm">19:54:55</span><span class="nk"> &lt;maaku&gt;</span> do we have reason to believe the interpretation of the field will change?
+<a name="l-284"></a><span class="tm">19:55:18</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">maaku:</span> the last few weeks :p
+<a name="l-285"></a><span class="tm">19:55:30</span><span class="nk"> &lt;gmaxwell&gt;</span> Deploying it as mempool only in the soft fork backport when its already non-standard carries basically only risk.
+<a name="l-286"></a><span class="tm">19:55:35</span><span class="nk"> &lt;btcdrak&gt;</span> BIP68 has been refined.
+<a name="l-287"></a><span class="tm">19:56:02</span><span class="nk"> &lt;btcdrak&gt;</span> I think everyone nits were addressed for BIP68, so itr should be considered final
+<a name="l-288"></a><span class="tm">19:56:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> w/ CLTV, the plan was to s/OP_NOP2/OP_NOP3/ - the equivalent for CSV's redefinition of what nSequence means might be to use nVersion&gt;=3 rather than nVersion&gt;=2
+<a name="l-289"></a><span class="tm">19:57:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> indeed, thats true.
+<a name="l-290"></a><span class="tm">19:57:14</span><span class="nk"> &lt;gmaxwell&gt;</span> But again, I do not see the gain.
+<a name="l-291"></a><span class="tm">19:57:26</span><span class="nk"> &lt;gmaxwell&gt;</span> At least in the context of the CLTV softfork release.
+<a name="l-292"></a><span class="tm">19:57:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> it's not a gain, just a backup plan if a mempool-only release turns out to need to be changed because the behavior was wrong
+<a name="l-293"></a><span class="tm">19:57:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> so you're suggesting we properly softfork MPL, and bip68/CSV right off the bat
+<a name="l-294"></a><span class="tm">19:58:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I meant I do not see the gain in putting out CSV mempool only at the same time as CLTV softfork.
+<a name="l-295"></a><span class="tm">19:58:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ah, yeah, neither do I
+<a name="l-296"></a><span class="tm">19:58:18</span><span class="nk"> &lt;gmaxwell&gt;</span> But I agree with your backup plan, good observation.
+<a name="l-297"></a><span class="tm">19:58:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> the original discussion is to have CLTV + MPL
+<a name="l-298"></a><span class="tm">19:58:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> No. backup.
+<a name="l-299"></a><span class="tm">19:58:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> I am saying, there will be a CLTV soft fork release which also has mempool only MPL.
+<a name="l-300"></a><span class="tm">19:59:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> ok, understood.
+<a name="l-301"></a><span class="tm">19:59:15</span><span class="nk"> &lt;gmaxwell&gt;</span> The latter because MPL violates current 'standard' behavior, so we would prefer to have that violation dead in the network before MPL soft-fork moves forward.
+<a name="l-302"></a><span class="tm">19:59:30</span><span class="nk"> &lt;gmaxwell&gt;</span> For CSV mempool it's already non-standard, so the same argument doesn't apply.
+<a name="l-303"></a><span class="tm">19:59:46</span><span class="nk"> &lt;btcdrak&gt;</span> in that case, maaku needs to work on backporting MPL to 0.11 and 0.10 asap.
+<a name="l-304"></a><span class="tm">20:00:05</span><span class="nk"> &lt;gmaxwell&gt;</span> And we're awfully close right now to the last semantic changes, so I'd rather hold for that. (could still go in mempool only first, but just not in the CLTV soft fork release)
+<a name="l-305"></a><span class="tm">20:00:18</span><span class="nk"> &lt;kanzure&gt;</span> was the mempool limiting stuff something that needs to be discussed? the thing that was misconfused above.
+<a name="l-306"></a><span class="tm">20:00:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> fortunate those backports will be trivial code copying, I believe.
+<a name="l-307"></a><span class="tm">20:00:35</span><span class="nk"> &lt;btcdrak&gt;</span> ok so I'll log that as an action point then
+<a name="l-308"></a><span class="tm">20:00:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> my wires were crossed, I thought btcdrak brought them up as deployment sweetener for CLTV.
+<a name="l-309"></a><span class="tm">20:00:52</span><span class="nk"> &lt;kanzure&gt;</span> right
+<a name="l-310"></a><span class="tm">20:00:59</span><span class="nk"> &lt;kanzure&gt;</span> it was wrong, but does that need to be discussed anyway
+<a name="l-311"></a><span class="tm">20:01:02</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#action </span><span class="cmdline">backport MPL to 0.10 and 0.11</span>
+<a name="l-312"></a><span class="tm">20:01:03</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">###</span><span class="cmdline"></span>
+<a name="l-313"></a><span class="tm">20:01:13</span><span class="nk"> &lt;sipa&gt;</span> time's up
+<a name="l-314"></a><span class="tm">20:01:17</span><span class="nk"> &lt;gmaxwell&gt;</span> we are past time. Thanks everyone!
+<a name="l-315"></a><span class="tm">20:01:21</span><span class="nk"> &lt;jgarzik&gt;</span> meeting fini
+<a name="l-316"></a><span class="tm">20:01:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
