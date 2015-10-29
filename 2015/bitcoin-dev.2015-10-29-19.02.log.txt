@@ -1,0 +1,264 @@
+19:02:58 <wumpus> #startmeeting
+19:02:58 <lightningbot> Meeting started Thu Oct 29 19:02:58 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:03:20 <Luke-Jr> .
+19:03:29 <wumpus> anything to discuss?
+19:03:37 <gmaxwell> Hm.
+19:03:58 <sipa> suggested topic: upcoming softfork?
+19:04:10 <wumpus> #topic upcoming softfork
+19:04:14 <morcos> suggeted topic: do we have sufficient agreement on new chain limts
+19:04:19 <gmaxwell> There were a couple things I wanted to discuss but my mind is blank at the moment.
+19:05:06 <gmaxwell> Are there other things not yet in the old release branches that we think need to be in the point releases for the softfork?
+19:05:27 <dstadulis> here's the google doc if desired https://docs.google.com/document/d/1t3kGkAUQ-Yui57P29YhDll5WyJuTiGrUhCW8so-E-iQ/edit?usp=sharing
+19:05:30 <Luke-Jr> gmaxwell: I have a PR open with 0.11 backports
+19:05:49 <Luke-Jr> but I plan to add more to it until the freeze
+19:06:06 <Luke-Jr> (at which point, I'll backport them to 0.10 too as applicable)
+19:07:28 <dcousens> is there any coordination in the softfork in regards to other clients? (btcd, bitcoinj, etc)
+19:08:23 <jtimon> here
+19:08:25 <gmaxwell> davec (btcd) had previously acked the schedule we'd proposed and IIRC it's ready for it.
+19:08:32 <warren> I could be wrong, but bitcoinj didn't implement all the previous validation rules.
+19:08:39 <sipa> bitcoinj doesn
+19:08:47 <gmaxwell> dcousens: historically bitcoinj has not implemented any softforks.
+19:08:47 <sipa> bitcoinj doesn't implement any validation rules, afaik
+19:08:55 <Luke-Jr> I saw a PR for bitcoinj to pay attention to the block versions
+19:08:58 <gmaxwell> sipa: well it has the not really maintained validation support.
+19:09:20 <sipa> so what exactly is under consideration: just CLTV?
+19:09:59 <morcos> +1 to CLTV alone
+19:10:08 <warren> Also for context, what is on the soft fork wish list for the medium term?
+19:10:09 <petertodd> +1
+19:10:22 <gmaxwell> sipa: I'm not following your question; as you should be aware we'd planned on doing releases with the CLTV soft fork for the 'end of the month'.  No other soft-forks are remotely ready right now.
+19:10:30 <gmaxwell> (we also discussed this last week)
+19:10:31 <petertodd> i mean, +1 to CLTV alone
+19:10:45 <sipa> gmaxwell: that's indeed my assumption, but i want to make sure that's what we're talking about :)
+19:10:58 <gmaxwell> I think the mediantime backports haven't been merged in the backport branches yet.
+19:11:12 <dcousens> +1 to CLTV alone, CSV is still just complicated enough it may warrant a more in-depth testing first
+19:11:14 <sipa> mediantime needs standardness first, right?
+19:11:17 <gmaxwell> And thats something I wanted to see in (as a standardness only rule of course)
+19:12:01 <gmaxwell> sipa: all thats implemented (and merged in master) is the standardness.
+19:12:19 <sipa> ok, so that needs backports too
+19:12:24 <Luke-Jr> are we backporting policy in general, or only future-softfork policies?
+19:12:29 <gmaxwell> dcousens: That was already discussed last week.
+19:12:44 <dcousens> gmaxwell: ok
+19:12:48 <gmaxwell> sipa: it's backported at least to 0.11.1 but not merged.
+19:12:56 <sipa> ok
+19:13:09 <dcousens> sipa: https://github.com/bitcoin/bitcoin/pull/6884 (for 0.11)
+19:14:17 <Luke-Jr> (for reference, I'm collecting bugfixes in https://github.com/bitcoin/bitcoin/pull/6825 )
+19:14:35 <Luke-Jr> does anyone know the answer to https://github.com/bitcoin/bitcoin/pull/6825#issuecomment-147972253 ?
+19:16:39 <jeremyrubin> that sure looks like a bugfix...
+19:16:51 <gmaxwell> Luke-Jr: ask petertodd
+19:16:56 <gmaxwell> We're straying offtopic severely now.
+19:17:36 <Luke-Jr> sorry, thought we were falling short on having topics to discuss
+19:17:54 <gmaxwell> Okay so beyond medianpast some effort needs to go in and pull in any straggling bugfixes, then a RC for a 0.11.2 / 0.10.x update?
+19:18:23 <sipa> ok
+19:18:28 <mcelrath> I'd like to discuss leveldb replacement briefly.
+19:19:08 <Luke-Jr> imo better to keep that topic until there's a viable replacement.
+19:19:15 <gmaxwell> We can talk about that subject; but I want to be clear. At this time we are not considering replacing leveldb in Bitcoin core.
+19:19:33 <mcelrath> I want to ask if anyone else is making a branch for testing with an alternative.
+19:19:45 <gmaxwell> (People trying out some other things is great and should always continue.)
+19:19:53 <mcelrath> I volunteer to make a LMDB branch.  jgarzik already has a sqlite branch.  We need to make tests.
+19:20:04 <jgarzik> 32-bit is a big issue
+19:20:10 <sipa> #topic leveldb replacement
+19:20:27 <gmaxwell> Holy crap.
+19:20:35 <jgarzik> LMDB simply doesn't work on 32-bit
+19:20:40 <gmaxwell> stop.
+19:20:48 * gmaxwell bangs gavel
+19:20:50 <mcelrath> Why is 32-bit such a big deal?
+19:21:07 <mcelrath> Want to keep running on raspbery pis?
+19:21:30 <gmaxwell> I don't think that I was clear enough. We are _NOT_ replacing leveldb at this time. People should happily test other things, the code is abstracted in a way that specifically facilitates that. Have fun, report results.
+19:21:48 <jgarzik> One of my side projects is a from-scratch COW ordered map dbm https://github.com/jgarzik/pgdb2
+19:22:07 <sipa> ok, discussion around exploring that seems to be happening now
+19:22:09 <mcelrath> gmaxwell: that is clear, just want to make sure I'm not duplicating someone's effort.
+19:22:34 <gmaxwell> The thing that spurred this discussion is a specific bug on windows, which people should stop being shitty developers and fix if they care about and have access to windows. Not run off seeking magic beanstalks.
+19:23:01 <mcelrath> Also having db code in the core and having to maintain it is not really a good idea.
+19:23:03 <sipa> seems magic beanstalks don't exist at this point, but people are welcome to look for them :)
+19:23:06 <Luke-Jr> I suggest we end the meeting early and discuss any alternative db stuff off-meeting. :P
+19:23:12 <morcos> chain limits?
+19:23:18 <Luke-Jr> mcelrath: 32-bit is the future~ (maybe)
+19:23:22 <sipa> #topic chain limits
+19:23:26 <Luke-Jr> mcelrath: no matter what we use, we will need to maintain it
+19:23:42 <morcos> mostly i want to know what we're looking for to have sufficient consensus to merge them, and maybe i can help try to make that happen, or panic if its not going to
+19:23:51 <Luke-Jr> (deferring further discussion on db stuff until post-meeting)
+19:23:55 <dcousens> sipa: is there any references to data on average chain length in blocks thus far?
+19:24:02 <mcelrath> Luke-Jr: would be nice if it had an upstream maintainer and we weren't the only user. (defferring now to post-meeting)
+19:24:03 <morcos> i think some people will be angry, but i dont' see an alternative
+19:24:03 <gmaxwell> mcelrath: You misunderstand the purpose of the database in the system. This is not a generic database, but a integral part of the implementation of the consensus algorithim. Some challenge cannot be escaped there.
+19:24:05 <sipa> dcousens: good question!
+19:24:10 <jgarzik> https://en.wikipedia.org/wiki/LevelDB#Bugs_and_Reliability "LevelDB is widely noted for being unreliable and databases it manages are prone to corruption."
+19:24:12 <morcos> dcousens: i posted stats in the pull
+19:24:25 <dcousens> morcos: link? (haven't got it open)
+19:24:51 <gmaxwell> And if ever something like commited txouts is implemented no off the shelf tool is going to work in any case. So thats just something to get used to there.
+19:25:24 <morcos> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-October/011401.html
+19:25:36 <morcos> https://github.com/bitcoin/bitcoin/pull/6771
+19:26:06 <morcos> i guess i didn't post all my data, but i have %s of txs that were > than chains of certain lengths for various numbers
+19:26:30 <gmaxwell> jgarzik: Not consistent with our expirence and extensive testing, outside of windows. (I'm familar with the usenix paper, and brought it to our attention when it came out); but among other things our durability requirement is somewhat unusual.
+19:27:06 <gmaxwell> oh I missed the chain limits switch.
+19:27:09 <dcousens> morcos: it might be interesting to see the average chain length per block as a graph over time
+19:27:34 <dcousens> that will only give us an idea of what was accepted by miners though, and not reflective of the mempool, but, still a good insight?
+19:27:37 <sipa> morcos: are these numbers on mempool acceptance, or blocks?
+19:27:41 <morcos> dcousens: i'm not sure average is a good measure?  there were some very long chains during some of the spam attacks
+19:27:54 <sipa> morcos: i would expect that actual blocks don't contain many long chains, even if the mempool usually does
+19:28:03 <dcousens> morcos: overlayed with peak maybe?
+19:28:10 <morcos> sipa: mempool acceptance (however historically i don't know that anythign got into mempools that didn't end up in blocks, but yes split over multiple blocks maybe)
+19:28:40 <morcos> dcousens: oh is that what you were asking about, longest chain in a block, i didn't measure that
+19:29:21 <sipa> morcos: assuming retransmits, all that matters is mempool chains that actually get into a single block
+19:29:25 <dcousens> morcos: you could also roll the chain window to evaluate over say 3 blocks, assuming the mempool might have been split over that
+19:29:36 <dcousens> sipa: true
+19:29:54 <gmaxwell> dcousens: that roll check is not very useful, because wallet behavior changes radically at 1 confirm.
+19:30:27 <Luke-Jr> (suggested next topic: block size replacement with cost limits)
+19:30:36 <jeremyrubin> btw I'm working on some tools for bitcoin anlaysis on top of spark, I imagine they will help at some point with above analysis. Not cam ready near term, but happy to share what I have if anyone needs that kind of thing sooner.
+19:30:43 <gmaxwell> E.g. bitcoin core tries _very_ hard to avoid ever creating an unconfirmed chain, but does less avoidance of spends at 1 confirm.
+19:30:44 <dcousens> gmaxwell: indeed, so maybe just average/peak over blockheights, might be worth seeing for insight on limits?
+19:30:52 <dstadulis> dcousens why not a histogram?
+19:31:29 <dcousens> dstadulis: I suppose once we have the data, there are various ways we could visualize it :)
+19:31:50 <morcos> ok i can do that i guess.  do you think that puts this to bed
+19:31:57 <gmaxwell> In any case, 25 is very high.  And the recent malleability attacks pretty much would guarentee someone going more than a few deep would be haing a very bad day.
+19:32:33 <sipa> my assumption too is that 25 is very high
+19:32:45 <jgarzik> +1
+19:32:51 <dgenr8> +1 to the more restrictive (but still not very restrictive at all) chain limits
+19:32:52 <sipa> but if possible at all, seeing data of how many such chains exist _within a single block_ would be useful
+19:33:12 <gmaxwell> From an algorithimic perspective we cannot reasonably support unbounded depth (at least not right now), and depth to the point where it can't even fit in a block undermines our attack prevention assumptions.
+19:33:15 <morcos> sipa: ok, will report back on pull, might be a few days though
+19:33:31 <dcousens> +1, 25 is too high
+19:33:59 <morcos> dcousens: i'm happy with lower
+19:34:04 <dcousens> morcos: pm if you need any help
+19:34:41 <gmaxwell> there were, unfortunately people complaining even at this patch. In any case, we could always go with a more conservative number now and lower in the future.
+19:34:56 <jtimon> do the descendant limits need to be as low as the ascendant limits?
+19:35:28 <morcos> jtimon: yeah i wanted 10 for ancestor and 25 for descendant, but seems people are most concerned about the straight line chians
+19:35:36 <morcos> and felt 10 was too small
+19:35:41 <gmaxwell> I think that if we could make measurements now (e.g. not for the flooding attacks) we'd find lower numbers on account of the malleability attacks.
+19:36:16 <morcos> gmaxwell: i can measure over a long time period, but i'll just do the max chain in a block, b/c otherwise it becomes confusing how you count the 10 txs that are all part of a chian of 10
+19:36:40 <sipa> morcos: sounds good
+19:36:45 <gmaxwell> morcos: okay, though max is a crummy statistic.
+19:37:14 <morcos> but if its over a lot of blocks, i think it'll be useful, i seriously doubt most blocks have signficant chians at all
+19:37:35 <gmaxwell> e.g. a single 'blockchaing gambling' thing can keep that perpetually inflated, but its probably worth looking at.
+19:37:44 <dcousens> gmaxwell: what else can we use? in the end it is max we are limiting?
+19:37:56 <gmaxwell> dumping a txid for the longest chain would be nice, so we could go see what it appears to be.
+19:38:08 <gmaxwell> dcousens: we are not limiting the max of a _block_
+19:38:27 <dcousens> true, but, its likely it will have that effect
+19:38:36 <asyn> hi everyone. I was thinking about OP_CHECKLOCKTIMEVERIFY. Will it be possible to send a transaction that freezes funds until a certain block height to any address? Wouldn't that be a problem for exchanges, when they receive funds, credit them but won't be able to spend the funds until a certain block height is reached?
+19:38:36 <asyn> Or would using CLTV change the resulting output in a way that it won't result in the deposit address the exchange presented?
+19:38:53 <jgarzik> asyn, off topic for meeting
+19:38:55 <gmaxwell> asyn: #bitcoin I'll answer you there.
+19:39:06 <asyn> sorry
+19:39:17 <gmaxwell> dcousens: what I think would be more interesting is how many 'chains' in a block fail the test as a function of the limit. But I don't want to waste morcos' time with a bunch of measurement.
+19:39:50 <morcos> gmaxwell: i'll be wasting my time figuring out how to even calculate any of this. :)  i'll report all the stats i can reasonably gather
+19:41:55 <dcousens> suggested topic, clang format testing, [strictly] enforce style unit testing or not AND jgarzik's suggestion RE a window for those changes to occur initially
+19:41:55 <gmaxwell> morcos: sounds good. Sorry, for my care I'm fine with what you have so far, but process wise, we can avoid some controversy by doing a little more homework I think.
+19:42:29 <morcos> gmaxwell: yep, i asked for it. :)
+19:43:18 <gmaxwell> #topic clang format
+19:43:29 <gmaxwell> dcousens: what is the proposal here?
+19:43:51 <dcousens> gmaxwell: https://github.com/bitcoin/bitcoin/pull/6839#issuecomment-151663851
+19:44:10 <gmaxwell> Clang format behavior changes "randomly" from version to version.
+19:44:15 <jgarzik> History review:  Proposal a while ago was to clang-format file set <a b c ...>   Once done, maintain those files' formatting with automation (git hook checks or whatnot)
+19:44:37 <dcousens> gmaxwell: worth locking down a version then?
+19:44:40 <jgarzik> +ends coding style complaints     -causes increase in cosmetic traffic
+19:44:52 <gmaxwell> This would mean that every contributor ould need the same copy of some selected version of clang format, which seems pretty burdensome to me.
+19:44:55 <jgarzik> ends lots of bike shedding and Diapolo (I love you) patches
+19:45:06 <jtimon> maybe we need to lock in a version for consistent automation, yes
+19:45:09 <gmaxwell> jgarzik: will not end coding style complaints, but might help some of the most uninteresting ones.
+19:45:10 <btcdrak> omg I am late
+19:45:23 * jonasschnelli has mixed up sommer / winter time..
+19:45:26 <btcdrak> the clocks went back.
+19:45:33 <jgarzik> gmaxwell, it won't end them but we can ignore with greater alacrity ;p
+19:45:37 <gmaxwell> it's USes turn nxt week.
+19:45:59 <sipa> i really like the idea of a consistent style
+19:46:19 <gmaxwell> So-- before we do that we need to have some discussion about style which shouldn't be in this meeting. We use several coding styles which are knon to increase defect rate (e.g. unbraced statements).
+19:46:35 <mcelrath> One should then start by clang-formatting the entire repo.
+19:46:40 <dcousens> gmaxwell: indeed, this was merely a suggestion to see if its worth getting the ball rolling on that
+19:46:45 <wumpus> I really don't like clang-formatting the entire repo
+19:46:49 <Luke-Jr> gmaxwell: contributors only need clang-format if we don't write the code in the proper format initially
+19:46:49 <jtimon> but it would be nice if some automation was shared in the repo (with or without fixed version)
+19:46:58 <jgarzik> A related and relevant piece of this discussion (as noted in PR):  Picking a time window for coding style changes
+19:46:58 <jgarzik> wumpus, not at once, certainly
+19:47:18 <wumpus> I like code changes to, make actual changes to code, diff noise makes maintenance really annoying
+19:47:19 <jgarzik> We can do libconsensus, reformat, other changes inside this time window as discussed previously.
+19:47:27 <gmaxwell> jgarzik: time window suggests at once!
+19:47:35 <jgarzik> wumpus, they are separate pull obviously
+19:47:38 <wumpus> so I'd prefer to not do clang formatting to existing files
+19:47:51 <jgarzik> -1   that doesn't solve problems
+19:47:52 <Luke-Jr> is there *anything* that supports only looking at changes for style?
+19:48:02 <wumpus> or at all really
+19:48:05 <jtimon> ideally coding style would be respected with each PR and "code style fixes" would never be necessary (or at least would stop being necessary at some point)
+19:48:07 <mcelrath> -1 bikeshedding
+19:48:16 <jgarzik> gmaxwell, ?
+19:48:21 <gmaxwell> wumpus: a prudent path might be to spec out something for new files, which would also be acceptable on all. And consider a mass reformat for later if we're happy with the result.
+19:48:28 <dcousens> mcelrath: the idea is that will end the constant bikeshedding/nits on PRs
+19:48:36 <wumpus> I'd really like to not have a mass reformat
+19:48:38 <jgarzik> gmaxwell, if you mean all cosmetics are submitted within same time window - yes that is the point
+19:48:41 <rusty> As a newcomer, an existing well-defined style would be good.
+19:48:42 <wumpus> but supposedly I'm alone in that
+19:48:48 <jonasschnelli> wumpus : +1
+19:48:55 <jgarzik> gmaxwell, avoiding current situation of constant-rebase-hell was already discussed
+19:49:00 <jonasschnelli> what if we enforce clang format code style for new code?
+19:49:04 <gmaxwell> wumpus: I certantly don't want to multiple times.
+19:49:09 <jtimon> yep, just respect the style on the lines you are touching anyway and little by little the style will be more respected overall
+19:49:13 <Luke-Jr> jonasschnelli: does it support that?
+19:49:15 <wumpus> I think it's overkill for what amounts to just cosmetic details
+19:49:25 <dgenr8> wumpus: +1.  but if you want to make it harder to cherrypick stuff to XT, keep it up with that refactors
+19:49:30 <jonasschnelli> let's travis do a diff and check the clang format style of the diff?
+19:49:31 <jgarzik> gmaxwell, by extension cosmetics and code movement are rejected outside time window, leaving time for real development with less pain over time
+19:49:40 <Luke-Jr> dgenr8: please.
+19:49:43 <jgarzik> (general rule - there are always exceptions)
+19:49:48 <wumpus> dgenr8: I'm ok with *sensible* refactors that move around code to make it easier to maintain, but this code style stuff annoys me
+19:49:48 <gmaxwell> Has anyone done the work to see if we can get identical objectfile verification after a clang format?
+19:49:59 <jtimon> someone automating that (apply style only on the lines I've touched for this commit) could share the script
+19:50:07 <dcousens> gmaxwell: good question
+19:50:08 <jonasschnelli> gmaxwell: i think its possible to get the same output.
+19:50:25 <mcelrath> jtimon: that's probably impossible since context from lines outside the lines you touch decide the amount of whitespace.
+19:50:29 <jgarzik> IMO objectfile differences indicate clang-format bug...
+19:50:45 <Luke-Jr> dgenr8: if anything, we should be making forks *easier*, not harder. just because one fork is misbehaving is not a reason to discourage forks.
+19:50:58 <gmaxwell> jgarzik: not so, assertion macros pepper the code with line numbers. special measures must be taken to avoid the object file changing.
+19:51:08 <dcousens> wumpus: if your main concern is git blame history being lost, I'm sure we could squash all code changes such that it is only 1 commit deep
+19:51:21 <gmaxwell> git blame history is already mostly useless in bitcoin core.
+19:51:38 <wumpus> dcousens: that's not my only concern - I just hate all-over-the-place changes, and the more if they don't really achieve anything
+19:51:47 <jtimon> mcelrath you can 1) write down the lines you are changing 2) apply clang on the whole file 3) discard any change in the lines you weren't previously changing
+19:51:57 <wumpus> gmaxwell: so let's not make it any more useless.
+19:52:00 <jgarzik> gmaxwell, good point
+19:52:09 <wumpus> 'some windows are broken, let's break them all...'
+19:52:13 <jonasschnelli> format everything could ruing the history and make branches/PRs harder to diff. What are the benefits of a clang-format style of every piece of code we have?
+19:52:13 <jgarzik> 8 minutes left
+19:52:15 <jgarzik> other topics?
+19:52:24 <wumpus> agree jonasschnelli
+19:52:38 <btcdrak> jgarzik: I need to talk about #6312 and #6564 again
+19:52:40 <jtimon> my preference would be to apply purely cosmetic changes ONLY in that way (no time window required)
+19:53:12 <wumpus> people will still find purely cosmetic changes to do after clang-format, there's always something it doesn't do, or not yet
+19:53:15 <jonasschnelli> cosmetic changes might be applied when touching the code because of a refactoring / change.
+19:53:30 <mcelrath> jtimon: your algorithm discounts the possibility that the line numbers change.  e.g. if(foo) { bar; } becoming multiple lines.  it's not so obvious.
+19:53:49 <jonasschnelli> and we have already a clang-format checker: Diapolo. :-)
+19:54:08 <Luke-Jr> jonasschnelli: lol
+19:54:13 <dcousens> jonasschnelli: I think if this is to go forward, careful attention will need to be made as to the timing.  This wasn't an easy question for sure
+19:54:48 <jonasschnelli> agree
+19:54:57 <wumpus> if the goal is to stop nitpicking about those, then discourage that, not mangle the entire source code to give a few people too franctic about spaces their way
+19:55:02 <sipa> my observation: too little consensus about enforcing a consistent style
+19:55:13 <jtimon> mcelrath: true, not that simple, but it shouldn't be impossible with some weird git magic
+19:55:26 * mcelrath awaits said magic...
+19:55:35 <jgarzik> let's move on to next topic
+19:55:39 <dcousens> sipa: the consensus is lacking over the how to initially enforce it
+19:55:45 <wumpus> any other topics?
+19:55:46 <dcousens> not over enforcement in general, AFAIK
+19:55:47 <jgarzik> ### 5 min
+19:55:54 <gmaxwell> Yes, I'd be fine with doing something in new files, though I don't know what style we'd use. Going further requires research that no one has done, like getting a determinstic object (which I know for a fact will not just work).
+19:55:59 <btcdrak> jgarzik: yes BIP68 and BIP112 implementations
+19:56:08 <sipa> dcousens: seems that gmaxwell for example is opposed to requiring a specific clang-format version; without that, there is no way to do it at all
+19:56:09 <btcdrak> wumpus:
+19:56:10 <dcousens> btcdrak: whats the topic specifically?
+19:56:19 <gmaxwell> dcousens: no, there is a lot more under determined.
+19:56:50 <gmaxwell> my concern about specific versions would be reduced if someone cooked up a way to make setting up an alien clang format (e.g. cfields dep builder work).
+19:57:10 <sipa> BIP68: i still dislike the fact that the checklocktime function has a clause for skipping missing inputs, under the assumption that those only happen in the wallet
+19:57:13 <dcousens> gmaxwell: ok, well, maybe something for another time then,  I'd like to grab a hard-copy of your concerns if possible though
+19:57:41 <btcdrak> #topic: BIP68 and BIP112 implementations
+19:57:49 <sipa> those behaviours should be separated; i think the function should be pure logic (which takes a list of heights/times, and the different call sites can provide that based on wallet, mempool or chainstate)
+19:58:21 <btcdrak> sipa: have you reviewed the latest PRs for #6312?
+19:58:35 <morcos> sipa: i haven't dived into it yet, but i agree
+19:58:47 <petertodd> sipa: ACK, the skipping missing inputs worries me a lot
+19:58:48 <sdaftuar> i dived into before and i also agree with sipa
+19:59:16 <sipa> btcdrak: it still does that
+19:59:37 <btcdrak> It would be helpful to comment on the PR
+19:59:45 <sipa> btcdrak: i've commented multiple times about it
+20:00:22 <sipa> mark changed the behaviour to making missing inputs cause failure; i commented that that broke the wallet, and then it was reverted to the preexisting skip behaviour
+20:00:57 <morcos> i'd love to get BIP68 and BIP112 merged, but without maaku championing it and being responsible for the code, i think we need to be even more cautious
+20:01:16 <morcos> btcdrak: i'm not sure how much responsbility you are taking for it?
+20:01:17 <btcdrak> well it's important to establish what is really needed to get these merged
+20:01:41 <morcos> but i think its important that someone takes up the mantle
+20:01:43 <dstadulis> FYI we're at the one hour mark (keep it going for those who can stick around. if people could take a quick read through of the draft of the meeting notes and tweak and add content where they see fit that would help improve coverage and productivity of the meeting: https://docs.google.com/document/d/1t3kGkAUQ-Yui57P29YhDll5WyJuTiGrUhCW8so-E-iQ/edit
+20:01:46 <wumpus> #endmeeting
