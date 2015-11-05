@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:40</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov  5 19:01:40 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:40</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:58</span><span class="nk"> &lt;wumpus&gt;</span> any topics that need to be discussed?
+<a name="l-5"></a><span class="tm">19:02:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Topics?
+<a name="l-6"></a><span class="tm">19:02:33</span><span class="nk"> &lt;sipa&gt;</span> suggested topic: sigcache performance (i've been doing benchmarks)
+<a name="l-7"></a><span class="tm">19:02:48</span><span class="nk"> &lt;sipa&gt;</span> suggested topic: softfork
+<a name="l-8"></a><span class="tm">19:02:55</span><span class="nk"> &lt;wumpus&gt;</span> yes, makes sense
+<a name="l-9"></a><span class="tm">19:03:00</span><span class="nk"> &lt;gmaxwell&gt;</span> suggested topic: 0.11.2 / 0.10.4 releases.
+<a name="l-10"></a><span class="tm">19:03:15</span><span class="nk"> &lt;wumpus&gt;</span> ok, first sigcache performance
+<a name="l-11"></a><span class="tm">19:03:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Sigcache performance</span>
+<a name="l-12"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> "Ouch"
+<a name="l-13"></a><span class="tm">19:03:51</span><span class="nk"> &lt;sipa&gt;</span> so, what i did was benchmark the hitrate of the sigcache for various sigcache sizes
+<a name="l-14"></a><span class="tm">19:04:01</span><span class="nk"> &lt;wumpus&gt;</span> on a reindex?
+<a name="l-15"></a><span class="tm">19:04:05</span><span class="nk"> &lt;sipa&gt;</span> no, live
+<a name="l-16"></a><span class="tm">19:04:19</span><span class="nk"> &lt;gmaxwell&gt;</span> As in, when a block comes in, what is the sigcache hitrate for that block?
+<a name="l-17"></a><span class="tm">19:04:27</span><span class="nk"> &lt;wumpus&gt;</span> somewhat offtopic: is there a good way to reproduce live usage deterministically?
+<a name="l-18"></a><span class="tm">19:04:31</span><span class="nk"> &lt;sipa&gt;</span> obly counting the block ones, not mempool ones
+<a name="l-19"></a><span class="tm">19:04:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> morcos and suhas have a simulator to replay recorded data iirc
+<a name="l-20"></a><span class="tm">19:04:52</span><span class="nk"> &lt;wumpus&gt;</span> e.g. has anyone implemented storing P2P traffic, replay?
+<a name="l-21"></a><span class="tm">19:04:58</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-22"></a><span class="tm">19:05:18</span><span class="nk"> &lt;sipa&gt;</span> this is on master, with mempool limiting
+<a name="l-23"></a><span class="tm">19:05:40</span><span class="nk"> &lt;sipa&gt;</span> and with the patch that deletes sigcache entries when they are seen in a block
+<a name="l-24"></a><span class="tm">19:05:49</span><span class="nk"> &lt;gmaxwell&gt;</span> master + the sigcache efficiency improvement + the delete on hit, to be specific.
+<a name="l-25"></a><span class="tm">19:06:05</span><span class="nk"> &lt;sipa&gt;</span> my sigcache was remarkably stable for days with a max of 68 MiB that way
+<a name="l-26"></a><span class="tm">19:06:17</span><span class="nk"> &lt;sipa&gt;</span> resulting in a 15% miss rate
+<a name="l-27"></a><span class="tm">19:06:26</span><span class="nk"> &lt;sipa&gt;</span> wait, 3%
+<a name="l-28"></a><span class="tm">19:06:52</span><span class="nk"> &lt;wumpus&gt;</span> that's useful, so we can now compare the different pulls by perf numbers?
+<a name="l-29"></a><span class="tm">19:07:17</span><span class="nk"> &lt;sipa&gt;</span> though some blocks have extremely high miss rates (over 60%)
+<a name="l-30"></a><span class="tm">19:07:22</span><span class="nk"> &lt;sipa&gt;</span> while others have 0.0000%
+<a name="l-31"></a><span class="tm">19:07:41</span><span class="nk"> &lt;sipa&gt;</span> which indicates that the miners are running different policies
+<a name="l-32"></a><span class="tm">19:08:00</span><span class="nk"> &lt;jgarzik&gt;</span> meta - did the meeting get moved -1 hour ?
+<a name="l-33"></a><span class="tm">19:08:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jgarzik:</span> your time did, US daylight savings time.
+<a name="l-34"></a><span class="tm">19:08:19</span><span class="nk"> &lt;Luke-Jr&gt;</span> ^
+<a name="l-35"></a><span class="tm">19:08:20</span><span class="nk"> &lt;wumpus&gt;</span> no, DST changed, meeting is in UTC
+<a name="l-36"></a><span class="tm">19:08:25</span><span class="nk"> &lt;sipa&gt;</span> meeting is 7pm iceland time :)
+<a name="l-37"></a><span class="tm">19:08:29</span><span class="nk"> &lt;wumpus&gt;</span> yep
+<a name="l-38"></a><span class="tm">19:08:54</span><span class="nk"> &lt;sipa&gt;</span> so, then gmaxwell suggested *always* running script verification for mempool txn
+<a name="l-39"></a><span class="tm">19:09:01</span><span class="nk"> &lt;sipa&gt;</span> even for policy rejected ones
+<a name="l-40"></a><span class="tm">19:09:02</span><span class="nk"> &lt;jgarzik&gt;</span> ah UTC, good
+<a name="l-41"></a><span class="tm">19:09:11</span><span class="nk"> &lt;wumpus&gt;</span> for the 60% miss rate blocks - any idea where the transactions come from? maybe the miners are taking them from their own pushtx interface and not from the network at all
+<a name="l-42"></a><span class="tm">19:09:32</span><span class="nk"> &lt;sipa&gt;</span> which can be justified because fetching the inputs from utxo is already a significant portion of the work anyway
+<a name="l-43"></a><span class="tm">19:09:40</span><span class="nk"> &lt;gmaxwell&gt;</span> The observation with the stable size is that the size was stable within a very small band, perhaps a few hundred K. There was a guess that most of that 68MB was cruft from before the mempool limiting kicked in that was never being cleared. Though that isn't confirmed. It seems likely.
+<a name="l-44"></a><span class="tm">19:09:54</span><span class="nk"> &lt;wumpus&gt;</span> heh
+<a name="l-45"></a><span class="tm">19:09:54</span><span class="nk"> &lt;sipa&gt;</span> the result is now that even a 300 MiB only gets down to 15% miss rate
+<a name="l-46"></a><span class="tm">19:09:58</span><span class="nk"> &lt;gmaxwell&gt;</span> "significant portion of the work" especially with libsecp256k1.
+<a name="l-47"></a><span class="tm">19:10:21</span><span class="nk"> &lt;sipa&gt;</span> so there is just too much crap being relayed to keep it in any reasonably sized cache
+<a name="l-48"></a><span class="tm">19:10:38</span><span class="nk"> &lt;wumpus&gt;</span> that's my experience as well
+<a name="l-49"></a><span class="tm">19:10:40</span><span class="nk"> &lt;gmaxwell&gt;</span> so clearly just verifying rejects and treating them the same is not a good call. :) I'd like to try changing the cache to be a map instead of a set to allow smarter expiration.
+<a name="l-50"></a><span class="tm">19:11:13</span><span class="nk"> &lt;sipa&gt;</span> another observation is that (with libsecp) the time to not verify is equivalent to around a 25% miss rate
+<a name="l-51"></a><span class="tm">19:11:39</span><span class="nk"> &lt;sipa&gt;</span> or in other words, 1/5th of the work is not script validation
+<a name="l-52"></a><span class="tm">19:11:51</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> over what time frame did you wait for the miss rate to stabilize
+<a name="l-53"></a><span class="tm">19:11:51</span><span class="nk"> &lt;gmaxwell&gt;</span> I have a specific concern here in that (1) there are some dos attacks if we do not verify rejected transactions, (2) not checking rejected transactions at all _increases_ your misrate if you set a policy which is more restrictive than the typical network, which might result in some race to the bottom.
+<a name="l-54"></a><span class="tm">19:12:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> a day
+<a name="l-55"></a><span class="tm">19:12:13</span><span class="nk"> &lt;morcos&gt;</span> obviously as the mempool is going from 0 -&gt; 300MB you get tons of txs in there that might not be mined for a long time
+<a name="l-56"></a><span class="tm">19:12:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I assume its still running now two days later?
+<a name="l-57"></a><span class="tm">19:12:19</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-58"></a><span class="tm">19:12:22</span><span class="nk"> &lt;morcos&gt;</span> over time though those should stay near the bottom
+<a name="l-59"></a><span class="tm">19:12:29</span><span class="nk"> &lt;wumpus&gt;</span> topic for later: secp256k1 verification readyness
+<a name="l-60"></a><span class="tm">19:12:31</span><span class="nk"> &lt;morcos&gt;</span> i bet it might do better over a longer period of time
+<a name="l-61"></a><span class="tm">19:12:47</span><span class="nk"> &lt;morcos&gt;</span> i'd also like to discuss other connect block latency improvements
+<a name="l-62"></a><span class="tm">19:12:54</span><span class="nk"> &lt;morcos&gt;</span> so we have some goal of what might be reasonable for 0.12
+<a name="l-63"></a><span class="tm">19:13:24</span><span class="nk"> &lt;sipa&gt;</span> anyway, i need to try some other strategy
+<a name="l-64"></a><span class="tm">19:13:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> right now a problem is that the eviction doesn't prefer to kick out old things that are never getting mined. So if crap is has a 'high' ratio to useful things, the cache must be huge to work well.
+<a name="l-65"></a><span class="tm">19:14:03</span><span class="nk"> &lt;sipa&gt;</span> but it seems reasonable that priming the sigcache with transactions that we do not accept into mempool, but who were close, may be worth it
+<a name="l-66"></a><span class="tm">19:14:24</span><span class="nk"> &lt;sipa&gt;</span> however, doing that fot every single transaction is the wrong approach
+<a name="l-67"></a><span class="tm">19:14:49</span><span class="nk"> &lt;wumpus&gt;</span> I think we should be careful not to merge risky performance imporovements last-minute for 0.12 - we will regret those if there turns out to be bugs. May be better to merge them after the release branch, dec 1
+<a name="l-68"></a><span class="tm">19:15:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i think most of these things are not risky, and the performance improvements are HUGE
+<a name="l-69"></a><span class="tm">19:15:15</span><span class="nk"> &lt;jgarzik&gt;</span> nod - prioritize getting 0.12 out the door and not blocking it
+<a name="l-70"></a><span class="tm">19:15:15</span><span class="nk"> &lt;sipa&gt;</span> well i think the PR i have out for sigcache changes is a net win
+<a name="l-71"></a><span class="tm">19:15:24</span><span class="nk"> &lt;jgarzik&gt;</span> 0.12 -already- has a lot of net win
+<a name="l-72"></a><span class="tm">19:15:52</span><span class="nk"> &lt;gmaxwell&gt;</span> I think the existing PR is an obvious win. Also, without sigcache improvements I'm concerned that mempool limiting may have bad effects on the network.
+<a name="l-73"></a><span class="tm">19:16:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I'm really risk-averse before releases, master (as in git now) is pretty much stable and would make a good release, I really don't want to regret merging anything now
+<a name="l-74"></a><span class="tm">19:16:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Because right now hitting high miss rates is not very acceptable... but it's much less bad with libsecp256k1 at least.
+<a name="l-75"></a><span class="tm">19:16:24</span><span class="nk"> &lt;morcos&gt;</span> i'd strongly like to include secp256k1, the changes to skip looking up your own txs id (BIP30 and modifyNewCoins, and the sigcache improvements
+<a name="l-76"></a><span class="tm">19:16:32</span><span class="nk"> &lt;morcos&gt;</span> the hot cache stuff is still far from proven
+<a name="l-77"></a><span class="tm">19:16:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> agree
+<a name="l-78"></a><span class="tm">19:16:59</span><span class="nk"> &lt;wumpus&gt;</span> yes I still like to include secp256k1 for 0.12 too (but that's not the topic now :-)
+<a name="l-79"></a><span class="tm">19:17:04</span><span class="nk"> &lt;gmaxwell&gt;</span> with openssl it only takes a miss rate of a couple percent to totally dominate block verification time.
+<a name="l-80"></a><span class="tm">19:17:05</span><span class="nk"> &lt;morcos&gt;</span> also the CreateNewBlock rewrite is only for miners, but it improves total time from about 3 seconds down to 150ms now on a 300MB mempool
+<a name="l-81"></a><span class="tm">19:17:08</span><span class="nk"> &lt;morcos&gt;</span> we can't leave that out
+<a name="l-82"></a><span class="tm">19:17:22</span><span class="nk"> &lt;morcos&gt;</span> well these things all go together
+<a name="l-83"></a><span class="tm">19:17:33</span><span class="nk"> &lt;morcos&gt;</span> no reason putting in secondary performance gains if you're missing the bigone
+<a name="l-84"></a><span class="tm">19:17:36</span><span class="nk"> &lt;morcos&gt;</span> :)
+<a name="l-85"></a><span class="tm">19:17:43</span><span class="nk"> &lt;jgarzik&gt;</span> I love the CNB change but that seems lower priority than making 0.12 rock solid otherwise - miners can patch up
+<a name="l-86"></a><span class="tm">19:17:53</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, I think we've covered sigcache for now.  Current work is a big improvement, but more work is needed.
+<a name="l-87"></a><span class="tm">19:18:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jgarzik:</span> miners won't patch up, and it is in everyone's interest that miner latency is low
+<a name="l-88"></a><span class="tm">19:18:12</span><span class="nk"> &lt;sipa&gt;</span> not just their own
+<a name="l-89"></a><span class="tm">19:18:18</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-90"></a><span class="tm">19:18:26</span><span class="nk"> &lt;sipa&gt;</span> next topic
+<a name="l-91"></a><span class="tm">19:18:26</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-92"></a><span class="tm">19:18:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">softfork releases</span>
+<a name="l-93"></a><span class="tm">19:18:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jgarzik:</span> I don't really agree there.  Our expirence in production has not been that.  Additionally, to the extent they do it creates inequality.. and this slowness has also contributed to verification free mining.
+<a name="l-94"></a><span class="tm">19:18:51</span><span class="nk"> &lt;morcos&gt;</span> wumpus lets stay on performance goals for 0.12 for a second
+<a name="l-95"></a><span class="tm">19:19:04</span><span class="nk"> &lt;morcos&gt;</span> since it ties closely with sigcache which we just covered
+<a name="l-96"></a><span class="tm">19:19:12</span><span class="nk"> &lt;wumpus&gt;</span> I'd really advise against merging last-mintue performance improvements for 0.12
+<a name="l-97"></a><span class="tm">19:19:34</span><span class="nk"> &lt;morcos&gt;</span> is it last minute if we merge it this month?
+<a name="l-98"></a><span class="tm">19:19:40</span><span class="nk"> &lt;gmaxwell&gt;</span> ^
+<a name="l-99"></a><span class="tm">19:19:41</span><span class="nk"> &lt;wumpus&gt;</span> sort of
+<a name="l-100"></a><span class="tm">19:20:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Put another way, if we'd already branched for 0.12 I'd be proposing backporting this work.
+<a name="l-101"></a><span class="tm">19:20:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok, do you mind setting a deadline for performance improvements in master?
+<a name="l-102"></a><span class="tm">19:20:12</span><span class="nk"> &lt;wumpus&gt;</span> but gmaxwell/sipa feel free to merge things if you're absolutely sure about them, I'm not the only one with commit rights
+<a name="l-103"></a><span class="tm">19:20:28</span><span class="nk"> &lt;gmaxwell&gt;</span> OK
+<a name="l-104"></a><span class="tm">19:20:44</span><span class="nk"> &lt;morcos&gt;</span> i'm leaving to go out of town in 2 weeks for a week
+<a name="l-105"></a><span class="tm">19:20:52</span><span class="nk"> &lt;morcos&gt;</span> lets set the deadline for 2 weeks from tomorrow
+<a name="l-106"></a><span class="tm">19:21:01</span><span class="nk"> &lt;wumpus&gt;</span> I'm really careful and would be pissed if we needed e.g. an urgent minor release to fix up 0.12 because something ill advices went in
+<a name="l-107"></a><span class="tm">19:21:08</span><span class="nk"> &lt;morcos&gt;</span> if we don't all agree they're ready we wait
+<a name="l-108"></a><span class="tm">19:21:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> fair enough
+<a name="l-109"></a><span class="tm">19:21:16</span><span class="nk"> &lt;wumpus&gt;</span> but the deadline is dec 1
+<a name="l-110"></a><span class="tm">19:21:28</span><span class="nk"> &lt;wumpus&gt;</span> that's the feature freeze - 0.12 branch
+<a name="l-111"></a><span class="tm">19:21:32</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-112"></a><span class="tm">19:21:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I will send you flowers if we screw up. :P  We do have a pretty conservative release schedule, in my view. :)
+<a name="l-113"></a><span class="tm">19:21:44</span><span class="nk"> &lt;morcos&gt;</span> ok, well guys, please help me reviewing those pulls then
+<a name="l-114"></a><span class="tm">19:21:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> will do!
+<a name="l-115"></a><span class="tm">19:21:56</span><span class="nk"> &lt;morcos&gt;</span> most importantly to make CreateNewBlock work properly
+<a name="l-116"></a><span class="tm">19:21:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Great. Will do.
+<a name="l-117"></a><span class="tm">19:22:02</span><span class="nk"> &lt;morcos&gt;</span> we have to make a decision about priority
+<a name="l-118"></a><span class="tm">19:22:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> agree, but better be slow than dead :)
+<a name="l-119"></a><span class="tm">19:22:08</span><span class="nk"> &lt;sipa&gt;</span> yes, i believe CNB is important
+<a name="l-120"></a><span class="tm">19:22:14</span><span class="nk"> &lt;morcos&gt;</span> it can't be fast to have priority, unless we fix it to be dynamic or change its definition
+<a name="l-121"></a><span class="tm">19:22:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> when do you libsecp in at the latest?
+<a name="l-122"></a><span class="tm">19:22:29</span><span class="nk"> &lt;morcos&gt;</span> i'm ambivalent on that choice
+<a name="l-123"></a><span class="tm">19:22:39 </span><span class="nka">* jgarzik</span> <span class="ac">agrees CNB is important - just not important enough to delay the release for over a month, if it comes to that.</span>
+<a name="l-124"></a><span class="tm">19:22:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> same
+<a name="l-125"></a><span class="tm">19:22:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jgarzik:</span> agree
+<a name="l-126"></a><span class="tm">19:22:49 </span><span class="nka">* Luke-Jr</span> <span class="ac">thinks CPFP and RBF are more important than optimisations, especially in CNB which can be slow.</span>
+<a name="l-127"></a><span class="tm">19:22:53</span><span class="nk"> &lt;jgarzik&gt;</span> libsecp256k1 - asap!
+<a name="l-128"></a><span class="tm">19:22:54</span><span class="nk"> &lt;wumpus&gt;</span> wel'll cetainly not delay the relaese on that
+<a name="l-129"></a><span class="tm">19:22:54</span><span class="nk"> &lt;phantomcircuit&gt;</span> I don't see any reason for create new block to consider property
+<a name="l-130"></a><span class="tm">19:22:55</span><span class="nk"> &lt;gmaxwell&gt;</span> Can we go to libsecp256k1 for a moment, this will be fast.
+<a name="l-131"></a><span class="tm">19:23:10</span><span class="nk"> &lt;morcos&gt;</span> yes
+<a name="l-132"></a><span class="tm">19:23:12</span><span class="nk"> &lt;jgarzik&gt;</span> libsecp256k1 yesterday :)
+<a name="l-133"></a><span class="tm">19:23:20</span><span class="nk"> &lt;phantomcircuit&gt;</span> Priority
+<a name="l-134"></a><span class="tm">19:23:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">libsecp256k1 now</span>
+<a name="l-135"></a><span class="tm">19:23:24</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we should merge support right now, like today.  We can update it incrementally, but we should get more than just our own nodes running this way.
+<a name="l-136"></a><span class="tm">19:23:29</span><span class="nk"> &lt;wumpus&gt;</span> agree
+<a name="l-137"></a><span class="tm">19:23:33</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-138"></a><span class="tm">19:23:36</span><span class="nk"> &lt;wumpus&gt;</span> everyone wants that basically
+<a name="l-139"></a><span class="tm">19:23:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Sipa has current patches for the update. PR them please.
+<a name="l-140"></a><span class="tm">19:23:39</span><span class="nk"> &lt;jgarzik&gt;</span> yes
+<a name="l-141"></a><span class="tm">19:23:48</span><span class="nk"> &lt;sipa&gt;</span> i realized it's unfair that i've been running them for months
+<a name="l-142"></a><span class="tm">19:23:55</span><span class="nk"> &lt;Luke-Jr&gt;</span> sgtm
+<a name="l-143"></a><span class="tm">19:24:00</span><span class="nk"> &lt;sipa&gt;</span> will PR
+<a name="l-144"></a><span class="tm">19:24:09</span><span class="nk"> &lt;morcos&gt;</span> fantastic, most productive IRC meeting ever!
+<a name="l-145"></a><span class="tm">19:24:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Our goal on libsecp256k1 has been to have a release of the library ahead of 0.12 but that doesn't have anything to do with when we merge support for it.
+<a name="l-146"></a><span class="tm">19:24:27</span><span class="nk"> &lt;gmaxwell&gt;</span> okay. good. tada.
+<a name="l-147"></a><span class="tm">19:24:29</span><span class="nk"> &lt;Luke-Jr&gt;</span> suggested topic: hardfork
+<a name="l-148"></a><span class="tm">19:24:31</span><span class="nk"> &lt;jgarzik&gt;</span> morcos, was a decision made on priority?
+<a name="l-149"></a><span class="tm">19:24:34</span><span class="nk"> &lt;wumpus&gt;</span> good
+<a name="l-150"></a><span class="tm">19:24:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jgarzik:</span> not yet
+<a name="l-151"></a><span class="tm">19:24:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">transaction priority</span>
+<a name="l-152"></a><span class="tm">19:25:19</span><span class="nk"> &lt;sipa&gt;</span> i feel that we should get rid of the current priority+separate-processing, and replace it with a functioncthat modifies fee or size of transactions
+<a name="l-153"></a><span class="tm">19:25:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Morcos suggested a lossy way of calcualting priority. It's a bit lame but I think somewhat better than dropping it completely.
+<a name="l-154"></a><span class="tm">19:25:25</span><span class="nk"> &lt;morcos&gt;</span> ok, i think the simplest answer here is people decide #6357 is efficient enough and safe
+<a name="l-155"></a><span class="tm">19:25:37</span><span class="nk"> &lt;sipa&gt;</span> will check 6357 then
+<a name="l-156"></a><span class="tm">19:25:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">check #6357 is efficient enough and safe</span>
+<a name="l-157"></a><span class="tm">19:25:41</span><span class="nk"> &lt;morcos&gt;</span> that doesn't change the definition, and so we avoid the political debate on a tight timeline
+<a name="l-158"></a><span class="tm">19:25:47</span><span class="nk"> &lt;morcos&gt;</span> however i can't say i've tested it too much
+<a name="l-159"></a><span class="tm">19:25:49</span><span class="nk"> &lt;sipa&gt;</span> sounds good
+<a name="l-160"></a><span class="tm">19:26:03</span><span class="nk"> &lt;morcos&gt;</span> i think take a look, if its no good we revert to a different definion
+<a name="l-161"></a><span class="tm">19:26:10</span><span class="nk"> &lt;morcos&gt;</span> but gmaxwell, the one i proposed is flawed
+<a name="l-162"></a><span class="tm">19:26:14</span><span class="nk"> &lt;morcos&gt;</span> it fails in the event of a reorg
+<a name="l-163"></a><span class="tm">19:26:27</span><span class="nk"> &lt;sipa&gt;</span> what failure mode?
+<a name="l-164"></a><span class="tm">19:27:23</span><span class="nk"> &lt;morcos&gt;</span> my suggestion was to only consider the in-chain input value for any further aging of the tx's priority
+<a name="l-165"></a><span class="tm">19:27:23</span><span class="nk"> &lt;morcos&gt;</span> but in a reorg, some in chain value might be no longer in chain
+<a name="l-166"></a><span class="tm">19:27:23</span><span class="nk"> &lt;morcos&gt;</span> and you could be overstating its priority
+<a name="l-167"></a><span class="tm">19:27:23</span><span class="nk"> &lt;sipa&gt;</span> "meh"
+<a name="l-168"></a><span class="tm">19:27:23</span><span class="nk"> &lt;morcos&gt;</span> so maybe thats fine
+<a name="l-169"></a><span class="tm">19:27:23</span><span class="nk"> &lt;jgarzik&gt;</span> meh
+<a name="l-170"></a><span class="tm">19:27:28</span><span class="nk"> &lt;gmaxwell&gt;</span> I think thats probably okay. It does not need to be precise.
+<a name="l-171"></a><span class="tm">19:27:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (though it was nice to think it could only understate)
+<a name="l-172"></a><span class="tm">19:27:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> while it sounds fine for a default policy, the old policy should remain possible; hard-coding policy into mempool structures is a regression.
+<a name="l-173"></a><span class="tm">19:27:44</span><span class="nk"> &lt;morcos&gt;</span> ok, well thats basically a subset of 6357 then
+<a name="l-174"></a><span class="tm">19:27:46</span><span class="nk"> &lt;wumpus&gt;</span> as long as it's not easy to cheat
+<a name="l-175"></a><span class="tm">19:27:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> respectfully disagree
+<a name="l-176"></a><span class="tm">19:27:59</span><span class="nk"> &lt;morcos&gt;</span> the scarier part of 6357 is properly updating that amount on block confirmations and reorgs
+<a name="l-177"></a><span class="tm">19:28:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Suggested topic: sigops flooding attack.
+<a name="l-178"></a><span class="tm">19:28:02</span><span class="nk"> &lt;jgarzik&gt;</span> priority is secondary anyway, yes?
+<a name="l-179"></a><span class="tm">19:28:02</span><span class="nk"> &lt;phantomcircuit&gt;</span> Priority changes mostly slowly why not just cache the value and re calculate in the background
+<a name="l-180"></a><span class="tm">19:28:29</span><span class="nk"> &lt;sipa&gt;</span> next topic?
+<a name="l-181"></a><span class="tm">19:28:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">phantomcircuit:</span> its important to make the recalculation not require looking up inputs again
+<a name="l-182"></a><span class="tm">19:28:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">sigops flooding attack</span>
+<a name="l-183"></a><span class="tm">19:29:07</span><span class="nk"> &lt;gmaxwell&gt;</span> So, there is an active attack on the network producing transactions with very high sigops counts and medium/high feerates causing miners to mine blocks with just a couple transactions.
+<a name="l-184"></a><span class="tm">19:29:12</span><span class="nk"> &lt;phantomcircuit&gt;</span> Right
+<a name="l-185"></a><span class="tm">19:29:57</span><span class="nk"> &lt;phantomcircuit&gt;</span> Sounds like they're not profit maximizing...
+<a name="l-186"></a><span class="tm">19:30:02</span><span class="nk"> &lt;wumpus&gt;</span> what would be the proposed mitigation? a change to default mining policy?
+<a name="l-187"></a><span class="tm">19:30:03</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> your proposal is to just change the mining code to be a bit smarter about that?
+<a name="l-188"></a><span class="tm">19:30:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I have (going back eons) suggested a simple hurestic where size for feerate is replaced with max(size, sigops*blocksizelimit/feeratelimit); for most transactions this does nothing, but for sigops boms it inflates their cost. It's simular to the post office charging for the largest dimension.
+<a name="l-189"></a><span class="tm">19:31:01</span><span class="nk"> &lt;wumpus&gt;</span> sounds sensible
+<a name="l-190"></a><span class="tm">19:31:04</span><span class="nk"> &lt;gmaxwell&gt;</span> it's a suggestion to scale sigops to it's share of the limit relative to the blocksize limit. e.g. a 10k sigops transaction is 500k of 'size'.
+<a name="l-191"></a><span class="tm">19:31:05</span><span class="nk"> &lt;jgarzik&gt;</span> is there a simple relay filter that doesn't impact normal users?
+<a name="l-192"></a><span class="tm">19:31:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> units mismatch
+<a name="l-193"></a><span class="tm">19:31:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> this would affect everything , including min relay fee?
+<a name="l-194"></a><span class="tm">19:31:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jgarzik:</span> style of the attack transactions has been different.
+<a name="l-195"></a><span class="tm">19:31:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> I also have a bytes-per-sigop limit that filters absolutely, which seems like a better solution for this case, since there is no legit use of such things past a certain ratio (perhaps both gmaxwell's and this make the most sense)
+<a name="l-196"></a><span class="tm">19:32:09</span><span class="nk"> &lt;gmaxwell&gt;</span> er. max(size, sigops*blocksizelimit/sigopslimit)  (sorry reading and typing at once.
+<a name="l-197"></a><span class="tm">19:32:36</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i think it would be an easy change to make the mining code sort by that
+<a name="l-198"></a><span class="tm">19:32:42</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-199"></a><span class="tm">19:32:52</span><span class="nk"> &lt;morcos&gt;</span> it would be somewhat more invasive to try to plug that into everything that looks at feerate
+<a name="l-200"></a><span class="tm">19:32:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> I think such a threshold must be uselessly high due to inaccurate sigops accounting.
+<a name="l-201"></a><span class="tm">19:33:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> doesn't the new mining code depend on the mempool sort?
+<a name="l-202"></a><span class="tm">19:33:21</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> I don't understand what you mean by that.
+<a name="l-203"></a><span class="tm">19:33:33</span><span class="nk"> &lt;morcos&gt;</span> its a mempool sort just for mining (another index)
+<a name="l-204"></a><span class="tm">19:33:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> separate index
+<a name="l-205"></a><span class="tm">19:33:37</span><span class="nk"> &lt;morcos&gt;</span> not the same that is used for eviction
+<a name="l-206"></a><span class="tm">19:33:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> txouts checksigs (p2pkh) are counted as sigops.
+<a name="l-207"></a><span class="tm">19:33:49</span><span class="nk"> &lt;sipa&gt;</span> so it can use different scoring
+<a name="l-208"></a><span class="tm">19:34:14</span><span class="nk"> &lt;gmaxwell&gt;</span> OKAY, well I think using it for just mining is totally fine.
+<a name="l-209"></a><span class="tm">19:34:19</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-210"></a><span class="tm">19:34:23</span><span class="nk"> &lt;sdaftuar&gt;</span> is this attack large enough that the mempool eviction feerate index needs to be reevaluated?
+<a name="l-211"></a><span class="tm">19:34:27</span><span class="nk"> &lt;morcos&gt;</span> yeah, ok, at least for now
+<a name="l-212"></a><span class="tm">19:34:28</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> ok? If that were an issue, this is just policy, and we could exclude them..
+<a name="l-213"></a><span class="tm">19:34:29</span><span class="nk"> &lt;sdaftuar&gt;</span> ie can you fill up a mempool with this garbage?
+<a name="l-214"></a><span class="tm">19:34:30</span><span class="nk"> &lt;gmaxwell&gt;</span> as I said, for most transaction it will have little to no effect.
+<a name="l-215"></a><span class="tm">19:34:39</span><span class="nk"> &lt;phantomcircuit&gt;</span> Could also have a backfiring thread continuously spinning trying to build a block with more fees
+<a name="l-216"></a><span class="tm">19:34:47</span><span class="nk"> &lt;phantomcircuit&gt;</span> Back ground*
+<a name="l-217"></a><span class="tm">19:34:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> the transactions are small in any case. but any time mining and mempool are misaligned then you do have backlog growth issues.
+<a name="l-218"></a><span class="tm">19:35:14</span><span class="nk"> &lt;morcos&gt;</span> 72 hour eviction might be good enough to solve for that
+<a name="l-219"></a><span class="tm">19:35:21</span><span class="nk"> &lt;morcos&gt;</span> oh, but hmm
+<a name="l-220"></a><span class="tm">19:35:23</span><span class="nk"> &lt;gmaxwell&gt;</span> (also part of why I'd thought to just change it in all the places)
+<a name="l-221"></a><span class="tm">19:35:35</span><span class="nk"> &lt;sdaftuar&gt;</span> well it'd be nice to know what fraction of the mempool is being taken up with this stuff
+<a name="l-222"></a><span class="tm">19:36:18</span><span class="nk"> &lt;morcos&gt;</span> yeah worth thinking about attacks anyway, if their effective mining feerate is very low, but then there is no mempool limiting for them b/c their size only feerate is large, they can just fill up your mempool
+<a name="l-223"></a><span class="tm">19:37:17</span><span class="nk"> &lt;wumpus&gt;</span> ~20 minutes to go for the meeting
+<a name="l-224"></a><span class="tm">19:37:27</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, perhaps some more analysis to be done here.
+<a name="l-225"></a><span class="tm">19:37:31</span><span class="nk"> &lt;morcos&gt;</span> yep, agreed
+<a name="l-226"></a><span class="tm">19:37:37</span><span class="nk"> &lt;morcos&gt;</span> topic suggestion chain limits
+<a name="l-227"></a><span class="tm">19:37:42</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm glad to hear that people are generally okay with this sort of direction.
+<a name="l-228"></a><span class="tm">19:37:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">chain limits</span>
+<a name="l-229"></a><span class="tm">19:38:00</span><span class="nk"> &lt;morcos&gt;</span> sdaftuar ran some analysis
+<a name="l-230"></a><span class="tm">19:38:04</span><span class="nk"> &lt;sdaftuar&gt;</span> heh. i'm furiously trying to upload my data right now
+<a name="l-231"></a><span class="tm">19:38:07</span><span class="nk"> &lt;morcos&gt;</span> lots of blocks have big chains
+<a name="l-232"></a><span class="tm">19:38:24</span><span class="nk"> &lt;morcos&gt;</span> 40% of blocks have a chain &gt; our proposed limits
+<a name="l-233"></a><span class="tm">19:38:29</span><span class="nk"> &lt;sipa&gt;</span> do we have idea of what those chains are?
+<a name="l-234"></a><span class="tm">19:38:43</span><span class="nk"> &lt;sipa&gt;</span> like, who creates them
+<a name="l-235"></a><span class="tm">19:38:45</span><span class="nk"> &lt;jgarzik&gt;</span> what lengths are revealed in the data?
+<a name="l-236"></a><span class="tm">19:38:48</span><span class="nk"> &lt;sipa&gt;</span> what kind of use case they look like
+<a name="l-237"></a><span class="tm">19:38:57</span><span class="nk"> &lt;morcos&gt;</span> the one i looked at in detail seemed to be a service paying the fees on other txs
+<a name="l-238"></a><span class="tm">19:39:17</span><span class="nk"> &lt;morcos&gt;</span> it occurred to me that we might should contact some of the exchanges and wallet services
+<a name="l-239"></a><span class="tm">19:39:17</span><span class="nk"> &lt;gmaxwell&gt;</span> really surprising to find this, since those transactions are highly malleability vulnerable.
+<a name="l-240"></a><span class="tm">19:39:22</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> I think at least some iOS wallet gladly spends unconfirmed change
+<a name="l-241"></a><span class="tm">19:39:30</span><span class="nk"> &lt;morcos&gt;</span> its possible that these long chains are delivered to miners out of band
+<a name="l-242"></a><span class="tm">19:39:46</span><span class="nk"> &lt;morcos&gt;</span> if thats the case, they'd be unaffected by relay policy limits anyway
+<a name="l-243"></a><span class="tm">19:39:52</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-244"></a><span class="tm">19:40:00</span><span class="nk"> &lt;gmaxwell&gt;</span> and by mallability (or less so at least)
+<a name="l-245"></a><span class="tm">19:40:29</span><span class="nk"> &lt;morcos&gt;</span> the problem is we HAVE to do something
+<a name="l-246"></a><span class="tm">19:40:35</span><span class="nk"> &lt;morcos&gt;</span> longer chains are a disaster waiting to happen
+<a name="l-247"></a><span class="tm">19:40:51</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-248"></a><span class="tm">19:40:52</span><span class="nk"> &lt;morcos&gt;</span> one thing i noticed from sdaftuars data is that a small bump doesn't make the problem go away
+<a name="l-249"></a><span class="tm">19:41:02</span><span class="nk"> &lt;morcos&gt;</span> at 50, 25% of blocks, at 100 15% of blocks
+<a name="l-250"></a><span class="tm">19:41:11</span><span class="nk"> &lt;phantomcircuit&gt;</span> How long are the chains?
+<a name="l-251"></a><span class="tm">19:41:11</span><span class="nk"> &lt;sipa&gt;</span> which indicates that it is a small percentage of *very* long chains
+<a name="l-252"></a><span class="tm">19:41:21</span><span class="nk"> &lt;sipa&gt;</span> rather than an organic distribution of chain lengths
+<a name="l-253"></a><span class="tm">19:41:28</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-254"></a><span class="tm">19:41:54</span><span class="nk"> &lt;morcos&gt;</span> about 4% of the txs in block would violate the limit
+<a name="l-255"></a><span class="tm">19:42:09</span><span class="nk"> &lt;morcos&gt;</span> this makes sense given the 6% number for txs in the mempool i posted earlier
+<a name="l-256"></a><span class="tm">19:42:32</span><span class="nk"> &lt;morcos&gt;</span> so yes, the vast majority of txs would not have an issue
+<a name="l-257"></a><span class="tm">19:43:00</span><span class="nk"> &lt;morcos&gt;</span> when sdaftuar gets his data out there people can look at it and draw their own conclusion
+<a name="l-258"></a><span class="tm">19:43:03</span><span class="nk"> &lt;morcos&gt;</span> s
+<a name="l-259"></a><span class="tm">19:43:17</span><span class="nk"> &lt;morcos&gt;</span> should i or someone else reach out to some of the businesses directly and get their viewpoints
+<a name="l-260"></a><span class="tm">19:43:23</span><span class="nk"> &lt;jouke&gt;</span> We create cpfp transactions when we reaceive bitcoins from an unspent chain.
+<a name="l-261"></a><span class="tm">19:43:26</span><span class="nk"> &lt;jgarzik&gt;</span> At a higher level, trying to move forward, there is always going to be a small percentage outside the limit.  Communicate the limit that seems reasonable in a release note, push the change, gauge reaction.
+<a name="l-262"></a><span class="tm">19:43:48</span><span class="nk"> &lt;morcos&gt;</span> i kind of like jgarzik's idea
+<a name="l-263"></a><span class="tm">19:43:54</span><span class="nk"> &lt;morcos&gt;</span> merge now
+<a name="l-264"></a><span class="tm">19:43:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jouke:</span> makes sense
+<a name="l-265"></a><span class="tm">19:43:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jouke:</span> does this result in 40 deep unconfirmed chains.
+<a name="l-266"></a><span class="tm">19:44:02</span><span class="nk"> &lt;morcos&gt;</span> and announce more clearly
+<a name="l-267"></a><span class="tm">19:44:03</span><span class="nk"> &lt;jgarzik&gt;</span> perfection is unattainable
+<a name="l-268"></a><span class="tm">19:44:07</span><span class="nk"> &lt;jouke&gt;</span> <span class="hi">gmaxwell:</span> no
+<a name="l-269"></a><span class="tm">19:44:21</span><span class="nk"> &lt;morcos&gt;</span> but that sets the right tone, of look, this isn't just a preference, its something that really needs to be done
+<a name="l-270"></a><span class="tm">19:44:22</span><span class="nk"> &lt;wumpus&gt;</span> merge - what pull?
+<a name="l-271"></a><span class="tm">19:44:24</span><span class="nk"> &lt;jgarzik&gt;</span> "release early, release often" + "communicate early, communicate often"
+<a name="l-272"></a><span class="tm">19:44:26</span><span class="nk"> &lt;gmaxwell&gt;</span> okay lets just see how that goes, announce and see what happens.
+<a name="l-273"></a><span class="tm">19:44:29</span><span class="nk"> &lt;morcos&gt;</span> and if the sky falls in, we can rethink
+<a name="l-274"></a><span class="tm">19:44:31</span><span class="nk"> &lt;sipa&gt;</span> i agreed
+<a name="l-275"></a><span class="tm">19:44:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">reminder:</span> policy is not a developer decision; let miners deal with figuring out what is ideal
+<a name="l-276"></a><span class="tm">19:44:47</span><span class="nk"> &lt;morcos&gt;</span> <span class="cmd">#6771</span><span class="cmdline"></span>
+<a name="l-277"></a><span class="tm">19:44:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">merge #6771</span>
+<a name="l-278"></a><span class="tm">19:45:14</span><span class="nk"> &lt;jgarzik&gt;</span> Luke-Jr, absolutely - all the more reason to communicate early, let people reason through things on their own, based on their own situations
+<a name="l-279"></a><span class="tm">19:45:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> it's a command-line flag :)
+<a name="l-280"></a><span class="tm">19:45:27</span><span class="nk"> &lt;gmaxwell&gt;</span> So we haven't talked about softfork releases / 0.11.2+0.10.4
+<a name="l-281"></a><span class="tm">19:45:33</span><span class="nk"> &lt;morcos&gt;</span> should i email again the dev list then?
+<a name="l-282"></a><span class="tm">19:45:44</span><span class="nk"> &lt;Luke-Jr&gt;</span> yeah, just saying, going overboard on defaults by contacting businesses etc is too much :P
+<a name="l-283"></a><span class="tm">19:45:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">softfork releases / 0.11.2+0.10.4</span>
+<a name="l-284"></a><span class="tm">19:45:51</span><span class="nk"> &lt;gmaxwell&gt;</span> Perhaps we merge and just announce the merge, if someone shows up with something convincing we can back it out.
+<a name="l-285"></a><span class="tm">19:45:52</span><span class="nk"> &lt;jgarzik&gt;</span> morcos, can't hurt
+<a name="l-286"></a><span class="tm">19:46:02</span><span class="nk"> &lt;jgarzik&gt;</span> gmaxwell, merge + list mail
+<a name="l-287"></a><span class="tm">19:46:03</span><span class="nk"> &lt;morcos&gt;</span> ok, i will email post merge, next
+<a name="l-288"></a><span class="tm">19:47:03</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay, so are we waiting for any other commits for 0.11.2 to cut an RC there?
+<a name="l-289"></a><span class="tm">19:47:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">imo:</span> asap, #6948 is merged, will test #6948 on windows tomorrow to see if it gets rid of (most) corruption on crashes
+<a name="l-290"></a><span class="tm">19:47:16</span><span class="nk"> &lt;gmaxwell&gt;</span> The things I was tracking was leveldb fixes, and MTP, and both are in.
+<a name="l-291"></a><span class="tm">19:47:27</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> I have a PR with a bunch of fixes for 0.11.2
+<a name="l-292"></a><span class="tm">19:47:32</span><span class="nk"> &lt;gmaxwell&gt;</span> If we RC we can get more windows testers, (almost universally they need binaries)
+<a name="l-293"></a><span class="tm">19:47:38</span><span class="nk"> &lt;wumpus&gt;</span> eh one of them is the undo flush fix, don't know the number by head
+<a name="l-294"></a><span class="tm">19:47:44</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, well... by back out do you mean massively increase the limit?
+<a name="l-295"></a><span class="tm">19:47:49</span><span class="nk"> &lt;gmaxwell&gt;</span> ah undo flush isn't in okay.
+<a name="l-296"></a><span class="tm">19:47:52</span><span class="nk"> &lt;wumpus&gt;</span> that one needs to go in too
+<a name="l-297"></a><span class="tm">19:47:56</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-298"></a><span class="tm">19:47:59</span><span class="nk"> &lt;Luke-Jr&gt;</span> https://github.com/bitcoin/bitcoin/pull/6825
+<a name="l-299"></a><span class="tm">19:48:34</span><span class="nk"> &lt;wumpus&gt;</span> then roll out 0.11.2 and 0.10.4 tomorrow
+<a name="l-300"></a><span class="tm">19:48:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> should I update this PR before then, or just merge what's there?
+<a name="l-301"></a><span class="tm">19:49:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> sure
+<a name="l-302"></a><span class="tm">19:49:14</span><span class="nk"> &lt;gmaxwell&gt;</span> We need to move fairly quickly on this, as there are miners on mainnet now running master who will begin CLTV voting (I haven't checked if any are in the chain, but there are public stratum servers returning v4 work).  Not _urgently_, mind you, as it still takes a lot of blocks to trigger, but we cannot delay much. :)
+<a name="l-303"></a><span class="tm">19:49:30</span><span class="nk"> &lt;wumpus&gt;</span> hence ,tomorrow
+<a name="l-304"></a><span class="tm">19:49:32</span><span class="nk"> &lt;gmaxwell&gt;</span> Tomrrow sounds good to me.
+<a name="l-305"></a><span class="tm">19:49:36</span><span class="nk"> &lt;gmaxwell&gt;</span> (not just good, great).
+<a name="l-306"></a><span class="tm">19:49:44</span><span class="nk"> &lt;Luke-Jr&gt;</span> sure = update first, or just merge what's there now?
+<a name="l-307"></a><span class="tm">19:50:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> I'd suggest just leaving it at is, not make last minute changes, so people cna review it
+<a name="l-308"></a><span class="tm">19:50:06</span><span class="nk"> &lt;Luke-Jr&gt;</span> k
+<a name="l-309"></a><span class="tm">19:50:34</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, sounds good, will review luke's patches.
+<a name="l-310"></a><span class="tm">19:50:42</span><span class="nk"> &lt;Luke-Jr&gt;</span> ok, removed [WIP] tag from it to indicate final state
+<a name="l-311"></a><span class="tm">19:50:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #6825 ASAP</span>
+<a name="l-312"></a><span class="tm">19:50:52 </span><span class="nka">* btcdrak</span> <span class="ac">is late again</span>
+<a name="l-313"></a><span class="tm">19:50:54</span><span class="nk"> &lt;gmaxwell&gt;</span> (oh also, testnet is CLTV locked already and constantly forking...)
+<a name="l-314"></a><span class="tm">19:51:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> I'll go do an equivalent branch for 0.10 with only the same commits
+<a name="l-315"></a><span class="tm">19:52:08</span><span class="nk"> &lt;wumpus&gt;</span> ok, thanks
+<a name="l-316"></a><span class="tm">19:52:21</span><span class="nk"> &lt;wumpus&gt;</span> I think that concludes this topic, anything else?
+<a name="l-317"></a><span class="tm">19:52:53</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay luke wanted to discuss 'hardfork', and I think this really meant scaling bitcoin things. The closing date for proposals for the workshop is the 9th, and several people have BIPs/proposals in flight (including myself). I dunno if there is anything more to discuss on that in this meeting.
+<a name="l-318"></a><span class="tm">19:53:11</span><span class="nk"> &lt;wumpus&gt;</span> there's 10 minutes left - I don't think that's enough for 'hardfork' discussion
+<a name="l-319"></a><span class="tm">19:53:23</span><span class="nk"> &lt;wumpus&gt;</span> *less than
+<a name="l-320"></a><span class="tm">19:53:25</span><span class="nk"> &lt;morcos&gt;</span> i'd like cover briefly one thing regarding mempools and mining
+<a name="l-321"></a><span class="tm">19:53:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">mempools and mining</span>
+<a name="l-322"></a><span class="tm">19:53:35</span><span class="nk"> &lt;gmaxwell&gt;</span> Agreed.
+<a name="l-323"></a><span class="tm">19:53:38</span><span class="nk"> &lt;jgarzik&gt;</span> +1 skip Scaling/hardfork discussion in this meeting
+<a name="l-324"></a><span class="tm">19:53:42</span><span class="nk"> &lt;jgarzik&gt;</span> maybe after
+<a name="l-325"></a><span class="tm">19:54:05</span><span class="nk"> &lt;morcos&gt;</span> when we did most of our analysis of limited mempools, we assumed a CPFP mining algo.  however that proved a bit ambitious for 0.12, and i opted fro just speeding up the existing algo
+<a name="l-326"></a><span class="tm">19:54:26</span><span class="nk"> &lt;morcos&gt;</span> so that that means is we haven't really analyzed matt's pull (forget the number) in the context of the existing mining algorithm
+<a name="l-327"></a><span class="tm">19:54:43</span><span class="nk"> &lt;morcos&gt;</span> its not clear that there isn't some abuse possible
+<a name="l-328"></a><span class="tm">19:55:08</span><span class="nk"> &lt;gmaxwell&gt;</span> oh suggested topic: "Should we be working on getting the opt-in RBF for 0.12?"
+<a name="l-329"></a><span class="tm">19:55:11</span><span class="nk"> &lt;morcos&gt;</span> i will try to spend some time thinking about this, but just wnated to flag it for other people as well.
+<a name="l-330"></a><span class="tm">19:55:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">topic for next week: "Should we be working on getting the opt-in RBF for 0.12?"</span>
+<a name="l-331"></a><span class="tm">19:55:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> okay, important thing to determine is what form the abuse takes if so.. e.g. getting excess priority from it is probably not very concerning.
+<a name="l-332"></a><span class="tm">19:56:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yeah i think the concern is artificially boosting the relay, or DoS miners with computationaly complexity or free bandwidth relay
+<a name="l-333"></a><span class="tm">19:56:33</span><span class="nk"> &lt;morcos&gt;</span> btw, +1 to RBF for 0.12
+<a name="l-334"></a><span class="tm">19:57:02</span><span class="nk"> &lt;morcos&gt;</span> i know this is a lot of big stuff in the next month, but its just scratching the tip of the iceberg for all we have to do, so lets do it!
+<a name="l-335"></a><span class="tm">19:57:37</span><span class="nk"> &lt;gmaxwell&gt;</span> That my view too, we can discuss more next week, but I'll take that as a tenitive as we should move towards that... see where things are next week.
+<a name="l-336"></a><span class="tm">19:58:10</span><span class="nk"> &lt;btcdrak&gt;</span> +1 for RBF in 0.12
+<a name="l-337"></a><span class="tm">19:58:19</span><span class="nk"> &lt;sdaftuar&gt;</span> for advancing the ball on RBF, is it time to get opinoins from people who were opposed to earlier versions?
+<a name="l-338"></a><span class="tm">19:58:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> I think the optin already deal with that
+<a name="l-339"></a><span class="tm">19:58:48</span><span class="nk"> &lt;phantomcircuit&gt;</span> agreed
+<a name="l-340"></a><span class="tm">19:58:49</span><span class="nk"> &lt;jgarzik&gt;</span> I would be for full-bore RBF if we could rope in Coinbase and Bitpay
+<a name="l-341"></a><span class="tm">19:58:56</span><span class="nk"> &lt;jgarzik&gt;</span> it's mainly a network-user-impact question, to me
+<a name="l-342"></a><span class="tm">19:58:57</span><span class="nk"> &lt;jtimon&gt;</span> yep, ACK RBF (I didn't say anything but I would happily ack the removal of priority as well...)
+<a name="l-343"></a><span class="tm">19:59:07</span><span class="nk"> &lt;wumpus&gt;</span> me too, I prefer full RBF, but any RBF would be a step forward
+<a name="l-344"></a><span class="tm">19:59:12</span><span class="nk"> &lt;jgarzik&gt;</span> long term ACK RBF
+<a name="l-345"></a><span class="tm">19:59:21</span><span class="nk"> &lt;phantomcircuit&gt;</span> jgarzik, it's opt in only, doesn't effect anybody on the network today
+<a name="l-346"></a><span class="tm">19:59:21</span><span class="nk"> &lt;gmaxwell&gt;</span> Opt-in had the "then don't use it" answer which I think is essential to make progress.
+<a name="l-347"></a><span class="tm">19:59:23</span><span class="nk"> &lt;morcos&gt;</span> is opt-in somehow worse than full
+<a name="l-348"></a><span class="tm">19:59:28</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> no
+<a name="l-349"></a><span class="tm">19:59:39</span><span class="nk"> &lt;wumpus&gt;</span> no, opt-in is not worse than full, some other proposals were
+<a name="l-350"></a><span class="tm">19:59:42</span><span class="nk"> &lt;sdaftuar&gt;</span> i think we need to make clear what users who don't want to accept opt-in transactions need to do
+<a name="l-351"></a><span class="tm">19:59:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> agreed. morcos: no
+<a name="l-352"></a><span class="tm">19:59:52</span><span class="nk"> &lt;sdaftuar&gt;</span> so that no one is surprised/not ready
+<a name="l-353"></a><span class="tm">19:59:55</span><span class="nk"> &lt;jgarzik&gt;</span> it is good to make progress towards RBF
+<a name="l-354"></a><span class="tm">19:59:56</span><span class="nk"> &lt;gmaxwell&gt;</span> We've been talking about this long term for years now but it's too easily politically attacked, where opt-in resolves that.
+<a name="l-355"></a><span class="tm">19:59:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> sounds good.
+<a name="l-356"></a><span class="tm">20:00:00</span><span class="nk"> &lt;jgarzik&gt;</span> poke users along
+<a name="l-357"></a><span class="tm">20:00:01</span><span class="nk"> &lt;jgarzik&gt;</span> gently
+<a name="l-358"></a><span class="tm">20:00:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> agree
+<a name="l-359"></a><span class="tm">20:00:13</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, it simply means you have to opt into the transaction being replaceable (of course miners can replace whatever they want already but it makes the *default* be opt into replacement)
+<a name="l-360"></a><span class="tm">20:00:17</span><span class="nk"> &lt;btcdrak&gt;</span> it's already apparent from the PR ACKs how much it is anticipated
+<a name="l-361"></a><span class="tm">20:00:35</span><span class="nk"> &lt;morcos&gt;</span> yes, i understood, just trying to parse peoples support for Full RBF also means support for opt-in (full) RBF
+<a name="l-362"></a><span class="tm">20:00:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> opt in is more complicated than full, just that
+<a name="l-363"></a><span class="tm">20:00:56</span><span class="nk"> &lt;jgarzik&gt;</span> nod
+<a name="l-364"></a><span class="tm">20:01:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingend</span><span class="cmdline"></span>
+<a name="l-365"></a><span class="tm">20:01:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes, I think everyone who supports full rbf supports this; I believe I've never heard other wise (after some explination at least)
+<a name="l-366"></a><span class="tm">20:01:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingstop</span><span class="cmdline"></span>
+<a name="l-367"></a><span class="tm">20:01:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks all.
+<a name="l-368"></a><span class="tm">20:01:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#exitmeeting</span><span class="cmdline"></span>
+<a name="l-369"></a><span class="tm">20:01:22</span><span class="nk"> &lt;mcelrath&gt;</span> Argh daylight savings time.
+<a name="l-370"></a><span class="tm">20:01:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#nomeetingnonono</span><span class="cmdline"></span>
+<a name="l-371"></a><span class="tm">20:01:25</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#meedingexit</span><span class="cmdline"></span>
+<a name="l-372"></a><span class="tm">20:01:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

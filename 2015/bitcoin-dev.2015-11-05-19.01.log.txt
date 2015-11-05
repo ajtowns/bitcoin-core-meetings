@@ -1,0 +1,372 @@
+19:01:40 <wumpus> #startmeeting
+19:01:40 <lightningbot> Meeting started Thu Nov  5 19:01:40 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:40 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:58 <wumpus> any topics that need to be discussed?
+19:02:13 <jonasschnelli> Topics?
+19:02:33 <sipa> suggested topic: sigcache performance (i've been doing benchmarks)
+19:02:48 <sipa> suggested topic: softfork
+19:02:55 <wumpus> yes, makes sense
+19:03:00 <gmaxwell> suggested topic: 0.11.2 / 0.10.4 releases.
+19:03:15 <wumpus> ok, first sigcache performance
+19:03:23 <wumpus> #topic Sigcache performance
+19:03:29 <gmaxwell> "Ouch"
+19:03:51 <sipa> so, what i did was benchmark the hitrate of the sigcache for various sigcache sizes
+19:04:01 <wumpus> on a reindex?
+19:04:05 <sipa> no, live
+19:04:19 <gmaxwell> As in, when a block comes in, what is the sigcache hitrate for that block?
+19:04:27 <wumpus> somewhat offtopic: is there a good way to reproduce live usage deterministically?
+19:04:31 <sipa> obly counting the block ones, not mempool ones
+19:04:48 <sipa> wumpus: morcos and suhas have a simulator to replay recorded data iirc
+19:04:52 <wumpus> e.g. has anyone implemented storing P2P traffic, replay?
+19:04:58 <wumpus> ok
+19:05:18 <sipa> this is on master, with mempool limiting
+19:05:40 <sipa> and with the patch that deletes sigcache entries when they are seen in a block
+19:05:49 <gmaxwell> master + the sigcache efficiency improvement + the delete on hit, to be specific.
+19:06:05 <sipa> my sigcache was remarkably stable for days with a max of 68 MiB that way
+19:06:17 <sipa> resulting in a 15% miss rate
+19:06:26 <sipa> wait, 3%
+19:06:52 <wumpus> that's useful, so we can now compare the different pulls by perf numbers?
+19:07:17 <sipa> though some blocks have extremely high miss rates (over 60%)
+19:07:22 <sipa> while others have 0.0000%
+19:07:41 <sipa> which indicates that the miners are running different policies
+19:08:00 <jgarzik> meta - did the meeting get moved -1 hour ?
+19:08:12 <gmaxwell> jgarzik: your time did, US daylight savings time.
+19:08:19 <Luke-Jr> ^
+19:08:20 <wumpus> no, DST changed, meeting is in UTC
+19:08:25 <sipa> meeting is 7pm iceland time :)
+19:08:29 <wumpus> yep
+19:08:54 <sipa> so, then gmaxwell suggested *always* running script verification for mempool txn
+19:09:01 <sipa> even for policy rejected ones
+19:09:02 <jgarzik> ah UTC, good
+19:09:11 <wumpus> for the 60% miss rate blocks - any idea where the transactions come from? maybe the miners are taking them from their own pushtx interface and not from the network at all
+19:09:32 <sipa> which can be justified because fetching the inputs from utxo is already a significant portion of the work anyway
+19:09:40 <gmaxwell> The observation with the stable size is that the size was stable within a very small band, perhaps a few hundred K. There was a guess that most of that 68MB was cruft from before the mempool limiting kicked in that was never being cleared. Though that isn't confirmed. It seems likely.
+19:09:54 <wumpus> heh
+19:09:54 <sipa> the result is now that even a 300 MiB only gets down to 15% miss rate
+19:09:58 <gmaxwell> "significant portion of the work" especially with libsecp256k1.
+19:10:21 <sipa> so there is just too much crap being relayed to keep it in any reasonably sized cache
+19:10:38 <wumpus> that's my experience as well
+19:10:40 <gmaxwell> so clearly just verifying rejects and treating them the same is not a good call. :) I'd like to try changing the cache to be a map instead of a set to allow smarter expiration.
+19:11:13 <sipa> another observation is that (with libsecp) the time to not verify is equivalent to around a 25% miss rate
+19:11:39 <sipa> or in other words, 1/5th of the work is not script validation
+19:11:51 <morcos> sipa: over what time frame did you wait for the miss rate to stabilize
+19:11:51 <gmaxwell> I have a specific concern here in that (1) there are some dos attacks if we do not verify rejected transactions, (2) not checking rejected transactions at all _increases_ your misrate if you set a policy which is more restrictive than the typical network, which might result in some race to the bottom.
+19:12:01 <sipa> morcos: a day
+19:12:13 <morcos> obviously as the mempool is going from 0 -> 300MB you get tons of txs in there that might not be mined for a long time
+19:12:14 <gmaxwell> sipa: I assume its still running now two days later?
+19:12:19 <sipa> yes
+19:12:22 <morcos> over time though those should stay near the bottom
+19:12:29 <wumpus> topic for later: secp256k1 verification readyness
+19:12:31 <morcos> i bet it might do better over a longer period of time
+19:12:47 <morcos> i'd also like to discuss other connect block latency improvements
+19:12:54 <morcos> so we have some goal of what might be reasonable for 0.12
+19:13:24 <sipa> anyway, i need to try some other strategy
+19:13:35 <gmaxwell> morcos: right now a problem is that the eviction doesn't prefer to kick out old things that are never getting mined. So if crap is has a 'high' ratio to useful things, the cache must be huge to work well.
+19:14:03 <sipa> but it seems reasonable that priming the sigcache with transactions that we do not accept into mempool, but who were close, may be worth it
+19:14:24 <sipa> however, doing that fot every single transaction is the wrong approach
+19:14:49 <wumpus> I think we should be careful not to merge risky performance imporovements last-minute for 0.12 - we will regret those if there turns out to be bugs. May be better to merge them after the release branch, dec 1
+19:15:11 <morcos> wumpus: i think most of these things are not risky, and the performance improvements are HUGE
+19:15:15 <jgarzik> nod - prioritize getting 0.12 out the door and not blocking it
+19:15:15 <sipa> well i think the PR i have out for sigcache changes is a net win
+19:15:24 <jgarzik> 0.12 -already- has a lot of net win
+19:15:52 <gmaxwell> I think the existing PR is an obvious win. Also, without sigcache improvements I'm concerned that mempool limiting may have bad effects on the network.
+19:16:10 <wumpus> morcos: I'm really risk-averse before releases, master (as in git now) is pretty much stable and would make a good release, I really don't want to regret merging anything now
+19:16:20 <gmaxwell> Because right now hitting high miss rates is not very acceptable... but it's much less bad with libsecp256k1 at least.
+19:16:24 <morcos> i'd strongly like to include secp256k1, the changes to skip looking up your own txs id (BIP30 and modifyNewCoins, and the sigcache improvements
+19:16:32 <morcos> the hot cache stuff is still far from proven
+19:16:38 <sipa> morcos: agree
+19:16:59 <wumpus> yes I still like to include secp256k1 for 0.12 too (but that's not the topic now :-)
+19:17:04 <gmaxwell> with openssl it only takes a miss rate of a couple percent to totally dominate block verification time.
+19:17:05 <morcos> also the CreateNewBlock rewrite is only for miners, but it improves total time from about 3 seconds down to 150ms now on a 300MB mempool
+19:17:08 <morcos> we can't leave that out
+19:17:22 <morcos> well these things all go together
+19:17:33 <morcos> no reason putting in secondary performance gains if you're missing the bigone
+19:17:36 <morcos> :)
+19:17:43 <jgarzik> I love the CNB change but that seems lower priority than making 0.12 rock solid otherwise - miners can patch up
+19:17:53 <gmaxwell> in any case, I think we've covered sigcache for now.  Current work is a big improvement, but more work is needed.
+19:18:05 <sipa> jgarzik: miners won't patch up, and it is in everyone's interest that miner latency is low
+19:18:12 <sipa> not just their own
+19:18:18 <sipa> ok
+19:18:26 <sipa> next topic
+19:18:26 <sipa> ?
+19:18:27 <wumpus> #topic softfork releases
+19:18:30 <gmaxwell> jgarzik: I don't really agree there.  Our expirence in production has not been that.  Additionally, to the extent they do it creates inequality.. and this slowness has also contributed to verification free mining.
+19:18:51 <morcos> wumpus lets stay on performance goals for 0.12 for a second
+19:19:04 <morcos> since it ties closely with sigcache which we just covered
+19:19:12 <wumpus> I'd really advise against merging last-mintue performance improvements for 0.12
+19:19:34 <morcos> is it last minute if we merge it this month?
+19:19:40 <gmaxwell> ^
+19:19:41 <wumpus> sort of
+19:20:08 <gmaxwell> Put another way, if we'd already branched for 0.12 I'd be proposing backporting this work.
+19:20:08 <sipa> wumpus: ok, do you mind setting a deadline for performance improvements in master?
+19:20:12 <wumpus> but gmaxwell/sipa feel free to merge things if you're absolutely sure about them, I'm not the only one with commit rights
+19:20:28 <gmaxwell> OK
+19:20:44 <morcos> i'm leaving to go out of town in 2 weeks for a week
+19:20:52 <morcos> lets set the deadline for 2 weeks from tomorrow
+19:21:01 <wumpus> I'm really careful and would be pissed if we needed e.g. an urgent minor release to fix up 0.12 because something ill advices went in
+19:21:08 <morcos> if we don't all agree they're ready we wait
+19:21:14 <sipa> wumpus: fair enough
+19:21:16 <wumpus> but the deadline is dec 1
+19:21:28 <wumpus> that's the feature freeze - 0.12 branch
+19:21:32 <sipa> ok
+19:21:36 <gmaxwell> wumpus: I will send you flowers if we screw up. :P  We do have a pretty conservative release schedule, in my view. :)
+19:21:44 <morcos> ok, well guys, please help me reviewing those pulls then
+19:21:52 <sipa> morcos: will do!
+19:21:56 <morcos> most importantly to make CreateNewBlock work properly
+19:21:56 <gmaxwell> Great. Will do.
+19:22:02 <morcos> we have to make a decision about priority
+19:22:06 <wumpus> gmaxwell: agree, but better be slow than dead :)
+19:22:08 <sipa> yes, i believe CNB is important
+19:22:14 <morcos> it can't be fast to have priority, unless we fix it to be dynamic or change its definition
+19:22:27 <sipa> wumpus: when do you libsecp in at the latest?
+19:22:29 <morcos> i'm ambivalent on that choice
+19:22:39 * jgarzik agrees CNB is important - just not important enough to delay the release for over a month, if it comes to that.
+19:22:40 <wumpus> sipa: same
+19:22:48 <sipa> jgarzik: agree
+19:22:49 * Luke-Jr thinks CPFP and RBF are more important than optimisations, especially in CNB which can be slow.
+19:22:53 <jgarzik> libsecp256k1 - asap!
+19:22:54 <wumpus> wel'll cetainly not delay the relaese on that
+19:22:54 <phantomcircuit> I don't see any reason for create new block to consider property
+19:22:55 <gmaxwell> Can we go to libsecp256k1 for a moment, this will be fast.
+19:23:10 <morcos> yes
+19:23:12 <jgarzik> libsecp256k1 yesterday :)
+19:23:20 <phantomcircuit> Priority
+19:23:20 <wumpus> #topic libsecp256k1 now
+19:23:24 <gmaxwell> I think we should merge support right now, like today.  We can update it incrementally, but we should get more than just our own nodes running this way.
+19:23:29 <wumpus> agree
+19:23:33 <sipa> agree
+19:23:36 <wumpus> everyone wants that basically
+19:23:38 <gmaxwell> Sipa has current patches for the update. PR them please.
+19:23:39 <jgarzik> yes
+19:23:48 <sipa> i realized it's unfair that i've been running them for months
+19:23:55 <Luke-Jr> sgtm
+19:24:00 <sipa> will PR
+19:24:09 <morcos> fantastic, most productive IRC meeting ever!
+19:24:15 <gmaxwell> Our goal on libsecp256k1 has been to have a release of the library ahead of 0.12 but that doesn't have anything to do with when we merge support for it.
+19:24:27 <gmaxwell> okay. good. tada.
+19:24:29 <Luke-Jr> suggested topic: hardfork
+19:24:31 <jgarzik> morcos, was a decision made on priority?
+19:24:34 <wumpus> good
+19:24:39 <morcos> jgarzik: not yet
+19:24:45 <wumpus> #topic transaction priority
+19:25:19 <sipa> i feel that we should get rid of the current priority+separate-processing, and replace it with a functioncthat modifies fee or size of transactions
+19:25:20 <gmaxwell> Morcos suggested a lossy way of calcualting priority. It's a bit lame but I think somewhat better than dropping it completely.
+19:25:25 <morcos> ok, i think the simplest answer here is people decide #6357 is efficient enough and safe
+19:25:37 <sipa> will check 6357 then
+19:25:41 <wumpus> #action check #6357 is efficient enough and safe
+19:25:41 <morcos> that doesn't change the definition, and so we avoid the political debate on a tight timeline
+19:25:47 <morcos> however i can't say i've tested it too much
+19:25:49 <sipa> sounds good
+19:26:03 <morcos> i think take a look, if its no good we revert to a different definion
+19:26:10 <morcos> but gmaxwell, the one i proposed is flawed
+19:26:14 <morcos> it fails in the event of a reorg
+19:26:27 <sipa> what failure mode?
+19:27:23 <morcos> my suggestion was to only consider the in-chain input value for any further aging of the tx's priority
+19:27:23 <morcos> but in a reorg, some in chain value might be no longer in chain
+19:27:23 <morcos> and you could be overstating its priority
+19:27:23 <sipa> "meh"
+19:27:23 <morcos> so maybe thats fine
+19:27:23 <jgarzik> meh
+19:27:28 <gmaxwell> I think thats probably okay. It does not need to be precise.
+19:27:38 <gmaxwell> (though it was nice to think it could only understate)
+19:27:39 <Luke-Jr> while it sounds fine for a default policy, the old policy should remain possible; hard-coding policy into mempool structures is a regression.
+19:27:44 <morcos> ok, well thats basically a subset of 6357 then
+19:27:46 <wumpus> as long as it's not easy to cheat
+19:27:56 <sipa> Luke-Jr: respectfully disagree
+19:27:59 <morcos> the scarier part of 6357 is properly updating that amount on block confirmations and reorgs
+19:28:00 <gmaxwell> Suggested topic: sigops flooding attack.
+19:28:02 <jgarzik> priority is secondary anyway, yes?
+19:28:02 <phantomcircuit> Priority changes mostly slowly why not just cache the value and re calculate in the background
+19:28:29 <sipa> next topic?
+19:28:34 <morcos> phantomcircuit: its important to make the recalculation not require looking up inputs again
+19:28:36 <wumpus> #topic sigops flooding attack
+19:29:07 <gmaxwell> So, there is an active attack on the network producing transactions with very high sigops counts and medium/high feerates causing miners to mine blocks with just a couple transactions.
+19:29:12 <phantomcircuit> Right
+19:29:57 <phantomcircuit> Sounds like they're not profit maximizing...
+19:30:02 <wumpus> what would be the proposed mitigation? a change to default mining policy?
+19:30:03 <morcos> gmaxwell: your proposal is to just change the mining code to be a bit smarter about that?
+19:30:15 <gmaxwell> I have (going back eons) suggested a simple hurestic where size for feerate is replaced with max(size, sigops*blocksizelimit/feeratelimit); for most transactions this does nothing, but for sigops boms it inflates their cost. It's simular to the post office charging for the largest dimension.
+19:31:01 <wumpus> sounds sensible
+19:31:04 <gmaxwell> it's a suggestion to scale sigops to it's share of the limit relative to the blocksize limit. e.g. a 10k sigops transaction is 500k of 'size'.
+19:31:05 <jgarzik> is there a simple relay filter that doesn't impact normal users?
+19:31:24 <sipa> gmaxwell: units mismatch
+19:31:26 <morcos> gmaxwell: this would affect everything , including min relay fee?
+19:31:34 <gmaxwell> jgarzik: style of the attack transactions has been different.
+19:31:53 <Luke-Jr> I also have a bytes-per-sigop limit that filters absolutely, which seems like a better solution for this case, since there is no legit use of such things past a certain ratio (perhaps both gmaxwell's and this make the most sense)
+19:32:09 <gmaxwell> er. max(size, sigops*blocksizelimit/sigopslimit)  (sorry reading and typing at once.
+19:32:36 <morcos> gmaxwell: i think it would be an easy change to make the mining code sort by that
+19:32:42 <wumpus> great
+19:32:52 <morcos> it would be somewhat more invasive to try to plug that into everything that looks at feerate
+19:32:54 <gmaxwell> Luke-Jr: I think such a threshold must be uselessly high due to inaccurate sigops accounting.
+19:33:18 <gmaxwell> morcos: doesn't the new mining code depend on the mempool sort?
+19:33:21 <Luke-Jr> gmaxwell: I don't understand what you mean by that.
+19:33:33 <morcos> its a mempool sort just for mining (another index)
+19:33:36 <sipa> gmaxwell: separate index
+19:33:37 <morcos> not the same that is used for eviction
+19:33:40 <gmaxwell> Luke-Jr: txouts checksigs (p2pkh) are counted as sigops.
+19:33:49 <sipa> so it can use different scoring
+19:34:14 <gmaxwell> OKAY, well I think using it for just mining is totally fine.
+19:34:19 <sipa> ok
+19:34:23 <sdaftuar> is this attack large enough that the mempool eviction feerate index needs to be reevaluated?
+19:34:27 <morcos> yeah, ok, at least for now
+19:34:28 <Luke-Jr> gmaxwell: ok? If that were an issue, this is just policy, and we could exclude them..
+19:34:29 <sdaftuar> ie can you fill up a mempool with this garbage?
+19:34:30 <gmaxwell> as I said, for most transaction it will have little to no effect.
+19:34:39 <phantomcircuit> Could also have a backfiring thread continuously spinning trying to build a block with more fees
+19:34:47 <phantomcircuit> Back ground*
+19:34:53 <gmaxwell> sdaftuar: the transactions are small in any case. but any time mining and mempool are misaligned then you do have backlog growth issues.
+19:35:14 <morcos> 72 hour eviction might be good enough to solve for that
+19:35:21 <morcos> oh, but hmm
+19:35:23 <gmaxwell> (also part of why I'd thought to just change it in all the places)
+19:35:35 <sdaftuar> well it'd be nice to know what fraction of the mempool is being taken up with this stuff
+19:36:18 <morcos> yeah worth thinking about attacks anyway, if their effective mining feerate is very low, but then there is no mempool limiting for them b/c their size only feerate is large, they can just fill up your mempool
+19:37:17 <wumpus> ~20 minutes to go for the meeting
+19:37:27 <gmaxwell> okay, perhaps some more analysis to be done here.
+19:37:31 <morcos> yep, agreed
+19:37:37 <morcos> topic suggestion chain limits
+19:37:42 <gmaxwell> I'm glad to hear that people are generally okay with this sort of direction.
+19:37:52 <wumpus> #topic chain limits
+19:38:00 <morcos> sdaftuar ran some analysis
+19:38:04 <sdaftuar> heh. i'm furiously trying to upload my data right now
+19:38:07 <morcos> lots of blocks have big chains
+19:38:24 <morcos> 40% of blocks have a chain > our proposed limits
+19:38:29 <sipa> do we have idea of what those chains are?
+19:38:43 <sipa> like, who creates them
+19:38:45 <jgarzik> what lengths are revealed in the data?
+19:38:48 <sipa> what kind of use case they look like
+19:38:57 <morcos> the one i looked at in detail seemed to be a service paying the fees on other txs
+19:39:17 <morcos> it occurred to me that we might should contact some of the exchanges and wallet services
+19:39:17 <gmaxwell> really surprising to find this, since those transactions are highly malleability vulnerable.
+19:39:22 <Luke-Jr> sipa: I think at least some iOS wallet gladly spends unconfirmed change
+19:39:30 <morcos> its possible that these long chains are delivered to miners out of band
+19:39:46 <morcos> if thats the case, they'd be unaffected by relay policy limits anyway
+19:39:52 <wumpus> right
+19:40:00 <gmaxwell> and by mallability (or less so at least)
+19:40:29 <morcos> the problem is we HAVE to do something
+19:40:35 <morcos> longer chains are a disaster waiting to happen
+19:40:51 <sipa> yes
+19:40:52 <morcos> one thing i noticed from sdaftuars data is that a small bump doesn't make the problem go away
+19:41:02 <morcos> at 50, 25% of blocks, at 100 15% of blocks
+19:41:11 <phantomcircuit> How long are the chains?
+19:41:11 <sipa> which indicates that it is a small percentage of *very* long chains
+19:41:21 <sipa> rather than an organic distribution of chain lengths
+19:41:28 <sipa> ?
+19:41:54 <morcos> about 4% of the txs in block would violate the limit
+19:42:09 <morcos> this makes sense given the 6% number for txs in the mempool i posted earlier
+19:42:32 <morcos> so yes, the vast majority of txs would not have an issue
+19:43:00 <morcos> when sdaftuar gets his data out there people can look at it and draw their own conclusion
+19:43:03 <morcos> s
+19:43:17 <morcos> should i or someone else reach out to some of the businesses directly and get their viewpoints
+19:43:23 <jouke> We create cpfp transactions when we reaceive bitcoins from an unspent chain.
+19:43:26 <jgarzik> At a higher level, trying to move forward, there is always going to be a small percentage outside the limit.  Communicate the limit that seems reasonable in a release note, push the change, gauge reaction.
+19:43:48 <morcos> i kind of like jgarzik's idea
+19:43:54 <morcos> merge now
+19:43:56 <wumpus> jouke: makes sense
+19:43:58 <gmaxwell> jouke: does this result in 40 deep unconfirmed chains.
+19:44:02 <morcos> and announce more clearly
+19:44:03 <jgarzik> perfection is unattainable
+19:44:07 <jouke> gmaxwell: no
+19:44:21 <morcos> but that sets the right tone, of look, this isn't just a preference, its something that really needs to be done
+19:44:22 <wumpus> merge - what pull?
+19:44:24 <jgarzik> "release early, release often" + "communicate early, communicate often"
+19:44:26 <gmaxwell> okay lets just see how that goes, announce and see what happens.
+19:44:29 <morcos> and if the sky falls in, we can rethink
+19:44:31 <sipa> i agreed
+19:44:39 <Luke-Jr> reminder: policy is not a developer decision; let miners deal with figuring out what is ideal
+19:44:47 <morcos> #6771
+19:44:53 <wumpus> #action merge #6771
+19:45:14 <jgarzik> Luke-Jr, absolutely - all the more reason to communicate early, let people reason through things on their own, based on their own situations
+19:45:26 <sipa> Luke-Jr: it's a command-line flag :)
+19:45:27 <gmaxwell> So we haven't talked about softfork releases / 0.11.2+0.10.4
+19:45:33 <morcos> should i email again the dev list then?
+19:45:44 <Luke-Jr> yeah, just saying, going overboard on defaults by contacting businesses etc is too much :P
+19:45:46 <wumpus> #topic softfork releases / 0.11.2+0.10.4
+19:45:51 <gmaxwell> Perhaps we merge and just announce the merge, if someone shows up with something convincing we can back it out.
+19:45:52 <jgarzik> morcos, can't hurt
+19:46:02 <jgarzik> gmaxwell, merge + list mail
+19:46:03 <morcos> ok, i will email post merge, next
+19:47:03 <gmaxwell> Okay, so are we waiting for any other commits for 0.11.2 to cut an RC there?
+19:47:03 <wumpus> imo: asap, #6948 is merged, will test #6948 on windows tomorrow to see if it gets rid of (most) corruption on crashes
+19:47:16 <gmaxwell> The things I was tracking was leveldb fixes, and MTP, and both are in.
+19:47:27 <Luke-Jr> gmaxwell: I have a PR with a bunch of fixes for 0.11.2
+19:47:32 <gmaxwell> If we RC we can get more windows testers, (almost universally they need binaries)
+19:47:38 <wumpus> eh one of them is the undo flush fix, don't know the number by head
+19:47:44 <phantomcircuit> gmaxwell, well... by back out do you mean massively increase the limit?
+19:47:49 <gmaxwell> ah undo flush isn't in okay.
+19:47:52 <wumpus> that one needs to go in too
+19:47:56 <wumpus> right.
+19:47:59 <Luke-Jr> https://github.com/bitcoin/bitcoin/pull/6825
+19:48:34 <wumpus> then roll out 0.11.2 and 0.10.4 tomorrow
+19:48:53 <Luke-Jr> wumpus: should I update this PR before then, or just merge what's there?
+19:49:10 <wumpus> Luke-Jr: sure
+19:49:14 <gmaxwell> We need to move fairly quickly on this, as there are miners on mainnet now running master who will begin CLTV voting (I haven't checked if any are in the chain, but there are public stratum servers returning v4 work).  Not _urgently_, mind you, as it still takes a lot of blocks to trigger, but we cannot delay much. :)
+19:49:30 <wumpus> hence ,tomorrow
+19:49:32 <gmaxwell> Tomrrow sounds good to me.
+19:49:36 <gmaxwell> (not just good, great).
+19:49:44 <Luke-Jr> sure = update first, or just merge what's there now?
+19:50:02 <wumpus> Luke-Jr: I'd suggest just leaving it at is, not make last minute changes, so people cna review it
+19:50:06 <Luke-Jr> k
+19:50:34 <gmaxwell> okay, sounds good, will review luke's patches.
+19:50:42 <Luke-Jr> ok, removed [WIP] tag from it to indicate final state
+19:50:51 <wumpus> #action review #6825 ASAP
+19:50:52 * btcdrak is late again
+19:50:54 <gmaxwell> (oh also, testnet is CLTV locked already and constantly forking...)
+19:51:03 <Luke-Jr> I'll go do an equivalent branch for 0.10 with only the same commits
+19:52:08 <wumpus> ok, thanks
+19:52:21 <wumpus> I think that concludes this topic, anything else?
+19:52:53 <gmaxwell> Okay luke wanted to discuss 'hardfork', and I think this really meant scaling bitcoin things. The closing date for proposals for the workshop is the 9th, and several people have BIPs/proposals in flight (including myself). I dunno if there is anything more to discuss on that in this meeting.
+19:53:11 <wumpus> there's 10 minutes left - I don't think that's enough for 'hardfork' discussion
+19:53:23 <wumpus> *less than
+19:53:25 <morcos> i'd like cover briefly one thing regarding mempools and mining
+19:53:33 <wumpus> #topic mempools and mining
+19:53:35 <gmaxwell> Agreed.
+19:53:38 <jgarzik> +1 skip Scaling/hardfork discussion in this meeting
+19:53:42 <jgarzik> maybe after
+19:54:05 <morcos> when we did most of our analysis of limited mempools, we assumed a CPFP mining algo.  however that proved a bit ambitious for 0.12, and i opted fro just speeding up the existing algo
+19:54:26 <morcos> so that that means is we haven't really analyzed matt's pull (forget the number) in the context of the existing mining algorithm
+19:54:43 <morcos> its not clear that there isn't some abuse possible
+19:55:08 <gmaxwell> oh suggested topic: "Should we be working on getting the opt-in RBF for 0.12?"
+19:55:11 <morcos> i will try to spend some time thinking about this, but just wnated to flag it for other people as well.
+19:55:34 <wumpus> #action topic for next week: "Should we be working on getting the opt-in RBF for 0.12?"
+19:55:41 <gmaxwell> morcos: okay, important thing to determine is what form the abuse takes if so.. e.g. getting excess priority from it is probably not very concerning.
+19:56:23 <morcos> gmaxwell: yeah i think the concern is artificially boosting the relay, or DoS miners with computationaly complexity or free bandwidth relay
+19:56:33 <morcos> btw, +1 to RBF for 0.12
+19:57:02 <morcos> i know this is a lot of big stuff in the next month, but its just scratching the tip of the iceberg for all we have to do, so lets do it!
+19:57:37 <gmaxwell> That my view too, we can discuss more next week, but I'll take that as a tenitive as we should move towards that... see where things are next week.
+19:58:10 <btcdrak> +1 for RBF in 0.12
+19:58:19 <sdaftuar> for advancing the ball on RBF, is it time to get opinoins from people who were opposed to earlier versions?
+19:58:38 <btcdrak> sdaftuar: I think the optin already deal with that
+19:58:48 <phantomcircuit> agreed
+19:58:49 <jgarzik> I would be for full-bore RBF if we could rope in Coinbase and Bitpay
+19:58:56 <jgarzik> it's mainly a network-user-impact question, to me
+19:58:57 <jtimon> yep, ACK RBF (I didn't say anything but I would happily ack the removal of priority as well...)
+19:59:07 <wumpus> me too, I prefer full RBF, but any RBF would be a step forward
+19:59:12 <jgarzik> long term ACK RBF
+19:59:21 <phantomcircuit> jgarzik, it's opt in only, doesn't effect anybody on the network today
+19:59:21 <gmaxwell> Opt-in had the "then don't use it" answer which I think is essential to make progress.
+19:59:23 <morcos> is opt-in somehow worse than full
+19:59:28 <sdaftuar> morcos: no
+19:59:39 <wumpus> no, opt-in is not worse than full, some other proposals were
+19:59:42 <sdaftuar> i think we need to make clear what users who don't want to accept opt-in transactions need to do
+19:59:46 <btcdrak> gmaxwell: agreed. morcos: no
+19:59:52 <sdaftuar> so that no one is surprised/not ready
+19:59:55 <jgarzik> it is good to make progress towards RBF
+19:59:56 <gmaxwell> We've been talking about this long term for years now but it's too easily politically attacked, where opt-in resolves that.
+19:59:59 <gmaxwell> sdaftuar: sounds good.
+20:00:00 <jgarzik> poke users along
+20:00:01 <jgarzik> gently
+20:00:10 <wumpus> gmaxwell: agree
+20:00:13 <phantomcircuit> morcos, it simply means you have to opt into the transaction being replaceable (of course miners can replace whatever they want already but it makes the *default* be opt into replacement)
+20:00:17 <btcdrak> it's already apparent from the PR ACKs how much it is anticipated
+20:00:35 <morcos> yes, i understood, just trying to parse peoples support for Full RBF also means support for opt-in (full) RBF
+20:00:38 <jtimon> morcos: opt in is more complicated than full, just that
+20:00:56 <jgarzik> nod
+20:01:01 <wumpus> #meetingend
+20:01:03 <gmaxwell> morcos: yes, I think everyone who supports full rbf supports this; I believe I've never heard other wise (after some explination at least)
+20:01:06 <wumpus> #meetingstop
+20:01:07 <gmaxwell> Thanks all.
+20:01:14 <btcdrak> #exitmeeting
+20:01:22 <mcelrath> Argh daylight savings time.
+20:01:23 <gmaxwell> #nomeetingnonono
+20:01:25 <btcdrak> #meedingexit
+20:01:29 <wumpus> #endmeeting
