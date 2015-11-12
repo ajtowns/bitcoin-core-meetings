@@ -1,0 +1,436 @@
+19:01:42 <wumpus> #startmeeting
+19:01:42 <lightningbot> Meeting started Thu Nov 12 19:01:42 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:42 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:43 <BlueMatt> morcos: that
+19:02:03 <wumpus> #topic What to do about priority for 0.12?  (besides cry)
+19:02:35 <petertodd> morcos: ditch it for now IMO, and work on a more general mechanism to get arbitrary txs propagated (perhaps priority, perhaps hashcash, maybe both!)
+19:03:01 <BlueMatt> remove priority entirely
+19:03:03 <phantomcircuit> wumpus, the wallet needs to be fixed... that is all
+19:03:07 <morcos> So as I commented on sdaftuars #6992, what I care most about is having 0.12 have a nice consistent state
+19:03:16 <BlueMatt> yes, remove all priority is consistent :)
+19:03:21 <morcos> semi-supporting priority in a broken manner is bad
+19:03:41 <jtimon> ack on removing enterely, it will be more disruptive the longer we wait
+19:03:45 <BlueMatt> we still have the fee adjustment RPC for miners that need to adjust fees, and we can (maybe) use that later to add our own default adjustments if people cry too much, though I'd rather not
+19:03:46 <sdaftuar> well i think pulling priority entirely without ever having warned is too abrupt
+19:03:52 <morcos> BlueMatt: I'm ok with that if its politically feasible, but seems like we should have communicated on the -dev list a long time ago and would maybe have gotten some pushback
+19:03:56 <jtimon> and we will remove it eventually
+19:03:59 <sipa> sdaftuar: agree
+19:04:18 <petertodd> morcos: not that many people use priority, particularly since even right now it's not very reliable and hard to calculate
+19:04:27 <sdaftuar> i proposed a staggered approach in #6992 -- let's let people know we're deprecating, and then plan to pull it in the next release
+19:04:31 <BlueMatt> the only people who use priority are devs, pretty much
+19:04:36 <BlueMatt> I dont think we need much time to announce
+19:04:38 <sdaftuar> and in 0.12 we can default the blockprioritysize to 0
+19:05:05 <petertodd> sdaftuar: well, the upgrade path is itself a staggered approach - not everyone will got to v0.12.0 instantly, and you don't need 100% to propagate reasonably well
+19:05:08 <phantomcircuit> we've made the mistake in the past of failing to communicate well that something will not work long term
+19:05:13 <petertodd> phantomcircuit: +1
+19:05:13 <phantomcircuit> lets not make that mistake again
+19:05:27 <morcos> yes, but that starts with communicate
+19:05:37 <petertodd> sdaftuar: also, XT will likely keep priority, which gives people an option
+19:06:00 <phantomcircuit> morcos, "this is now deprecated" afaict no wallet outside of bitcoin core implements priority calculations
+19:06:05 <CodeShark> not really an option if you can't pick and choose granularly :)
+19:06:12 <jtimon> action item communicate it on the ml?
+19:06:24 <gavinandresen> What’s the plan to mitigate the “spend money on fees, crowd out everybody else’s transactions” attack if priority goes away?
+19:06:46 <BlueMatt> gavinandresen: that is bitcoin
+19:06:48 <phantomcircuit> gavinandresen, there isn't a plan because that's a fundamental property of the system
+19:07:06 <phantomcircuit> if someone wants to blow wads of cash on trying to break things they can buy miners just as easily
+19:07:09 <petertodd> gavinandresen: those attacks are horribly expensive...
+19:07:39 <petertodd> phantomcircuit: exactly - as fees pay more of miners' incomes, those attacks become as expensive as just 51% attacking the network anyway
+19:07:42 <gavinandresen> petertodd: really?  I thought the latest spam attack showed it was fairly chieap....
+19:07:56 <petertodd> gavinandresen: yes, but it was also ineffective at stopping normal users from sending txs
+19:07:58 <CodeShark> about all we can do is make it expensive - but economics dictates that sufficiently well-funded adversaries can attack the network
+19:08:05 <morcos> gavinandresen: tx fees to get mined quickly never went up that high
+19:08:09 <petertodd> gavinandresen: that's why we have fee estimation, replace-by-fee, CPFP etc.
+19:08:11 <gavinandresen> If the plan is “smarter wallets that raise fees appropriately” then great.  That needs to be communicated.
+19:08:17 <petertodd> gavinandresen: we already have that
+19:08:21 <BlueMatt> gavinandresen: wallets already did that
+19:08:31 <phantomcircuit> gavinandresen, that is the plan and has been communicated directly to all of the wallet devs for months
+19:08:32 <BlueMatt> that was +/- the only impact the spam attack had
+19:08:38 <BlueMatt> (well, that and the relay network :(((    )
+19:08:53 <phantomcircuit> indeed if you open up the google you will find many of them implemented dynamic fees without the last few months
+19:09:03 <sipa> well at least bitcoin core's wallet will need to support that too!
+19:09:22 <BlueMatt> we have the fee estimator stuff?
+19:09:23 <BlueMatt> its not bad
+19:09:28 <petertodd> sipa: AFAIK many of the wallet providers use bitcoin core's fee estimation
+19:09:37 <BlueMatt> in fact, many people "implemented dynaic fees" buy just using bitcoin core's
+19:10:03 <morcos> please review #6134 on that note!
+19:10:16 <sipa> petertodd: hmm, that's good for a baseline, but i would expect that some mechanism to respend with higher fees is available
+19:10:19 <BlueMatt> anyway, back to the actual topic....
+19:10:30 <BlueMatt> I think removing priority in 0.12 is fine
+19:10:37 <morcos> ok, will someone volunteer to email -dev and let them know this is the plan then?
+19:10:39 <BlueMatt> if it is announced in the next weeks
+19:10:42 <BlueMatt> morcos: willdo
+19:10:53 <wumpus> #action please review #6134 (Improve usage of fee estimation code)
+19:10:58 <jtimon> sipa: that makes some form of RBF a priority
+19:11:07 <petertodd> sipa: mycelium for example has multiple levels of fees that you can easily select
+19:11:14 <BlueMatt> next topic: rbf for 0.12?
+19:11:22 <BlueMatt> (though i think the answer there may just be "YES")
+19:11:24 <morcos> then i think we could skip sdaftuar's 6992 and we could skip dynamic priority 6357
+19:11:27 <morcos> (hold on)
+19:11:32 <wumpus> RBF: https://github.com/bitcoin/bitcoin/pull/6871
+19:11:53 <morcos> but we'll be having another regression in the mining code, by making those who still want to mine by priority, only have access to starting priority
+19:12:00 <morcos> is that also an ok regression?
+19:12:11 <BlueMatt> morcos: we could rip out all priority stuff in 0.12?
+19:12:17 <morcos> we should also default block priority size to 0 and comment about further deprecation in the future
+19:12:27 <petertodd> morcos: well, a lot of miners have turned off priority anyway; I'd let them make that decision and give us some feedback
+19:12:46 <BlueMatt> morcos: we could backport default block priority size to 0....
+19:12:57 <BlueMatt> but i wouldnt think we should
+19:13:22 <sipa> ... i just wished we could replace priority with an adjusted fee metric...
+19:13:38 <gavinandresen> morcos: yes, I think that is an OK regression.
+19:13:45 <morcos> thanks gavinandresen
+19:13:52 <btcdrak> sipa: what would that look like?
+19:14:04 <CodeShark> it ultimately is a balance between rational behavior and how lazy miners are in changing defaults :)
+19:14:23 <BlueMatt> sipa: meh, I'm not so sure
+19:14:33 <jtimon> morcos: why this deprecation needs to be in 2 steps?
+19:14:40 <morcos> if we've stopped fully supporting priority, it only makes sense to change the default blockpriority size to 0, doesn't need to be backported
+19:14:53 <BlueMatt> morcos: ack
+19:14:58 <sipa> BlueMatt: i said i wished; i'm not convinced it is possible in a useful way
+19:15:02 <morcos> jtimon: primarily bc it hasn't be discussed very much yet
+19:15:11 <BlueMatt> sipa: we could have something for relay that isnt the same as mining (years ago there was some discussion of "relay policy is what *you* want to be mined", miners can do the rational thing)
+19:15:20 <wumpus> jtimon: to give some advance warning before completely removing it
+19:15:22 <BlueMatt> sipa: ok, well then I agree
+19:15:40 <jtimon> morcos: I believe this has been a recurring discussion ever since we wanted to limit the mempool size
+19:15:44 <morcos> anyway, i think the new 2 step process avoids adding new complication now.  presents a mostly consistent release, and allows us to rip all this stuff right out as soon as we branch off 0.12
+19:15:55 <sipa> jtimon: but it has only been a discussion among developers
+19:15:57 <wumpus> yes
+19:16:21 <petertodd> morcos: well, if we're not *ready* to rip that code away, I 100% agree we should just set the default to zero, but if we're ready to rip that code away, I see no reason to delay
+19:16:46 <jtimon> ok, default to zero as a first step and remove in 0.13 ?
+19:16:58 <Luke-Jr> we should absolutely not remove priority..
+19:17:07 <CodeShark> ?
+19:17:17 <btcdrak> Luke-Jr: why?
+19:17:31 <Luke-Jr> it's the best metric Core's default policy supports right now..
+19:17:40 <BlueMatt> Luke-Jr: no, feerate is
+19:17:43 <gmaxwell> I thought sipa has a good way to rationalize it that should be exploired. It would eliminate the multiple objective optimization.
+19:17:44 <jg_taxi> Nearly universal  consensus to remove - except for Luke :)
+19:17:58 <Luke-Jr> BlueMatt: feerate often isn't.
+19:18:00 <phantomcircuit> morcos, we should not be carrying code complex efficient dynamic priority calculation
+19:18:05 <morcos> gmaxwell: multiple objective optimization isn't that hard
+19:18:09 <BlueMatt> gmaxwell: yes, we should explore adjustments to feerate, but the priority code as it exists should be ripped out
+19:18:10 <jtimon> we should only have a cost function (currently txSize) and a reward function (currently fees)
+19:18:12 <morcos> phantomcircuit: right, we will skip adding that
+19:18:29 <phantomcircuit> i rewrote that sentence one time too few
+19:18:36 <gmaxwell> morcos: not fundimentally hard but unnecessary code and computional complexity.
+19:18:42 <petertodd> Luke-Jr: I think what we need is "multi-mempool" support, to make it easier to deal with multiple different metrics - e.g. a pool with polcies like Eligius certainly would want to have an easy time setting up a seperate priority-based mechanism
+19:18:44 <Luke-Jr> also shouldn't be changing defaults to try to influence miners, outside of emergencies.
+19:18:58 <jtimon> after we unify that it's much simpler to change the cost/reward functions
+19:19:04 <jg_taxi> Fee deltas can produce priority
+19:19:08 <petertodd> Luke-Jr: same reason I think we *should* have a non-feerate mechanism for tx propagation that doesn't interact with the feerate based mechanism
+19:19:14 <petertodd> jg_taxi: yup
+19:19:20 <gmaxwell> the thing sipa suggests eliminates all impact of priority except in the cost calculation.
+19:19:23 <BlueMatt> Luke-Jr: we're not chaning to try to influence miners, we're changing to keep shit from breaking when miners disable priority anyway
+19:19:24 <morcos> what i'm proposing is basically shipping 0.12 as is with respect to priority, with a couple of changes: mining code will use starting priority, default prioritysize=0, and wallet is smart enough to not place priority txs if mempool limiting is in effect
+19:19:31 <jg_taxi> Thus you can do priority without priority code
+19:19:49 <BlueMatt> morcos: which seems reasonable
+19:19:59 <morcos> so thats the fewest changes from now to a semi-consistent state.   more ripping out can then be done in 0.13.   if we're not going to rip it out, we should do more now to make it work better, but sounds like we are
+19:20:00 <jg_taxi> Ack 0
+19:20:15 <BlueMatt> though I really want to rip out the code (its a big churn, though, so we can push back)
+19:20:15 <petertodd> morcos: I'd be inclined to make the wallet not use priority at all by default
+19:20:32 <Luke-Jr> morcos: the first should be optional, at least
+19:20:37 <sipa> jg_taxi, gmaxwell: my idea was to take the btcdaysdestroued of a transaction, divide that by the average utxo age, take a small fraction of that (1%) and add that as extra fee
+19:20:57 <Luke-Jr> BlueMatt: I don't know what you mean. Why would things break?
+19:20:59 <sipa> jg_taxi, gmaxwell: the problem is that that has no bound on how much fees can be lost by a miner
+19:21:06 <Luke-Jr> and why must default policy be changed to prevent it?
+19:21:12 <petertodd> morcos: main thing is I just don't want users to get their txs stuck, especially since full RBF and CPFP support isn't in the wallet yte
+19:21:28 <morcos> ok i agree with petertodd , lets default QT to no longer send free also.  bitcoind already has that off
+19:21:31 <sipa> Luke-Jr: multiple sorting orders is a massive complication to maintain...
+19:21:38 <Luke-Jr> morcos: doesn't it already?
+19:21:47 <morcos> QT is default on
+19:21:55 <jtimon> Luke-Jr: maintaining that code while doing other changes to the mempool behaviour is costly
+19:22:02 <jg_taxi> Once opt in RBF is there wallet will have smarter policies in this area
+19:22:10 <Luke-Jr> sipa: better to maintain complicated code than to make flexible policy code more complicated to write
+19:22:11 <phantomcircuit> petertodd, how do you relay transactions that you're not keeping in the mempool though?
+19:22:21 <phantomcircuit> (especially if there's opt in RBF for them)
+19:22:23 <gmaxwell> sipa: you can simply cap the impact; thats a candidate for the only tunable for that approach.
+19:22:51 <petertodd> phantomcircuit: well, I'm thinking in the future we won't just have one mempool, or one way fo relaying - e.g. it'd be a trivial hack to do tx relaying by bitmessage :)
+19:23:01 <gmaxwell> From a code perspective what sipa suggests is largely orthorgonal with removing priority (actually, it wants priority removed); but from a communication perspective it's different.
+19:23:21 <sipa> gmaxwell: that does mean it should work first...
+19:23:39 <morcos> Luke-Jr: The problem is its impossible to meaningfully speed up CreateNewBlock unless you are A) dynamically calculating priority on the fly as in 6357 or B) changing to a static definition of priority.
+19:23:53 <Luke-Jr> if simpler mempool code, makes it harder to write mining policy code, then the simpler mempool policy code should be rejected.
+19:23:58 <BlueMatt> gmaxwell: I'm really not sold on doing an adjustment metric....I mean we could, as long as it has a limited impact and I'd be fine with that, but then what was the point?
+19:24:04 <morcos> I really think we need the performance improvement in CNB, so we have to pick A or B.  People don't like adding the complication of A, so B it is
+19:24:11 <BlueMatt> gmaxwell: mostly I think we should only do it for relay, not mining, but then there is actually no point
+19:24:13 <jg_taxi> It sounds like there needs to be a minor hook related to this anyway
+19:24:21 <gmaxwell> luke's argument as I understand it is that in recent months we'd generally seen dos attackers as more willing and able to pay just over market rate fees than joe user; even though many wallets have caught up with dynamic fee behavior. Part of this is due to the market rate fees being so low that most of the cost of adjustment is the lack of RBF (which doesn't bother attackers) rather than the fee its
+19:24:24 <jtimon> Luke-Jr: you don't have to remove priority in your branch
+19:24:27 <gmaxwell> elf.  But all this may be a temporary effect.
+19:24:28 <Luke-Jr> morcos: or recalculate priorities each block
+19:24:41 <Luke-Jr> jtimon: the changes being proposed make that impossible
+19:24:48 <morcos> Luke-Jr: That requries accessing every input for every tx in the mempool
+19:24:58 <sipa> Luke-Jr: not impossible, just expensive
+19:25:02 <Luke-Jr> morcos: it doesn't need to.
+19:25:10 <morcos> that's option A
+19:25:20 <gmaxwell> BlueMatt: even a limited impact is likely useful for getting non-dos-attack transactions sorted higher.
+19:25:37 <BlueMatt> Luke-Jr: there is a fee-adjustment api for this, it can be tweaked into being your priority calculator
+19:25:45 <jtimon> Luke-Jr: as "impossible" as reverting a merged change in master, don't you mean hard to maintain? why should bitcoin core bear that cost instead?
+19:25:45 <BlueMatt> gmaxwell: sure, but do we get miners to use it as well?
+19:25:45 <petertodd> gmaxwell: the speed at which wallet authors have adopted dynamic fees makes me pretty optimistic that dos attackers won't be doing too much harm - the cost to pay over "market rate" is really, really high
+19:25:47 <Luke-Jr> BlueMatt: priority is not fee-adjustment.
+19:26:12 <gavinandresen> +1 for using the adjust api if you want something weird. And I vote for simple and fast for createnewblock
+19:26:14 <phantomcircuit> this all fundamentally comes down to a simple question; do you believe that user real users will pay higher fees than non-users?
+19:26:33 <gmaxwell> phantomcircuit: that overly simplifies.
+19:26:37 <BlueMatt> phantomcircuit: meh, we cant do anything if they arent
+19:26:46 <petertodd> BlueMatt: agreed there
+19:26:51 <Luke-Jr> BlueMatt: they aren't in practice.
+19:26:54 <gmaxwell> Because it ignores prediction error costs which are high right now due to a lack of replacement.
+19:27:01 <sdaftuar> BlueMatt: i think mempool limiting needs to be updated to take into account fee-deltas
+19:27:03 <BlueMatt> Luke-Jr: then we're fucked, lets all go home
+19:27:04 <phantomcircuit> gmaxwell, yes... but we can fix that
+19:27:14 <phantomcircuit> speaking of which where are we with opt in rbf?
+19:27:15 <BlueMatt> sdaftuar: oh? I thought it did that?
+19:27:18 <morcos> The topic was what to do for 0.12.  The nice thing about my suggested approach is its minimal changes for now, and allows us to keep arguing indefinitely about prioirty next release cycle, but with a slight nudge towards deprecation.
+19:27:26 <BlueMatt> sdaftuar: then, yes, it really does need to be updated if it doesnt
+19:27:35 <sdaftuar> (double checking)
+19:27:38 <BlueMatt> phantomcircuit: thats the next topic, be patient :)
+19:27:39 <petertodd> phantomcircuit: wumpus code reviewed ACKed it
+19:28:07 <BlueMatt> morcos: I thought your suggestion included disabling priority for wallet when you see a limited mempool?
+19:28:12 <jgarzik> I tested opt-in with a simple replacement.  Need to re-review but overall ACK
+19:28:14 <BlueMatt> morcos: I would call that a pretty hard deprecation
+19:28:20 <btcdrak> Link for the RBF patch https://github.com/bitcoin/bitcoin/pull/6871
+19:28:22 <morcos> morcos: thats already in master!
+19:28:22 <BlueMatt> morcos: given mempool sizes
+19:28:25 <morcos> BlueMatt: i mena
+19:28:28 <Luke-Jr> morcos: so the current behaviour remains possible?
+19:28:32 <gmaxwell> morcos: I think what you're suggesting is okay for now. I am only commenting because I do not share BlueMatt/Petertodd/etc. view on the utility of priority like things.
+19:28:35 <BlueMatt> jgarzik: please wait for topic change
+19:28:50 <CodeShark> I don't think we'll ever finish this topic :p
+19:28:56 <jgarzik> BlueMatt, talk to phantomcircuit he started it :)
+19:29:00 <wumpus> time for topic change?
+19:29:04 <btcdrak> yes!
+19:29:07 <CodeShark> please!
+19:29:08 <phantomcircuit> ya
+19:29:08 <BlueMatt> can we ack the current proposal?
+19:29:09 <cfields> yes
+19:29:10 <BlueMatt> first
+19:29:12 <wumpus> #topic RBF opt-in
+19:29:17 <CodeShark> ACK
+19:29:17 <BlueMatt> morcos' proposal acks?
+19:29:20 <petertodd> ACK
+19:29:21 <jgarzik> ACK
+19:29:22 <btcdrak> ACK
+19:29:27 <wumpus> ACK
+19:29:27 <BlueMatt> ok, new topic :)
+19:29:27 <sipa> ACK
+19:29:29 <sdaftuar> sdaftuar was here
+19:29:30 <gmaxwell> ACK
+19:29:31 <CodeShark> hehe
+19:29:33 <morcos> Luke-Jr: you'd be able to approximate the current behavior.  I f you started with a large mempool, you could still send prioirty txs, and if you were willing to forgo the slight diff in static vs actual priority
+19:29:36 <btcdrak> #link https://github.com/bitcoin/bitcoin/pull/6871
+19:29:36 <Luke-Jr> NACK if current policy is made impossible
+19:29:45 <jtimon> I got lost, what is the current proposal?
+19:29:50 <btcdrak> RBF
+19:29:55 <CodeShark> opt-in RBF
+19:30:05 <phantomcircuit> oh boy
+19:30:06 <wumpus> jtimon: set prioritysize to 0 for 0.12, rip out priority for 0.13
+19:30:19 <BlueMatt> wumpus: and disable priority in wallet if mempool is limited
+19:30:22 <jtimon> ok, ack both
+19:30:29 <morcos> jtimon: shipping 0.12 as is with respect to priority, with a couple of changes: mining code will use starting priority, default prioritysize=0, and wallet is smart enough to  not place priority txs if mempool limiting is in effect
+19:30:39 <petertodd> Luke-Jr: the above will make current policy still possible, and give time for something better to be implemented I think
+19:30:46 <jgarzik> nod
+19:30:54 <BlueMatt> ok, so *now* rbf
+19:30:56 <Luke-Jr> petertodd: not if mining code must use starting priority.
+19:30:59 <jgarzik> ### really RBF
+19:31:14 <petertodd> re: RBF, tools! https://github.com/petertodd/replace-by-fee-tools
+19:31:27 <petertodd> I wrote tx combining - "incremental sendmany" - yesterday
+19:31:27 <btcdrak> that's a good start
+19:31:28 <gmaxwell> Luke-Jr: we'll talk more later.
+19:31:30 <wumpus> nice petertodd
+19:31:38 <BlueMatt> how much is there to discuss aside from "yes, we want this, code has been heavily concept-ack'ed"?
+19:31:42 <morcos> Yay for RBF
+19:31:45 <jtimon> RBF: ACK
+19:31:54 <morcos> we go from cry to rejoice
+19:31:54 <jgarzik> opt-in RBF - ACK
+19:31:56 <petertodd> BlueMatt: and running in production at f2pool in the FFS variant
+19:31:57 <Luke-Jr> biggest problem for optin RBF is that you can't opt-in per-output
+19:31:59 <Luke-Jr> IMO
+19:32:00 <btcdrak> I guess action point is to review PR if you havemt
+19:32:23 <petertodd> Luke-Jr: yeah, that'd be cool, but very hard to implement, and prolematic re privacy :(
+19:32:24 <wumpus> #action review and merge #6871 (nSequence-based Full-RBF opt-in)
+19:32:27 <BlueMatt> petertodd: I think we all agree FSS is useless :(
+19:32:32 <petertodd> Luke-Jr: nSequence is the only "free to use" field we have :(
+19:32:36 <jgarzik> BlueMatt, ACK!
+19:32:48 <btcdrak> I would prefer we just went full-RBF. I know the landscape has changed a lot since all the tx flooding
+19:32:51 <jgarzik> petertodd, until the TX structure changes
+19:32:56 <petertodd> BlueMatt: yeah, and if that changes, we can implement FSS later as an add-on
+19:33:04 * jtimon should find time to turn concept ACK into utACK
+19:33:05 <jgarzik> well we also have TX version bits
+19:33:06 <petertodd> jgarzik: agreed!
+19:33:31 <Luke-Jr> jgarzik: this doesn't help per-ouptut I think
+19:33:32 <gmaxwell> Luke-Jr: any RBF use (further) breaks the safty of unconfirmed decendants... I don't know how much additional value per output flagging would accomplish even if it were reasonably possible (nowhere to encode it, alas).
+19:33:33 <petertodd> for now though, nSequence opt-in is the best we have
+19:33:38 <sdaftuar> as i mentioned last week i think an email to the list about how opt-in RBF works is important
+19:33:43 <jgarzik> it would be nice to mask out TX version bits ahead of time.  Agree it doesn't help with per-{input,output} stuff.
+19:33:44 <petertodd> sdaftuar: will do
+19:33:55 <jtimon> suggested topic: version bits
+19:34:12 <morcos> Suggested Topic: wumpus was supposed to merge chain limits so we could email -dev list about that as well
+19:34:17 <Luke-Jr> petertodd: can this optin-RBF be disabled by nodes?
+19:34:20 <jgarzik> #action - everybody take opt-in RBF from concept ACK to [ut] ACK
+19:34:39 <petertodd> Luke-Jr: no, but if you want to add a command line switch for that by all means go for it
+19:34:41 <BlueMatt> morcos: yea, lets do that
+19:35:11 <Luke-Jr> petertodd: IMO nodes should be able to toggle between FSS-or-not, and never/optin/always
+19:35:15 <morcos> sorry jgarzik:  s/wumpus/any one of the 5 high elders of Bitcoin/
+19:35:35 <phantomcircuit> petertodd, well... technically you can send the replacement optin flag outside of the transaction
+19:35:37 <Luke-Jr> (are any anti-RBF people going to block an option for nodes to enable always-full-RBF?)
+19:35:45 <petertodd> Luke-Jr: well, write that and pull-req! just a few more lines of code
+19:35:55 <phantomcircuit> it's not consensus enforced so it doesn't matter
+19:36:47 <wumpus> morcos: #6771 seems quite controversial looking at the comments
+19:37:02 <phantomcircuit> Luke-Jr, i predict yes, so please as a separate pull request
+19:37:27 <morcos> wumpus: yes we discussed that last week.  its a strong majority in favor, but there is a very vocal minority who are opposed.  its not clear how strongly opposed though.
+19:37:31 <jgarzik> ### change topic, people
+19:37:43 <jgarzik> #topic chain limits
+19:37:44 <btcdrak> wumpus: really? a couple of loud voices only it seems.
+19:37:44 <wumpus> ok ,next topic was versionbits by jtimon aaik
+19:37:46 <Luke-Jr> jgarzik: I'd particularly like an answer from you on that :P
+19:37:46 <wumpus> #topic versionbits
+19:37:57 <wumpus> jgarzik: please don't do that, I'm chairing
+19:38:16 <morcos> unfortunately we don't think there is much of an otpion, so last time we said we'd merge and email and if all hell breaks loose we could consider reverting, but we have to do what we think is the right choice.  and leaving existing limits is dangerous
+19:38:17 <jgarzik> then keep it moving, chair :)
+19:38:35 <wumpus> jgarzik: it's kind of annoying if we both change topics
+19:38:39 <btcdrak> CodeShark: what is the status of versionbits?
+19:38:42 <CodeShark> for versionbits, some think the container stuff I did is a bit excessive
+19:38:45 <btcdrak> wumpus: agree one chair.
+19:38:52 <sipa> morcos: afaik all the opposing voices had use cases up to a few deep
+19:38:55 <wumpus> jgarzik: you can chair next week, ok
+19:38:56 <jtimon> there's two implementations, CodeShark's https://github.com/bitcoin/bitcoin/pull/6816 and rusty's (let me look for the link later)
+19:38:57 <CodeShark> it has been proposed to stick everything into a single static table
+19:39:06 <jgarzik> I'm tempted to write a TX version bits BIP, just to reserve bits for later, separate from block version bits
+19:39:11 <gmaxwell> morcos: lets come back to after meeting.
+19:39:40 <phantomcircuit> jgarzik, fyi there is at least a few transactions in the chain that have weird versions
+19:39:41 <petertodd> I haven't looked in detail at either softfork version bits code myself, but I don't think it needs to be in v0.12.0 at all, so I'm thinking no rush
+19:39:51 <jgarzik> phantomcircuit, hmmm interesting
+19:39:58 <sipa> petertodd: it will need to be backportable anyway
+19:40:14 <petertodd> phantomcircuit: not necessarily a bit deal - there's some blocks with weird versions too, and the soft-fork mechanism handles that fine
+19:40:31 <gmaxwell> Versionbits bip needs a minor revisions, proposals need a starting time. It can be just a time for which signaling will begin, or also a time for when counting starts.
+19:40:33 <btcdrak> petertodd: no sense in delaying this or dealing with refactoring that will come in 0.13
+19:40:48 <CodeShark> I had proposed a starting time in a PR to the bip
+19:40:54 <CodeShark> but some opposed it
+19:40:58 <gmaxwell> Suggested topic: 0.11.2/0.10.4 release.
+19:41:03 <jgarzik> in general we want to push versionbits soonish
+19:41:05 <gmaxwell> CodeShark: we have more expirence now.
+19:41:07 <sipa> CodeShark: there is very good reason now to have it
+19:41:23 <phantomcircuit> petertodd, yes im aware, just saying it's something to keep in mind
+19:41:23 <sipa> jgarzik: existing softforks need to complete forst anyway
+19:41:30 <wumpus> gmaxwell: I don't understand why you want that as topic, they're already in rc?
+19:41:31 <btcdrak> CodeShark: I very much pefer the table approach suggested by rusty.
+19:41:32 <jgarzik> nod
+19:41:45 <gmaxwell> http://bitcoin.sipa.be/ver-2k.png
+19:41:56 <cfields> btcdrak: got a link?
+19:41:59 <jtimon> to be clear I never opposed to a starting date
+19:42:08 <gmaxwell> wumpus: just to find out if there is anything we need to target to cut the release that you or others are thinking of.
+19:42:31 <gmaxwell> (I look at that graph twice a day and worry that it's going to uptick hard without a release out. :) )
+19:42:37 <btcdrak> cfields: this was rusty's draft idea: https://github.com/bitcoin/bitcoin/compare/master...rustyrussell:bip-9-versionbits
+19:43:06 <jtimon> btcdrak: thanks
+19:43:06 <cfields> wumpus: want the qt/-fpie change backported to .11.2 ?
+19:43:14 <petertodd> gmaxwell: yeah, very inclined to have a CLTV relese out; I'd only delay 0.11.2/0.10.4 for critical fixes
+19:43:16 <jgarzik> cfields, later / different chan
+19:43:16 <sipa> what is the topic?
+19:43:21 <jgarzik> versionbits
+19:43:24 <btcdrak> sipa: versionbits
+19:43:28 <wumpus> cfields: too late for that IMO, as gmaxwell says we want them final ASAP
+19:43:38 <jgarzik> let's move on - seems main decision is codeshark / rusty - not much actionable right now
+19:43:44 <petertodd> jgarzik: agreed
+19:43:47 <CodeShark> I had added a deploytime parameter as well, but I took it out: https://github.com/bitcoin/bips/pull/219
+19:43:48 <cfields> jgarzik: eh? the question was what's .11.2 waiting for
+19:43:51 <cfields> wumpus: ok
+19:43:59 <jgarzik> cfields, the topic is versionbits
+19:44:00 <jgarzik> cfields, not qt
+19:44:01 <btcdrak> CodeShark: better add it back then
+19:44:10 <CodeShark> will do
+19:44:16 <wumpus> #topic chian limits
+19:44:18 <gmaxwell> versionbits isn't actionable yet. starting time should be considered.
+19:44:18 <jtimon> in fact I personally think both CodeShark's and rusty's are more complicated than they need to be
+19:44:33 <jgarzik> chain limits -- last meeting we decided to push & tell list about it
+19:44:42 <gmaxwell> CodeShark: feel free to pull me into a conversation with rusty about starting time.
+19:44:46 <jgarzik> definitionally impossible to satisfy all
+19:44:54 <wumpus> I'm not comfortable with merging it with all the controversy
+19:44:59 <jgarzik> I am
+19:44:59 <petertodd> re: chian limits, I keep thinking that the # of users actually affected by them is reasonably small, and they tend to be people with engineering teams who should be able to at least do the easy hack of "create a buffer of txs waiting to go out"
+19:45:07 <morcos> wumpus: are you comfortable with someone merging it?
+19:45:09 <CodeShark> will do, gmaxwell
+19:45:10 <btcdrak> gmaxwell: I thought we were all in that discussion
+19:45:13 <jtimon> I opposed to having a per-bip threshold instead of per-chain
+19:45:14 <BlueMatt> jgarzik: go do it
+19:45:18 <jgarzik> OK
+19:45:27 <gmaxwell> I am fine with jgarzik merging it. We can revert based on response if needed.
+19:45:32 <CodeShark> yeah, actually I think I also added you to the convo, gmaxwell
+19:45:35 <petertodd> gmaxwell: +1
+19:45:37 <CodeShark> but this was a few weeks ago
+19:45:39 <btcdrak> gmaxwell: +1
+19:45:44 <sipa> petertodd: they don't even need them to be mined at once; they just nees to get them in the mempool at once so customers can see the transactions
+19:45:45 <jgarzik> merge easy, revert easy
+19:45:49 <jgarzik> get Internet feedback
+19:45:50 <wumpus> blah
+19:45:53 <gmaxwell> CodeShark: I might have been stupid then.
+19:45:55 <petertodd> sipa: yes I know :(
+19:46:06 <gmaxwell> wumpus: I think it will actually be okay but we need more information if not.
+19:46:14 <jgarzik> nod
+19:46:25 <petertodd> sipa: we should definitely communicate the RBF sendmany alternative to long chains ASAP
+19:46:32 <sipa> petertodd: if people were justnusing payment protocol etc, and not using the p2p network as a communication channel, nobody would care
+19:46:33 <morcos> ok after it's merged I will email the list
+19:46:41 <jgarzik> ok
+19:46:44 <petertodd> sipa: agreed
+19:46:47 <gmaxwell> wumpus: the cases people raised were all for small chain counts; and large chains cannot be safely supported by the software (of course you can still author large chains, you just need to retransmit until nodes take them-- not unlike other limits... not even clear to me that people knew this)
+19:47:18 <sipa> gmaxwell: read my conversation with petertodd above
+19:47:32 <gmaxwell> Long chains are still also highly malleability vulnerable.
+19:47:33 <petertodd> re: "customer sees tx in wallet" - the user experience of long chains isn't great anyway, as they're not all that reliable due to propagation failures
+19:47:39 <jgarzik> yup
+19:47:44 <sipa> gmaxwell: retransmit doesn't work for them, it is not mining; it is about getting them instantly relayed
+19:47:55 <wumpus> right
+19:47:57 <gmaxwell> sipa: fair point though also petertodd's response.
+19:48:16 <petertodd> gmaxwell: RBF sendmany won't show up in many users wallets yet :(
+19:48:32 <jgarzik> get opt-in RBF into tree, and it will show up in wallets rapidly.
+19:48:34 <morcos> I think this is the reason to announce this as far in advance as possible
+19:48:38 <petertodd> jgarzik: agreed
+19:48:40 <gmaxwell> petertodd: I think showing up in wallets isn't the actual metric, showing up in block explorers is.
+19:48:53 <morcos> So that if they need to figure out another way to communicate the information they can
+19:48:58 <btcdrak> jgarzik: +!
+19:49:06 <morcos> also its a configurable limit!, we're just chanigng the default
+19:49:09 <petertodd> gmaxwell: good point - although it'll take awhile for even that to be handled well rather than as scary doublespends
+19:49:23 <jgarzik> morcos, agree but weak argument - most go with default
+19:49:41 <wumpus> morcos: yes it's not a consensus change :)
+19:49:42 <btcdrak> gmaxwell: we can contact popular explorers to make changes. Shouldnt be hard.
+19:49:46 <sipa> indeed; defaults has anlot.of power unfortunately
+19:49:53 <morcos> the default should be one that allows the node to operate securely and be safe from attack, if more risky parameters are needed for rarer use cases that should be something those users worry about
+19:49:56 <gmaxwell> In any case I think collectively we dont think failing to limit here is technically viable. So what choice do we have? people can have their own opinions, but not your own reality. :)
+19:50:17 <morcos> gmaxwell: exactly
+19:50:18 <jgarzik> ### 10min
+19:50:20 <gmaxwell> if there are specific needs about very long chains we need to know so we can figure out how to handle them.
+19:50:26 <petertodd> gmaxwell: agreed - first priority is to keep the system working for the super majority who don't need long chains
+19:50:37 <jgarzik> gmaxwell, yep -- and merging is the best way to get user feedback on that, IMO
+19:50:48 <wumpus> gmaxwell: that's true - the only thing under discussion is what the limits should be, not whetehr there should be any
+19:50:52 <phantomcircuit> gmaxwell, nobody commenting in the pull request came up with an actual use case for very long chains, they merely asserted that they needed them
+19:50:56 <jgarzik> can only spin wheels so long in the dev silo (info vacuum)
+19:51:00 <btcdrak> what is the PR for chainlimits again?
+19:51:04 <jgarzik> #6771
+19:51:05 <phantomcircuit> which i am happy to ignore
+19:51:21 <btcdrak> #link https://github.com/bitcoin/bitcoin/pull/6771
+19:51:32 <jgarzik> new topic?
+19:51:39 <jtimon> 25 25 wasn't final, right
+19:51:57 <morcos> 25 / 101 and 25 / 101  are the final limits
+19:52:35 <jtimon> same for both? I expected ancestors to be lower
+19:53:04 <morcos> jtimon: most common use case is linear chain...
+19:53:23 <sipa> new topic?
+19:53:26 <wumpus> any other topics?
+19:53:44 <petertodd> <crickets>
+19:53:47 <jgarzik> did we cover jonas while I was in the taxi?
+19:54:10 <sdaftuar> ?
+19:54:10 <jtimon> ?
+19:54:20 <CodeShark> not sure I want to know
+19:54:20 <Luke-Jr> ?
+19:54:23 <petertodd> ‽
+19:54:30 <Luke-Jr> ⁈
+19:54:42 <jgarzik> proposal for new GUI maintainer
+19:54:42 <CodeShark> sounds kinky, though
+19:54:52 <petertodd> CodeShark: GUI's are pretty kinky
+19:55:10 <BlueMatt> petertodd: they're masochistic, if nothing else
+19:55:13 <gmaxwell> jgarzik: I think it's kind of rude to bring that up in this meeting when wumpus probably hasn't talked to jonasschnelli about it! :)
+19:55:28 <jgarzik> gmaxwell, he said he did, which is why I mentioned it
+19:55:40 <wumpus> it's not time to talk about that yet
+19:55:42 * bsm1175321 would separate the GUI into a different project...
+19:55:42 <Luke-Jr> jonas also doesn't seem to be here for the meeting
+19:55:44 <wumpus> yes, that very rude
+19:55:48 <gmaxwell> ah. Okay.
+19:56:02 <wumpus> I asked if he was interested, not whether we should announce it yet
+19:56:06 <BlueMatt> ok, end meeting?
+19:56:24 <btcdrak> if we can remember the command this week :-)
+19:56:30 <wumpus> #meetingend
+19:56:39 <gmaxwell> #destroymeeting
+19:56:42 <wumpus> #endmeeting

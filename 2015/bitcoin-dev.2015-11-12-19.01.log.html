@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:42</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov 12 19:01:42 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:42</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> that
+<a name="l-5"></a><span class="tm">19:02:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">What to do about priority for 0.12?  (besides cry)</span>
+<a name="l-6"></a><span class="tm">19:02:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> ditch it for now IMO, and work on a more general mechanism to get arbitrary txs propagated (perhaps priority, perhaps hashcash, maybe both!)
+<a name="l-7"></a><span class="tm">19:03:01</span><span class="nk"> &lt;BlueMatt&gt;</span> remove priority entirely
+<a name="l-8"></a><span class="tm">19:03:03</span><span class="nk"> &lt;phantomcircuit&gt;</span> wumpus, the wallet needs to be fixed... that is all
+<a name="l-9"></a><span class="tm">19:03:07</span><span class="nk"> &lt;morcos&gt;</span> So as I commented on sdaftuars #6992, what I care most about is having 0.12 have a nice consistent state
+<a name="l-10"></a><span class="tm">19:03:16</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, remove all priority is consistent :)
+<a name="l-11"></a><span class="tm">19:03:21</span><span class="nk"> &lt;morcos&gt;</span> semi-supporting priority in a broken manner is bad
+<a name="l-12"></a><span class="tm">19:03:41</span><span class="nk"> &lt;jtimon&gt;</span> ack on removing enterely, it will be more disruptive the longer we wait
+<a name="l-13"></a><span class="tm">19:03:45</span><span class="nk"> &lt;BlueMatt&gt;</span> we still have the fee adjustment RPC for miners that need to adjust fees, and we can (maybe) use that later to add our own default adjustments if people cry too much, though I'd rather not
+<a name="l-14"></a><span class="tm">19:03:46</span><span class="nk"> &lt;sdaftuar&gt;</span> well i think pulling priority entirely without ever having warned is too abrupt
+<a name="l-15"></a><span class="tm">19:03:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> I'm ok with that if its politically feasible, but seems like we should have communicated on the -dev list a long time ago and would maybe have gotten some pushback
+<a name="l-16"></a><span class="tm">19:03:56</span><span class="nk"> &lt;jtimon&gt;</span> and we will remove it eventually
+<a name="l-17"></a><span class="tm">19:03:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> agree
+<a name="l-18"></a><span class="tm">19:04:18</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> not that many people use priority, particularly since even right now it's not very reliable and hard to calculate
+<a name="l-19"></a><span class="tm">19:04:27</span><span class="nk"> &lt;sdaftuar&gt;</span> i proposed a staggered approach in #6992 -- let's let people know we're deprecating, and then plan to pull it in the next release
+<a name="l-20"></a><span class="tm">19:04:31</span><span class="nk"> &lt;BlueMatt&gt;</span> the only people who use priority are devs, pretty much
+<a name="l-21"></a><span class="tm">19:04:36</span><span class="nk"> &lt;BlueMatt&gt;</span> I dont think we need much time to announce
+<a name="l-22"></a><span class="tm">19:04:38</span><span class="nk"> &lt;sdaftuar&gt;</span> and in 0.12 we can default the blockprioritysize to 0
+<a name="l-23"></a><span class="tm">19:05:05</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> well, the upgrade path is itself a staggered approach - not everyone will got to v0.12.0 instantly, and you don't need 100% to propagate reasonably well
+<a name="l-24"></a><span class="tm">19:05:08</span><span class="nk"> &lt;phantomcircuit&gt;</span> we've made the mistake in the past of failing to communicate well that something will not work long term
+<a name="l-25"></a><span class="tm">19:05:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> +1
+<a name="l-26"></a><span class="tm">19:05:13</span><span class="nk"> &lt;phantomcircuit&gt;</span> lets not make that mistake again
+<a name="l-27"></a><span class="tm">19:05:27</span><span class="nk"> &lt;morcos&gt;</span> yes, but that starts with communicate
+<a name="l-28"></a><span class="tm">19:05:37</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> also, XT will likely keep priority, which gives people an option
+<a name="l-29"></a><span class="tm">19:06:00</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, "this is now deprecated" afaict no wallet outside of bitcoin core implements priority calculations
+<a name="l-30"></a><span class="tm">19:06:05</span><span class="nk"> &lt;CodeShark&gt;</span> not really an option if you can't pick and choose granularly :)
+<a name="l-31"></a><span class="tm">19:06:12</span><span class="nk"> &lt;jtimon&gt;</span> action item communicate it on the ml?
+<a name="l-32"></a><span class="tm">19:06:24</span><span class="nk"> &lt;gavinandresen&gt;</span> What’s the plan to mitigate the “spend money on fees, crowd out everybody else’s transactions” attack if priority goes away?
+<a name="l-33"></a><span class="tm">19:06:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gavinandresen:</span> that is bitcoin
+<a name="l-34"></a><span class="tm">19:06:48</span><span class="nk"> &lt;phantomcircuit&gt;</span> gavinandresen, there isn't a plan because that's a fundamental property of the system
+<a name="l-35"></a><span class="tm">19:07:06</span><span class="nk"> &lt;phantomcircuit&gt;</span> if someone wants to blow wads of cash on trying to break things they can buy miners just as easily
+<a name="l-36"></a><span class="tm">19:07:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gavinandresen:</span> those attacks are horribly expensive...
+<a name="l-37"></a><span class="tm">19:07:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> exactly - as fees pay more of miners' incomes, those attacks become as expensive as just 51% attacking the network anyway
+<a name="l-38"></a><span class="tm">19:07:42</span><span class="nk"> &lt;gavinandresen&gt;</span> <span class="hi">petertodd:</span> really?  I thought the latest spam attack showed it was fairly chieap....
+<a name="l-39"></a><span class="tm">19:07:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gavinandresen:</span> yes, but it was also ineffective at stopping normal users from sending txs
+<a name="l-40"></a><span class="tm">19:07:58</span><span class="nk"> &lt;CodeShark&gt;</span> about all we can do is make it expensive - but economics dictates that sufficiently well-funded adversaries can attack the network
+<a name="l-41"></a><span class="tm">19:08:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gavinandresen:</span> tx fees to get mined quickly never went up that high
+<a name="l-42"></a><span class="tm">19:08:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gavinandresen:</span> that's why we have fee estimation, replace-by-fee, CPFP etc.
+<a name="l-43"></a><span class="tm">19:08:11</span><span class="nk"> &lt;gavinandresen&gt;</span> If the plan is “smarter wallets that raise fees appropriately” then great.  That needs to be communicated.
+<a name="l-44"></a><span class="tm">19:08:17</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gavinandresen:</span> we already have that
+<a name="l-45"></a><span class="tm">19:08:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gavinandresen:</span> wallets already did that
+<a name="l-46"></a><span class="tm">19:08:31</span><span class="nk"> &lt;phantomcircuit&gt;</span> gavinandresen, that is the plan and has been communicated directly to all of the wallet devs for months
+<a name="l-47"></a><span class="tm">19:08:32</span><span class="nk"> &lt;BlueMatt&gt;</span> that was +/- the only impact the spam attack had
+<a name="l-48"></a><span class="tm">19:08:38</span><span class="nk"> &lt;BlueMatt&gt;</span> (well, that and the relay network :(((    )
+<a name="l-49"></a><span class="tm">19:08:53</span><span class="nk"> &lt;phantomcircuit&gt;</span> indeed if you open up the google you will find many of them implemented dynamic fees without the last few months
+<a name="l-50"></a><span class="tm">19:09:03</span><span class="nk"> &lt;sipa&gt;</span> well at least bitcoin core's wallet will need to support that too!
+<a name="l-51"></a><span class="tm">19:09:22</span><span class="nk"> &lt;BlueMatt&gt;</span> we have the fee estimator stuff?
+<a name="l-52"></a><span class="tm">19:09:23</span><span class="nk"> &lt;BlueMatt&gt;</span> its not bad
+<a name="l-53"></a><span class="tm">19:09:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> AFAIK many of the wallet providers use bitcoin core's fee estimation
+<a name="l-54"></a><span class="tm">19:09:37</span><span class="nk"> &lt;BlueMatt&gt;</span> in fact, many people "implemented dynaic fees" buy just using bitcoin core's
+<a name="l-55"></a><span class="tm">19:10:03</span><span class="nk"> &lt;morcos&gt;</span> please review #6134 on that note!
+<a name="l-56"></a><span class="tm">19:10:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> hmm, that's good for a baseline, but i would expect that some mechanism to respend with higher fees is available
+<a name="l-57"></a><span class="tm">19:10:19</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, back to the actual topic....
+<a name="l-58"></a><span class="tm">19:10:30</span><span class="nk"> &lt;BlueMatt&gt;</span> I think removing priority in 0.12 is fine
+<a name="l-59"></a><span class="tm">19:10:37</span><span class="nk"> &lt;morcos&gt;</span> ok, will someone volunteer to email -dev and let them know this is the plan then?
+<a name="l-60"></a><span class="tm">19:10:39</span><span class="nk"> &lt;BlueMatt&gt;</span> if it is announced in the next weeks
+<a name="l-61"></a><span class="tm">19:10:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> willdo
+<a name="l-62"></a><span class="tm">19:10:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">please review #6134 (Improve usage of fee estimation code)</span>
+<a name="l-63"></a><span class="tm">19:10:58</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> that makes some form of RBF a priority
+<a name="l-64"></a><span class="tm">19:11:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> mycelium for example has multiple levels of fees that you can easily select
+<a name="l-65"></a><span class="tm">19:11:14</span><span class="nk"> &lt;BlueMatt&gt;</span> next topic: rbf for 0.12?
+<a name="l-66"></a><span class="tm">19:11:22</span><span class="nk"> &lt;BlueMatt&gt;</span> (though i think the answer there may just be "YES")
+<a name="l-67"></a><span class="tm">19:11:24</span><span class="nk"> &lt;morcos&gt;</span> then i think we could skip sdaftuar's 6992 and we could skip dynamic priority 6357
+<a name="l-68"></a><span class="tm">19:11:27</span><span class="nk"> &lt;morcos&gt;</span> (hold on)
+<a name="l-69"></a><span class="tm">19:11:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">RBF:</span> https://github.com/bitcoin/bitcoin/pull/6871
+<a name="l-70"></a><span class="tm">19:11:53</span><span class="nk"> &lt;morcos&gt;</span> but we'll be having another regression in the mining code, by making those who still want to mine by priority, only have access to starting priority
+<a name="l-71"></a><span class="tm">19:12:00</span><span class="nk"> &lt;morcos&gt;</span> is that also an ok regression?
+<a name="l-72"></a><span class="tm">19:12:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> we could rip out all priority stuff in 0.12?
+<a name="l-73"></a><span class="tm">19:12:17</span><span class="nk"> &lt;morcos&gt;</span> we should also default block priority size to 0 and comment about further deprecation in the future
+<a name="l-74"></a><span class="tm">19:12:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> well, a lot of miners have turned off priority anyway; I'd let them make that decision and give us some feedback
+<a name="l-75"></a><span class="tm">19:12:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> we could backport default block priority size to 0....
+<a name="l-76"></a><span class="tm">19:12:57</span><span class="nk"> &lt;BlueMatt&gt;</span> but i wouldnt think we should
+<a name="l-77"></a><span class="tm">19:13:22</span><span class="nk"> &lt;sipa&gt;</span> ... i just wished we could replace priority with an adjusted fee metric...
+<a name="l-78"></a><span class="tm">19:13:38</span><span class="nk"> &lt;gavinandresen&gt;</span> <span class="hi">morcos:</span> yes, I think that is an OK regression.
+<a name="l-79"></a><span class="tm">19:13:45</span><span class="nk"> &lt;morcos&gt;</span> thanks gavinandresen
+<a name="l-80"></a><span class="tm">19:13:52</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> what would that look like?
+<a name="l-81"></a><span class="tm">19:14:04</span><span class="nk"> &lt;CodeShark&gt;</span> it ultimately is a balance between rational behavior and how lazy miners are in changing defaults :)
+<a name="l-82"></a><span class="tm">19:14:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> meh, I'm not so sure
+<a name="l-83"></a><span class="tm">19:14:33</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> why this deprecation needs to be in 2 steps?
+<a name="l-84"></a><span class="tm">19:14:40</span><span class="nk"> &lt;morcos&gt;</span> if we've stopped fully supporting priority, it only makes sense to change the default blockpriority size to 0, doesn't need to be backported
+<a name="l-85"></a><span class="tm">19:14:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-86"></a><span class="tm">19:14:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i said i wished; i'm not convinced it is possible in a useful way
+<a name="l-87"></a><span class="tm">19:15:02</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> primarily bc it hasn't be discussed very much yet
+<a name="l-88"></a><span class="tm">19:15:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> we could have something for relay that isnt the same as mining (years ago there was some discussion of "relay policy is what *you* want to be mined", miners can do the rational thing)
+<a name="l-89"></a><span class="tm">19:15:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> to give some advance warning before completely removing it
+<a name="l-90"></a><span class="tm">19:15:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ok, well then I agree
+<a name="l-91"></a><span class="tm">19:15:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> I believe this has been a recurring discussion ever since we wanted to limit the mempool size
+<a name="l-92"></a><span class="tm">19:15:44</span><span class="nk"> &lt;morcos&gt;</span> anyway, i think the new 2 step process avoids adding new complication now.  presents a mostly consistent release, and allows us to rip all this stuff right out as soon as we branch off 0.12
+<a name="l-93"></a><span class="tm">19:15:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> but it has only been a discussion among developers
+<a name="l-94"></a><span class="tm">19:15:57</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-95"></a><span class="tm">19:16:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> well, if we're not *ready* to rip that code away, I 100% agree we should just set the default to zero, but if we're ready to rip that code away, I see no reason to delay
+<a name="l-96"></a><span class="tm">19:16:46</span><span class="nk"> &lt;jtimon&gt;</span> ok, default to zero as a first step and remove in 0.13 ?
+<a name="l-97"></a><span class="tm">19:16:58</span><span class="nk"> &lt;Luke-Jr&gt;</span> we should absolutely not remove priority..
+<a name="l-98"></a><span class="tm">19:17:07</span><span class="nk"> &lt;CodeShark&gt;</span> ?
+<a name="l-99"></a><span class="tm">19:17:17</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">Luke-Jr:</span> why?
+<a name="l-100"></a><span class="tm">19:17:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> it's the best metric Core's default policy supports right now..
+<a name="l-101"></a><span class="tm">19:17:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Luke-Jr:</span> no, feerate is
+<a name="l-102"></a><span class="tm">19:17:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I thought sipa has a good way to rationalize it that should be exploired. It would eliminate the multiple objective optimization.
+<a name="l-103"></a><span class="tm">19:17:44</span><span class="nk"> &lt;jg_taxi&gt;</span> Nearly universal  consensus to remove - except for Luke :)
+<a name="l-104"></a><span class="tm">19:17:58</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">BlueMatt:</span> feerate often isn't.
+<a name="l-105"></a><span class="tm">19:18:00</span><span class="nk"> &lt;phantomcircuit&gt;</span> morcos, we should not be carrying code complex efficient dynamic priority calculation
+<a name="l-106"></a><span class="tm">19:18:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> multiple objective optimization isn't that hard
+<a name="l-107"></a><span class="tm">19:18:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, we should explore adjustments to feerate, but the priority code as it exists should be ripped out
+<a name="l-108"></a><span class="tm">19:18:10</span><span class="nk"> &lt;jtimon&gt;</span> we should only have a cost function (currently txSize) and a reward function (currently fees)
+<a name="l-109"></a><span class="tm">19:18:12</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">phantomcircuit:</span> right, we will skip adding that
+<a name="l-110"></a><span class="tm">19:18:29</span><span class="nk"> &lt;phantomcircuit&gt;</span> i rewrote that sentence one time too few
+<a name="l-111"></a><span class="tm">19:18:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> not fundimentally hard but unnecessary code and computional complexity.
+<a name="l-112"></a><span class="tm">19:18:42</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> I think what we need is "multi-mempool" support, to make it easier to deal with multiple different metrics - e.g. a pool with polcies like Eligius certainly would want to have an easy time setting up a seperate priority-based mechanism
+<a name="l-113"></a><span class="tm">19:18:44</span><span class="nk"> &lt;Luke-Jr&gt;</span> also shouldn't be changing defaults to try to influence miners, outside of emergencies.
+<a name="l-114"></a><span class="tm">19:18:58</span><span class="nk"> &lt;jtimon&gt;</span> after we unify that it's much simpler to change the cost/reward functions
+<a name="l-115"></a><span class="tm">19:19:04</span><span class="nk"> &lt;jg_taxi&gt;</span> Fee deltas can produce priority
+<a name="l-116"></a><span class="tm">19:19:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> same reason I think we *should* have a non-feerate mechanism for tx propagation that doesn't interact with the feerate based mechanism
+<a name="l-117"></a><span class="tm">19:19:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jg_taxi:</span> yup
+<a name="l-118"></a><span class="tm">19:19:20</span><span class="nk"> &lt;gmaxwell&gt;</span> the thing sipa suggests eliminates all impact of priority except in the cost calculation.
+<a name="l-119"></a><span class="tm">19:19:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Luke-Jr:</span> we're not chaning to try to influence miners, we're changing to keep shit from breaking when miners disable priority anyway
+<a name="l-120"></a><span class="tm">19:19:24</span><span class="nk"> &lt;morcos&gt;</span> what i'm proposing is basically shipping 0.12 as is with respect to priority, with a couple of changes: mining code will use starting priority, default prioritysize=0, and wallet is smart enough to not place priority txs if mempool limiting is in effect
+<a name="l-121"></a><span class="tm">19:19:31</span><span class="nk"> &lt;jg_taxi&gt;</span> Thus you can do priority without priority code
+<a name="l-122"></a><span class="tm">19:19:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> which seems reasonable
+<a name="l-123"></a><span class="tm">19:19:59</span><span class="nk"> &lt;morcos&gt;</span> so thats the fewest changes from now to a semi-consistent state.   more ripping out can then be done in 0.13.   if we're not going to rip it out, we should do more now to make it work better, but sounds like we are
+<a name="l-124"></a><span class="tm">19:20:00</span><span class="nk"> &lt;jg_taxi&gt;</span> Ack 0
+<a name="l-125"></a><span class="tm">19:20:15</span><span class="nk"> &lt;BlueMatt&gt;</span> though I really want to rip out the code (its a big churn, though, so we can push back)
+<a name="l-126"></a><span class="tm">19:20:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> I'd be inclined to make the wallet not use priority at all by default
+<a name="l-127"></a><span class="tm">19:20:32</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> the first should be optional, at least
+<a name="l-128"></a><span class="tm">19:20:37</span><span class="nk"> &lt;sipa&gt;</span> jg_taxi, gmaxwell: my idea was to take the btcdaysdestroued of a transaction, divide that by the average utxo age, take a small fraction of that (1%) and add that as extra fee
+<a name="l-129"></a><span class="tm">19:20:57</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">BlueMatt:</span> I don't know what you mean. Why would things break?
+<a name="l-130"></a><span class="tm">19:20:59</span><span class="nk"> &lt;sipa&gt;</span> jg_taxi, gmaxwell: the problem is that that has no bound on how much fees can be lost by a miner
+<a name="l-131"></a><span class="tm">19:21:06</span><span class="nk"> &lt;Luke-Jr&gt;</span> and why must default policy be changed to prevent it?
+<a name="l-132"></a><span class="tm">19:21:12</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> main thing is I just don't want users to get their txs stuck, especially since full RBF and CPFP support isn't in the wallet yte
+<a name="l-133"></a><span class="tm">19:21:28</span><span class="nk"> &lt;morcos&gt;</span> ok i agree with petertodd , lets default QT to no longer send free also.  bitcoind already has that off
+<a name="l-134"></a><span class="tm">19:21:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> multiple sorting orders is a massive complication to maintain...
+<a name="l-135"></a><span class="tm">19:21:38</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> doesn't it already?
+<a name="l-136"></a><span class="tm">19:21:47</span><span class="nk"> &lt;morcos&gt;</span> QT is default on
+<a name="l-137"></a><span class="tm">19:21:55</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> maintaining that code while doing other changes to the mempool behaviour is costly
+<a name="l-138"></a><span class="tm">19:22:02</span><span class="nk"> &lt;jg_taxi&gt;</span> Once opt in RBF is there wallet will have smarter policies in this area
+<a name="l-139"></a><span class="tm">19:22:10</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> better to maintain complicated code than to make flexible policy code more complicated to write
+<a name="l-140"></a><span class="tm">19:22:11</span><span class="nk"> &lt;phantomcircuit&gt;</span> petertodd, how do you relay transactions that you're not keeping in the mempool though?
+<a name="l-141"></a><span class="tm">19:22:21</span><span class="nk"> &lt;phantomcircuit&gt;</span> (especially if there's opt in RBF for them)
+<a name="l-142"></a><span class="tm">19:22:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> you can simply cap the impact; thats a candidate for the only tunable for that approach.
+<a name="l-143"></a><span class="tm">19:22:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> well, I'm thinking in the future we won't just have one mempool, or one way fo relaying - e.g. it'd be a trivial hack to do tx relaying by bitmessage :)
+<a name="l-144"></a><span class="tm">19:23:01</span><span class="nk"> &lt;gmaxwell&gt;</span> From a code perspective what sipa suggests is largely orthorgonal with removing priority (actually, it wants priority removed); but from a communication perspective it's different.
+<a name="l-145"></a><span class="tm">19:23:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> that does mean it should work first...
+<a name="l-146"></a><span class="tm">19:23:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">Luke-Jr:</span> The problem is its impossible to meaningfully speed up CreateNewBlock unless you are A) dynamically calculating priority on the fly as in 6357 or B) changing to a static definition of priority.
+<a name="l-147"></a><span class="tm">19:23:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> if simpler mempool code, makes it harder to write mining policy code, then the simpler mempool policy code should be rejected.
+<a name="l-148"></a><span class="tm">19:23:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm really not sold on doing an adjustment metric....I mean we could, as long as it has a limited impact and I'd be fine with that, but then what was the point?
+<a name="l-149"></a><span class="tm">19:24:04</span><span class="nk"> &lt;morcos&gt;</span> I really think we need the performance improvement in CNB, so we have to pick A or B.  People don't like adding the complication of A, so B it is
+<a name="l-150"></a><span class="tm">19:24:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> mostly I think we should only do it for relay, not mining, but then there is actually no point
+<a name="l-151"></a><span class="tm">19:24:13</span><span class="nk"> &lt;jg_taxi&gt;</span> It sounds like there needs to be a minor hook related to this anyway
+<a name="l-152"></a><span class="tm">19:24:21</span><span class="nk"> &lt;gmaxwell&gt;</span> luke's argument as I understand it is that in recent months we'd generally seen dos attackers as more willing and able to pay just over market rate fees than joe user; even though many wallets have caught up with dynamic fee behavior. Part of this is due to the market rate fees being so low that most of the cost of adjustment is the lack of RBF (which doesn't bother attackers) rather than the fee its
+<a name="l-153"></a><span class="tm">19:24:24</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> you don't have to remove priority in your branch
+<a name="l-154"></a><span class="tm">19:24:27</span><span class="nk"> &lt;gmaxwell&gt;</span> elf.  But all this may be a temporary effect.
+<a name="l-155"></a><span class="tm">19:24:28</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> or recalculate priorities each block
+<a name="l-156"></a><span class="tm">19:24:41</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jtimon:</span> the changes being proposed make that impossible
+<a name="l-157"></a><span class="tm">19:24:48</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">Luke-Jr:</span> That requries accessing every input for every tx in the mempool
+<a name="l-158"></a><span class="tm">19:24:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> not impossible, just expensive
+<a name="l-159"></a><span class="tm">19:25:02</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> it doesn't need to.
+<a name="l-160"></a><span class="tm">19:25:10</span><span class="nk"> &lt;morcos&gt;</span> that's option A
+<a name="l-161"></a><span class="tm">19:25:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> even a limited impact is likely useful for getting non-dos-attack transactions sorted higher.
+<a name="l-162"></a><span class="tm">19:25:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Luke-Jr:</span> there is a fee-adjustment api for this, it can be tweaked into being your priority calculator
+<a name="l-163"></a><span class="tm">19:25:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> as "impossible" as reverting a merged change in master, don't you mean hard to maintain? why should bitcoin core bear that cost instead?
+<a name="l-164"></a><span class="tm">19:25:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> sure, but do we get miners to use it as well?
+<a name="l-165"></a><span class="tm">19:25:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> the speed at which wallet authors have adopted dynamic fees makes me pretty optimistic that dos attackers won't be doing too much harm - the cost to pay over "market rate" is really, really high
+<a name="l-166"></a><span class="tm">19:25:47</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">BlueMatt:</span> priority is not fee-adjustment.
+<a name="l-167"></a><span class="tm">19:26:12</span><span class="nk"> &lt;gavinandresen&gt;</span> +1 for using the adjust api if you want something weird. And I vote for simple and fast for createnewblock
+<a name="l-168"></a><span class="tm">19:26:14</span><span class="nk"> &lt;phantomcircuit&gt;</span> this all fundamentally comes down to a simple question; do you believe that user real users will pay higher fees than non-users?
+<a name="l-169"></a><span class="tm">19:26:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">phantomcircuit:</span> that overly simplifies.
+<a name="l-170"></a><span class="tm">19:26:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">phantomcircuit:</span> meh, we cant do anything if they arent
+<a name="l-171"></a><span class="tm">19:26:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> agreed there
+<a name="l-172"></a><span class="tm">19:26:51</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">BlueMatt:</span> they aren't in practice.
+<a name="l-173"></a><span class="tm">19:26:54</span><span class="nk"> &lt;gmaxwell&gt;</span> Because it ignores prediction error costs which are high right now due to a lack of replacement.
+<a name="l-174"></a><span class="tm">19:27:01</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> i think mempool limiting needs to be updated to take into account fee-deltas
+<a name="l-175"></a><span class="tm">19:27:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Luke-Jr:</span> then we're fucked, lets all go home
+<a name="l-176"></a><span class="tm">19:27:04</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, yes... but we can fix that
+<a name="l-177"></a><span class="tm">19:27:14</span><span class="nk"> &lt;phantomcircuit&gt;</span> speaking of which where are we with opt in rbf?
+<a name="l-178"></a><span class="tm">19:27:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> oh? I thought it did that?
+<a name="l-179"></a><span class="tm">19:27:18</span><span class="nk"> &lt;morcos&gt;</span> The topic was what to do for 0.12.  The nice thing about my suggested approach is its minimal changes for now, and allows us to keep arguing indefinitely about prioirty next release cycle, but with a slight nudge towards deprecation.
+<a name="l-180"></a><span class="tm">19:27:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> then, yes, it really does need to be updated if it doesnt
+<a name="l-181"></a><span class="tm">19:27:35</span><span class="nk"> &lt;sdaftuar&gt;</span> (double checking)
+<a name="l-182"></a><span class="tm">19:27:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">phantomcircuit:</span> thats the next topic, be patient :)
+<a name="l-183"></a><span class="tm">19:27:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> wumpus code reviewed ACKed it
+<a name="l-184"></a><span class="tm">19:28:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I thought your suggestion included disabling priority for wallet when you see a limited mempool?
+<a name="l-185"></a><span class="tm">19:28:12</span><span class="nk"> &lt;jgarzik&gt;</span> I tested opt-in with a simple replacement.  Need to re-review but overall ACK
+<a name="l-186"></a><span class="tm">19:28:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I would call that a pretty hard deprecation
+<a name="l-187"></a><span class="tm">19:28:20</span><span class="nk"> &lt;btcdrak&gt;</span> Link for the RBF patch https://github.com/bitcoin/bitcoin/pull/6871
+<a name="l-188"></a><span class="tm">19:28:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">morcos:</span> thats already in master!
+<a name="l-189"></a><span class="tm">19:28:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> given mempool sizes
+<a name="l-190"></a><span class="tm">19:28:25</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> i mena
+<a name="l-191"></a><span class="tm">19:28:28</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> so the current behaviour remains possible?
+<a name="l-192"></a><span class="tm">19:28:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I think what you're suggesting is okay for now. I am only commenting because I do not share BlueMatt/Petertodd/etc. view on the utility of priority like things.
+<a name="l-193"></a><span class="tm">19:28:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jgarzik:</span> please wait for topic change
+<a name="l-194"></a><span class="tm">19:28:50</span><span class="nk"> &lt;CodeShark&gt;</span> I don't think we'll ever finish this topic :p
+<a name="l-195"></a><span class="tm">19:28:56</span><span class="nk"> &lt;jgarzik&gt;</span> BlueMatt, talk to phantomcircuit he started it :)
+<a name="l-196"></a><span class="tm">19:29:00</span><span class="nk"> &lt;wumpus&gt;</span> time for topic change?
+<a name="l-197"></a><span class="tm">19:29:04</span><span class="nk"> &lt;btcdrak&gt;</span> yes!
+<a name="l-198"></a><span class="tm">19:29:07</span><span class="nk"> &lt;CodeShark&gt;</span> please!
+<a name="l-199"></a><span class="tm">19:29:08</span><span class="nk"> &lt;phantomcircuit&gt;</span> ya
+<a name="l-200"></a><span class="tm">19:29:08</span><span class="nk"> &lt;BlueMatt&gt;</span> can we ack the current proposal?
+<a name="l-201"></a><span class="tm">19:29:09</span><span class="nk"> &lt;cfields&gt;</span> yes
+<a name="l-202"></a><span class="tm">19:29:10</span><span class="nk"> &lt;BlueMatt&gt;</span> first
+<a name="l-203"></a><span class="tm">19:29:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">RBF opt-in</span>
+<a name="l-204"></a><span class="tm">19:29:17</span><span class="nk"> &lt;CodeShark&gt;</span> ACK
+<a name="l-205"></a><span class="tm">19:29:17</span><span class="nk"> &lt;BlueMatt&gt;</span> morcos' proposal acks?
+<a name="l-206"></a><span class="tm">19:29:20</span><span class="nk"> &lt;petertodd&gt;</span> ACK
+<a name="l-207"></a><span class="tm">19:29:21</span><span class="nk"> &lt;jgarzik&gt;</span> ACK
+<a name="l-208"></a><span class="tm">19:29:22</span><span class="nk"> &lt;btcdrak&gt;</span> ACK
+<a name="l-209"></a><span class="tm">19:29:27</span><span class="nk"> &lt;wumpus&gt;</span> ACK
+<a name="l-210"></a><span class="tm">19:29:27</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, new topic :)
+<a name="l-211"></a><span class="tm">19:29:27</span><span class="nk"> &lt;sipa&gt;</span> ACK
+<a name="l-212"></a><span class="tm">19:29:29</span><span class="nk"> &lt;sdaftuar&gt;</span> sdaftuar was here
+<a name="l-213"></a><span class="tm">19:29:30</span><span class="nk"> &lt;gmaxwell&gt;</span> ACK
+<a name="l-214"></a><span class="tm">19:29:31</span><span class="nk"> &lt;CodeShark&gt;</span> hehe
+<a name="l-215"></a><span class="tm">19:29:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">Luke-Jr:</span> you'd be able to approximate the current behavior.  I f you started with a large mempool, you could still send prioirty txs, and if you were willing to forgo the slight diff in static vs actual priority
+<a name="l-216"></a><span class="tm">19:29:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/6871</span>
+<a name="l-217"></a><span class="tm">19:29:36</span><span class="nk"> &lt;Luke-Jr&gt;</span> NACK if current policy is made impossible
+<a name="l-218"></a><span class="tm">19:29:45</span><span class="nk"> &lt;jtimon&gt;</span> I got lost, what is the current proposal?
+<a name="l-219"></a><span class="tm">19:29:50</span><span class="nk"> &lt;btcdrak&gt;</span> RBF
+<a name="l-220"></a><span class="tm">19:29:55</span><span class="nk"> &lt;CodeShark&gt;</span> opt-in RBF
+<a name="l-221"></a><span class="tm">19:30:05</span><span class="nk"> &lt;phantomcircuit&gt;</span> oh boy
+<a name="l-222"></a><span class="tm">19:30:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> set prioritysize to 0 for 0.12, rip out priority for 0.13
+<a name="l-223"></a><span class="tm">19:30:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> and disable priority in wallet if mempool is limited
+<a name="l-224"></a><span class="tm">19:30:22</span><span class="nk"> &lt;jtimon&gt;</span> ok, ack both
+<a name="l-225"></a><span class="tm">19:30:29</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> shipping 0.12 as is with respect to priority, with a couple of changes: mining code will use starting priority, default prioritysize=0, and wallet is smart enough to  not place priority txs if mempool limiting is in effect
+<a name="l-226"></a><span class="tm">19:30:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> the above will make current policy still possible, and give time for something better to be implemented I think
+<a name="l-227"></a><span class="tm">19:30:46</span><span class="nk"> &lt;jgarzik&gt;</span> nod
+<a name="l-228"></a><span class="tm">19:30:54</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so *now* rbf
+<a name="l-229"></a><span class="tm">19:30:56</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">petertodd:</span> not if mining code must use starting priority.
+<a name="l-230"></a><span class="tm">19:30:59</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">### </span><span class="cmdline">really RBF</span>
+<a name="l-231"></a><span class="tm">19:31:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">re:</span> RBF, tools! https://github.com/petertodd/replace-by-fee-tools
+<a name="l-232"></a><span class="tm">19:31:27</span><span class="nk"> &lt;petertodd&gt;</span> I wrote tx combining - "incremental sendmany" - yesterday
+<a name="l-233"></a><span class="tm">19:31:27</span><span class="nk"> &lt;btcdrak&gt;</span> that's a good start
+<a name="l-234"></a><span class="tm">19:31:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> we'll talk more later.
+<a name="l-235"></a><span class="tm">19:31:30</span><span class="nk"> &lt;wumpus&gt;</span> nice petertodd
+<a name="l-236"></a><span class="tm">19:31:38</span><span class="nk"> &lt;BlueMatt&gt;</span> how much is there to discuss aside from "yes, we want this, code has been heavily concept-ack'ed"?
+<a name="l-237"></a><span class="tm">19:31:42</span><span class="nk"> &lt;morcos&gt;</span> Yay for RBF
+<a name="l-238"></a><span class="tm">19:31:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">RBF:</span> ACK
+<a name="l-239"></a><span class="tm">19:31:54</span><span class="nk"> &lt;morcos&gt;</span> we go from cry to rejoice
+<a name="l-240"></a><span class="tm">19:31:54</span><span class="nk"> &lt;jgarzik&gt;</span> opt-in RBF - ACK
+<a name="l-241"></a><span class="tm">19:31:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> and running in production at f2pool in the FFS variant
+<a name="l-242"></a><span class="tm">19:31:57</span><span class="nk"> &lt;Luke-Jr&gt;</span> biggest problem for optin RBF is that you can't opt-in per-output
+<a name="l-243"></a><span class="tm">19:31:59</span><span class="nk"> &lt;Luke-Jr&gt;</span> IMO
+<a name="l-244"></a><span class="tm">19:32:00</span><span class="nk"> &lt;btcdrak&gt;</span> I guess action point is to review PR if you havemt
+<a name="l-245"></a><span class="tm">19:32:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> yeah, that'd be cool, but very hard to implement, and prolematic re privacy :(
+<a name="l-246"></a><span class="tm">19:32:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review and merge #6871 (nSequence-based Full-RBF opt-in)</span>
+<a name="l-247"></a><span class="tm">19:32:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">petertodd:</span> I think we all agree FSS is useless :(
+<a name="l-248"></a><span class="tm">19:32:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> nSequence is the only "free to use" field we have :(
+<a name="l-249"></a><span class="tm">19:32:36</span><span class="nk"> &lt;jgarzik&gt;</span> BlueMatt, ACK!
+<a name="l-250"></a><span class="tm">19:32:48</span><span class="nk"> &lt;btcdrak&gt;</span> I would prefer we just went full-RBF. I know the landscape has changed a lot since all the tx flooding
+<a name="l-251"></a><span class="tm">19:32:51</span><span class="nk"> &lt;jgarzik&gt;</span> petertodd, until the TX structure changes
+<a name="l-252"></a><span class="tm">19:32:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> yeah, and if that changes, we can implement FSS later as an add-on
+<a name="l-253"></a><span class="tm">19:33:04 </span><span class="nka">* jtimon</span> <span class="ac">should find time to turn concept ACK into utACK</span>
+<a name="l-254"></a><span class="tm">19:33:05</span><span class="nk"> &lt;jgarzik&gt;</span> well we also have TX version bits
+<a name="l-255"></a><span class="tm">19:33:06</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jgarzik:</span> agreed!
+<a name="l-256"></a><span class="tm">19:33:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jgarzik:</span> this doesn't help per-ouptut I think
+<a name="l-257"></a><span class="tm">19:33:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> any RBF use (further) breaks the safty of unconfirmed decendants... I don't know how much additional value per output flagging would accomplish even if it were reasonably possible (nowhere to encode it, alas).
+<a name="l-258"></a><span class="tm">19:33:33</span><span class="nk"> &lt;petertodd&gt;</span> for now though, nSequence opt-in is the best we have
+<a name="l-259"></a><span class="tm">19:33:38</span><span class="nk"> &lt;sdaftuar&gt;</span> as i mentioned last week i think an email to the list about how opt-in RBF works is important
+<a name="l-260"></a><span class="tm">19:33:43</span><span class="nk"> &lt;jgarzik&gt;</span> it would be nice to mask out TX version bits ahead of time.  Agree it doesn't help with per-{input,output} stuff.
+<a name="l-261"></a><span class="tm">19:33:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> will do
+<a name="l-262"></a><span class="tm">19:33:55</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic: version bits
+<a name="l-263"></a><span class="tm">19:34:12</span><span class="nk"> &lt;morcos&gt;</span> Suggested Topic: wumpus was supposed to merge chain limits so we could email -dev list about that as well
+<a name="l-264"></a><span class="tm">19:34:17</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">petertodd:</span> can this optin-RBF be disabled by nodes?
+<a name="l-265"></a><span class="tm">19:34:20</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">#action </span><span class="cmdline">- everybody take opt-in RBF from concept ACK to [ut] ACK</span>
+<a name="l-266"></a><span class="tm">19:34:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> no, but if you want to add a command line switch for that by all means go for it
+<a name="l-267"></a><span class="tm">19:34:41</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yea, lets do that
+<a name="l-268"></a><span class="tm">19:35:11</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">petertodd:</span> IMO nodes should be able to toggle between FSS-or-not, and never/optin/always
+<a name="l-269"></a><span class="tm">19:35:15</span><span class="nk"> &lt;morcos&gt;</span> sorry jgarzik:  s/wumpus/any one of the 5 high elders of Bitcoin/
+<a name="l-270"></a><span class="tm">19:35:35</span><span class="nk"> &lt;phantomcircuit&gt;</span> petertodd, well... technically you can send the replacement optin flag outside of the transaction
+<a name="l-271"></a><span class="tm">19:35:37</span><span class="nk"> &lt;Luke-Jr&gt;</span> (are any anti-RBF people going to block an option for nodes to enable always-full-RBF?)
+<a name="l-272"></a><span class="tm">19:35:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> well, write that and pull-req! just a few more lines of code
+<a name="l-273"></a><span class="tm">19:35:55</span><span class="nk"> &lt;phantomcircuit&gt;</span> it's not consensus enforced so it doesn't matter
+<a name="l-274"></a><span class="tm">19:36:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> #6771 seems quite controversial looking at the comments
+<a name="l-275"></a><span class="tm">19:37:02</span><span class="nk"> &lt;phantomcircuit&gt;</span> Luke-Jr, i predict yes, so please as a separate pull request
+<a name="l-276"></a><span class="tm">19:37:27</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes we discussed that last week.  its a strong majority in favor, but there is a very vocal minority who are opposed.  its not clear how strongly opposed though.
+<a name="l-277"></a><span class="tm">19:37:31</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">### </span><span class="cmdline">change topic, people</span>
+<a name="l-278"></a><span class="tm">19:37:43</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="topic">#topic </span><span class="topicline">chain limits</span>
+<a name="l-279"></a><span class="tm">19:37:44</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> really? a couple of loud voices only it seems.
+<a name="l-280"></a><span class="tm">19:37:44</span><span class="nk"> &lt;wumpus&gt;</span> ok ,next topic was versionbits by jtimon aaik
+<a name="l-281"></a><span class="tm">19:37:46</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jgarzik:</span> I'd particularly like an answer from you on that :P
+<a name="l-282"></a><span class="tm">19:37:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">versionbits</span>
+<a name="l-283"></a><span class="tm">19:37:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jgarzik:</span> please don't do that, I'm chairing
+<a name="l-284"></a><span class="tm">19:38:16</span><span class="nk"> &lt;morcos&gt;</span> unfortunately we don't think there is much of an otpion, so last time we said we'd merge and email and if all hell breaks loose we could consider reverting, but we have to do what we think is the right choice.  and leaving existing limits is dangerous
+<a name="l-285"></a><span class="tm">19:38:17</span><span class="nk"> &lt;jgarzik&gt;</span> then keep it moving, chair :)
+<a name="l-286"></a><span class="tm">19:38:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jgarzik:</span> it's kind of annoying if we both change topics
+<a name="l-287"></a><span class="tm">19:38:39</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">CodeShark:</span> what is the status of versionbits?
+<a name="l-288"></a><span class="tm">19:38:42</span><span class="nk"> &lt;CodeShark&gt;</span> for versionbits, some think the container stuff I did is a bit excessive
+<a name="l-289"></a><span class="tm">19:38:45</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> agree one chair.
+<a name="l-290"></a><span class="tm">19:38:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> afaik all the opposing voices had use cases up to a few deep
+<a name="l-291"></a><span class="tm">19:38:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jgarzik:</span> you can chair next week, ok
+<a name="l-292"></a><span class="tm">19:38:56</span><span class="nk"> &lt;jtimon&gt;</span> there's two implementations, CodeShark's https://github.com/bitcoin/bitcoin/pull/6816 and rusty's (let me look for the link later)
+<a name="l-293"></a><span class="tm">19:38:57</span><span class="nk"> &lt;CodeShark&gt;</span> it has been proposed to stick everything into a single static table
+<a name="l-294"></a><span class="tm">19:39:06</span><span class="nk"> &lt;jgarzik&gt;</span> I'm tempted to write a TX version bits BIP, just to reserve bits for later, separate from block version bits
+<a name="l-295"></a><span class="tm">19:39:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> lets come back to after meeting.
+<a name="l-296"></a><span class="tm">19:39:40</span><span class="nk"> &lt;phantomcircuit&gt;</span> jgarzik, fyi there is at least a few transactions in the chain that have weird versions
+<a name="l-297"></a><span class="tm">19:39:41</span><span class="nk"> &lt;petertodd&gt;</span> I haven't looked in detail at either softfork version bits code myself, but I don't think it needs to be in v0.12.0 at all, so I'm thinking no rush
+<a name="l-298"></a><span class="tm">19:39:51</span><span class="nk"> &lt;jgarzik&gt;</span> phantomcircuit, hmmm interesting
+<a name="l-299"></a><span class="tm">19:39:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> it will need to be backportable anyway
+<a name="l-300"></a><span class="tm">19:40:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> not necessarily a bit deal - there's some blocks with weird versions too, and the soft-fork mechanism handles that fine
+<a name="l-301"></a><span class="tm">19:40:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Versionbits bip needs a minor revisions, proposals need a starting time. It can be just a time for which signaling will begin, or also a time for when counting starts.
+<a name="l-302"></a><span class="tm">19:40:33</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> no sense in delaying this or dealing with refactoring that will come in 0.13
+<a name="l-303"></a><span class="tm">19:40:48</span><span class="nk"> &lt;CodeShark&gt;</span> I had proposed a starting time in a PR to the bip
+<a name="l-304"></a><span class="tm">19:40:54</span><span class="nk"> &lt;CodeShark&gt;</span> but some opposed it
+<a name="l-305"></a><span class="tm">19:40:58</span><span class="nk"> &lt;gmaxwell&gt;</span> Suggested topic: 0.11.2/0.10.4 release.
+<a name="l-306"></a><span class="tm">19:41:03</span><span class="nk"> &lt;jgarzik&gt;</span> in general we want to push versionbits soonish
+<a name="l-307"></a><span class="tm">19:41:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> we have more expirence now.
+<a name="l-308"></a><span class="tm">19:41:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> there is very good reason now to have it
+<a name="l-309"></a><span class="tm">19:41:23</span><span class="nk"> &lt;phantomcircuit&gt;</span> petertodd, yes im aware, just saying it's something to keep in mind
+<a name="l-310"></a><span class="tm">19:41:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jgarzik:</span> existing softforks need to complete forst anyway
+<a name="l-311"></a><span class="tm">19:41:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I don't understand why you want that as topic, they're already in rc?
+<a name="l-312"></a><span class="tm">19:41:31</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">CodeShark:</span> I very much pefer the table approach suggested by rusty.
+<a name="l-313"></a><span class="tm">19:41:32</span><span class="nk"> &lt;jgarzik&gt;</span> nod
+<a name="l-314"></a><span class="tm">19:41:45</span><span class="nk"> &lt;gmaxwell&gt;</span> http://bitcoin.sipa.be/ver-2k.png
+<a name="l-315"></a><span class="tm">19:41:56</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">btcdrak:</span> got a link?
+<a name="l-316"></a><span class="tm">19:41:59</span><span class="nk"> &lt;jtimon&gt;</span> to be clear I never opposed to a starting date
+<a name="l-317"></a><span class="tm">19:42:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> just to find out if there is anything we need to target to cut the release that you or others are thinking of.
+<a name="l-318"></a><span class="tm">19:42:31</span><span class="nk"> &lt;gmaxwell&gt;</span> (I look at that graph twice a day and worry that it's going to uptick hard without a release out. :) )
+<a name="l-319"></a><span class="tm">19:42:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">cfields:</span> this was rusty's draft idea: https://github.com/bitcoin/bitcoin/compare/master...rustyrussell:bip-9-versionbits
+<a name="l-320"></a><span class="tm">19:43:06</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> thanks
+<a name="l-321"></a><span class="tm">19:43:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> want the qt/-fpie change backported to .11.2 ?
+<a name="l-322"></a><span class="tm">19:43:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> yeah, very inclined to have a CLTV relese out; I'd only delay 0.11.2/0.10.4 for critical fixes
+<a name="l-323"></a><span class="tm">19:43:16</span><span class="nk"> &lt;jgarzik&gt;</span> cfields, later / different chan
+<a name="l-324"></a><span class="tm">19:43:16</span><span class="nk"> &lt;sipa&gt;</span> what is the topic?
+<a name="l-325"></a><span class="tm">19:43:21</span><span class="nk"> &lt;jgarzik&gt;</span> versionbits
+<a name="l-326"></a><span class="tm">19:43:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> versionbits
+<a name="l-327"></a><span class="tm">19:43:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> too late for that IMO, as gmaxwell says we want them final ASAP
+<a name="l-328"></a><span class="tm">19:43:38</span><span class="nk"> &lt;jgarzik&gt;</span> let's move on - seems main decision is codeshark / rusty - not much actionable right now
+<a name="l-329"></a><span class="tm">19:43:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jgarzik:</span> agreed
+<a name="l-330"></a><span class="tm">19:43:47</span><span class="nk"> &lt;CodeShark&gt;</span> I had added a deploytime parameter as well, but I took it out: https://github.com/bitcoin/bips/pull/219
+<a name="l-331"></a><span class="tm">19:43:48</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jgarzik:</span> eh? the question was what's .11.2 waiting for
+<a name="l-332"></a><span class="tm">19:43:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> ok
+<a name="l-333"></a><span class="tm">19:43:59</span><span class="nk"> &lt;jgarzik&gt;</span> cfields, the topic is versionbits
+<a name="l-334"></a><span class="tm">19:44:00</span><span class="nk"> &lt;jgarzik&gt;</span> cfields, not qt
+<a name="l-335"></a><span class="tm">19:44:01</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">CodeShark:</span> better add it back then
+<a name="l-336"></a><span class="tm">19:44:10</span><span class="nk"> &lt;CodeShark&gt;</span> will do
+<a name="l-337"></a><span class="tm">19:44:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">chian limits</span>
+<a name="l-338"></a><span class="tm">19:44:18</span><span class="nk"> &lt;gmaxwell&gt;</span> versionbits isn't actionable yet. starting time should be considered.
+<a name="l-339"></a><span class="tm">19:44:18</span><span class="nk"> &lt;jtimon&gt;</span> in fact I personally think both CodeShark's and rusty's are more complicated than they need to be
+<a name="l-340"></a><span class="tm">19:44:33</span><span class="nk"> &lt;jgarzik&gt;</span> chain limits -- last meeting we decided to push &amp; tell list about it
+<a name="l-341"></a><span class="tm">19:44:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> feel free to pull me into a conversation with rusty about starting time.
+<a name="l-342"></a><span class="tm">19:44:46</span><span class="nk"> &lt;jgarzik&gt;</span> definitionally impossible to satisfy all
+<a name="l-343"></a><span class="tm">19:44:54</span><span class="nk"> &lt;wumpus&gt;</span> I'm not comfortable with merging it with all the controversy
+<a name="l-344"></a><span class="tm">19:44:59</span><span class="nk"> &lt;jgarzik&gt;</span> I am
+<a name="l-345"></a><span class="tm">19:44:59</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">re:</span> chian limits, I keep thinking that the # of users actually affected by them is reasonably small, and they tend to be people with engineering teams who should be able to at least do the easy hack of "create a buffer of txs waiting to go out"
+<a name="l-346"></a><span class="tm">19:45:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> are you comfortable with someone merging it?
+<a name="l-347"></a><span class="tm">19:45:09</span><span class="nk"> &lt;CodeShark&gt;</span> will do, gmaxwell
+<a name="l-348"></a><span class="tm">19:45:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> I thought we were all in that discussion
+<a name="l-349"></a><span class="tm">19:45:13</span><span class="nk"> &lt;jtimon&gt;</span> I opposed to having a per-bip threshold instead of per-chain
+<a name="l-350"></a><span class="tm">19:45:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jgarzik:</span> go do it
+<a name="l-351"></a><span class="tm">19:45:18</span><span class="nk"> &lt;jgarzik&gt;</span> OK
+<a name="l-352"></a><span class="tm">19:45:27</span><span class="nk"> &lt;gmaxwell&gt;</span> I am fine with jgarzik merging it. We can revert based on response if needed.
+<a name="l-353"></a><span class="tm">19:45:32</span><span class="nk"> &lt;CodeShark&gt;</span> yeah, actually I think I also added you to the convo, gmaxwell
+<a name="l-354"></a><span class="tm">19:45:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-355"></a><span class="tm">19:45:37</span><span class="nk"> &lt;CodeShark&gt;</span> but this was a few weeks ago
+<a name="l-356"></a><span class="tm">19:45:39</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-357"></a><span class="tm">19:45:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> they don't even need them to be mined at once; they just nees to get them in the mempool at once so customers can see the transactions
+<a name="l-358"></a><span class="tm">19:45:45</span><span class="nk"> &lt;jgarzik&gt;</span> merge easy, revert easy
+<a name="l-359"></a><span class="tm">19:45:49</span><span class="nk"> &lt;jgarzik&gt;</span> get Internet feedback
+<a name="l-360"></a><span class="tm">19:45:50</span><span class="nk"> &lt;wumpus&gt;</span> blah
+<a name="l-361"></a><span class="tm">19:45:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> I might have been stupid then.
+<a name="l-362"></a><span class="tm">19:45:55</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> yes I know :(
+<a name="l-363"></a><span class="tm">19:46:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think it will actually be okay but we need more information if not.
+<a name="l-364"></a><span class="tm">19:46:14</span><span class="nk"> &lt;jgarzik&gt;</span> nod
+<a name="l-365"></a><span class="tm">19:46:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> we should definitely communicate the RBF sendmany alternative to long chains ASAP
+<a name="l-366"></a><span class="tm">19:46:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> if people were justnusing payment protocol etc, and not using the p2p network as a communication channel, nobody would care
+<a name="l-367"></a><span class="tm">19:46:33</span><span class="nk"> &lt;morcos&gt;</span> ok after it's merged I will email the list
+<a name="l-368"></a><span class="tm">19:46:41</span><span class="nk"> &lt;jgarzik&gt;</span> ok
+<a name="l-369"></a><span class="tm">19:46:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> agreed
+<a name="l-370"></a><span class="tm">19:46:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the cases people raised were all for small chain counts; and large chains cannot be safely supported by the software (of course you can still author large chains, you just need to retransmit until nodes take them-- not unlike other limits... not even clear to me that people knew this)
+<a name="l-371"></a><span class="tm">19:47:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> read my conversation with petertodd above
+<a name="l-372"></a><span class="tm">19:47:32</span><span class="nk"> &lt;gmaxwell&gt;</span> Long chains are still also highly malleability vulnerable.
+<a name="l-373"></a><span class="tm">19:47:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">re:</span> "customer sees tx in wallet" - the user experience of long chains isn't great anyway, as they're not all that reliable due to propagation failures
+<a name="l-374"></a><span class="tm">19:47:39</span><span class="nk"> &lt;jgarzik&gt;</span> yup
+<a name="l-375"></a><span class="tm">19:47:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> retransmit doesn't work for them, it is not mining; it is about getting them instantly relayed
+<a name="l-376"></a><span class="tm">19:47:55</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-377"></a><span class="tm">19:47:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> fair point though also petertodd's response.
+<a name="l-378"></a><span class="tm">19:48:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> RBF sendmany won't show up in many users wallets yet :(
+<a name="l-379"></a><span class="tm">19:48:32</span><span class="nk"> &lt;jgarzik&gt;</span> get opt-in RBF into tree, and it will show up in wallets rapidly.
+<a name="l-380"></a><span class="tm">19:48:34</span><span class="nk"> &lt;morcos&gt;</span> I think this is the reason to announce this as far in advance as possible
+<a name="l-381"></a><span class="tm">19:48:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jgarzik:</span> agreed
+<a name="l-382"></a><span class="tm">19:48:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I think showing up in wallets isn't the actual metric, showing up in block explorers is.
+<a name="l-383"></a><span class="tm">19:48:53</span><span class="nk"> &lt;morcos&gt;</span> So that if they need to figure out another way to communicate the information they can
+<a name="l-384"></a><span class="tm">19:48:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jgarzik:</span> +!
+<a name="l-385"></a><span class="tm">19:49:06</span><span class="nk"> &lt;morcos&gt;</span> also its a configurable limit!, we're just chanigng the default
+<a name="l-386"></a><span class="tm">19:49:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> good point - although it'll take awhile for even that to be handled well rather than as scary doublespends
+<a name="l-387"></a><span class="tm">19:49:23</span><span class="nk"> &lt;jgarzik&gt;</span> morcos, agree but weak argument - most go with default
+<a name="l-388"></a><span class="tm">19:49:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes it's not a consensus change :)
+<a name="l-389"></a><span class="tm">19:49:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> we can contact popular explorers to make changes. Shouldnt be hard.
+<a name="l-390"></a><span class="tm">19:49:46</span><span class="nk"> &lt;sipa&gt;</span> indeed; defaults has anlot.of power unfortunately
+<a name="l-391"></a><span class="tm">19:49:53</span><span class="nk"> &lt;morcos&gt;</span> the default should be one that allows the node to operate securely and be safe from attack, if more risky parameters are needed for rarer use cases that should be something those users worry about
+<a name="l-392"></a><span class="tm">19:49:56</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case I think collectively we dont think failing to limit here is technically viable. So what choice do we have? people can have their own opinions, but not your own reality. :)
+<a name="l-393"></a><span class="tm">19:50:17</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> exactly
+<a name="l-394"></a><span class="tm">19:50:18</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">### </span><span class="cmdline">10min</span>
+<a name="l-395"></a><span class="tm">19:50:20</span><span class="nk"> &lt;gmaxwell&gt;</span> if there are specific needs about very long chains we need to know so we can figure out how to handle them.
+<a name="l-396"></a><span class="tm">19:50:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> agreed - first priority is to keep the system working for the super majority who don't need long chains
+<a name="l-397"></a><span class="tm">19:50:37</span><span class="nk"> &lt;jgarzik&gt;</span> gmaxwell, yep -- and merging is the best way to get user feedback on that, IMO
+<a name="l-398"></a><span class="tm">19:50:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that's true - the only thing under discussion is what the limits should be, not whetehr there should be any
+<a name="l-399"></a><span class="tm">19:50:52</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, nobody commenting in the pull request came up with an actual use case for very long chains, they merely asserted that they needed them
+<a name="l-400"></a><span class="tm">19:50:56</span><span class="nk"> &lt;jgarzik&gt;</span> can only spin wheels so long in the dev silo (info vacuum)
+<a name="l-401"></a><span class="tm">19:51:00</span><span class="nk"> &lt;btcdrak&gt;</span> what is the PR for chainlimits again?
+<a name="l-402"></a><span class="tm">19:51:04</span><span class="nk"> &lt;jgarzik&gt;</span> <span class="cmd">#6771</span><span class="cmdline"></span>
+<a name="l-403"></a><span class="tm">19:51:05</span><span class="nk"> &lt;phantomcircuit&gt;</span> which i am happy to ignore
+<a name="l-404"></a><span class="tm">19:51:21</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/6771</span>
+<a name="l-405"></a><span class="tm">19:51:32</span><span class="nk"> &lt;jgarzik&gt;</span> new topic?
+<a name="l-406"></a><span class="tm">19:51:39</span><span class="nk"> &lt;jtimon&gt;</span> 25 25 wasn't final, right
+<a name="l-407"></a><span class="tm">19:51:57</span><span class="nk"> &lt;morcos&gt;</span> 25 / 101 and 25 / 101  are the final limits
+<a name="l-408"></a><span class="tm">19:52:35</span><span class="nk"> &lt;jtimon&gt;</span> same for both? I expected ancestors to be lower
+<a name="l-409"></a><span class="tm">19:53:04</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> most common use case is linear chain...
+<a name="l-410"></a><span class="tm">19:53:23</span><span class="nk"> &lt;sipa&gt;</span> new topic?
+<a name="l-411"></a><span class="tm">19:53:26</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-412"></a><span class="tm">19:53:44</span><span class="nk"> &lt;petertodd&gt;</span> &lt;crickets&gt;
+<a name="l-413"></a><span class="tm">19:53:47</span><span class="nk"> &lt;jgarzik&gt;</span> did we cover jonas while I was in the taxi?
+<a name="l-414"></a><span class="tm">19:54:10</span><span class="nk"> &lt;sdaftuar&gt;</span> ?
+<a name="l-415"></a><span class="tm">19:54:10</span><span class="nk"> &lt;jtimon&gt;</span> ?
+<a name="l-416"></a><span class="tm">19:54:20</span><span class="nk"> &lt;CodeShark&gt;</span> not sure I want to know
+<a name="l-417"></a><span class="tm">19:54:20</span><span class="nk"> &lt;Luke-Jr&gt;</span> ?
+<a name="l-418"></a><span class="tm">19:54:23</span><span class="nk"> &lt;petertodd&gt;</span> ‽
+<a name="l-419"></a><span class="tm">19:54:30</span><span class="nk"> &lt;Luke-Jr&gt;</span> ⁈
+<a name="l-420"></a><span class="tm">19:54:42</span><span class="nk"> &lt;jgarzik&gt;</span> proposal for new GUI maintainer
+<a name="l-421"></a><span class="tm">19:54:42</span><span class="nk"> &lt;CodeShark&gt;</span> sounds kinky, though
+<a name="l-422"></a><span class="tm">19:54:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> GUI's are pretty kinky
+<a name="l-423"></a><span class="tm">19:55:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">petertodd:</span> they're masochistic, if nothing else
+<a name="l-424"></a><span class="tm">19:55:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jgarzik:</span> I think it's kind of rude to bring that up in this meeting when wumpus probably hasn't talked to jonasschnelli about it! :)
+<a name="l-425"></a><span class="tm">19:55:28</span><span class="nk"> &lt;jgarzik&gt;</span> gmaxwell, he said he did, which is why I mentioned it
+<a name="l-426"></a><span class="tm">19:55:40</span><span class="nk"> &lt;wumpus&gt;</span> it's not time to talk about that yet
+<a name="l-427"></a><span class="tm">19:55:42 </span><span class="nka">* bsm1175321</span> <span class="ac">would separate the GUI into a different project...</span>
+<a name="l-428"></a><span class="tm">19:55:42</span><span class="nk"> &lt;Luke-Jr&gt;</span> jonas also doesn't seem to be here for the meeting
+<a name="l-429"></a><span class="tm">19:55:44</span><span class="nk"> &lt;wumpus&gt;</span> yes, that very rude
+<a name="l-430"></a><span class="tm">19:55:48</span><span class="nk"> &lt;gmaxwell&gt;</span> ah. Okay.
+<a name="l-431"></a><span class="tm">19:56:02</span><span class="nk"> &lt;wumpus&gt;</span> I asked if he was interested, not whether we should announce it yet
+<a name="l-432"></a><span class="tm">19:56:06</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, end meeting?
+<a name="l-433"></a><span class="tm">19:56:24</span><span class="nk"> &lt;btcdrak&gt;</span> if we can remember the command this week :-)
+<a name="l-434"></a><span class="tm">19:56:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingend</span><span class="cmdline"></span>
+<a name="l-435"></a><span class="tm">19:56:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#destroymeeting</span><span class="cmdline"></span>
+<a name="l-436"></a><span class="tm">19:56:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
