@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:38</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov 19 19:00:38 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:38</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:16</span><span class="nk"> &lt;wumpus&gt;</span> ok, any topics?
+<a name="l-5"></a><span class="tm">19:01:19</span><span class="nk"> &lt;sipa&gt;</span> suggested topic: priority clarification
+<a name="l-6"></a><span class="tm">19:01:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">priority clarification</span>
+<a name="l-7"></a><span class="tm">19:01:44</span><span class="nk"> &lt;sipa&gt;</span> suggested topic: dealing with mempool eviction
+<a name="l-8"></a><span class="tm">19:02:01</span><span class="nk"> &lt;sipa&gt;</span> so it wasn't entirely clear to me after last weekend what the plan was wrt priority
+<a name="l-9"></a><span class="tm">19:02:45</span><span class="nk"> &lt;sipa&gt;</span> but imho, either we stop supporting it for tx creation entirely (meaning estimatepriority etc go away)
+<a name="l-10"></a><span class="tm">19:02:48</span><span class="nk"> &lt;sipa&gt;</span> or it keeps working
+<a name="l-11"></a><span class="tm">19:03:20</span><span class="nk"> &lt;sipa&gt;</span> which also means a mempool area for priority, or there's no way to keep wallet-created priority transactions in
+<a name="l-12"></a><span class="tm">19:03:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> i am ok with either.  i vote for stop supporting it for tx creation entirely.
+<a name="l-13"></a><span class="tm">19:04:14</span><span class="nk"> &lt;morcos&gt;</span> i feel like we will keep going round and round on this issue release after release unless we finally start pulling off the bandaid
+<a name="l-14"></a><span class="tm">19:04:28</span><span class="nk"> &lt;morcos&gt;</span> if we develop a better framework for supporting a similar type metric we can add it back
+<a name="l-15"></a><span class="tm">19:04:47</span><span class="nk"> &lt;morcos&gt;</span> but we waste too much time debating it.
+<a name="l-16"></a><span class="tm">19:05:04</span><span class="nk"> &lt;wumpus&gt;</span> action point for that for last week re: priority was to look at https://github.com/bitcoin/bitcoin/pull/6134
+<a name="l-17"></a><span class="tm">19:05:47</span><span class="nk"> &lt;jgarzik&gt;</span> it sounded like luke-jr was the only one opposed to ceasing support for it
+<a name="l-18"></a><span class="tm">19:06:12</span><span class="nk"> &lt;wumpus&gt;</span> he's also the person that introduced the priority deltas IIRC
+<a name="l-19"></a><span class="tm">19:06:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> we should pull the bandaid now imo
+<a name="l-20"></a><span class="tm">19:06:27</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes #6134 is required either way.  if we decide to start including priority support, we can make a simple modification to that pull to return the estimate maxed with mempools min priority instead of infinity
+<a name="l-21"></a><span class="tm">19:06:47</span><span class="nk"> &lt;morcos&gt;</span> i think other people (including myself) think the notion has some benefit
+<a name="l-22"></a><span class="tm">19:07:18</span><span class="nk"> &lt;morcos&gt;</span> but its a matter of introducing additional complicatin at this point to continue supportin git
+<a name="l-23"></a><span class="tm">19:08:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I've decided to stop disliking the complete removal of priority.
+<a name="l-24"></a><span class="tm">19:08:40</span><span class="nk"> &lt;jtimon&gt;</span> I won't insist on this, but everything (including 6134) would just be simpler without having to worry about the priority code
+<a name="l-25"></a><span class="tm">19:08:44</span><span class="nk"> &lt;CodeShark&gt;</span> I never really liked it in the first place
+<a name="l-26"></a><span class="tm">19:08:44</span><span class="nk"> &lt;jgarzik&gt;</span> yay!
+<a name="l-27"></a><span class="tm">19:09:08</span><span class="nk"> &lt;BlueMatt&gt;</span> yay!
+<a name="l-28"></a><span class="tm">19:09:13</span><span class="nk"> &lt;btcdrak&gt;</span> do it
+<a name="l-29"></a><span class="tm">19:09:37</span><span class="nk"> &lt;jtimon&gt;</span> iirc Luke-Jr wasn't so happy about removing it, but not now nor eventually
+<a name="l-30"></a><span class="tm">19:09:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> we have fee deltas that work in the same way, though
+<a name="l-31"></a><span class="tm">19:10:22</span><span class="nk"> &lt;wumpus&gt;</span> yes, we can still support a similar delta
+<a name="l-32"></a><span class="tm">19:10:33</span><span class="nk"> &lt;sipa&gt;</span> i'd still like to try adding a "count very small fraction of bitcoin-days-destroyed as extra fee"
+<a name="l-33"></a><span class="tm">19:10:46</span><span class="nk"> &lt;wumpus&gt;</span> txfee rate delta
+<a name="l-34"></a><span class="tm">19:10:57</span><span class="nk"> &lt;morcos&gt;</span> If this is the path we follow (which I agree with), then I would suggest for the mining code we use the lowerBoundPriority concept from 7008 for 0.12.
+<a name="l-35"></a><span class="tm">19:10:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> fee delta
+<a name="l-36"></a><span class="tm">19:11:09</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">clarification:</span> I never really liked the priority code - I only disliked removing it because it was too tangled up
+<a name="l-37"></a><span class="tm">19:11:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> sounds good to me
+<a name="l-38"></a><span class="tm">19:11:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I think we can only do that if there is a very low cap
+<a name="l-39"></a><span class="tm">19:11:33</span><span class="nk"> &lt;BlueMatt&gt;</span> at which point its useless
+<a name="l-40"></a><span class="tm">19:11:35</span><span class="nk"> &lt;BlueMatt&gt;</span> so....why?
+<a name="l-41"></a><span class="tm">19:11:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i know
+<a name="l-42"></a><span class="tm">19:11:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i said try
+<a name="l-43"></a><span class="tm">19:11:52</span><span class="nk"> &lt;BlueMatt&gt;</span> fair enough
+<a name="l-44"></a><span class="tm">19:12:25</span><span class="nk"> &lt;wumpus&gt;</span> ok - next topic?
+<a name="l-45"></a><span class="tm">19:12:34</span><span class="nk"> &lt;Luke-Jr&gt;</span> I will discourage all miners from upgrading if priority is removed.
+<a name="l-46"></a><span class="tm">19:12:44</span><span class="nk"> &lt;sdaftuar&gt;</span> so do we actually need to modify 6134?  i think it's fine in it's current form.  we -could- take out futher priority support, but i think it works pretty well as is.
+<a name="l-47"></a><span class="tm">19:12:56</span><span class="nk"> &lt;btcdrak&gt;</span> suggested topic: merge #6312 sequence numbers
+<a name="l-48"></a><span class="tm">19:12:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> it's not removed from mining, only from the wallet
+<a name="l-49"></a><span class="tm">19:12:59</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> ok
+<a name="l-50"></a><span class="tm">19:13:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> though you'll need a sufficiently large mempool to keep priority txn in
+<a name="l-51"></a><span class="tm">19:13:14</span><span class="nk"> &lt;Luke-Jr&gt;</span> that seems acceptable, since nobody is really maintaining the wallet
+<a name="l-52"></a><span class="tm">19:13:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> I think if we remove priority from other tx creation places it'll be equivalently easy to move in from 6134
+<a name="l-53"></a><span class="tm">19:13:38</span><span class="nk"> &lt;morcos&gt;</span> i'd merge 6134 first (after it gets reviewed) and then let people remove priority
+<a name="l-54"></a><span class="tm">19:13:48</span><span class="nk"> &lt;morcos&gt;</span> but 6134 has important fee estimation changes
+<a name="l-55"></a><span class="tm">19:13:51</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> ok that makes sense to me
+<a name="l-56"></a><span class="tm">19:14:03</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> my offer to help adapting any codebase to a non-priority future still stands (even/spcially if you think that case it's "impossible")
+<a name="l-57"></a><span class="tm">19:14:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> suggested topic: dealing with evicted wallet transactions
+<a name="l-58"></a><span class="tm">19:14:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I don't dislike that "count as extra fee", though I think morcos convinced me that it won't make the big improvement I thought it would. (and if we were going to bias a bit it could be utxo destroyed)
+<a name="l-59"></a><span class="tm">19:14:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> i thought this was always the plan?
+<a name="l-60"></a><span class="tm">19:14:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> he convinced me too... but... numbers after trying say more
+<a name="l-61"></a><span class="tm">19:15:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">dealing with mempool eviction</span>
+<a name="l-62"></a><span class="tm">19:16:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">so:</span> problem: currently when a wallet transaction is evicted, the wallet considers the resulting transaction as "conflicting" and will happily respend the inputs
+<a name="l-63"></a><span class="tm">19:16:43</span><span class="nk"> &lt;BlueMatt&gt;</span> add a timeout, done
+<a name="l-64"></a><span class="tm">19:16:48</span><span class="nk"> &lt;gmaxwell&gt;</span> We knew when we added the conflicting stuff using the mempool that it would be problematic later. (I checked logs)
+<a name="l-65"></a><span class="tm">19:16:51</span><span class="nk"> &lt;sipa&gt;</span> suggested solution: only when accepttomemorypool fails due to non-existing inputs does the wallet treat the result as conflicting
+<a name="l-66"></a><span class="tm">19:16:53</span><span class="nk"> &lt;BlueMatt&gt;</span> makes the wallet shitty, but we need rbf
+<a name="l-67"></a><span class="tm">19:16:58</span><span class="nk"> &lt;wumpus&gt;</span> I think that's the wrong behavior, it shouldn't automatically regard transactions that you created yourself as respendable
+<a name="l-68"></a><span class="tm">19:17:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> it should consider it respendable at some point later on, though
+<a name="l-69"></a><span class="tm">19:17:24</span><span class="nk"> &lt;jtimon&gt;</span> what's the definition of an evicted tx?
+<a name="l-70"></a><span class="tm">19:17:35</span><span class="nk"> &lt;Luke-Jr&gt;</span> the wallet code needs to understand when transactions are *actually* conflicted
+<a name="l-71"></a><span class="tm">19:17:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> fix that and the rest just works
+<a name="l-72"></a><span class="tm">19:17:40</span><span class="nk"> &lt;wumpus&gt;</span> just add a way to manually remove transactions if the user doesn't care aout it anymore
+<a name="l-73"></a><span class="tm">19:17:41</span><span class="nk"> &lt;sipa&gt;</span> + add a removewallettransaction function (GUI/RPC) which removes unconfirmed transactions (the GUI version can warn if it's still in the mempool at that point)
+<a name="l-74"></a><span class="tm">19:18:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> that corresponds exactly (afaik) to failing with missing inputs
+<a name="l-75"></a><span class="tm">19:18:19</span><span class="nk"> &lt;gmaxwell&gt;</span> the 'remove' should perhaps not remove but tag as removed. I am uncomfortable with anything that destroys records.
+<a name="l-76"></a><span class="tm">19:18:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> that would be good, too, but I don't like anything involving a timeout
+<a name="l-77"></a><span class="tm">19:18:27</span><span class="nk"> &lt;jgarzik&gt;</span> That will be a big usability improvement for Bitcoin Core users...
+<a name="l-78"></a><span class="tm">19:18:35</span><span class="nk"> &lt;jgarzik&gt;</span> rename if not remove
+<a name="l-79"></a><span class="tm">19:18:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">removewallettransaction:</span> tag as removed and remove it withing the next x hours when no confirmation come in?
+<a name="l-80"></a><span class="tm">19:18:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> *comes
+<a name="l-81"></a><span class="tm">19:18:52</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> I agree, a timeout would not fix the logic here. And even if we added a timeout, we would still need to fix the logic.
+<a name="l-82"></a><span class="tm">19:18:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well as long as it's no longer visible
+<a name="l-83"></a><span class="tm">19:18:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> any reason to remove vs move to another list?
+<a name="l-84"></a><span class="tm">19:19:04</span><span class="nk"> &lt;jgarzik&gt;</span> s/remove/store it as archived but invisible/
+<a name="l-85"></a><span class="tm">19:19:10</span><span class="nk"> &lt;gmaxwell&gt;</span> archive would be fine.
+<a name="l-86"></a><span class="tm">19:19:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> rather than remove, maybe have a atomic thing to force acceptance of a double-spend?
+<a name="l-87"></a><span class="tm">19:19:16</span><span class="nk"> &lt;wumpus&gt;</span> as long as it's *effectively* removed
+<a name="l-88"></a><span class="tm">19:19:23</span><span class="nk"> &lt;jgarzik&gt;</span> archivewallettransactions
+<a name="l-89"></a><span class="tm">19:19:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> remove could give the impression the tx can't be mined in the future...
+<a name="l-90"></a><span class="tm">19:19:45</span><span class="nk"> &lt;wumpus&gt;</span> I mean people use -zapwallettxes now, this deletes all unconfirmed transactions
+<a name="l-91"></a><span class="tm">19:19:46</span><span class="nk"> &lt;sipa&gt;</span> maybe we need something separate that just marks a tx as respendable
+<a name="l-92"></a><span class="tm">19:19:46</span><span class="nk"> &lt;Luke-Jr&gt;</span> if we don't have a "is this transaction conflicted" function, it probably isn't hard to write one..
+<a name="l-93"></a><span class="tm">19:20:03</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, archive then, and effectively removes it.   I'm concerned that either will be seen as canceled but we could allow archival only once confirmed or conflicted?
+<a name="l-94"></a><span class="tm">19:20:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> might be more expensive though, if we're not careful
+<a name="l-95"></a><span class="tm">19:20:20</span><span class="nk"> &lt;gmaxwell&gt;</span> lets perhaps not do design in the meeting (/me guilty look)
+<a name="l-96"></a><span class="tm">19:20:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> should we agree on adding a function (RPC/GUI) that can remove/archive an transaction? specs. done later?
+<a name="l-97"></a><span class="tm">19:20:54</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> yeah, like an opt-in RBF or something but for non-respendable transactions...
+<a name="l-98"></a><span class="tm">19:21:22</span><span class="nk"> &lt;sipa&gt;</span> well the important part is being able to mark a transaction as respendable
+<a name="l-99"></a><span class="tm">19:21:32</span><span class="nk"> &lt;sipa&gt;</span> whether that also archives/deletes/hides... is extra functionality
+<a name="l-100"></a><span class="tm">19:21:48</span><span class="nk"> &lt;petertodd&gt;</span> giveupontx
+<a name="l-101"></a><span class="tm">19:21:55</span><span class="nk"> &lt;jtimon&gt;</span> yeah, sorry the important part is to free the inputs
+<a name="l-102"></a><span class="tm">19:22:27</span><span class="nk"> &lt;jtimon&gt;</span> freeinputstransaction ?
+<a name="l-103"></a><span class="tm">19:22:31</span><span class="nk"> &lt;wumpus&gt;</span> bleh
+<a name="l-104"></a><span class="tm">19:22:31</span><span class="nk"> &lt;gmaxwell&gt;</span> indeed, it shouldn't be silent because you may need to resend the payment.
+<a name="l-105"></a><span class="tm">19:22:41</span><span class="nk"> &lt;gmaxwell&gt;</span> archive sounded fine to me.
+<a name="l-106"></a><span class="tm">19:22:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> free is way too overloaded for this space :)
+<a name="l-107"></a><span class="tm">19:22:53</span><span class="nk"> &lt;sipa&gt;</span> bitcoin wallet for android has a "respend with higher fee" function
+<a name="l-108"></a><span class="tm">19:22:58</span><span class="nk"> &lt;sipa&gt;</span> i think
+<a name="l-109"></a><span class="tm">19:22:59</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> fair enough
+<a name="l-110"></a><span class="tm">19:23:00</span><span class="nk"> &lt;gmaxwell&gt;</span> also archiving transactions could (eventually) improve performance of listtransactions and such.
+<a name="l-111"></a><span class="tm">19:23:17</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> that would be a nice feature regardless of removal
+<a name="l-112"></a><span class="tm">19:23:22</span><span class="nk"> &lt;wumpus&gt;</span> I would like an option to just forget about a transaction completely - but yes, that's unrelated to the mempool eviction thing
+<a name="l-113"></a><span class="tm">19:23:24</span><span class="nk"> &lt;sipa&gt;</span> but we need a minimal viable idea for 0.12 (as morcos said)
+<a name="l-114"></a><span class="tm">19:23:40</span><span class="nk"> &lt;jtimon&gt;</span> yeah respendtransaction seems cooler than archivetransaction
+<a name="l-115"></a><span class="tm">19:24:36</span><span class="nk"> &lt;Luke-Jr&gt;</span> minimum viable idea IMO is to fix the "isconflicted" method
+<a name="l-116"></a><span class="tm">19:24:50</span><span class="nk"> &lt;Luke-Jr&gt;</span> whatever we do otherwise, we still need that fixed
+<a name="l-117"></a><span class="tm">19:24:52</span><span class="nk"> &lt;gmaxwell&gt;</span> do we have other topics (we can discuss this more later.   I think minimum viable is what sipa suggests.
+<a name="l-118"></a><span class="tm">19:24:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> that means you still get coins that may be locked up for infinity
+<a name="l-119"></a><span class="tm">19:25:01</span><span class="nk"> &lt;gmaxwell&gt;</span> that we detect conflict instead of non-mempooling.
+<a name="l-120"></a><span class="tm">19:25:08</span><span class="nk"> &lt;jtimon&gt;</span> but archivetransaction and then spend seems equivalent (assuming you can chose one of the inputs from the archived transaction)
+<a name="l-121"></a><span class="tm">19:25:13</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> yes, that's not a regression
+<a name="l-122"></a><span class="tm">19:25:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> it's still a regression wrt 0.11, where wallet transactions wouldn't be kicked out of the mempool until they were actually conflicted
+<a name="l-123"></a><span class="tm">19:25:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> luke means the and-immediately-respendable, part as we have now.
+<a name="l-124"></a><span class="tm">19:26:00</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-125"></a><span class="tm">19:26:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> luke is saying we detect actual conflict instead of non-mempoolability and leave the coins immediately respendable.
+<a name="l-126"></a><span class="tm">19:26:21</span><span class="nk"> &lt;sipa&gt;</span> no other suggested topicks afaik
+<a name="l-127"></a><span class="tm">19:26:28</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we have any other topics
+<a name="l-128"></a><span class="tm">19:26:32</span><span class="nk"> &lt;gmaxwell&gt;</span> Which I agree is the essential first step.
+<a name="l-129"></a><span class="tm">19:26:35</span><span class="nk"> &lt;btcdrak&gt;</span> suggested topic: sequence numbers..
+<a name="l-130"></a><span class="tm">19:26:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> suggested topic: bdb replacement
+<a name="l-131"></a><span class="tm">19:26:54</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> important though that if we add that step, we note we've now locked up inputs that perviously would have been freed
+<a name="l-132"></a><span class="tm">19:27:06</span><span class="nk"> &lt;sipa&gt;</span> yes, that was my point too ^
+<a name="l-133"></a><span class="tm">19:27:06</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> that's a Core-specific matter
+<a name="l-134"></a><span class="tm">19:27:07</span><span class="nk"> &lt;morcos&gt;</span> also given the tight deadlines, hopefully somebody volunteers to work on this
+<a name="l-135"></a><span class="tm">19:27:07</span><span class="nk"> &lt;jgarzik&gt;</span> I like both those topics :)
+<a name="l-136"></a><span class="tm">19:27:22</span><span class="nk"> &lt;Luke-Jr&gt;</span> (also, FWIW I need to go in 4 minutes.)
+<a name="l-137"></a><span class="tm">19:27:22</span><span class="nk"> &lt;jgarzik&gt;</span> Luke-Jr, we handle plenty of Core-specific stuff in this meeting
+<a name="l-138"></a><span class="tm">19:27:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> Luke-Jr : agreed.
+<a name="l-139"></a><span class="tm">19:27:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">sequence numbers</span>
+<a name="l-140"></a><span class="tm">19:28:08</span><span class="nk"> &lt;btcdrak&gt;</span> what's left to get this merged?
+<a name="l-141"></a><span class="tm">19:29:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> why do we need it merged? we need to wait until BIP113 is deployed as standardness so 68/112/113 can go in a softfork
+<a name="l-142"></a><span class="tm">19:29:05</span><span class="nk"> &lt;gmaxwell&gt;</span> because of soft fork feature binding I think I want to move in a direction where we don't soft fork in major versions.
+<a name="l-143"></a><span class="tm">19:29:12</span><span class="nk"> &lt;jtimon&gt;</span> I just posted a little nit to sipa's latest commit
+<a name="l-144"></a><span class="tm">19:29:27</span><span class="nk"> &lt;jgarzik&gt;</span> As mentioned in one of the PRs, my biggest concern was nascent projects already using sequence numbers, and this would introduce a new behavior into the field
+<a name="l-145"></a><span class="tm">19:29:28</span><span class="nk"> &lt;gmaxwell&gt;</span> but we should still be moving this code to maturity.
+<a name="l-146"></a><span class="tm">19:29:30</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> I think he's just sick of rebasing it :)
+<a name="l-147"></a><span class="tm">19:29:43</span><span class="nk"> &lt;btcdrak&gt;</span> BIP113 standardness already is being mined by 36% of the network and rising fast
+<a name="l-148"></a><span class="tm">19:29:43 </span><span class="nka">* jgarzik</span> <span class="ac">did a scan of projects and it seemed manageable</span>
+<a name="l-149"></a><span class="tm">19:30:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> absolutely
+<a name="l-150"></a><span class="tm">19:30:41</span><span class="nk"> &lt;jtimon&gt;</span> well, merging bip68, would also make bip112 esier to review
+<a name="l-151"></a><span class="tm">19:30:43</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> what do you mean there?
+<a name="l-152"></a><span class="tm">19:30:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> understably!
+<a name="l-153"></a><span class="tm">19:30:59</span><span class="nk"> &lt;btcdrak&gt;</span> *bad language, I mean, 36% of miners so far appear to be applying policy
+<a name="l-154"></a><span class="tm">19:31:05</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> ah, thanks
+<a name="l-155"></a><span class="tm">19:31:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> that's a portmonteau of "understandably" and "stable"
+<a name="l-156"></a><span class="tm">19:31:42</span><span class="nk"> &lt;CodeShark&gt;</span> :)
+<a name="l-157"></a><span class="tm">19:32:15</span><span class="nk"> &lt;btcdrak&gt;</span> I would like to see bip68 and 112 merged, then we dont have to worry about the PRs rotting or keeping up with all refactoring.
+<a name="l-158"></a><span class="tm">19:32:19</span><span class="nk"> &lt;gmaxwell&gt;</span> going back to my earlier comment, 68/112 could go in as standardness rules though (113 already is)
+<a name="l-159"></a><span class="tm">19:32:33</span><span class="nk"> &lt;gmaxwell&gt;</span> if we feel they are sufficiently reviewed and mature.
+<a name="l-160"></a><span class="tm">19:32:46</span><span class="nk"> &lt;jgarzik&gt;</span> downstream payment channels code -does- make use of lower sequence numbers, but that is usually pre-broadcast
+<a name="l-161"></a><span class="tm">19:32:47</span><span class="nk"> &lt;btcdrak&gt;</span> cltv sat merged for 11 months before we deployed the softfork.
+<a name="l-162"></a><span class="tm">19:32:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> we'll need to rebase it for backports anyway... no need to keep it up the whole time
+<a name="l-163"></a><span class="tm">19:33:06</span><span class="nk"> &lt;sipa&gt;</span> (though if people ack it, it should go in, of course)
+<a name="l-164"></a><span class="tm">19:33:07</span><span class="nk"> &lt;jgarzik&gt;</span> +1 for standardness rules
+<a name="l-165"></a><span class="tm">19:33:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> do we have a summary of final gripes about the design of them?
+<a name="l-166"></a><span class="tm">19:33:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> well as of today, as I understood it, sipa patched it according to his preference.
+<a name="l-167"></a><span class="tm">19:33:42</span><span class="nk"> &lt;gmaxwell&gt;</span> It's also the case that we can add them as unused code even without the standardness rule.
+<a name="l-168"></a><span class="tm">19:33:51</span><span class="nk"> &lt;btcdrak&gt;</span> so to my knowledge it's good to go.
+<a name="l-169"></a><span class="tm">19:34:13</span><span class="nk"> &lt;jgarzik&gt;</span> +1 on standardness roll out
+<a name="l-170"></a><span class="tm">19:34:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> sipa's gribes were implementation related, not the protocol design. If there are no gripes about the protocol design we haven't looked hard enough, there always should be some. :)
+<a name="l-171"></a><span class="tm">19:34:59</span><span class="nk"> &lt;CodeShark&gt;</span> or we've just given up on doing anything about them :p
+<a name="l-172"></a><span class="tm">19:35:06</span><span class="nk"> &lt;sipa&gt;</span> i have little opinion about bip68 itself; if people feel it's good, it's fine
+<a name="l-173"></a><span class="tm">19:35:07</span><span class="nk"> &lt;gmaxwell&gt;</span> We should perhaps call for gripes on the design. I believe petertodd had some but they were really mild.
+<a name="l-174"></a><span class="tm">19:35:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> well thats the point, its fine to go forward with residual gripes but we should know that we are and do so intentionally.
+<a name="l-175"></a><span class="tm">19:36:02</span><span class="nk"> &lt;jtimon&gt;</span> well, even as unused code I think would simplify things, but I still don't see the "wait for bip113 to be widely used to merge bip68 as a policy thing in master"
+<a name="l-176"></a><span class="tm">19:36:20</span><span class="nk"> &lt;jtimon&gt;</span> we need the backports for consensus, not for policy
+<a name="l-177"></a><span class="tm">19:36:35</span><span class="nk"> &lt;morcos&gt;</span> but we all agree we don't need the policy before the soft fork right?
+<a name="l-178"></a><span class="tm">19:36:36</span><span class="nk"> &lt;CodeShark&gt;</span> I personally don't really care how relative locktime is deployed anymore as long as the functionality is there and I can wrap it in my code so that I don't have to look at the ugliness :p
+<a name="l-179"></a><span class="tm">19:36:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> bip68 is already nonstandard
+<a name="l-180"></a><span class="tm">19:36:42</span><span class="nk"> &lt;morcos&gt;</span> it might not hurt, but its not required
+<a name="l-181"></a><span class="tm">19:37:09</span><span class="nk"> &lt;gmaxwell&gt;</span> Seperate concerns, we should not isstandard enforce unless we're reasonably confident the protocol design will not change.
+<a name="l-182"></a><span class="tm">19:37:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> right we don't need policy before the soft fork, but it can be better than merging dead code.
+<a name="l-183"></a><span class="tm">19:37:41</span><span class="nk"> &lt;gmaxwell&gt;</span> and allows more (insecure) testing of the protocol.
+<a name="l-184"></a><span class="tm">19:38:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> ??
+<a name="l-185"></a><span class="tm">19:38:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> it needs v2 transactions
+<a name="l-186"></a><span class="tm">19:38:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> which are nonstandard
+<a name="l-187"></a><span class="tm">19:38:55</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay so I think we should try to see if we can find any gripes, and move towards merging, and turn on as standard after next meeting if the gripes we can find are not convincing at all.
+<a name="l-188"></a><span class="tm">19:38:56</span><span class="nk"> &lt;jtimon&gt;</span> but what is exactly the harm if it gets merged before bip113 is widely used?
+<a name="l-189"></a><span class="tm">19:39:00</span><span class="nk"> &lt;jgarzik&gt;</span> Related - any opinion on reserving bits for TX versions, like version bits does for blocks?
+<a name="l-190"></a><span class="tm">19:39:03</span><span class="nk"> &lt;morcos&gt;</span> wait wait
+<a name="l-191"></a><span class="tm">19:39:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> nothing
+<a name="l-192"></a><span class="tm">19:39:11</span><span class="nk"> &lt;morcos&gt;</span> sorry i haven't looked at BIP68 in a while
+<a name="l-193"></a><span class="tm">19:39:25</span><span class="nk"> &lt;morcos&gt;</span> but the text does not reflect what i thought was the agreed upon semantics, i haven't checked the code
+<a name="l-194"></a><span class="tm">19:39:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jgarzik:</span> the widely used comment was we cannot softfork 113 until 113 is desployed as isstandardness (well we can but it's preferrable to not)
+<a name="l-195"></a><span class="tm">19:39:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> i'm saying we don't need a long wait between deploying bip68 as standardness and doing a softfork for it (like with bip113)
+<a name="l-196"></a><span class="tm">19:39:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> see. okay thats fine, so lets address that.
+<a name="l-197"></a><span class="tm">19:39:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I got confused with this "we need to wait until BIP113 is deployed as standardness so 68/112/113 can go in a softfork"
+<a name="l-198"></a><span class="tm">19:40:03</span><span class="nk"> &lt;morcos&gt;</span> i thought there was going to be 512 second resolution on the time part
+<a name="l-199"></a><span class="tm">19:40:15</span><span class="nk"> &lt;morcos&gt;</span> thats the last thing maaku discussed before leaving the project
+<a name="l-200"></a><span class="tm">19:40:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> bip113 needs to be deployed as standardness rule before we can softfork it, to make sure nothing breaks
+<a name="l-201"></a><span class="tm">19:40:33</span><span class="nk"> &lt;morcos&gt;</span> i'm not sure whats in the code, but the BIP needs to be what we all agree on before we even talk about merging the code
+<a name="l-202"></a><span class="tm">19:40:46</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> yeah thanks now I get what you meant
+<a name="l-203"></a><span class="tm">19:40:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yup yup. okay, so we need to take a spin on that.
+<a name="l-204"></a><span class="tm">19:41:30</span><span class="nk"> &lt;sipa&gt;</span> seconds_offset is 5
+<a name="l-205"></a><span class="tm">19:41:39</span><span class="nk"> &lt;sipa&gt;</span> so time is specified in a multiple of 30 seconds?
+<a name="l-206"></a><span class="tm">19:41:45</span><span class="nk"> &lt;sipa&gt;</span> eh, 32
+<a name="l-207"></a><span class="tm">19:41:46</span><span class="nk"> &lt;morcos&gt;</span> the code appears to have the 512 seconds
+<a name="l-208"></a><span class="tm">19:42:12</span><span class="nk"> &lt;morcos&gt;</span> but i refuse to even review the code until the BIP is right, how can you check if the code properly implements the BIP if they describe different things
+<a name="l-209"></a><span class="tm">19:42:22</span><span class="nk"> &lt;sipa&gt;</span> ok, so look at the bip
+<a name="l-210"></a><span class="tm">19:42:59</span><span class="nk"> &lt;morcos&gt;</span> this was the same complaint i had a couple of months ago and i just blew off continuing to look at it because everytime i checked the BIP and the code were describing different things and iw anted to wait for the design to settle down
+<a name="l-211"></a><span class="tm">19:43:08</span><span class="nk"> &lt;morcos&gt;</span> i'm not sure if the design has settled or not
+<a name="l-212"></a><span class="tm">19:43:17</span><span class="nk"> &lt;morcos&gt;</span> and if it has settled, can someone tell me what it settled on
+<a name="l-213"></a><span class="tm">19:43:27</span><span class="nk"> &lt;sipa&gt;</span> it certainly hasn't changed in a long time, and afaik, there are also no other outstanding concerns
+<a name="l-214"></a><span class="tm">19:43:31</span><span class="nk"> &lt;morcos&gt;</span> sorry for getting a bit worked up about this... but why do we keep talking about merging something
+<a name="l-215"></a><span class="tm">19:43:40</span><span class="nk"> &lt;morcos&gt;</span> what hasn't changed in a long time?
+<a name="l-216"></a><span class="tm">19:43:47</span><span class="nk"> &lt;sipa&gt;</span> bip68
+<a name="l-217"></a><span class="tm">19:43:57</span><span class="nk"> &lt;morcos&gt;</span> does it match the code, maybe i just read it wrong?
+<a name="l-218"></a><span class="tm">19:44:06</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> only implementation details have changed recently
+<a name="l-219"></a><span class="tm">19:44:24</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> if it doesn't please say so
+<a name="l-220"></a><span class="tm">19:44:48</span><span class="nk"> &lt;sipa&gt;</span> it doesn't match
+<a name="l-221"></a><span class="tm">19:44:56</span><span class="nk"> &lt;sipa&gt;</span> i was not aware
+<a name="l-222"></a><span class="tm">19:45:30</span><span class="nk"> &lt;btcdrak&gt;</span> I thought maaku had updated that. The PR has the right details. In any case, this is minor to update.
+<a name="l-223"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sipa&gt;</span> bip uses shift 5, implementing shift 9
+<a name="l-224"></a><span class="tm">19:45:40</span><span class="nk"> &lt;sipa&gt;</span> well, that's not good!
+<a name="l-225"></a><span class="tm">19:45:43</span><span class="nk"> &lt;jtimon&gt;</span> I also got lost in the time resolution discussion so I assumed the code would contain whatever was decided
+<a name="l-226"></a><span class="tm">19:45:48</span><span class="nk"> &lt;wumpus&gt;</span> good to discover that at least before merging...
+<a name="l-227"></a><span class="tm">19:45:51</span><span class="nk"> &lt;morcos&gt;</span> sipa, no, bip uses shift 5, implementing is shift 5+9 with granularity 9
+<a name="l-228"></a><span class="tm">19:46:08</span><span class="nk"> &lt;morcos&gt;</span> i think.
+<a name="l-229"></a><span class="tm">19:46:33</span><span class="nk"> &lt;sipa&gt;</span> so does anyone even know what "the plan" is?
+<a name="l-230"></a><span class="tm">19:46:36</span><span class="nk"> &lt;morcos&gt;</span> oh maybe i'm wrong
+<a name="l-231"></a><span class="tm">19:46:43</span><span class="nk"> &lt;morcos&gt;</span> i assume the code is "the plan"
+<a name="l-232"></a><span class="tm">19:46:53</span><span class="nk"> &lt;btcdrak&gt;</span> what do you mean "the plan". The code is the correct specification.
+<a name="l-233"></a><span class="tm">19:47:00</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> let's assume they have to say the same thing
+<a name="l-234"></a><span class="tm">19:47:03</span><span class="nk"> &lt;morcos&gt;</span> but "the plan" should be described in the BIP so we can all decide if we agree on it
+<a name="l-235"></a><span class="tm">19:47:17</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, BIP must be correct.
+<a name="l-236"></a><span class="tm">19:47:25</span><span class="nk"> &lt;btcdrak&gt;</span> It got chanegd so much according to people nits regarding the spec. The last change was the granularity so that BIP68 could be supported on chains with faster blocktimes
+<a name="l-237"></a><span class="tm">19:47:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> then what's the point of having a BIP?
+<a name="l-238"></a><span class="tm">19:47:34</span><span class="nk"> &lt;gmaxwell&gt;</span> (or rather there at least must be no known errors in the thing, even if the code is normative!)
+<a name="l-239"></a><span class="tm">19:47:37</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> i just meant the current notion of the plan is the same as whats in the code right now, i think
+<a name="l-240"></a><span class="tm">19:47:48</span><span class="nk"> &lt;gmaxwell&gt;</span> also the code is only normative once its network consensus. :P
+<a name="l-241"></a><span class="tm">19:47:51</span><span class="nk"> &lt;btcdrak&gt;</span> I will edit the bip, it's just an oversight, I thought it has been updated by maaku
+<a name="l-242"></a><span class="tm">19:48:07</span><span class="nk"> &lt;morcos&gt;</span> yeah but this is important to get right
+<a name="l-243"></a><span class="tm">19:48:12</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> then the specification must be corrected, no?
+<a name="l-244"></a><span class="tm">19:48:54</span><span class="nk"> &lt;morcos&gt;</span> sipa, i think the code and the BIP are actually completely different
+<a name="l-245"></a><span class="tm">19:49:07</span><span class="nk"> &lt;sipa&gt;</span> why is the SECONDS_FLAG = (1 &lt;&lt; 22)?
+<a name="l-246"></a><span class="tm">19:49:09</span><span class="nk"> &lt;morcos&gt;</span> the code looks like the low order 16 bits describe the number of 512 second units
+<a name="l-247"></a><span class="tm">19:49:11</span><span class="nk"> &lt;sipa&gt;</span> where does that number come from
+<a name="l-248"></a><span class="tm">19:49:44</span><span class="nk"> &lt;morcos&gt;</span> my numbers, i don't know.... i'm quickly skimming the code now, probably not the best use of everyones time
+<a name="l-249"></a><span class="tm">19:49:56</span><span class="nk"> &lt;sipa&gt;</span> no, i'm looking at the code
+<a name="l-250"></a><span class="tm">19:50:13</span><span class="nk"> &lt;morcos&gt;</span> yeah thats why we need a BIP
+<a name="l-251"></a><span class="tm">19:50:18</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, so the code and BIP looked to be good at, it's certainly not ready yet
+<a name="l-252"></a><span class="tm">19:50:21</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> there was a long conversation months about about conserving as many bits in nsequence as possible
+<a name="l-253"></a><span class="tm">19:50:36</span><span class="nk"> &lt;morcos&gt;</span> right but the conserved bits are kind of all over the place now
+<a name="l-254"></a><span class="tm">19:50:37</span><span class="nk"> &lt;jgarzik&gt;</span> +1 wumpus
+<a name="l-255"></a><span class="tm">19:50:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-256"></a><span class="tm">19:50:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> no I disagree. the code is ready, the BIP needs to be syncronised. It wont take an hour
+<a name="l-257"></a><span class="tm">19:50:53</span><span class="nk"> &lt;morcos&gt;</span> which might be ok, but it needs to be clearly described
+<a name="l-258"></a><span class="tm">19:51:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> this has to be NACK for 0.12.  this is crazy
+<a name="l-259"></a><span class="tm">19:51:22</span><span class="nk"> &lt;petertodd&gt;</span> NACK for v0.12.0 doesn't mean a NACK for v0.12.1 after all
+<a name="l-260"></a><span class="tm">19:51:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> +1
+<a name="l-261"></a><span class="tm">19:51:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> right
+<a name="l-262"></a><span class="tm">19:51:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> sorry, I disagree. You are making a big fuss over an administration error
+<a name="l-263"></a><span class="tm">19:51:39</span><span class="nk"> &lt;morcos&gt;</span> we have to agreed on the design specification first.  some people maybe think they were agreeing on the BIP and soe think they were agreein gon the code
+<a name="l-264"></a><span class="tm">19:51:51</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, we really can't merge without the bip being believed consistent-- I agree.
+<a name="l-265"></a><span class="tm">19:51:53</span><span class="nk"> &lt;morcos&gt;</span> i agree i'm making a big fuss :)
+<a name="l-266"></a><span class="tm">19:51:53</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> we already agreed the design specification.
+<a name="l-267"></a><span class="tm">19:51:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> this is not an administration error. people don't know what the proposal or its intent is
+<a name="l-268"></a><span class="tm">19:52:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> I'm sure many people only read the
+<a name="l-269"></a><span class="tm">19:52:16</span><span class="nk"> &lt;gmaxwell&gt;</span> BIP
+<a name="l-270"></a><span class="tm">19:52:17</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I'll dig out the mailing list posts, it was agreed. discussed on the IRC meets too
+<a name="l-271"></a><span class="tm">19:52:19</span><span class="nk"> &lt;gmaxwell&gt;</span> and other people only read the code.
+<a name="l-272"></a><span class="tm">19:52:37</span><span class="nk"> &lt;morcos&gt;</span> i'm not blaming anyone btw... we all want this functionality merged.  and you're the only one thats even stepping up to the plate at all, so don't get me wrong
+<a name="l-273"></a><span class="tm">19:52:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">look closely at BIP68 and make sure it matches the implementation #6312</span>
+<a name="l-274"></a><span class="tm">19:52:47</span><span class="nk"> &lt;gmaxwell&gt;</span> and other people don't know what they agreed to. Which is part of why I was suggesting another round of gripe gathering, but that can't happen unless we think the code and bip agree.
+<a name="l-275"></a><span class="tm">19:52:50</span><span class="nk"> &lt;morcos&gt;</span> but i think we have to be a little bit more careful with this stuff
+<a name="l-276"></a><span class="tm">19:52:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> ya. thanks.
+<a name="l-277"></a><span class="tm">19:53:37</span><span class="nk"> &lt;petertodd&gt;</span> fwiw, I'm going to be doing some python demo's of CSV functionality, which will help get clarity that it all works as expected
+<a name="l-278"></a><span class="tm">19:53:44</span><span class="nk"> &lt;gmaxwell&gt;</span> Currently I don't know the actual behavior, I stopped looking when it kept changing. (Though I doubt I have an opinion about those details if they've already satisfied multiple people)
+<a name="l-279"></a><span class="tm">19:53:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> +1!
+<a name="l-280"></a><span class="tm">19:53:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> that will help.
+<a name="l-281"></a><span class="tm">19:53:57</span><span class="nk"> &lt;jgarzik&gt;</span> yep
+<a name="l-282"></a><span class="tm">19:53:59</span><span class="nk"> &lt;morcos&gt;</span> i'll try to go back and see what the last thing maaku and i discussed on IRC is, and hopefully that matches the code
+<a name="l-283"></a><span class="tm">19:54:10</span><span class="nk"> &lt;wumpus&gt;</span> good idea petertodd
+<a name="l-284"></a><span class="tm">19:54:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> btcdrak's idea :)
+<a name="l-285"></a><span class="tm">19:54:40</span><span class="nk"> &lt;jgarzik&gt;</span> 330 seconds left
+<a name="l-286"></a><span class="tm">19:54:47</span><span class="nk"> &lt;gmaxwell&gt;</span> Do we have any versionbits things to discuss?  I prodded for some start time (due to BIP65 expirence), and progress was made
+<a name="l-287"></a><span class="tm">19:54:52</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic: optin RBF
+<a name="l-288"></a><span class="tm">19:55:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Is there anything left to say on optin RBF? I think it's mostly just code pipeline right now.
+<a name="l-289"></a><span class="tm">19:55:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> not much to say there other than I posted a think to the dev list announcing it and got no responses
+<a name="l-290"></a><span class="tm">19:55:34</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> fair enough
+<a name="l-291"></a><span class="tm">19:55:46</span><span class="nk"> &lt;gavinand1esen&gt;</span> are any wallet devs onboard with optin RBF?  Any actively participating in spec’ing ?
+<a name="l-292"></a><span class="tm">19:55:50</span><span class="nk"> &lt;gmaxwell&gt;</span> We were GO last week on it, Rusty was confused about the condition and suggested some description change.
+<a name="l-293"></a><span class="tm">19:56:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">gavinand1esen:</span> yes, see the pull req.
+<a name="l-294"></a><span class="tm">19:56:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">optin RBF</span>
+<a name="l-295"></a><span class="tm">19:56:20</span><span class="nk"> &lt;jtimon&gt;</span> yea, I was more like asking what was missing for it to get merged?
+<a name="l-296"></a><span class="tm">19:56:28</span><span class="nk"> &lt;jtimon&gt;</span> more review maybe?
+<a name="l-297"></a><span class="tm">19:56:35</span><span class="nk"> &lt;gmaxwell&gt;</span> Greenaddress is all over it, and I believe we intend to support replacement in core once its deployed.
+<a name="l-298"></a><span class="tm">19:56:58</span><span class="nk"> &lt;gmaxwell&gt;</span> Greenaddress I think also did FSS RBF support before or was working on it, but found it not very useful.
+<a name="l-299"></a><span class="tm">19:57:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> mostly it has concept or utACKs; another full ACK would be nice
+<a name="l-300"></a><span class="tm">19:57:17</span><span class="nk"> &lt;sipa&gt;</span> i haven't looked at the code yet; i will
+<a name="l-301"></a><span class="tm">19:57:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> thanks!
+<a name="l-302"></a><span class="tm">19:57:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">#6871 (nSequence-based Full-RBF opt-in) needs more review and testing</span>
+<a name="l-303"></a><span class="tm">19:57:46</span><span class="nk"> &lt;sipa&gt;</span> (though upcoming mempool changes may cause it to need rebase, and simplify?)
+<a name="l-304"></a><span class="tm">19:57:49</span><span class="nk"> &lt;petertodd&gt;</span> https://github.com/petertodd/replace-by-fee-tools#incremental-send-many &lt;- testing tools
+<a name="l-305"></a><span class="tm">19:58:01</span><span class="nk"> &lt;jtimon&gt;</span> sipa or viceversa?
+<a name="l-306"></a><span class="tm">19:58:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> removing priority should only simplify things i think :)
+<a name="l-307"></a><span class="tm">19:58:20</span><span class="nk"> &lt;wumpus&gt;</span> although I think it looks pretty well already
+<a name="l-308"></a><span class="tm">19:58:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> why would it simplify? it's independent of priority
+<a name="l-309"></a><span class="tm">19:58:32</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> sure
+<a name="l-310"></a><span class="tm">19:58:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> i added a question mark
+<a name="l-311"></a><span class="tm">19:58:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> oh, but nvm, only wallet
+<a name="l-312"></a><span class="tm">19:58:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> just no need to plan what comes first
+<a name="l-313"></a><span class="tm">19:59:02</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i'm not aware of anything coming up that would affect it fwiw
+<a name="l-314"></a><span class="tm">19:59:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> ok!
+<a name="l-315"></a><span class="tm">19:59:13</span><span class="nk"> &lt;sipa&gt;</span> that's good to know
+<a name="l-316"></a><span class="tm">20:00:01</span><span class="nk"> &lt;sipa&gt;</span> *BANG*
+<a name="l-317"></a><span class="tm">20:00:04</span><span class="nk"> &lt;sdaftuar&gt;</span> er.  i might have spoken too soon.
+<a name="l-318"></a><span class="tm">20:00:11</span><span class="nk"> &lt;sipa&gt;</span> too late
+<a name="l-319"></a><span class="tm">20:00:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#doommeeting</span><span class="cmdline"></span>
+<a name="l-320"></a><span class="tm">20:00:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> logo
+<a name="l-321"></a><span class="tm">20:00:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> lol
+<a name="l-322"></a><span class="tm">20:00:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

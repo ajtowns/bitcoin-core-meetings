@@ -1,0 +1,322 @@
+19:00:38 <wumpus> #startmeeting
+19:00:38 <lightningbot> Meeting started Thu Nov 19 19:00:38 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:38 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:16 <wumpus> ok, any topics?
+19:01:19 <sipa> suggested topic: priority clarification
+19:01:42 <wumpus> #topic priority clarification
+19:01:44 <sipa> suggested topic: dealing with mempool eviction
+19:02:01 <sipa> so it wasn't entirely clear to me after last weekend what the plan was wrt priority
+19:02:45 <sipa> but imho, either we stop supporting it for tx creation entirely (meaning estimatepriority etc go away)
+19:02:48 <sipa> or it keeps working
+19:03:20 <sipa> which also means a mempool area for priority, or there's no way to keep wallet-created priority transactions in
+19:03:23 <morcos> sipa: i am ok with either.  i vote for stop supporting it for tx creation entirely.
+19:04:14 <morcos> i feel like we will keep going round and round on this issue release after release unless we finally start pulling off the bandaid
+19:04:28 <morcos> if we develop a better framework for supporting a similar type metric we can add it back
+19:04:47 <morcos> but we waste too much time debating it.
+19:05:04 <wumpus> action point for that for last week re: priority was to look at https://github.com/bitcoin/bitcoin/pull/6134
+19:05:47 <jgarzik> it sounded like luke-jr was the only one opposed to ceasing support for it
+19:06:12 <wumpus> he's also the person that introduced the priority deltas IIRC
+19:06:12 <btcdrak> morcos: we should pull the bandaid now imo
+19:06:27 <morcos> wumpus: yes #6134 is required either way.  if we decide to start including priority support, we can make a simple modification to that pull to return the estimate maxed with mempools min priority instead of infinity
+19:06:47 <morcos> i think other people (including myself) think the notion has some benefit
+19:07:18 <morcos> but its a matter of introducing additional complicatin at this point to continue supportin git
+19:08:21 <gmaxwell> I've decided to stop disliking the complete removal of priority.
+19:08:40 <jtimon> I won't insist on this, but everything (including 6134) would just be simpler without having to worry about the priority code
+19:08:44 <CodeShark> I never really liked it in the first place
+19:08:44 <jgarzik> yay!
+19:09:08 <BlueMatt> yay!
+19:09:13 <btcdrak> do it
+19:09:37 <jtimon> iirc Luke-Jr wasn't so happy about removing it, but not now nor eventually
+19:09:39 <BlueMatt> wumpus: we have fee deltas that work in the same way, though
+19:10:22 <wumpus> yes, we can still support a similar delta
+19:10:33 <sipa> i'd still like to try adding a "count very small fraction of bitcoin-days-destroyed as extra fee"
+19:10:46 <wumpus> txfee rate delta
+19:10:57 <morcos> If this is the path we follow (which I agree with), then I would suggest for the mining code we use the lowerBoundPriority concept from 7008 for 0.12.
+19:10:58 <sipa> wumpus: fee delta
+19:11:09 <CodeShark> clarification: I never really liked the priority code - I only disliked removing it because it was too tangled up
+19:11:29 <sipa> morcos: sounds good to me
+19:11:30 <BlueMatt> sipa: I think we can only do that if there is a very low cap
+19:11:33 <BlueMatt> at which point its useless
+19:11:35 <BlueMatt> so....why?
+19:11:42 <sipa> BlueMatt: i know
+19:11:47 <sipa> BlueMatt: i said try
+19:11:52 <BlueMatt> fair enough
+19:12:25 <wumpus> ok - next topic?
+19:12:34 <Luke-Jr> I will discourage all miners from upgrading if priority is removed.
+19:12:44 <sdaftuar> so do we actually need to modify 6134?  i think it's fine in it's current form.  we -could- take out futher priority support, but i think it works pretty well as is.
+19:12:56 <btcdrak> suggested topic: merge #6312 sequence numbers
+19:12:56 <sipa> Luke-Jr: it's not removed from mining, only from the wallet
+19:12:59 <Luke-Jr> sipa: ok
+19:13:13 <sipa> Luke-Jr: though you'll need a sufficiently large mempool to keep priority txn in
+19:13:14 <Luke-Jr> that seems acceptable, since nobody is really maintaining the wallet
+19:13:21 <morcos> sdaftuar: I think if we remove priority from other tx creation places it'll be equivalently easy to move in from 6134
+19:13:38 <morcos> i'd merge 6134 first (after it gets reviewed) and then let people remove priority
+19:13:48 <morcos> but 6134 has important fee estimation changes
+19:13:51 <sdaftuar> morcos: ok that makes sense to me
+19:14:03 <jtimon> Luke-Jr: my offer to help adapting any codebase to a non-priority future still stands (even/spcially if you think that case it's "impossible")
+19:14:06 <sipa> wumpus: suggested topic: dealing with evicted wallet transactions
+19:14:08 <gmaxwell> sipa: I don't dislike that "count as extra fee", though I think morcos convinced me that it won't make the big improvement I thought it would. (and if we were going to bias a bit it could be utxo destroyed)
+19:14:10 <BlueMatt> morcos: i thought this was always the plan?
+19:14:52 <sipa> gmaxwell: he convinced me too... but... numbers after trying say more
+19:15:53 <wumpus> #topic dealing with mempool eviction
+19:16:22 <sipa> so: problem: currently when a wallet transaction is evicted, the wallet considers the resulting transaction as "conflicting" and will happily respend the inputs
+19:16:43 <BlueMatt> add a timeout, done
+19:16:48 <gmaxwell> We knew when we added the conflicting stuff using the mempool that it would be problematic later. (I checked logs)
+19:16:51 <sipa> suggested solution: only when accepttomemorypool fails due to non-existing inputs does the wallet treat the result as conflicting
+19:16:53 <BlueMatt> makes the wallet shitty, but we need rbf
+19:16:58 <wumpus> I think that's the wrong behavior, it shouldn't automatically regard transactions that you created yourself as respendable
+19:17:18 <BlueMatt> sipa: it should consider it respendable at some point later on, though
+19:17:24 <jtimon> what's the definition of an evicted tx?
+19:17:35 <Luke-Jr> the wallet code needs to understand when transactions are *actually* conflicted
+19:17:39 <Luke-Jr> fix that and the rest just works
+19:17:40 <wumpus> just add a way to manually remove transactions if the user doesn't care aout it anymore
+19:17:41 <sipa> + add a removewallettransaction function (GUI/RPC) which removes unconfirmed transactions (the GUI version can warn if it's still in the mempool at that point)
+19:18:08 <sipa> Luke-Jr: that corresponds exactly (afaik) to failing with missing inputs
+19:18:19 <gmaxwell> the 'remove' should perhaps not remove but tag as removed. I am uncomfortable with anything that destroys records.
+19:18:26 <wumpus> Luke-Jr: that would be good, too, but I don't like anything involving a timeout
+19:18:27 <jgarzik> That will be a big usability improvement for Bitcoin Core users...
+19:18:35 <jgarzik> rename if not remove
+19:18:42 <jonasschnelli> removewallettransaction: tag as removed and remove it withing the next x hours when no confirmation come in?
+19:18:47 <jonasschnelli> *comes
+19:18:52 <Luke-Jr> wumpus: I agree, a timeout would not fix the logic here. And even if we added a timeout, we would still need to fix the logic.
+19:18:52 <wumpus> gmaxwell: well as long as it's no longer visible
+19:18:58 <gmaxwell> jonasschnelli: any reason to remove vs move to another list?
+19:19:04 <jgarzik> s/remove/store it as archived but invisible/
+19:19:10 <gmaxwell> archive would be fine.
+19:19:10 <petertodd> sipa: rather than remove, maybe have a atomic thing to force acceptance of a double-spend?
+19:19:16 <wumpus> as long as it's *effectively* removed
+19:19:23 <jgarzik> archivewallettransactions
+19:19:32 <petertodd> sipa: remove could give the impression the tx can't be mined in the future...
+19:19:45 <wumpus> I mean people use -zapwallettxes now, this deletes all unconfirmed transactions
+19:19:46 <sipa> maybe we need something separate that just marks a tx as respendable
+19:19:46 <Luke-Jr> if we don't have a "is this transaction conflicted" function, it probably isn't hard to write one..
+19:20:03 <gmaxwell> yes, archive then, and effectively removes it.   I'm concerned that either will be seen as canceled but we could allow archival only once confirmed or conflicted?
+19:20:03 <Luke-Jr> might be more expensive though, if we're not careful
+19:20:20 <gmaxwell> lets perhaps not do design in the meeting (/me guilty look)
+19:20:52 <jonasschnelli> should we agree on adding a function (RPC/GUI) that can remove/archive an transaction? specs. done later?
+19:20:54 <jtimon> sipa: yeah, like an opt-in RBF or something but for non-respendable transactions...
+19:21:22 <sipa> well the important part is being able to mark a transaction as respendable
+19:21:32 <sipa> whether that also archives/deletes/hides... is extra functionality
+19:21:48 <petertodd> giveupontx
+19:21:55 <jtimon> yeah, sorry the important part is to free the inputs
+19:22:27 <jtimon> freeinputstransaction ?
+19:22:31 <wumpus> bleh
+19:22:31 <gmaxwell> indeed, it shouldn't be silent because you may need to resend the payment.
+19:22:41 <gmaxwell> archive sounded fine to me.
+19:22:48 <petertodd> jtimon: free is way too overloaded for this space :)
+19:22:53 <sipa> bitcoin wallet for android has a "respend with higher fee" function
+19:22:58 <sipa> i think
+19:22:59 <jtimon> petertodd: fair enough
+19:23:00 <gmaxwell> also archiving transactions could (eventually) improve performance of listtransactions and such.
+19:23:17 <Luke-Jr> sipa: that would be a nice feature regardless of removal
+19:23:22 <wumpus> I would like an option to just forget about a transaction completely - but yes, that's unrelated to the mempool eviction thing
+19:23:24 <sipa> but we need a minimal viable idea for 0.12 (as morcos said)
+19:23:40 <jtimon> yeah respendtransaction seems cooler than archivetransaction
+19:24:36 <Luke-Jr> minimum viable idea IMO is to fix the "isconflicted" method
+19:24:50 <Luke-Jr> whatever we do otherwise, we still need that fixed
+19:24:52 <gmaxwell> do we have other topics (we can discuss this more later.   I think minimum viable is what sipa suggests.
+19:24:54 <sipa> Luke-Jr: that means you still get coins that may be locked up for infinity
+19:25:01 <gmaxwell> that we detect conflict instead of non-mempooling.
+19:25:08 <jtimon> but archivetransaction and then spend seems equivalent (assuming you can chose one of the inputs from the archived transaction)
+19:25:13 <Luke-Jr> sipa: yes, that's not a regression
+19:25:45 <sipa> Luke-Jr: it's still a regression wrt 0.11, where wallet transactions wouldn't be kicked out of the mempool until they were actually conflicted
+19:25:54 <gmaxwell> sipa: luke means the and-immediately-respendable, part as we have now.
+19:26:00 <sipa> ok
+19:26:18 <gmaxwell> sipa: luke is saying we detect actual conflict instead of non-mempoolability and leave the coins immediately respendable.
+19:26:21 <sipa> no other suggested topicks afaik
+19:26:28 <wumpus> I don't think we have any other topics
+19:26:32 <gmaxwell> Which I agree is the essential first step.
+19:26:35 <btcdrak> suggested topic: sequence numbers..
+19:26:48 <jonasschnelli> suggested topic: bdb replacement
+19:26:54 <morcos> gmaxwell: important though that if we add that step, we note we've now locked up inputs that perviously would have been freed
+19:27:06 <sipa> yes, that was my point too ^
+19:27:06 <Luke-Jr> jonasschnelli: that's a Core-specific matter
+19:27:07 <morcos> also given the tight deadlines, hopefully somebody volunteers to work on this
+19:27:07 <jgarzik> I like both those topics :)
+19:27:22 <Luke-Jr> (also, FWIW I need to go in 4 minutes.)
+19:27:22 <jgarzik> Luke-Jr, we handle plenty of Core-specific stuff in this meeting
+19:27:25 <jonasschnelli> Luke-Jr : agreed.
+19:27:42 <wumpus> #topic sequence numbers
+19:28:08 <btcdrak> what's left to get this merged?
+19:29:01 <sipa> btcdrak: why do we need it merged? we need to wait until BIP113 is deployed as standardness so 68/112/113 can go in a softfork
+19:29:05 <gmaxwell> because of soft fork feature binding I think I want to move in a direction where we don't soft fork in major versions.
+19:29:12 <jtimon> I just posted a little nit to sipa's latest commit
+19:29:27 <jgarzik> As mentioned in one of the PRs, my biggest concern was nascent projects already using sequence numbers, and this would introduce a new behavior into the field
+19:29:28 <gmaxwell> but we should still be moving this code to maturity.
+19:29:30 <CodeShark> sipa: I think he's just sick of rebasing it :)
+19:29:43 <btcdrak> BIP113 standardness already is being mined by 36% of the network and rising fast
+19:29:43 * jgarzik did a scan of projects and it seemed manageable
+19:30:38 <sipa> gmaxwell: absolutely
+19:30:41 <jtimon> well, merging bip68, would also make bip112 esier to review
+19:30:43 <petertodd> btcdrak: what do you mean there?
+19:30:43 <sipa> CodeShark: understably!
+19:30:59 <btcdrak> *bad language, I mean, 36% of miners so far appear to be applying policy
+19:31:05 <petertodd> btcdrak: ah, thanks
+19:31:29 <sipa> CodeShark: that's a portmonteau of "understandably" and "stable"
+19:31:42 <CodeShark> :)
+19:32:15 <btcdrak> I would like to see bip68 and 112 merged, then we dont have to worry about the PRs rotting or keeping up with all refactoring.
+19:32:19 <gmaxwell> going back to my earlier comment, 68/112 could go in as standardness rules though (113 already is)
+19:32:33 <gmaxwell> if we feel they are sufficiently reviewed and mature.
+19:32:46 <jgarzik> downstream payment channels code -does- make use of lower sequence numbers, but that is usually pre-broadcast
+19:32:47 <btcdrak> cltv sat merged for 11 months before we deployed the softfork.
+19:32:55 <sipa> btcdrak: we'll need to rebase it for backports anyway... no need to keep it up the whole time
+19:33:06 <sipa> (though if people ack it, it should go in, of course)
+19:33:07 <jgarzik> +1 for standardness rules
+19:33:08 <gmaxwell> btcdrak: do we have a summary of final gripes about the design of them?
+19:33:37 <btcdrak> gmaxwell: well as of today, as I understood it, sipa patched it according to his preference.
+19:33:42 <gmaxwell> It's also the case that we can add them as unused code even without the standardness rule.
+19:33:51 <btcdrak> so to my knowledge it's good to go.
+19:34:13 <jgarzik> +1 on standardness roll out
+19:34:25 <gmaxwell> btcdrak: sipa's gribes were implementation related, not the protocol design. If there are no gripes about the protocol design we haven't looked hard enough, there always should be some. :)
+19:34:59 <CodeShark> or we've just given up on doing anything about them :p
+19:35:06 <sipa> i have little opinion about bip68 itself; if people feel it's good, it's fine
+19:35:07 <gmaxwell> We should perhaps call for gripes on the design. I believe petertodd had some but they were really mild.
+19:35:24 <gmaxwell> CodeShark: well thats the point, its fine to go forward with residual gripes but we should know that we are and do so intentionally.
+19:36:02 <jtimon> well, even as unused code I think would simplify things, but I still don't see the "wait for bip113 to be widely used to merge bip68 as a policy thing in master"
+19:36:20 <jtimon> we need the backports for consensus, not for policy
+19:36:35 <morcos> but we all agree we don't need the policy before the soft fork right?
+19:36:36 <CodeShark> I personally don't really care how relative locktime is deployed anymore as long as the functionality is there and I can wrap it in my code so that I don't have to look at the ugliness :p
+19:36:37 <sipa> jtimon: bip68 is already nonstandard
+19:36:42 <morcos> it might not hurt, but its not required
+19:37:09 <gmaxwell> Seperate concerns, we should not isstandard enforce unless we're reasonably confident the protocol design will not change.
+19:37:22 <gmaxwell> morcos: right we don't need policy before the soft fork, but it can be better than merging dead code.
+19:37:41 <gmaxwell> and allows more (insecure) testing of the protocol.
+19:38:13 <jtimon> sipa: ??
+19:38:19 <sipa> jtimon: it needs v2 transactions
+19:38:26 <sipa> jtimon: which are nonstandard
+19:38:55 <gmaxwell> Okay so I think we should try to see if we can find any gripes, and move towards merging, and turn on as standard after next meeting if the gripes we can find are not convincing at all.
+19:38:56 <jtimon> but what is exactly the harm if it gets merged before bip113 is widely used?
+19:39:00 <jgarzik> Related - any opinion on reserving bits for TX versions, like version bits does for blocks?
+19:39:03 <morcos> wait wait
+19:39:05 <sipa> jtimon: nothing
+19:39:11 <morcos> sorry i haven't looked at BIP68 in a while
+19:39:25 <morcos> but the text does not reflect what i thought was the agreed upon semantics, i haven't checked the code
+19:39:27 <gmaxwell> jgarzik: the widely used comment was we cannot softfork 113 until 113 is desployed as isstandardness (well we can but it's preferrable to not)
+19:39:44 <sipa> jtimon: i'm saying we don't need a long wait between deploying bip68 as standardness and doing a softfork for it (like with bip113)
+19:39:50 <gmaxwell> morcos: see. okay thats fine, so lets address that.
+19:39:51 <jtimon> sipa: I got confused with this "we need to wait until BIP113 is deployed as standardness so 68/112/113 can go in a softfork"
+19:40:03 <morcos> i thought there was going to be 512 second resolution on the time part
+19:40:15 <morcos> thats the last thing maaku discussed before leaving the project
+19:40:16 <sipa> jtimon: bip113 needs to be deployed as standardness rule before we can softfork it, to make sure nothing breaks
+19:40:33 <morcos> i'm not sure whats in the code, but the BIP needs to be what we all agree on before we even talk about merging the code
+19:40:46 <jtimon> sipa: yeah thanks now I get what you meant
+19:40:52 <gmaxwell> morcos: yup yup. okay, so we need to take a spin on that.
+19:41:30 <sipa> seconds_offset is 5
+19:41:39 <sipa> so time is specified in a multiple of 30 seconds?
+19:41:45 <sipa> eh, 32
+19:41:46 <morcos> the code appears to have the 512 seconds
+19:42:12 <morcos> but i refuse to even review the code until the BIP is right, how can you check if the code properly implements the BIP if they describe different things
+19:42:22 <sipa> ok, so look at the bip
+19:42:59 <morcos> this was the same complaint i had a couple of months ago and i just blew off continuing to look at it because everytime i checked the BIP and the code were describing different things and iw anted to wait for the design to settle down
+19:43:08 <morcos> i'm not sure if the design has settled or not
+19:43:17 <morcos> and if it has settled, can someone tell me what it settled on
+19:43:27 <sipa> it certainly hasn't changed in a long time, and afaik, there are also no other outstanding concerns
+19:43:31 <morcos> sorry for getting a bit worked up about this... but why do we keep talking about merging something
+19:43:40 <morcos> what hasn't changed in a long time?
+19:43:47 <sipa> bip68
+19:43:57 <morcos> does it match the code, maybe i just read it wrong?
+19:44:06 <jtimon> morcos: only implementation details have changed recently
+19:44:24 <jtimon> morcos: if it doesn't please say so
+19:44:48 <sipa> it doesn't match
+19:44:56 <sipa> i was not aware
+19:45:30 <btcdrak> I thought maaku had updated that. The PR has the right details. In any case, this is minor to update.
+19:45:31 <sipa> bip uses shift 5, implementing shift 9
+19:45:40 <sipa> well, that's not good!
+19:45:43 <jtimon> I also got lost in the time resolution discussion so I assumed the code would contain whatever was decided
+19:45:48 <wumpus> good to discover that at least before merging...
+19:45:51 <morcos> sipa, no, bip uses shift 5, implementing is shift 5+9 with granularity 9
+19:46:08 <morcos> i think.
+19:46:33 <sipa> so does anyone even know what "the plan" is?
+19:46:36 <morcos> oh maybe i'm wrong
+19:46:43 <morcos> i assume the code is "the plan"
+19:46:53 <btcdrak> what do you mean "the plan". The code is the correct specification.
+19:47:00 <jtimon> morcos: let's assume they have to say the same thing
+19:47:03 <morcos> but "the plan" should be described in the BIP so we can all decide if we agree on it
+19:47:17 <gmaxwell> yes, BIP must be correct.
+19:47:25 <btcdrak> It got chanegd so much according to people nits regarding the spec. The last change was the granularity so that BIP68 could be supported on chains with faster blocktimes
+19:47:26 <sipa> btcdrak: then what's the point of having a BIP?
+19:47:34 <gmaxwell> (or rather there at least must be no known errors in the thing, even if the code is normative!)
+19:47:37 <morcos> jtimon: i just meant the current notion of the plan is the same as whats in the code right now, i think
+19:47:48 <gmaxwell> also the code is only normative once its network consensus. :P
+19:47:51 <btcdrak> I will edit the bip, it's just an oversight, I thought it has been updated by maaku
+19:48:07 <morcos> yeah but this is important to get right
+19:48:12 <jtimon> morcos: then the specification must be corrected, no?
+19:48:54 <morcos> sipa, i think the code and the BIP are actually completely different
+19:49:07 <sipa> why is the SECONDS_FLAG = (1 << 22)?
+19:49:09 <morcos> the code looks like the low order 16 bits describe the number of 512 second units
+19:49:11 <sipa> where does that number come from
+19:49:44 <morcos> my numbers, i don't know.... i'm quickly skimming the code now, probably not the best use of everyones time
+19:49:56 <sipa> no, i'm looking at the code
+19:50:13 <morcos> yeah thats why we need a BIP
+19:50:18 <wumpus> anyhow, so the code and BIP looked to be good at, it's certainly not ready yet
+19:50:21 <btcdrak> sipa: there was a long conversation months about about conserving as many bits in nsequence as possible
+19:50:36 <morcos> right but the conserved bits are kind of all over the place now
+19:50:37 <jgarzik> +1 wumpus
+19:50:46 <petertodd> wumpus: ack
+19:50:50 <btcdrak> wumpus: no I disagree. the code is ready, the BIP needs to be syncronised. It wont take an hour
+19:50:53 <morcos> which might be ok, but it needs to be clearly described
+19:51:06 <morcos> btcdrak: this has to be NACK for 0.12.  this is crazy
+19:51:22 <petertodd> NACK for v0.12.0 doesn't mean a NACK for v0.12.1 after all
+19:51:27 <sipa> petertodd: +1
+19:51:30 <wumpus> petertodd: right
+19:51:38 <btcdrak> morcos: sorry, I disagree. You are making a big fuss over an administration error
+19:51:39 <morcos> we have to agreed on the design specification first.  some people maybe think they were agreeing on the BIP and soe think they were agreein gon the code
+19:51:51 <gmaxwell> in any case, we really can't merge without the bip being believed consistent-- I agree.
+19:51:53 <morcos> i agree i'm making a big fuss :)
+19:51:53 <btcdrak> morcos: we already agreed the design specification.
+19:51:54 <sipa> btcdrak: this is not an administration error. people don't know what the proposal or its intent is
+19:52:14 <gmaxwell> btcdrak: I'm sure many people only read the
+19:52:16 <gmaxwell> BIP
+19:52:17 <btcdrak> sipa: I'll dig out the mailing list posts, it was agreed. discussed on the IRC meets too
+19:52:19 <gmaxwell> and other people only read the code.
+19:52:37 <morcos> i'm not blaming anyone btw... we all want this functionality merged.  and you're the only one thats even stepping up to the plate at all, so don't get me wrong
+19:52:38 <wumpus> #action look closely at BIP68 and make sure it matches the implementation #6312
+19:52:47 <gmaxwell> and other people don't know what they agreed to. Which is part of why I was suggesting another round of gripe gathering, but that can't happen unless we think the code and bip agree.
+19:52:50 <morcos> but i think we have to be a little bit more careful with this stuff
+19:52:55 <gmaxwell> wumpus: ya. thanks.
+19:53:37 <petertodd> fwiw, I'm going to be doing some python demo's of CSV functionality, which will help get clarity that it all works as expected
+19:53:44 <gmaxwell> Currently I don't know the actual behavior, I stopped looking when it kept changing. (Though I doubt I have an opinion about those details if they've already satisfied multiple people)
+19:53:51 <jonasschnelli> petertodd: +1!
+19:53:53 <gmaxwell> petertodd: that will help.
+19:53:57 <jgarzik> yep
+19:53:59 <morcos> i'll try to go back and see what the last thing maaku and i discussed on IRC is, and hopefully that matches the code
+19:54:10 <wumpus> good idea petertodd
+19:54:22 <petertodd> wumpus: btcdrak's idea :)
+19:54:40 <jgarzik> 330 seconds left
+19:54:47 <gmaxwell> Do we have any versionbits things to discuss?  I prodded for some start time (due to BIP65 expirence), and progress was made
+19:54:52 <jtimon> suggested topic: optin RBF
+19:55:15 <gmaxwell> Is there anything left to say on optin RBF? I think it's mostly just code pipeline right now.
+19:55:34 <petertodd> jtimon: not much to say there other than I posted a think to the dev list announcing it and got no responses
+19:55:34 <jtimon> gmaxwell: fair enough
+19:55:46 <gavinand1esen> are any wallet devs onboard with optin RBF?  Any actively participating in spec’ing ?
+19:55:50 <gmaxwell> We were GO last week on it, Rusty was confused about the condition and suggested some description change.
+19:56:01 <gmaxwell> gavinand1esen: yes, see the pull req.
+19:56:08 <wumpus> #topic optin RBF
+19:56:20 <jtimon> yea, I was more like asking what was missing for it to get merged?
+19:56:28 <jtimon> more review maybe?
+19:56:35 <gmaxwell> Greenaddress is all over it, and I believe we intend to support replacement in core once its deployed.
+19:56:58 <gmaxwell> Greenaddress I think also did FSS RBF support before or was working on it, but found it not very useful.
+19:57:04 <petertodd> jtimon: mostly it has concept or utACKs; another full ACK would be nice
+19:57:17 <sipa> i haven't looked at the code yet; i will
+19:57:21 <petertodd> sipa: thanks!
+19:57:36 <wumpus> #action #6871 (nSequence-based Full-RBF opt-in) needs more review and testing
+19:57:46 <sipa> (though upcoming mempool changes may cause it to need rebase, and simplify?)
+19:57:49 <petertodd> https://github.com/petertodd/replace-by-fee-tools#incremental-send-many <- testing tools
+19:58:01 <jtimon> sipa or viceversa?
+19:58:19 <sipa> jtimon: removing priority should only simplify things i think :)
+19:58:20 <wumpus> although I think it looks pretty well already
+19:58:27 <petertodd> sipa: why would it simplify? it's independent of priority
+19:58:32 <jtimon> sipa: sure
+19:58:43 <sipa> petertodd: i added a question mark
+19:58:51 <sipa> jtimon: oh, but nvm, only wallet
+19:58:53 <jtimon> sipa: just no need to plan what comes first
+19:59:02 <sdaftuar> sipa: i'm not aware of anything coming up that would affect it fwiw
+19:59:09 <sipa> sdaftuar: ok!
+19:59:13 <sipa> that's good to know
+20:00:01 <sipa> *BANG*
+20:00:04 <sdaftuar> er.  i might have spoken too soon.
+20:00:11 <sipa> too late
+20:00:12 <gmaxwell> #doommeeting
+20:00:17 <jonasschnelli> logo
+20:00:20 <jonasschnelli> lol
+20:00:23 <wumpus> #endmeeting
