@@ -1,0 +1,134 @@
+19:24:40 <btcdrak> #startmeeting
+19:24:40 <lightningbot> Meeting started Thu Nov 26 19:24:40 2015 UTC.  The chair is btcdrak. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:24:40 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:24:58 <btcdrak> #topic CLTV activation
+19:25:06 <btcdrak> petertodd: the floor is yours
+19:25:17 <petertodd> right, so it's plausible that we'll have CLTV activate within just a few weeks, as everyone but a few big players has adopted it
+19:26:03 <petertodd> we've got about 20% of nodes running CLTV-supporting bitcoin core versions... we should do another redit/twitter/etc. push reminding people that they should upgrade to v0.11.2 / v0.10.4
+19:26:44 <btcdrak> Yes, I was planning to do something today but got sidetracked and forgot. Best to do on Monday/Tuesday for best coverage.
+19:26:55 <petertodd> btcdrak: sounds like a plan
+19:27:56 <CodeShark> it will be fun doing an mSIGNA release that supports CLTV :)
+19:27:59 <Luke-Jr> petertodd: well, negative effect of not upgrading for non-miners is just degraded validation, right?
+19:28:15 <petertodd> Luke-Jr: yes, reduced to SPV
+19:28:31 <Luke-Jr> k
+19:28:38 <petertodd> Luke-Jr: we do not kick peers for sending us a now-invalid nVersion=3 blocks, so the network won't split or anything
+19:28:39 <btcdrak> #action Post reminder about CLTV deployment next week on social media
+19:29:48 <btcdrak> is this topic concluded?
+19:29:52 <petertodd> I think so
+19:30:05 <btcdrak> ok well I have one :)
+19:30:13 <petertodd> shoot
+19:30:21 <btcdrak> #topic BIP68/BIP112 implementation
+19:31:12 <CodeShark> in retrospect we should have kept the nSequence semantics but still called the opcode OP_RCHECKLOCKTIMEVERIFY and use the proper semantics for that ;)
+19:31:15 <btcdrak> So reporting from last week, the BIP68 and BIP112 texts have been updated to match the implementations
+19:31:28 <petertodd> I've done a bit of work on CSV demo's, but that's getting pushed behind scaling bitcoin conf prep: https://github.com/petertodd/csv-demos
+19:31:49 <petertodd> btcdrak: yeah, new texts look better
+19:31:56 <btcdrak> I would like to note the implementations are as agreed back in October. The BIP texts have has some peer review and received ACKs.
+19:32:00 <Luke-Jr> CodeShark: never too late to rename..
+19:32:13 <btcdrak> #link BIP68 text https://github.com/bitcoin/bips/pull/245
+19:32:27 <btcdrak> #link BIP112 text https://github.com/bitcoin/bips/pull/248
+19:32:30 <petertodd> I vote we let btcdrak pick a new bikeshed color^H^H^H new name
+19:32:48 <CodeShark> lol
+19:33:14 <btcdrak> Regarding the implementations PRs #6312 (BIP68) and #6564 (CSV opcode BIP112), these are up to date and ready. They have also received a number of ACKs
+19:33:48 <btcdrak> I posted to the list about renaming OP_CHECKSEQUENCEVERIFY
+19:33:50 <petertodd> btcdrak: I'm definitely holding off an ACK until I've seen some worked out demos of CSV functionality
+19:33:51 <btcdrak> #link http://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011801.html
+19:34:41 <CodeShark> yeah, the only thing that is holding me back from ACKing is that I haven't actually tried constructing CSV transactions
+19:35:29 <btcdrak> I believe these PRs should be merged soon. For the avoidance of doubt, these are mempool-only implementations, with no softfork deployment code. That should be added later when we are ready to deploy
+19:35:37 <petertodd> it's worth noting that if it were easier to add fields to transactions, this whole review process would be much easier
+19:35:58 <sipa> petertodd: working on it!
+19:35:59 <CodeShark> :)
+19:35:59 <CodeShark> segwit might fix that, PT
+19:36:11 <Luke-Jr> sipa: hah, I was thinking just that
+19:36:14 <petertodd> sipa: yes, I was thinking about segwit when I said that :)
+19:36:41 <CodeShark> in the end it might turn out that we don't even need the nSequence field ;)
+19:36:47 <petertodd> sipa: though if I understood your code, you haven't yet made tx hashing be oer a tree yet
+19:36:56 <btcdrak> So we can never have enough review, I can never say the PRs are ready, but, since there has been a lot of ACKs and we're not merging a consensus change, I really want to ask for #6312 and #6564 to get merged
+19:36:59 <sipa> petertodd: i changed that
+19:37:13 <sipa> petertodd: though it's still broken
+19:37:29 <btcdrak> So that's my monologue done.
+19:37:41 <petertodd> btcdrak: so, I'd suggest you write out in the pull-req what exactly is your plan for handling a change to the rules after it's merged - in a dev branch I don't think that's a big deal, but if we release a mempool-only version that can be ugly
+19:38:21 <petertodd> btcdrak: merging after v0.12.0 is forked off would be safest
+19:38:40 <petertodd> btcdrak: IIRC that's supposed to happen in about a week or so
+19:39:08 <btcdrak> petertodd: OK. I'm pretty confident we're not changing the rules, BIP68 has been in the bike-shed long enough and pretty much everyone's requests have been incorporated.
+19:39:08 <petertodd> sipa: we should talk at scaling bitcoin about this; I've done a lot of thinking re: this stuff for my proofchains work
+19:39:30 <sipa> petertodd: sure
+19:39:49 <CodeShark> I actually am presenting on extensibility using segwit
+19:39:55 <btcdrak> I would be happy with it being merged right after 0.12 is branched off. But it really needs to get merged... I cant insist enough
+19:39:56 <CodeShark> although it is not in the program yett
+19:39:58 <petertodd> btcdrak: but I asked for the bikeshed to be painted the color of an eldritch horror!
+19:40:14 <petertodd> CodeShark: cool!
+19:40:29 <petertodd> CodeShark: send me what you have; may be relevant to my presentation
+19:40:36 <btcdrak> I certainly do want to change the name of the opcode, but that's an easy change
+19:41:02 <btcdrak> wumpus: sipa: gmaxwell: coments/thoughts?
+19:41:15 <sipa> btcdrak: i disagree with the need to be merged... at this point we have to wait anyway
+19:41:34 <CodeShark> PT: sure - as soon as I have something ;)
+19:41:38 <sipa> btcdrak: not saying that it shouldn't, and i understand that waiting and rebasing is annoying
+19:41:39 <petertodd> btcdrak: next rebase is on me :)
+19:41:43 <btcdrak> sipa: with all due respect it's almost 6 months. it's getting painful.
+19:42:15 <petertodd> btcdrak: hey, CLTV took a year, two if you count from the initial implementation
+19:42:16 <sipa> btcdrak: i completely understand that, but that is not a reason... i have a feeling people only recently started actually looking into it seriously
+19:42:24 <petertodd> sipa: agreed :(
+19:43:01 <petertodd> anyway the remarkable speed that CLTV is being adopted makes me worry less about getting CSV ready in time for things that might use it
+19:43:20 <btcdrak> sipa: fair enough. Can the BIP texts get merged. They are an accurate representation of the current implementations and it's already confused a couple of people who read the version in master not realising it was an old version.
+19:43:33 <petertodd> btcdrak: +1 on merging BIP texts
+19:43:44 <sipa> btcdrak: no reason why the bip texts can't be merged
+19:43:50 <Luke-Jr> btcdrak: BIP changes should be merged as soon as the author(s) ACK them
+19:44:03 <btcdrak> even if there are minor amendments to make to the BIP texts it's a heck of a lot better than the current status
+19:44:10 <Luke-Jr> remind me when I get home tonight if that's the case
+19:44:15 <btcdrak> Luke-Jr: I am the author of BIP112
+19:44:17 <petertodd> Luke-Jr: oh, all authors? we should make that clear in the instructions
+19:44:35 <Luke-Jr> petertodd: AFAIK just one
+19:44:44 <btcdrak> and really maaku has handed over the proposals to me so it is not reasonable to expect him to ACK BIP68
+19:44:51 <Luke-Jr> but clarifying it would be nice
+19:45:09 <CodeShark> btcdrak: can you rebase your BIP112 PR?
+19:45:57 <btcdrak> CodeShark: to what, they all show as mergeable
+19:46:22 <CodeShark> I guess it's mergeable - but we merged in something recently
+19:46:22 <petertodd> you know, a better procedure for draft BIP's might be to have a placeholder link in bitcoin/bips pointing to the authors' presonal repo...
+19:46:26 <btcdrak> #action Merge BIPs PRs #245 and #248
+19:47:00 <Luke-Jr> CodeShark: rebasing for no reason whatsoever is just annoying :/
+19:47:17 <CodeShark> ok, I see there are no conflicts
+19:47:35 <CodeShark> btcdrak: specifically, I changed a couple things in the Retroactive Invalidation section that got merged but it does not conflict with your PR
+19:48:03 <btcdrak> sipa: in your view, what remains for the implementations to get merged?
+19:49:46 <btcdrak> ### 10 minutes left. are there any other topic suggestions?
+19:50:01 <petertodd> btcdrak: rbf
+19:50:28 <btcdrak> ok then let's end this topic
+19:50:32 <btcdrak> #topic RBF
+19:50:57 <btcdrak> petertodd: please go ahead
+19:51:00 <petertodd> so, I've been running RBF nodes with the mempool limiter turned way down to stress test... and no issues reported
+19:51:04 <CodeShark> anyone have a topic that pays a higher fee? :)
+19:51:13 <petertodd> CodeShark: lol
+19:51:31 <Luke-Jr> this fee is too low, I'm leaving early!
+19:51:34 <Luke-Jr> :P
+19:51:50 <petertodd> Luke-Jr: here's a (non)-alcoholic beverage of your choice
+19:52:40 <Luke-Jr> petertodd: is the current PR easy to merge FSS and full-unconditional on top of as options?
+19:52:54 <petertodd> Luke-Jr: sure is, and I invite people to do exacty that
+19:53:29 <sipa> petertodd: sorry, haven't reviewed it... we have a bit of more urgent changes to make still
+19:53:30 <CodeShark> I haven't had a chance to review your stuff yet, petertodd, but strongly support the effort ;)
+19:53:59 <petertodd> cool, reviews so this can get into v0.12.0 much appreciated...
+19:54:03 <btcdrak> RBF is another PR which seems to have a ton of support and ACKs iirc.
+19:54:17 <petertodd> btcdrak: note, concept acks and utacks, not much full acks
+19:54:18 <jtimon> btcdrak: totally agree on bip68, if it's going to survive longer as unmerged we should condider separate releases ala eternal petertodd's RBF instead of just an eternal PR
+19:54:49 <petertodd> jtimon: rbf works as a separate release, bip68 doesn't
+19:55:33 <Luke-Jr> it would be nice if bitcoin.org and similar sites were designed to convey multiple Core-based branches/releases
+19:55:36 <btcdrak> iirc from the previous meetings RBF is scheduled for 0.12 anyhow.
+19:55:40 <btcdrak> any action points petertodd?
+19:55:56 <btcdrak> ### 5 minutes remaining
+19:55:57 <jtimon> petertodd: it could be implemented, I'm just pointing out how unfortunate would be to require that unnecesary additional work
+19:55:59 <petertodd> #action another one or two ACKS on opt-in RBF
+19:56:23 <btcdrak> what's the PR link again?
+19:56:30 <petertodd> btcdrak: https://github.com/bitcoin/bitcoin/pull/6871
+19:56:48 <jtimon> petertodd: I always celebrated all RBF releases, and at the same time lament them
+19:56:49 <btcdrak> #action test and ACK RBF https://github.com/bitcoin/bitcoin/pull/6871
+19:57:30 <petertodd> jtimon: separate RBF releases do help make the point that the Bitcoin Core devs do not have absolute control of Bitcoin
+19:58:05 <Luke-Jr> ^ moving away from a single master branch would make that point better
+19:58:26 <petertodd> Luke-Jr: we did that already, github.com/bitcoin and github.com/bitcoinxt :)
+19:58:27 <Luke-Jr> but that will take some changes to be practical long-term
+19:58:40 <Luke-Jr> petertodd: the latter isn't Bitcoin so not really
+19:58:59 <Luke-Jr> petertodd: LJR is a better example there, but suffers from the rebase-abuse issue ;P
+19:59:08 <petertodd> Luke-Jr: yeah, it's a pity that had to happen with a protocol change too, confuses the issue
+19:59:14 <btcdrak> inb4 everyone shills their own fork btcdrak addrindex fork for example...
+19:59:58 <jtimon> petertodd: absolutely, please help me document it as an example in bip99, even if it's just as an example of software fork vs consensus fork
+20:00:04 <btcdrak> time is up.
+20:00:14 <Luke-Jr> ttyl, going to join family
+20:00:20 <petertodd> Luke-Jr: have fun!
+20:00:24 <btcdrak> #endmeeting
