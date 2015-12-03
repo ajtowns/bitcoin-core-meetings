@@ -1,0 +1,169 @@
+18:59:51 <wumpus> #startmeeting
+18:59:51 <lightningbot`> Meeting started Thu Dec  3 18:59:51 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:51 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:10 <wumpus> anyone topics?
+19:01:26 <jcorgan> bip68-related pull requests?
+19:01:44 <jonasschnelli> bip68 is a evergreen here... :)
+19:02:06 <wumpus> yes from last week we have: CLTV activation, BIP68/112 implementation, RBF
+19:02:25 <wumpus> action item for CLTV activation was: Post reminder about CLTV deployment next week on social media (btcdrak, 19:28:39)
+19:02:52 <btcdrak> wumpus: I did it a couple days ago
+19:03:02 <wumpus> awesome
+19:03:18 <wumpus> ok, BIP68 it is then
+19:03:30 <wumpus> #topic BIP68-related pull requests
+19:03:33 <btcdrak> is morcos here?
+19:03:36 <gmaxwell> I want to talk briefly about eviction and onion support.
+19:03:39 <morcos> yep, justg showed up
+19:03:49 <wumpus> action item from last week was  Merge BIPs PRs #245 and #248
+19:03:57 <btcdrak> wumpus: that was done
+19:04:01 <Diablo-D3> wait, wtf?
+19:04:03 <wumpus> good
+19:04:08 <Diablo-D3> how the hell did we get that many BIPs
+19:04:25 <wumpus> we didn't, those refer to pull requests, not to pull numbers
+19:04:56 <btcdrak> wumpus: there is one small correction https://github.com/bitcoin/bips/pull/252
+19:05:08 <btcdrak> if that could be merged it would be dandy.
+19:05:12 <morcos> so we're not on the verge of merging 6312 immediately anyway correct?
+19:05:25 <Diablo-D3> wumpus: ahh
+19:05:30 <morcos> it needs more tested ACKS ?
+19:05:31 <morcos> or any
+19:05:36 <wumpus> yes
+19:05:39 <btcdrak> morcos: yes
+19:05:42 <morcos> i don't want to be the cause of delaying it
+19:05:44 <Diablo-D3> wumpus: I was going to say, did I sleep for 10 years or what
+19:05:48 <morcos> but i want to throw something out there
+19:05:56 <sipa> present, from airport
+19:05:57 <wumpus> #action there is one small correction https://github.com/bitcoin/bips/pull/252
+19:06:21 <morcos> i'm trying to figure out how to cache and efficiently check BIP68 validity
+19:06:22 <btcdrak> morcos: although to be fair, I think we're much closer now. Are we going to leave the CNB optimisations till post merge of #6312?
+19:06:37 <wumpus> ok, next topic I guess
+19:06:40 <morcos> we'd realized before this is necessary for reorgs, but more importantly its necessary to make CNB fast
+19:06:58 <morcos> (sorry i guess i intepreted BIP68 related pulls differently :) )
+19:07:10 <btcdrak> wumpus: wait a sec
+19:07:14 <morcos> sdaftuar and i are looking at two approaches
+19:07:34 <morcos> 1 will probably not change the existing code in 6312 at all (or barely)
+19:07:49 <morcos> the other will refactor LockTime(..)  signficiantly
+19:08:10 <sipa> i'd rather see the refactor done uofront
+19:08:16 <morcos> I think if we decide the refactored version is better, exactly
+19:08:21 <morcos> thats what i was going to say
+19:08:33 <btcdrak> sipa: +1
+19:08:50 <sipa> so not significantly different code goes into backports
+19:08:50 <morcos> ok, so it may be the refactor is not better anyway, but give us a couple of days to try out the two approaches and let people see them
+19:09:11 <morcos> sipa: yep, thats what we were discussing
+19:09:55 <morcos> ok..  will make sure we ping people when we have something to show then
+19:10:10 <btcdrak> morcos: so let's revisit the topic next meeting.
+19:10:18 <morcos> ack
+19:10:41 <btcdrak> morcos: if you do make a patch ping me and I'll cherry-pick it into to the PR
+19:11:17 <btcdrak> so I guess the action point is look into refactoring for CNB optimisation
+19:11:44 <wumpus> #action  look into refactoring for CNB optimisation
+19:12:01 <morcos> yeah, but since the code is also for backports that doesn't care about cnb optimisation i think we need to make sure the refactor is reasonable standing on its own as well  (and b/c its consensus code!)
+19:12:13 <btcdrak> morcos: ack
+19:12:27 <sipa> i believe that code that works on master/0.12 will be easier to trivially backport than the other way around
+19:13:26 <morcos> sipa: sure but interesting to think about the data that we'll be getting out of the refactor, these heights and times and so forth, isn't useful in backports
+19:13:56 <sipa> agree
+19:14:16 <morcos> new topic PR 7062?
+19:14:29 <morcos> i know ppl are going to conference now
+19:14:31 <btcdrak> morcos: ack
+19:14:39 <wumpus> gmaxwell proposed a next topic already
+19:14:40 <gmaxwell> I believe we've seen ~no network visbile use or user comments on backports 0.10.x; so I believe we should backport no further than 0.11.x anymore. (and perhaps announce pending end of support on 0.10 on the list to bring anyone out of the woodwork)
+19:14:47 <wumpus> #topic eviction and onions
+19:14:51 <morcos> but sooner we merge that into 0.12, the more test coverage it gets.. (ok sorry, all iw anted to say)
+19:15:15 <btcdrak> gmaxwell: yes
+19:15:32 <gmaxwell> Brief, w/ auto onion support we'll now have a lot of potentially hostile localhost peers, which our eviction code will currently not evict.  #7082 addresses this, but sipa caught me making a locking naughty move.
+19:15:48 <wumpus> we usually keep to one version back, support for 0.10 stops as soon as 0.12 is released
+19:16:11 <wumpus> (excluding super serious bugs and security issues I guess)
+19:16:15 <gmaxwell> I updated to fix it with a kind of gross global lock. But looking around, I see that we frequently update data in node objects with no lock protection. (e.g. pingtimes)
+19:16:52 <btcdrak> wumpus: let's post that to the mailing list so end users are clear about it.
+19:16:59 <btcdrak> wumpus: I was thinking we need a clear EOL statement somewhere
+19:17:10 <gmaxwell> I think its somewhat important to do something about the localhost connections w/ eviction, even in 0.12, to prevent the HS support from bein a liability.
+19:17:21 <sipa> gmaxwell: i know how to fix that
+19:17:37 <wumpus> btcdrak: well it used to be the case that luke-jr was backporting things to older versions, in general other people may still bother
+19:17:51 <gmaxwell> I don't really care what, if I'm getting no comments on that PR because people hate that; lemme know. If someone wants to suggest how to fix the locking mess without the gross global lock I just updated the PR to add, let me know.
+19:18:02 <gmaxwell> sipa: great.
+19:18:06 <btcdrak> What PR are we talking about now?
+19:18:12 <gmaxwell> 7082
+19:18:14 <gmaxwell> Thats all I had for that.
+19:18:38 <wumpus> we can still disable the auto HS stuff by default if it's risky
+19:19:02 <gmaxwell> I think a very minimal change derisks it, even less than 7082. (7082 without the last commit, basically)
+19:19:04 <wumpus> the only reason it's enabled by default is because I never got any pushback on that
+19:19:04 <cfields> gmaxwell: could you describe the issue with nasty localhost peers? I'm not following
+19:19:59 <gmaxwell> cfields: localhost peers are never evicted; so as soon as you show up on HS someone can prevent anyone else from connecting to you trivially. (just open 125 connections and respond to pings)
+19:20:06 <wumpus> #action take a look at #7082
+19:20:24 <gmaxwell> thanks.
+19:20:48 <jonasschnelli> and there is no other way to distinct between real localhost connections and tor hs localhost connections?
+19:20:51 <wumpus> there's already plenty of people that run HS nodes so that is an issue independent of whether auto HS support will be disabled
+19:20:59 <wumpus> jonasschnelli: yes, use whitebind
+19:21:09 <sipa> jonasschnelli: we could restrict the no-evict behaviour to whitelisted nodes
+19:21:18 <sipa> but that may break existing software
+19:21:21 <gmaxwell> jonasschnelli: you can whitebind, but that has other effects like force relaying all transactions even redundantly.
+19:21:44 <jonasschnelli> why to we special threat localhost in the first place?
+19:21:51 <wumpus> jonasschnelli: because of old
+19:22:05 <wumpus> if it was decided now, we'd only do it for specially whitelisted nodes
+19:22:06 <cfields> gmaxwell: got it now, thanks
+19:22:08 <sipa> jonasschnelli: because local software was historically trusted
+19:22:17 <sipa> but tor connections aren't really
+19:22:22 <gmaxwell> 7082 does not evict whitelisted peers. It removes the special treatment in eviction; and trusts that the fact that eviction does not evict the peers with the 8 lowest ping times, to protect local peers.
+19:22:28 <sipa> HS support was only added in 0.6 iirc
+19:22:58 <gmaxwell> We still have several other bits of excessive trust of local peers, I think; but this was the most obvious.
+19:23:09 <wumpus> in general, P2P connecting software will be able to cope with being disconnected/evicted
+19:23:35 <wumpus> gmaxwell: sounds good to me
+19:23:52 <gmaxwell> So long has you have less than 8 local peers, and they respond to pings fast just once, they'll still get protected from eviction in 7082.
+19:24:06 <wumpus> in the long term we should encourage using whitelisted for special peers
+19:24:08 <wumpus> local or not
+19:24:14 <sipa> agree
+19:24:15 <jonasschnelli> +1!
+19:24:24 <jonasschnelli> I think we should take https://github.com/bitcoin/bitcoin/pull/7082/files#diff-9a82240fe7dfe86564178691cc57f2f1L886 in
+19:25:14 <wumpus> #action look at  https://github.com/bitcoin/bitcoin/pull/7082/files#diff-9a82240fe7dfe86564178691cc57f2f1L886
+19:25:15 <jonasschnelli> i mean remove the if (node->addr.IsLocal()) protection at all
+19:25:20 <wumpus> any other topics?
+19:25:37 <sipa> topic: 0.12 party
+19:25:39 <sipa> :p
+19:25:54 <btcdrak> +1
+19:25:54 <cfields> i'd like to quickly discuss the HK dev meetup
+19:25:54 <wumpus> lol :)
+19:25:54 <jonasschnelli> hah!
+19:25:59 <wumpus> #topic HK dev meetup
+19:26:04 * sipa will be in HK in 14 hours
+19:26:11 <cfields> everyone who's in hk, come to the dev meetup :)
+19:26:13 <cfields> </topic>
+19:26:24 <jonasschnelli> ;-)
+19:26:28 <cfields> sec, i'll like the mail thread
+19:26:37 <wumpus> useful information may be: where, when etc
+19:26:57 <sipa> cfields: you'll "like" it, is it on facebook?
+19:27:01 <morcos> sorry to be missing it!
+19:27:07 <cfields> wumpus: getting there, discussion went faster than i expected. 1 sec :)
+19:27:16 <wumpus> twitter has 'likes' now too :')
+19:27:22 <cfields> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011712.html
+19:27:25 <morcos> we shoudl add on github
+19:27:41 <cfields> Dec 8/9, 8am-?
+19:27:54 <wumpus> #action all go to HK dev meeting if you're around https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011712.html Dec 8/9, 8am-?
+19:27:56 <cfields> same place as the conference. More info at the link above
+19:28:22 <cfields> hope everyone can make it. Plan it just to have unstructured dev time.
+19:28:55 * jonasschnelli can't go to HK
+19:28:56 <btcdrak> with lots of beer
+19:29:06 <cfields> If anyone wants to suggest some topics ahead of time, I'm happy to start a list. Otherwise, whatever comes up on its own
+19:29:08 <cfields> :(
+19:29:09 <wumpus> any other topics?
+19:29:09 <sipa> :(
+19:29:35 <sdaftuar> topic suggestion: opt-in RBF shoudl have a BIP?
+19:29:54 <wumpus> #topic BIP for opt-in RBF
+19:29:56 <btcdrak> not really, it is just policy code
+19:29:56 <jonasschnelli> definitively!
+19:30:12 <sdaftuar> i think it's unfortunate that the only documentation for what wallet writers should do is in a single mailnig list post...
+19:30:28 <gmaxwell> Sounds reasonable.
+19:30:28 <wumpus> depends on whether someone is volunteering I suppose
+19:30:28 <sipa> standardness has been covered before in BIPs
+19:30:41 <harding> +1 for a BIP.  I'll write something and coordinate with petertodd
+19:30:42 <btcdrak> sdaftaur: I think we should add this FAQ to the release notes https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/
+19:30:49 <sipa> well better communication with wallet authors definitely makes sense
+19:30:49 <morcos> its also very intricate policy that is likely to be handled in the exact same way by a high proportion of the network
+19:30:51 <wumpus> awesome harding
+19:30:52 <sdaftuar> awesome, thansk harding
+19:31:27 <wumpus> #action harding will coordinate with petertodd about opt-in RBF BIP
+19:31:59 <wumpus> next topic?
+19:32:20 <sipa> Segmentation faul
+19:32:37 <cfields> red flag
+19:32:38 <wumpus> #action FAQ useful for BIP: https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/
+19:32:47 <gmaxwell> lol
+19:33:26 <btcdrak> #link https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/
+19:34:33 <wumpus> ok, short meeting this time :) have fun in HK everyone that is going
+19:35:06 <jonasschnelli> Yes. Have fun. And enjoy the warm weather...
+19:35:10 <wumpus> #endmeeting

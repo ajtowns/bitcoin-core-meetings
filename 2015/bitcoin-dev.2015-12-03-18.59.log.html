@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:51</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Dec  3 18:59:51 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:51</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:10</span><span class="nk"> &lt;wumpus&gt;</span> anyone topics?
+<a name="l-5"></a><span class="tm">19:01:26</span><span class="nk"> &lt;jcorgan&gt;</span> bip68-related pull requests?
+<a name="l-6"></a><span class="tm">19:01:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> bip68 is a evergreen here... :)
+<a name="l-7"></a><span class="tm">19:02:06</span><span class="nk"> &lt;wumpus&gt;</span> yes from last week we have: CLTV activation, BIP68/112 implementation, RBF
+<a name="l-8"></a><span class="tm">19:02:25</span><span class="nk"> &lt;wumpus&gt;</span> action item for CLTV activation was: Post reminder about CLTV deployment next week on social media (btcdrak, 19:28:39)
+<a name="l-9"></a><span class="tm">19:02:52</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I did it a couple days ago
+<a name="l-10"></a><span class="tm">19:03:02</span><span class="nk"> &lt;wumpus&gt;</span> awesome
+<a name="l-11"></a><span class="tm">19:03:18</span><span class="nk"> &lt;wumpus&gt;</span> ok, BIP68 it is then
+<a name="l-12"></a><span class="tm">19:03:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP68-related pull requests</span>
+<a name="l-13"></a><span class="tm">19:03:33</span><span class="nk"> &lt;btcdrak&gt;</span> is morcos here?
+<a name="l-14"></a><span class="tm">19:03:36</span><span class="nk"> &lt;gmaxwell&gt;</span> I want to talk briefly about eviction and onion support.
+<a name="l-15"></a><span class="tm">19:03:39</span><span class="nk"> &lt;morcos&gt;</span> yep, justg showed up
+<a name="l-16"></a><span class="tm">19:03:49</span><span class="nk"> &lt;wumpus&gt;</span> action item from last week was  Merge BIPs PRs #245 and #248
+<a name="l-17"></a><span class="tm">19:03:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> that was done
+<a name="l-18"></a><span class="tm">19:04:01</span><span class="nk"> &lt;Diablo-D3&gt;</span> wait, wtf?
+<a name="l-19"></a><span class="tm">19:04:03</span><span class="nk"> &lt;wumpus&gt;</span> good
+<a name="l-20"></a><span class="tm">19:04:08</span><span class="nk"> &lt;Diablo-D3&gt;</span> how the hell did we get that many BIPs
+<a name="l-21"></a><span class="tm">19:04:25</span><span class="nk"> &lt;wumpus&gt;</span> we didn't, those refer to pull requests, not to pull numbers
+<a name="l-22"></a><span class="tm">19:04:56</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> there is one small correction https://github.com/bitcoin/bips/pull/252
+<a name="l-23"></a><span class="tm">19:05:08</span><span class="nk"> &lt;btcdrak&gt;</span> if that could be merged it would be dandy.
+<a name="l-24"></a><span class="tm">19:05:12</span><span class="nk"> &lt;morcos&gt;</span> so we're not on the verge of merging 6312 immediately anyway correct?
+<a name="l-25"></a><span class="tm">19:05:25</span><span class="nk"> &lt;Diablo-D3&gt;</span> <span class="hi">wumpus:</span> ahh
+<a name="l-26"></a><span class="tm">19:05:30</span><span class="nk"> &lt;morcos&gt;</span> it needs more tested ACKS ?
+<a name="l-27"></a><span class="tm">19:05:31</span><span class="nk"> &lt;morcos&gt;</span> or any
+<a name="l-28"></a><span class="tm">19:05:36</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-29"></a><span class="tm">19:05:39</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> yes
+<a name="l-30"></a><span class="tm">19:05:42</span><span class="nk"> &lt;morcos&gt;</span> i don't want to be the cause of delaying it
+<a name="l-31"></a><span class="tm">19:05:44</span><span class="nk"> &lt;Diablo-D3&gt;</span> <span class="hi">wumpus:</span> I was going to say, did I sleep for 10 years or what
+<a name="l-32"></a><span class="tm">19:05:48</span><span class="nk"> &lt;morcos&gt;</span> but i want to throw something out there
+<a name="l-33"></a><span class="tm">19:05:56</span><span class="nk"> &lt;sipa&gt;</span> present, from airport
+<a name="l-34"></a><span class="tm">19:05:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">there is one small correction https://github.com/bitcoin/bips/pull/252</span>
+<a name="l-35"></a><span class="tm">19:06:21</span><span class="nk"> &lt;morcos&gt;</span> i'm trying to figure out how to cache and efficiently check BIP68 validity
+<a name="l-36"></a><span class="tm">19:06:22</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> although to be fair, I think we're much closer now. Are we going to leave the CNB optimisations till post merge of #6312?
+<a name="l-37"></a><span class="tm">19:06:37</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic I guess
+<a name="l-38"></a><span class="tm">19:06:40</span><span class="nk"> &lt;morcos&gt;</span> we'd realized before this is necessary for reorgs, but more importantly its necessary to make CNB fast
+<a name="l-39"></a><span class="tm">19:06:58</span><span class="nk"> &lt;morcos&gt;</span> (sorry i guess i intepreted BIP68 related pulls differently :) )
+<a name="l-40"></a><span class="tm">19:07:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> wait a sec
+<a name="l-41"></a><span class="tm">19:07:14</span><span class="nk"> &lt;morcos&gt;</span> sdaftuar and i are looking at two approaches
+<a name="l-42"></a><span class="tm">19:07:34</span><span class="nk"> &lt;morcos&gt;</span> 1 will probably not change the existing code in 6312 at all (or barely)
+<a name="l-43"></a><span class="tm">19:07:49</span><span class="nk"> &lt;morcos&gt;</span> the other will refactor LockTime(..)  signficiantly
+<a name="l-44"></a><span class="tm">19:08:10</span><span class="nk"> &lt;sipa&gt;</span> i'd rather see the refactor done uofront
+<a name="l-45"></a><span class="tm">19:08:16</span><span class="nk"> &lt;morcos&gt;</span> I think if we decide the refactored version is better, exactly
+<a name="l-46"></a><span class="tm">19:08:21</span><span class="nk"> &lt;morcos&gt;</span> thats what i was going to say
+<a name="l-47"></a><span class="tm">19:08:33</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-48"></a><span class="tm">19:08:50</span><span class="nk"> &lt;sipa&gt;</span> so not significantly different code goes into backports
+<a name="l-49"></a><span class="tm">19:08:50</span><span class="nk"> &lt;morcos&gt;</span> ok, so it may be the refactor is not better anyway, but give us a couple of days to try out the two approaches and let people see them
+<a name="l-50"></a><span class="tm">19:09:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> yep, thats what we were discussing
+<a name="l-51"></a><span class="tm">19:09:55</span><span class="nk"> &lt;morcos&gt;</span> ok..  will make sure we ping people when we have something to show then
+<a name="l-52"></a><span class="tm">19:10:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> so let's revisit the topic next meeting.
+<a name="l-53"></a><span class="tm">19:10:18</span><span class="nk"> &lt;morcos&gt;</span> ack
+<a name="l-54"></a><span class="tm">19:10:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> if you do make a patch ping me and I'll cherry-pick it into to the PR
+<a name="l-55"></a><span class="tm">19:11:17</span><span class="nk"> &lt;btcdrak&gt;</span> so I guess the action point is look into refactoring for CNB optimisation
+<a name="l-56"></a><span class="tm">19:11:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action  </span><span class="cmdline">look into refactoring for CNB optimisation</span>
+<a name="l-57"></a><span class="tm">19:12:01</span><span class="nk"> &lt;morcos&gt;</span> yeah, but since the code is also for backports that doesn't care about cnb optimisation i think we need to make sure the refactor is reasonable standing on its own as well  (and b/c its consensus code!)
+<a name="l-58"></a><span class="tm">19:12:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-59"></a><span class="tm">19:12:27</span><span class="nk"> &lt;sipa&gt;</span> i believe that code that works on master/0.12 will be easier to trivially backport than the other way around
+<a name="l-60"></a><span class="tm">19:13:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> sure but interesting to think about the data that we'll be getting out of the refactor, these heights and times and so forth, isn't useful in backports
+<a name="l-61"></a><span class="tm">19:13:56</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-62"></a><span class="tm">19:14:16</span><span class="nk"> &lt;morcos&gt;</span> new topic PR 7062?
+<a name="l-63"></a><span class="tm">19:14:29</span><span class="nk"> &lt;morcos&gt;</span> i know ppl are going to conference now
+<a name="l-64"></a><span class="tm">19:14:31</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-65"></a><span class="tm">19:14:39</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell proposed a next topic already
+<a name="l-66"></a><span class="tm">19:14:40</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe we've seen ~no network visbile use or user comments on backports 0.10.x; so I believe we should backport no further than 0.11.x anymore. (and perhaps announce pending end of support on 0.10 on the list to bring anyone out of the woodwork)
+<a name="l-67"></a><span class="tm">19:14:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">eviction and onions</span>
+<a name="l-68"></a><span class="tm">19:14:51</span><span class="nk"> &lt;morcos&gt;</span> but sooner we merge that into 0.12, the more test coverage it gets.. (ok sorry, all iw anted to say)
+<a name="l-69"></a><span class="tm">19:15:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-70"></a><span class="tm">19:15:32</span><span class="nk"> &lt;gmaxwell&gt;</span> Brief, w/ auto onion support we'll now have a lot of potentially hostile localhost peers, which our eviction code will currently not evict.  #7082 addresses this, but sipa caught me making a locking naughty move.
+<a name="l-71"></a><span class="tm">19:15:48</span><span class="nk"> &lt;wumpus&gt;</span> we usually keep to one version back, support for 0.10 stops as soon as 0.12 is released
+<a name="l-72"></a><span class="tm">19:16:11</span><span class="nk"> &lt;wumpus&gt;</span> (excluding super serious bugs and security issues I guess)
+<a name="l-73"></a><span class="tm">19:16:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I updated to fix it with a kind of gross global lock. But looking around, I see that we frequently update data in node objects with no lock protection. (e.g. pingtimes)
+<a name="l-74"></a><span class="tm">19:16:52</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> let's post that to the mailing list so end users are clear about it.
+<a name="l-75"></a><span class="tm">19:16:59</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I was thinking we need a clear EOL statement somewhere
+<a name="l-76"></a><span class="tm">19:17:10</span><span class="nk"> &lt;gmaxwell&gt;</span> I think its somewhat important to do something about the localhost connections w/ eviction, even in 0.12, to prevent the HS support from bein a liability.
+<a name="l-77"></a><span class="tm">19:17:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i know how to fix that
+<a name="l-78"></a><span class="tm">19:17:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> well it used to be the case that luke-jr was backporting things to older versions, in general other people may still bother
+<a name="l-79"></a><span class="tm">19:17:51</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't really care what, if I'm getting no comments on that PR because people hate that; lemme know. If someone wants to suggest how to fix the locking mess without the gross global lock I just updated the PR to add, let me know.
+<a name="l-80"></a><span class="tm">19:18:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> great.
+<a name="l-81"></a><span class="tm">19:18:06</span><span class="nk"> &lt;btcdrak&gt;</span> What PR are we talking about now?
+<a name="l-82"></a><span class="tm">19:18:12</span><span class="nk"> &lt;gmaxwell&gt;</span> 7082
+<a name="l-83"></a><span class="tm">19:18:14</span><span class="nk"> &lt;gmaxwell&gt;</span> Thats all I had for that.
+<a name="l-84"></a><span class="tm">19:18:38</span><span class="nk"> &lt;wumpus&gt;</span> we can still disable the auto HS stuff by default if it's risky
+<a name="l-85"></a><span class="tm">19:19:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I think a very minimal change derisks it, even less than 7082. (7082 without the last commit, basically)
+<a name="l-86"></a><span class="tm">19:19:04</span><span class="nk"> &lt;wumpus&gt;</span> the only reason it's enabled by default is because I never got any pushback on that
+<a name="l-87"></a><span class="tm">19:19:04</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> could you describe the issue with nasty localhost peers? I'm not following
+<a name="l-88"></a><span class="tm">19:19:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> localhost peers are never evicted; so as soon as you show up on HS someone can prevent anyone else from connecting to you trivially. (just open 125 connections and respond to pings)
+<a name="l-89"></a><span class="tm">19:20:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">take a look at #7082</span>
+<a name="l-90"></a><span class="tm">19:20:24</span><span class="nk"> &lt;gmaxwell&gt;</span> thanks.
+<a name="l-91"></a><span class="tm">19:20:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> and there is no other way to distinct between real localhost connections and tor hs localhost connections?
+<a name="l-92"></a><span class="tm">19:20:51</span><span class="nk"> &lt;wumpus&gt;</span> there's already plenty of people that run HS nodes so that is an issue independent of whether auto HS support will be disabled
+<a name="l-93"></a><span class="tm">19:20:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes, use whitebind
+<a name="l-94"></a><span class="tm">19:21:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> we could restrict the no-evict behaviour to whitelisted nodes
+<a name="l-95"></a><span class="tm">19:21:18</span><span class="nk"> &lt;sipa&gt;</span> but that may break existing software
+<a name="l-96"></a><span class="tm">19:21:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> you can whitebind, but that has other effects like force relaying all transactions even redundantly.
+<a name="l-97"></a><span class="tm">19:21:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> why to we special threat localhost in the first place?
+<a name="l-98"></a><span class="tm">19:21:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> because of old
+<a name="l-99"></a><span class="tm">19:22:05</span><span class="nk"> &lt;wumpus&gt;</span> if it was decided now, we'd only do it for specially whitelisted nodes
+<a name="l-100"></a><span class="tm">19:22:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> got it now, thanks
+<a name="l-101"></a><span class="tm">19:22:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> because local software was historically trusted
+<a name="l-102"></a><span class="tm">19:22:17</span><span class="nk"> &lt;sipa&gt;</span> but tor connections aren't really
+<a name="l-103"></a><span class="tm">19:22:22</span><span class="nk"> &lt;gmaxwell&gt;</span> 7082 does not evict whitelisted peers. It removes the special treatment in eviction; and trusts that the fact that eviction does not evict the peers with the 8 lowest ping times, to protect local peers.
+<a name="l-104"></a><span class="tm">19:22:28</span><span class="nk"> &lt;sipa&gt;</span> HS support was only added in 0.6 iirc
+<a name="l-105"></a><span class="tm">19:22:58</span><span class="nk"> &lt;gmaxwell&gt;</span> We still have several other bits of excessive trust of local peers, I think; but this was the most obvious.
+<a name="l-106"></a><span class="tm">19:23:09</span><span class="nk"> &lt;wumpus&gt;</span> in general, P2P connecting software will be able to cope with being disconnected/evicted
+<a name="l-107"></a><span class="tm">19:23:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sounds good to me
+<a name="l-108"></a><span class="tm">19:23:52</span><span class="nk"> &lt;gmaxwell&gt;</span> So long has you have less than 8 local peers, and they respond to pings fast just once, they'll still get protected from eviction in 7082.
+<a name="l-109"></a><span class="tm">19:24:06</span><span class="nk"> &lt;wumpus&gt;</span> in the long term we should encourage using whitelisted for special peers
+<a name="l-110"></a><span class="tm">19:24:08</span><span class="nk"> &lt;wumpus&gt;</span> local or not
+<a name="l-111"></a><span class="tm">19:24:14</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-112"></a><span class="tm">19:24:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1!
+<a name="l-113"></a><span class="tm">19:24:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should take https://github.com/bitcoin/bitcoin/pull/7082/files#diff-9a82240fe7dfe86564178691cc57f2f1L886 in
+<a name="l-114"></a><span class="tm">19:25:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">look at  https://github.com/bitcoin/bitcoin/pull/7082/files#diff-9a82240fe7dfe86564178691cc57f2f1L886</span>
+<a name="l-115"></a><span class="tm">19:25:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> i mean remove the if (node-&gt;addr.IsLocal()) protection at all
+<a name="l-116"></a><span class="tm">19:25:20</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-117"></a><span class="tm">19:25:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">topic:</span> 0.12 party
+<a name="l-118"></a><span class="tm">19:25:39</span><span class="nk"> &lt;sipa&gt;</span> :p
+<a name="l-119"></a><span class="tm">19:25:54</span><span class="nk"> &lt;btcdrak&gt;</span> +1
+<a name="l-120"></a><span class="tm">19:25:54</span><span class="nk"> &lt;cfields&gt;</span> i'd like to quickly discuss the HK dev meetup
+<a name="l-121"></a><span class="tm">19:25:54</span><span class="nk"> &lt;wumpus&gt;</span> lol :)
+<a name="l-122"></a><span class="tm">19:25:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> hah!
+<a name="l-123"></a><span class="tm">19:25:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">HK dev meetup</span>
+<a name="l-124"></a><span class="tm">19:26:04 </span><span class="nka">* sipa</span> <span class="ac">will be in HK in 14 hours</span>
+<a name="l-125"></a><span class="tm">19:26:11</span><span class="nk"> &lt;cfields&gt;</span> everyone who's in hk, come to the dev meetup :)
+<a name="l-126"></a><span class="tm">19:26:13</span><span class="nk"> &lt;cfields&gt;</span> &lt;/topic&gt;
+<a name="l-127"></a><span class="tm">19:26:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;-)
+<a name="l-128"></a><span class="tm">19:26:28</span><span class="nk"> &lt;cfields&gt;</span> sec, i'll like the mail thread
+<a name="l-129"></a><span class="tm">19:26:37</span><span class="nk"> &lt;wumpus&gt;</span> useful information may be: where, when etc
+<a name="l-130"></a><span class="tm">19:26:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> you'll "like" it, is it on facebook?
+<a name="l-131"></a><span class="tm">19:27:01</span><span class="nk"> &lt;morcos&gt;</span> sorry to be missing it!
+<a name="l-132"></a><span class="tm">19:27:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> getting there, discussion went faster than i expected. 1 sec :)
+<a name="l-133"></a><span class="tm">19:27:16</span><span class="nk"> &lt;wumpus&gt;</span> twitter has 'likes' now too :')
+<a name="l-134"></a><span class="tm">19:27:22</span><span class="nk"> &lt;cfields&gt;</span> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011712.html
+<a name="l-135"></a><span class="tm">19:27:25</span><span class="nk"> &lt;morcos&gt;</span> we shoudl add on github
+<a name="l-136"></a><span class="tm">19:27:41</span><span class="nk"> &lt;cfields&gt;</span> Dec 8/9, 8am-?
+<a name="l-137"></a><span class="tm">19:27:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">all go to HK dev meeting if you're around https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-November/011712.html Dec 8/9, 8am-?</span>
+<a name="l-138"></a><span class="tm">19:27:56</span><span class="nk"> &lt;cfields&gt;</span> same place as the conference. More info at the link above
+<a name="l-139"></a><span class="tm">19:28:22</span><span class="nk"> &lt;cfields&gt;</span> hope everyone can make it. Plan it just to have unstructured dev time.
+<a name="l-140"></a><span class="tm">19:28:55 </span><span class="nka">* jonasschnelli</span> <span class="ac">can't go to HK</span>
+<a name="l-141"></a><span class="tm">19:28:56</span><span class="nk"> &lt;btcdrak&gt;</span> with lots of beer
+<a name="l-142"></a><span class="tm">19:29:06</span><span class="nk"> &lt;cfields&gt;</span> If anyone wants to suggest some topics ahead of time, I'm happy to start a list. Otherwise, whatever comes up on its own
+<a name="l-143"></a><span class="tm">19:29:08</span><span class="nk"> &lt;cfields&gt;</span> :(
+<a name="l-144"></a><span class="tm">19:29:09</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-145"></a><span class="tm">19:29:09</span><span class="nk"> &lt;sipa&gt;</span> :(
+<a name="l-146"></a><span class="tm">19:29:35</span><span class="nk"> &lt;sdaftuar&gt;</span> topic suggestion: opt-in RBF shoudl have a BIP?
+<a name="l-147"></a><span class="tm">19:29:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP for opt-in RBF</span>
+<a name="l-148"></a><span class="tm">19:29:56</span><span class="nk"> &lt;btcdrak&gt;</span> not really, it is just policy code
+<a name="l-149"></a><span class="tm">19:29:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> definitively!
+<a name="l-150"></a><span class="tm">19:30:12</span><span class="nk"> &lt;sdaftuar&gt;</span> i think it's unfortunate that the only documentation for what wallet writers should do is in a single mailnig list post...
+<a name="l-151"></a><span class="tm">19:30:28</span><span class="nk"> &lt;gmaxwell&gt;</span> Sounds reasonable.
+<a name="l-152"></a><span class="tm">19:30:28</span><span class="nk"> &lt;wumpus&gt;</span> depends on whether someone is volunteering I suppose
+<a name="l-153"></a><span class="tm">19:30:28</span><span class="nk"> &lt;sipa&gt;</span> standardness has been covered before in BIPs
+<a name="l-154"></a><span class="tm">19:30:41</span><span class="nk"> &lt;harding&gt;</span> +1 for a BIP.  I'll write something and coordinate with petertodd
+<a name="l-155"></a><span class="tm">19:30:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftaur:</span> I think we should add this FAQ to the release notes https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/
+<a name="l-156"></a><span class="tm">19:30:49</span><span class="nk"> &lt;sipa&gt;</span> well better communication with wallet authors definitely makes sense
+<a name="l-157"></a><span class="tm">19:30:49</span><span class="nk"> &lt;morcos&gt;</span> its also very intricate policy that is likely to be handled in the exact same way by a high proportion of the network
+<a name="l-158"></a><span class="tm">19:30:51</span><span class="nk"> &lt;wumpus&gt;</span> awesome harding
+<a name="l-159"></a><span class="tm">19:30:52</span><span class="nk"> &lt;sdaftuar&gt;</span> awesome, thansk harding
+<a name="l-160"></a><span class="tm">19:31:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">harding will coordinate with petertodd about opt-in RBF BIP</span>
+<a name="l-161"></a><span class="tm">19:31:59</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-162"></a><span class="tm">19:32:20</span><span class="nk"> &lt;sipa&gt;</span> Segmentation faul
+<a name="l-163"></a><span class="tm">19:32:37</span><span class="nk"> &lt;cfields&gt;</span> red flag
+<a name="l-164"></a><span class="tm">19:32:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">FAQ useful for BIP: https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/</span>
+<a name="l-165"></a><span class="tm">19:32:47</span><span class="nk"> &lt;gmaxwell&gt;</span> lol
+<a name="l-166"></a><span class="tm">19:33:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://www.reddit.com/r/Bitcoin/comments/3urm8o/optin_rbf_is_misunderstood_ask_questions_about_it/</span>
+<a name="l-167"></a><span class="tm">19:34:33</span><span class="nk"> &lt;wumpus&gt;</span> ok, short meeting this time :) have fun in HK everyone that is going
+<a name="l-168"></a><span class="tm">19:35:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Have fun. And enjoy the warm weather...
+<a name="l-169"></a><span class="tm">19:35:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
