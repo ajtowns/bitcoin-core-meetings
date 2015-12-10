@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:42</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Dec 10 19:01:42 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:42</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:17</span><span class="nk"> &lt;wumpus&gt;</span> &lt;morcos&gt; wumpus: suggested topics for todays meeting: 1)  BIP 68 questions - a) semantic change to assume MTP  b) implentation approach change to #7184
+<a name="l-5"></a><span class="tm">19:02:34</span><span class="nk"> &lt;wumpus&gt;</span> start with those?
+<a name="l-6"></a><span class="tm">19:02:43</span><span class="nk"> &lt;BlueMatt&gt;</span> yup
+<a name="l-7"></a><span class="tm">19:02:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> sure
+<a name="l-8"></a><span class="tm">19:02:53</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-9"></a><span class="tm">19:02:59</span><span class="nk"> &lt;wumpus&gt;</span> !topic BIP 68 questions - a) semantic change to assume MTP
+<a name="l-10"></a><span class="tm">19:03:00</span><span class="nk"> &lt;gmaxwell&gt;</span> ack
+<a name="l-11"></a><span class="tm">19:03:00</span><span class="nk"> &lt;gribble&gt;</span> (topic [&lt;channel&gt;]) -- Returns the topic for &lt;channel&gt;. &lt;channel&gt; is only necessary if the message isn't sent in the channel itself.
+<a name="l-12"></a><span class="tm">19:03:09</span><span class="nk"> &lt;morcos&gt;</span> so for people that didn't see the 1)a) discussion.  i thin k it makes sense if we just always use prior blocks MTP for bip68 sequence lock comparisons
+<a name="l-13"></a><span class="tm">19:03:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> it makes sense to me, since BIP68 and BIP113(mtp) are intended to be sf together
+<a name="l-14"></a><span class="tm">19:03:50</span><span class="nk"> &lt;gmaxwell&gt;</span> I think that makes sense. It will force us to make the 113 softfork at the same time, but I expected we would in any case.
+<a name="l-15"></a><span class="tm">19:04:09</span><span class="nk"> &lt;morcos&gt;</span> it'll potentially simplify BIP 68 implementation and since no policy for BIP 68 is in the wild yet, why introduce the possibility of configuring a very temporary BIP68/non-MTP policy
+<a name="l-16"></a><span class="tm">19:04:18</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> won't actually force that
+<a name="l-17"></a><span class="tm">19:04:24</span><span class="nk"> &lt;morcos&gt;</span> it just means BIP68 is defined that way
+<a name="l-18"></a><span class="tm">19:04:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> we discussed doing them together in quite a few previous meetings so I think there's no particular change of plan
+<a name="l-19"></a><span class="tm">19:04:40</span><span class="nk"> &lt;morcos&gt;</span> it'll be somewhat annoying if BIP68 and nLockTime have different semantics, but only somewhat
+<a name="l-20"></a><span class="tm">19:05:16</span><span class="nk"> &lt;morcos&gt;</span> are there any objections?
+<a name="l-21"></a><span class="tm">19:05:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> that would be pretty obnoxious though. But fair enough.
+<a name="l-22"></a><span class="tm">19:05:47</span><span class="nk"> &lt;btcdrak&gt;</span> let's do it.
+<a name="l-23"></a><span class="tm">19:05:48</span><span class="nk"> &lt;morcos&gt;</span> yes to be clear i think they should soft fork in together and standard policy is already  MTP
+<a name="l-24"></a><span class="tm">19:06:36</span><span class="nk"> &lt;sdaftuar&gt;</span> ok so lets talk about the alternate implementation approach in 7184?
+<a name="l-25"></a><span class="tm">19:06:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP 68 questions - b) implentation approach change to #7184</span>
+<a name="l-26"></a><span class="tm">19:06:49</span><span class="nk"> &lt;gmaxwell&gt;</span> One nice thing is that BIP65 should have likely seralized MTP-standardness deployment.
+<a name="l-27"></a><span class="tm">19:07:08</span><span class="nk"> &lt;morcos&gt;</span> so i don't need to beg for code review yet, b/c i think BIP 68 is waiting for post 0.12 release anwyay
+<a name="l-28"></a><span class="tm">19:07:28</span><span class="nk"> &lt;morcos&gt;</span> but what i would appreciate is some feedback on whether changing the implentation in 6312 is a good idea or not
+<a name="l-29"></a><span class="tm">19:07:43</span><span class="nk"> &lt;morcos&gt;</span> i like splitting sequence lock consensus code from nLockTime consensus code
+<a name="l-30"></a><span class="tm">19:07:47</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> wrong, we beg for code reviews. It can be merged like BIP65 which remained as policy code for months before we added the softfork code
+<a name="l-31"></a><span class="tm">19:07:55</span><span class="nk"> &lt;gavinandresen&gt;</span> I can't resist throwing in a pet peeve: it'd help people who read these meeting notes if acronyms were spelled out first time they were used.  MTP --&gt; mean time previous ... (now I'll be quiet again)
+<a name="l-32"></a><span class="tm">19:08:00</span><span class="nk"> &lt;morcos&gt;</span> i think it makes sense for consensus code units to be small and self contained
+<a name="l-33"></a><span class="tm">19:08:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">MTP:</span> median time past
+<a name="l-34"></a><span class="tm">19:08:22</span><span class="nk"> &lt;btcdrak&gt;</span> MTP is BIP113
+<a name="l-35"></a><span class="tm">19:08:56</span><span class="nk"> &lt;morcos&gt;</span> so i'd just like people to maybe take a look at the code approach of #7184, and give feed back
+<a name="l-36"></a><span class="tm">19:09:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">gavinandresen:</span> there is a for-layman summary that gets posted; the author often contacts people after the meeting for help expanding things.
+<a name="l-37"></a><span class="tm">19:09:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">take a look at code approach of #7184</span>
+<a name="l-38"></a><span class="tm">19:09:23</span><span class="nk"> &lt;morcos&gt;</span> if we like it, we can change the BIP to reflect a different implenetation idea.   but the semantics are unchanged modulo the prior topic
+<a name="l-39"></a><span class="tm">19:09:41</span><span class="nk"> &lt;BlueMatt&gt;</span> as for #7184 - I dont find CNB performance to be of critical importance (getblocktemplate shouldn't rely on CNB to be fast)
+<a name="l-40"></a><span class="tm">19:09:45</span><span class="nk"> &lt;gavinandresen&gt;</span> <span class="hi">gmaxwell:</span> ok, feel free to ignore my pet peeve, it might just be me who has a secret superpower of forgetting acronyms
+<a name="l-41"></a><span class="tm">19:09:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> I specifically didn't mention that because I think #7184 makes sense on its own
+<a name="l-42"></a><span class="tm">19:10:00</span><span class="nk"> &lt;BlueMatt&gt;</span> the fact that getblocktemplate relies on CNB to be fast is kinda broken, it should be background-updated
+<a name="l-43"></a><span class="tm">19:10:20</span><span class="nk"> &lt;morcos&gt;</span> there are details in its implementaion that allow speeding up CNB, that coudl be removed if they in particular are bad
+<a name="l-44"></a><span class="tm">19:10:21</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I think it's worth asking for ideas on 7187 too
+<a name="l-45"></a><span class="tm">19:10:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gavinandresen:</span> no, I agree, feel free to ask when acronyms are unclear
+<a name="l-46"></a><span class="tm">19:10:38</span><span class="nk"> &lt;gavinandresen&gt;</span> CNB == CreateNewBlock for anybody else with my secret superpower
+<a name="l-47"></a><span class="tm">19:10:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I dont have a particularly strong opinion about 7184 vs 6312, though 6312 has gotten some review and is probably a bit more mature
+<a name="l-48"></a><span class="tm">19:10:40</span><span class="nk"> &lt;btcdrak&gt;</span> CNB = CreateNewBlock()
+<a name="l-49"></a><span class="tm">19:11:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I was just commenting that we shouldnt be considering CNB performance that strongly for 7184
+<a name="l-50"></a><span class="tm">19:11:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> in all fairness, 6312 has changed so much over 6 months it's not fair to say the current PR has all the same review.
+<a name="l-51"></a><span class="tm">19:11:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> background updating CNB isn't super easy b/c of locking.  not saying it can't be done.  also the one thing that will never be able to be done is making it fast to return a new template with txs after a new block is found unless you do soemthing like i'm proposing
+<a name="l-52"></a><span class="tm">19:11:49</span><span class="nk"> &lt;BlueMatt&gt;</span> i wasnt claiming it had a ton of review, but it does have some
+<a name="l-53"></a><span class="tm">19:12:14</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> 6312 is confusing in my opinion because it changes the consensus code that does nLockTime checks.  splitting consensus checks into their smallest logical unit makes more sense, i think -- that's why i like morcos' approach in 7184
+<a name="l-54"></a><span class="tm">19:12:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> oh? I dont see how its /that/ hard to do background updating due to locking?
+<a name="l-55"></a><span class="tm">19:12:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftaur:</span> I'm much more in favour of 7184 than 6312.
+<a name="l-56"></a><span class="tm">19:12:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> how is it not possible to make it fast to make getblocktemplate return an empty block?
+<a name="l-57"></a><span class="tm">19:13:04</span><span class="nk"> &lt;BlueMatt&gt;</span> that should be easy
+<a name="l-58"></a><span class="tm">19:13:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> its perhaps a subject for another conversation, not impossible, but not trivial, you need access to a lot of the mempool state.   yes, that is possible, i said with txs
+<a name="l-59"></a><span class="tm">19:13:22</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, with txns, ok, yes, ofc
+<a name="l-60"></a><span class="tm">19:13:44</span><span class="nk"> &lt;morcos&gt;</span> do people in general think that having the sequence locks be combined with nlocktime locks makes sense
+<a name="l-61"></a><span class="tm">19:13:53</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yea, getblocktemplate reworking is a separate conversation (we could discuss today if we get bored, though should probably go implement something to discuss first)
+<a name="l-62"></a><span class="tm">19:14:00</span><span class="nk"> &lt;morcos&gt;</span> you get these weird things in 6312, liek calling LockTime with null prevHeights
+<a name="l-63"></a><span class="tm">19:14:25</span><span class="nk"> &lt;oldbrew&gt;</span> seen alot of empty blocks being mined when the mempool is high
+<a name="l-64"></a><span class="tm">19:14:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> also regardless of end design for CNB, 0.12 will have a serious regression if we lookup every input for sequence locks
+<a name="l-65"></a><span class="tm">19:15:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> oh? I figured that stuff would be in 0.12.1?
+<a name="l-66"></a><span class="tm">19:15:18</span><span class="nk"> &lt;BlueMatt&gt;</span> and a background-CNB should be a small enough patch to backport, I'd think
+<a name="l-67"></a><span class="tm">19:15:19</span><span class="nk"> &lt;morcos&gt;</span> yes, 0.12 fast CNB.  0.12.1 slow CNB
+<a name="l-68"></a><span class="tm">19:15:27</span><span class="nk"> &lt;morcos&gt;</span> ha, definitely not
+<a name="l-69"></a><span class="tm">19:15:35</span><span class="nk"> &lt;morcos&gt;</span> well, the empty template version
+<a name="l-70"></a><span class="tm">19:15:36</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe I need to look closer
+<a name="l-71"></a><span class="tm">19:15:42</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, empty templates is fine
+<a name="l-72"></a><span class="tm">19:15:46</span><span class="nk"> &lt;morcos&gt;</span> ehh...
+<a name="l-73"></a><span class="tm">19:15:49</span><span class="nk"> &lt;BlueMatt&gt;</span> empty templates is what you want, actually
+<a name="l-74"></a><span class="tm">19:15:51</span><span class="nk"> &lt;sdaftuar&gt;</span> non-empty templates are achievable...
+<a name="l-75"></a><span class="tm">19:15:52</span><span class="nk"> &lt;BlueMatt&gt;</span> non-empty templates sucks
+<a name="l-76"></a><span class="tm">19:16:04</span><span class="nk"> &lt;morcos&gt;</span> sigh.. ok, back to BIP 68
+<a name="l-77"></a><span class="tm">19:16:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> there is an issue to discuss the performance https://github.com/bitcoin/bitcoin/issues/7190
+<a name="l-78"></a><span class="tm">19:16:46</span><span class="nk"> &lt;morcos&gt;</span> i think it makes sense on its own, i think the consensus checks for seq locks outght to give you back the relevant information determined by the consensus logic (especially if there are expensive calculations in preparing the inputs to those functions)
+<a name="l-79"></a><span class="tm">19:16:56</span><span class="nk"> &lt;morcos&gt;</span> that might be useful many places, not just CNB
+<a name="l-80"></a><span class="tm">19:17:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> while I agree CNB should be made latency non-crticial I don't think it's okay to make it actually slow.
+<a name="l-81"></a><span class="tm">19:17:32</span><span class="nk"> &lt;morcos&gt;</span> its also blowing out your UTXO cache
+<a name="l-82"></a><span class="tm">19:17:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> maybe I'm missing context, how slow are we talking? a second or two is fine
+<a name="l-83"></a><span class="tm">19:17:52</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, I'll shut up
+<a name="l-84"></a><span class="tm">19:18:01</span><span class="nk"> &lt;morcos&gt;</span> forget about latency of CNB, if you recalculate every sequence lock dumbly then your UTXO cache is useless after a reorg
+<a name="l-85"></a><span class="tm">19:18:06</span><span class="nk"> &lt;btcdrak&gt;</span> Yeah, there is no choice. 6312 would be a regression, it needs to be fixed
+<a name="l-86"></a><span class="tm">19:18:47</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, yea, blowing out utxo cache is unacceptable
+<a name="l-87"></a><span class="tm">19:19:11</span><span class="nk"> &lt;morcos&gt;</span> anwyay perhaps people want to look at the code first, but i wanted to highlight this idea of not touching the IsFinalTx checks and just adding new checks for the new soft fork.
+<a name="l-88"></a><span class="tm">19:19:38</span><span class="nk"> &lt;morcos&gt;</span> additionaly related question that i've asked and no one has commented on is the GUI display of currently locked txs
+<a name="l-89"></a><span class="tm">19:20:01</span><span class="nk"> &lt;morcos&gt;</span> for expediency i suggested removing checking sequence locks there
+<a name="l-90"></a><span class="tm">19:20:16</span><span class="nk"> &lt;morcos&gt;</span> i can't see how that's necessary except very rarely
+<a name="l-91"></a><span class="tm">19:21:08</span><span class="nk"> &lt;wumpus&gt;</span> what is the problem specific to the GUI there?
+<a name="l-92"></a><span class="tm">19:21:11</span><span class="nk"> &lt;morcos&gt;</span> if there is a reorg that makes your tx no longer acceptable to the mempool, then it'll be out of the mempool, but maybe you want to know that the reason is its locked
+<a name="l-93"></a><span class="tm">19:21:18</span><span class="nk"> &lt;btcdrak&gt;</span> sorry previously posted the wrong link to the discussion ticket re CNB performance, should be https://github.com/bitcoin/bitcoin/issues/7176
+<a name="l-94"></a><span class="tm">19:21:20</span><span class="nk"> &lt;morcos&gt;</span> i just don't know when that code gets excercise
+<a name="l-95"></a><span class="tm">19:21:25</span><span class="nk"> &lt;morcos&gt;</span> how do you have a locked tx in your wallet
+<a name="l-96"></a><span class="tm">19:21:58</span><span class="nk"> &lt;wumpus&gt;</span> right, there is no concept of that at this point, they would have to be shown differently I suppsoe
+<a name="l-97"></a><span class="tm">19:22:19</span><span class="nk"> &lt;morcos&gt;</span> well IsFinal is checked right now, and this was addressed in #6312
+<a name="l-98"></a><span class="tm">19:22:19</span><span class="nk"> &lt;wumpus&gt;</span> same for listtransactions RPC
+<a name="l-99"></a><span class="tm">19:22:49</span><span class="nk"> &lt;gmaxwell&gt;</span> well anyone can create and send you one, but with MTP in effect, I don't think a one deep reorg can ever force the eviction of one.
+<a name="l-100"></a><span class="tm">19:23:02</span><span class="nk"> &lt;morcos&gt;</span> but my point is I think its fine to leave that less than ideal for now (not touch it) and clean it up properly later, rather than hack in something for sequence locks which might end up blowing out your utxo cache and making wallet things slow
+<a name="l-101"></a><span class="tm">19:23:04</span><span class="nk"> &lt;gmaxwell&gt;</span> oh I guess it can, because of time locks.
+<a name="l-102"></a><span class="tm">19:23:39</span><span class="nk"> &lt;sdaftuar&gt;</span> if a confirmed input became unconfirmed then it can force the eviction (that can happen in a 1-deep reorg)
+<a name="l-103"></a><span class="tm">19:23:45</span><span class="nk"> &lt;morcos&gt;</span> just checking sequence locks on all wallet txs seems dangerous
+<a name="l-104"></a><span class="tm">19:23:57</span><span class="nk"> &lt;sdaftuar&gt;</span> for height locks too i mean
+<a name="l-105"></a><span class="tm">19:24:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> whats dangerous about it?
+<a name="l-106"></a><span class="tm">19:24:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> we shouldn't have unconfirmed locked transactions in the wallet to begin with.
+<a name="l-107"></a><span class="tm">19:24:35</span><span class="nk"> &lt;morcos&gt;</span> checking sequence locks is expensive
+<a name="l-108"></a><span class="tm">19:25:25</span><span class="nk"> &lt;gmaxwell&gt;</span> It's espensive because you have to pull in the input utxos to get their heights.
+<a name="l-109"></a><span class="tm">19:26:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. But how many locked wtx per wallet do we expect,... only update the cache during a tip update seems okay?
+<a name="l-110"></a><span class="tm">19:26:19</span><span class="nk"> &lt;wumpus&gt;</span> but you only have to check it for possibly locked transactions, not for all transactions?
+<a name="l-111"></a><span class="tm">19:26:50</span><span class="nk"> &lt;morcos&gt;</span> sure sure, i'm not saying we shouldn't ever do it, i'm just saying naively adding it as was done in 6312 is bad
+<a name="l-112"></a><span class="tm">19:27:09</span><span class="nk"> &lt;morcos&gt;</span> and it doesn't seem important enough to include in the soft fork that must be backported for BIP 68
+<a name="l-113"></a><span class="tm">19:27:13</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. keep a flag for what, don't check it all the time unless something changes)
+<a name="l-114"></a><span class="tm">19:27:16</span><span class="nk"> &lt;wumpus&gt;</span> I agree
+<a name="l-115"></a><span class="tm">19:27:20</span><span class="nk"> &lt;morcos&gt;</span> s/is bad/is potentially bad/
+<a name="l-116"></a><span class="tm">19:27:23</span><span class="nk"> &lt;gmaxwell&gt;</span> Sipa is travling now but I expect he'd have more comments on the wallet impact. I hadn't been paying attention to it because he was.
+<a name="l-117"></a><span class="tm">19:27:27</span><span class="nk"> &lt;wumpus&gt;</span> doesn't need to be part of that
+<a name="l-118"></a><span class="tm">19:27:59</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> the idea of my 7184 implentation is you get access to all the relevant lock state, time , height, hash at which those values are valid
+<a name="l-119"></a><span class="tm">19:28:00</span><span class="nk"> &lt;wumpus&gt;</span> UI/wallet changes are usually separate from the softfork changes
+<a name="l-120"></a><span class="tm">19:28:07</span><span class="nk"> &lt;morcos&gt;</span> that could be used by the mempool, by CNB, by the wallet
+<a name="l-121"></a><span class="tm">19:28:12</span><span class="nk"> &lt;morcos&gt;</span> it just seems the right way to do it
+<a name="l-122"></a><span class="tm">19:28:12</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-123"></a><span class="tm">19:28:23</span><span class="nk"> &lt;wumpus&gt;</span> yes that makes sense
+<a name="l-124"></a><span class="tm">19:28:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> so 7184 would hide any bip68/113 tx from listtransaction and UI?
+<a name="l-125"></a><span class="tm">19:28:30</span><span class="nk"> &lt;morcos&gt;</span> using that information i left out of 7184
+<a name="l-126"></a><span class="tm">19:28:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> no, they would just not be aware of those txs
+<a name="l-127"></a><span class="tm">19:28:59</span><span class="nk"> &lt;morcos&gt;</span> sorry, if they were currently locked they wouldn't be aware of them
+<a name="l-128"></a><span class="tm">19:29:16</span><span class="nk"> &lt;morcos&gt;</span> if they were able to be included, then they would not be aware that they had previously be locked
+<a name="l-129"></a><span class="tm">19:29:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> because of the isFinal check?
+<a name="l-130"></a><span class="tm">19:29:28</span><span class="nk"> &lt;morcos&gt;</span> but if they are currently locked, then they're not in the mempool anyway
+<a name="l-131"></a><span class="tm">19:29:47</span><span class="nk"> &lt;morcos&gt;</span> isFinal has to do with nLockTime, i'm trying to completely separate sequence lock logic from that
+<a name="l-132"></a><span class="tm">19:30:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Well, .. i agree with wumpus: wallet/UI changes can be done later
+<a name="l-133"></a><span class="tm">19:30:01</span><span class="nk"> &lt;morcos&gt;</span> i think we need to clean up how the wallet/GUI deals with both
+<a name="l-134"></a><span class="tm">19:30:07</span><span class="nk"> &lt;morcos&gt;</span> correct
+<a name="l-135"></a><span class="tm">19:30:20</span><span class="nk"> &lt;morcos&gt;</span> the thing is, IsFinal is cheap , so no reason to worry we check that now
+<a name="l-136"></a><span class="tm">19:31:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> We just need to make sure, the wallet doesn't lack to far behind (RBF).
+<a name="l-137"></a><span class="tm">19:31:45</span><span class="nk"> &lt;morcos&gt;</span> in any case, i mispoke before.  the proposed wallet behavior is: if a tx is sequence locked and can't be included in a block, it won't ever end up in your wallet (or your mempool) unless it was originally unlocked and in your wallet (and mempool) and then a reorg caused it to be locked, in which case it woudl be evicted from your mempool
+<a name="l-138"></a><span class="tm">19:31:57</span><span class="nk"> &lt;morcos&gt;</span> in that case your wallet would display it like any other evicted tx
+<a name="l-139"></a><span class="tm">19:32:42</span><span class="nk"> &lt;morcos&gt;</span> the proposed behavior is the result of not touching wallet/gui code
+<a name="l-140"></a><span class="tm">19:33:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> thats good. :)
+<a name="l-141"></a><span class="tm">19:33:05</span><span class="nk"> &lt;morcos&gt;</span> ok , anyway, i didn't want to hijack this whole meeting to discuss one pull
+<a name="l-142"></a><span class="tm">19:33:37</span><span class="nk"> &lt;morcos&gt;</span> but i'd just like to get some clarity b/c i feel bad hijacking 6312 into a different implementaion if it slows down its merging, since we all would like the functionality
+<a name="l-143"></a><span class="tm">19:33:48</span><span class="nk"> &lt;morcos&gt;</span> so would be nice to agree on a approach
+<a name="l-144"></a><span class="tm">19:34:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I wouldnt worry. 7184 is an improvement for sure, as is assuming MTP.
+<a name="l-145"></a><span class="tm">19:36:13</span><span class="nk"> &lt;morcos&gt;</span> next topic?
+<a name="l-146"></a><span class="tm">19:36:40</span><span class="nk"> &lt;btcdrak&gt;</span> I'd also like to mention aj wrote some python demos for BIP68/+CSV which will be useful for testers
+<a name="l-147"></a><span class="tm">19:37:08</span><span class="nk"> &lt;morcos&gt;</span> i'd suggested this question:  mempool containing only txs valid for the next block : is this something it would make sense to relax in the future, under what constraints?
+<a name="l-148"></a><span class="tm">19:37:09</span><span class="nk"> &lt;btcdrak&gt;</span> Those should be pushed to guthub soon
+<a name="l-149"></a><span class="tm">19:37:39</span><span class="nk"> &lt;Lightsword&gt;</span> looks like BIP65 will activate soon, Antpool does not appear to be producing any more v3 blocks
+<a name="l-150"></a><span class="tm">19:38:19 </span><span class="nka">* btcdrak</span> <span class="ac">jumps for joy</span>
+<a name="l-151"></a><span class="tm">19:38:41</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-152"></a><span class="tm">19:38:46</span><span class="nk"> &lt;btcdrak&gt;</span> are there any more topics wumpus?
+<a name="l-153"></a><span class="tm">19:39:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> mempool should only contain things which can be cheaply skipped for the next block? e.g. (near) future locktimes seem mostly fine to me.
+<a name="l-154"></a><span class="tm">19:39:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> none that I know of
+<a name="l-155"></a><span class="tm">19:39:57</span><span class="nk"> &lt;btcdrak&gt;</span> looks like BIP65 will enforce on Monday
+<a name="l-156"></a><span class="tm">19:39:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> ok, thats what i thought, and i'm sure there are lots of implementation things to think about, but i just wondered if people had previously thought about this and had reasons it woudl be a bad idea
+<a name="l-157"></a><span class="tm">19:42:18</span><span class="nk"> &lt;btcdrak&gt;</span> Seems like we're done?
+<a name="l-158"></a><span class="tm">19:42:33</span><span class="nk"> &lt;wumpus&gt;</span> if there are no suggestions for topics?
+<a name="l-159"></a><span class="tm">19:43:11</span><span class="nk"> &lt;btcdrak&gt;</span> *crickets*
+<a name="l-160"></a><span class="tm">19:43:14</span><span class="nk"> &lt;wumpus&gt;</span> okay
+<a name="l-161"></a><span class="tm">19:43:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

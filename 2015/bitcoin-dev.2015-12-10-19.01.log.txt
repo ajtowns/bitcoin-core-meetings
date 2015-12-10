@@ -1,0 +1,161 @@
+19:01:42 <wumpus> #startmeeting
+19:01:42 <lightningbot`> Meeting started Thu Dec 10 19:01:42 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:42 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:17 <wumpus> <morcos> wumpus: suggested topics for todays meeting: 1)  BIP 68 questions - a) semantic change to assume MTP  b) implentation approach change to #7184
+19:02:34 <wumpus> start with those?
+19:02:43 <BlueMatt> yup
+19:02:50 <jonasschnelli> sure
+19:02:53 <btcdrak> ack
+19:02:59 <wumpus> !topic BIP 68 questions - a) semantic change to assume MTP
+19:03:00 <gmaxwell> ack
+19:03:00 <gribble> (topic [<channel>]) -- Returns the topic for <channel>. <channel> is only necessary if the message isn't sent in the channel itself.
+19:03:09 <morcos> so for people that didn't see the 1)a) discussion.  i thin k it makes sense if we just always use prior blocks MTP for bip68 sequence lock comparisons
+19:03:37 <btcdrak> morcos: it makes sense to me, since BIP68 and BIP113(mtp) are intended to be sf together
+19:03:50 <gmaxwell> I think that makes sense. It will force us to make the 113 softfork at the same time, but I expected we would in any case.
+19:04:09 <morcos> it'll potentially simplify BIP 68 implementation and since no policy for BIP 68 is in the wild yet, why introduce the possibility of configuring a very temporary BIP68/non-MTP policy
+19:04:18 <morcos> gmaxwell: won't actually force that
+19:04:24 <morcos> it just means BIP68 is defined that way
+19:04:38 <btcdrak> gmaxwell: we discussed doing them together in quite a few previous meetings so I think there's no particular change of plan
+19:04:40 <morcos> it'll be somewhat annoying if BIP68 and nLockTime have different semantics, but only somewhat
+19:05:16 <morcos> are there any objections?
+19:05:23 <gmaxwell> morcos: that would be pretty obnoxious though. But fair enough.
+19:05:47 <btcdrak> let's do it.
+19:05:48 <morcos> yes to be clear i think they should soft fork in together and standard policy is already  MTP
+19:06:36 <sdaftuar> ok so lets talk about the alternate implementation approach in 7184?
+19:06:41 <wumpus> #topic BIP 68 questions - b) implentation approach change to #7184
+19:06:49 <gmaxwell> One nice thing is that BIP65 should have likely seralized MTP-standardness deployment.
+19:07:08 <morcos> so i don't need to beg for code review yet, b/c i think BIP 68 is waiting for post 0.12 release anwyay
+19:07:28 <morcos> but what i would appreciate is some feedback on whether changing the implentation in 6312 is a good idea or not
+19:07:43 <morcos> i like splitting sequence lock consensus code from nLockTime consensus code
+19:07:47 <btcdrak> morcos: wrong, we beg for code reviews. It can be merged like BIP65 which remained as policy code for months before we added the softfork code
+19:07:55 <gavinandresen> I can't resist throwing in a pet peeve: it'd help people who read these meeting notes if acronyms were spelled out first time they were used.  MTP --> mean time previous ... (now I'll be quiet again)
+19:08:00 <morcos> i think it makes sense for consensus code units to be small and self contained
+19:08:15 <btcdrak> MTP: median time past
+19:08:22 <btcdrak> MTP is BIP113
+19:08:56 <morcos> so i'd just like people to maybe take a look at the code approach of #7184, and give feed back
+19:09:02 <gmaxwell> gavinandresen: there is a for-layman summary that gets posted; the author often contacts people after the meeting for help expanding things.
+19:09:21 <wumpus> #action take a look at code approach of #7184
+19:09:23 <morcos> if we like it, we can change the BIP to reflect a different implenetation idea.   but the semantics are unchanged modulo the prior topic
+19:09:41 <BlueMatt> as for #7184 - I dont find CNB performance to be of critical importance (getblocktemplate shouldn't rely on CNB to be fast)
+19:09:45 <gavinandresen> gmaxwell: ok, feel free to ignore my pet peeve, it might just be me who has a secret superpower of forgetting acronyms
+19:09:58 <morcos> BlueMatt: I specifically didn't mention that because I think #7184 makes sense on its own
+19:10:00 <BlueMatt> the fact that getblocktemplate relies on CNB to be fast is kinda broken, it should be background-updated
+19:10:20 <morcos> there are details in its implementaion that allow speeding up CNB, that coudl be removed if they in particular are bad
+19:10:21 <btcdrak> morcos: I think it's worth asking for ideas on 7187 too
+19:10:23 <wumpus> gavinandresen: no, I agree, feel free to ask when acronyms are unclear
+19:10:38 <gavinandresen> CNB == CreateNewBlock for anybody else with my secret superpower
+19:10:38 <BlueMatt> morcos: I dont have a particularly strong opinion about 7184 vs 6312, though 6312 has gotten some review and is probably a bit more mature
+19:10:40 <btcdrak> CNB = CreateNewBlock()
+19:11:10 <BlueMatt> morcos: I was just commenting that we shouldnt be considering CNB performance that strongly for 7184
+19:11:30 <btcdrak> BlueMatt: in all fairness, 6312 has changed so much over 6 months it's not fair to say the current PR has all the same review.
+19:11:45 <morcos> BlueMatt: background updating CNB isn't super easy b/c of locking.  not saying it can't be done.  also the one thing that will never be able to be done is making it fast to return a new template with txs after a new block is found unless you do soemthing like i'm proposing
+19:11:49 <BlueMatt> i wasnt claiming it had a ton of review, but it does have some
+19:12:14 <sdaftuar> BlueMatt: 6312 is confusing in my opinion because it changes the consensus code that does nLockTime checks.  splitting consensus checks into their smallest logical unit makes more sense, i think -- that's why i like morcos' approach in 7184
+19:12:24 <BlueMatt> morcos: oh? I dont see how its /that/ hard to do background updating due to locking?
+19:12:41 <btcdrak> sdaftaur: I'm much more in favour of 7184 than 6312.
+19:12:57 <BlueMatt> morcos: how is it not possible to make it fast to make getblocktemplate return an empty block?
+19:13:04 <BlueMatt> that should be easy
+19:13:07 <morcos> BlueMatt: its perhaps a subject for another conversation, not impossible, but not trivial, you need access to a lot of the mempool state.   yes, that is possible, i said with txs
+19:13:22 <BlueMatt> oh, with txns, ok, yes, ofc
+19:13:44 <morcos> do people in general think that having the sequence locks be combined with nlocktime locks makes sense
+19:13:53 <BlueMatt> but, yea, getblocktemplate reworking is a separate conversation (we could discuss today if we get bored, though should probably go implement something to discuss first)
+19:14:00 <morcos> you get these weird things in 6312, liek calling LockTime with null prevHeights
+19:14:25 <oldbrew> seen alot of empty blocks being mined when the mempool is high
+19:14:39 <morcos> BlueMatt: also regardless of end design for CNB, 0.12 will have a serious regression if we lookup every input for sequence locks
+19:15:04 <BlueMatt> morcos: oh? I figured that stuff would be in 0.12.1?
+19:15:18 <BlueMatt> and a background-CNB should be a small enough patch to backport, I'd think
+19:15:19 <morcos> yes, 0.12 fast CNB.  0.12.1 slow CNB
+19:15:27 <morcos> ha, definitely not
+19:15:35 <morcos> well, the empty template version
+19:15:36 <BlueMatt> maybe I need to look closer
+19:15:42 <BlueMatt> yea, empty templates is fine
+19:15:46 <morcos> ehh...
+19:15:49 <BlueMatt> empty templates is what you want, actually
+19:15:51 <sdaftuar> non-empty templates are achievable...
+19:15:52 <BlueMatt> non-empty templates sucks
+19:16:04 <morcos> sigh.. ok, back to BIP 68
+19:16:14 <btcdrak> BlueMatt: there is an issue to discuss the performance https://github.com/bitcoin/bitcoin/issues/7190
+19:16:46 <morcos> i think it makes sense on its own, i think the consensus checks for seq locks outght to give you back the relevant information determined by the consensus logic (especially if there are expensive calculations in preparing the inputs to those functions)
+19:16:56 <morcos> that might be useful many places, not just CNB
+19:17:17 <gmaxwell> BlueMatt: while I agree CNB should be made latency non-crticial I don't think it's okay to make it actually slow.
+19:17:32 <morcos> its also blowing out your UTXO cache
+19:17:44 <BlueMatt> gmaxwell: maybe I'm missing context, how slow are we talking? a second or two is fine
+19:17:52 <BlueMatt> anyway, I'll shut up
+19:18:01 <morcos> forget about latency of CNB, if you recalculate every sequence lock dumbly then your UTXO cache is useless after a reorg
+19:18:06 <btcdrak> Yeah, there is no choice. 6312 would be a regression, it needs to be fixed
+19:18:47 <BlueMatt> ok, yea, blowing out utxo cache is unacceptable
+19:19:11 <morcos> anwyay perhaps people want to look at the code first, but i wanted to highlight this idea of not touching the IsFinalTx checks and just adding new checks for the new soft fork.
+19:19:38 <morcos> additionaly related question that i've asked and no one has commented on is the GUI display of currently locked txs
+19:20:01 <morcos> for expediency i suggested removing checking sequence locks there
+19:20:16 <morcos> i can't see how that's necessary except very rarely
+19:21:08 <wumpus> what is the problem specific to the GUI there?
+19:21:11 <morcos> if there is a reorg that makes your tx no longer acceptable to the mempool, then it'll be out of the mempool, but maybe you want to know that the reason is its locked
+19:21:18 <btcdrak> sorry previously posted the wrong link to the discussion ticket re CNB performance, should be https://github.com/bitcoin/bitcoin/issues/7176
+19:21:20 <morcos> i just don't know when that code gets excercise
+19:21:25 <morcos> how do you have a locked tx in your wallet
+19:21:58 <wumpus> right, there is no concept of that at this point, they would have to be shown differently I suppsoe
+19:22:19 <morcos> well IsFinal is checked right now, and this was addressed in #6312
+19:22:19 <wumpus> same for listtransactions RPC
+19:22:49 <gmaxwell> well anyone can create and send you one, but with MTP in effect, I don't think a one deep reorg can ever force the eviction of one.
+19:23:02 <morcos> but my point is I think its fine to leave that less than ideal for now (not touch it) and clean it up properly later, rather than hack in something for sequence locks which might end up blowing out your utxo cache and making wallet things slow
+19:23:04 <gmaxwell> oh I guess it can, because of time locks.
+19:23:39 <sdaftuar> if a confirmed input became unconfirmed then it can force the eviction (that can happen in a 1-deep reorg)
+19:23:45 <morcos> just checking sequence locks on all wallet txs seems dangerous
+19:23:57 <sdaftuar> for height locks too i mean
+19:24:10 <jonasschnelli> whats dangerous about it?
+19:24:30 <gmaxwell> sdaftuar: we shouldn't have unconfirmed locked transactions in the wallet to begin with.
+19:24:35 <morcos> checking sequence locks is expensive
+19:25:25 <gmaxwell> It's espensive because you have to pull in the input utxos to get their heights.
+19:26:15 <jonasschnelli> Okay. But how many locked wtx per wallet do we expect,... only update the cache during a tip update seems okay?
+19:26:19 <wumpus> but you only have to check it for possibly locked transactions, not for all transactions?
+19:26:50 <morcos> sure sure, i'm not saying we shouldn't ever do it, i'm just saying naively adding it as was done in 6312 is bad
+19:27:09 <morcos> and it doesn't seem important enough to include in the soft fork that must be backported for BIP 68
+19:27:13 <wumpus> (e.g. keep a flag for what, don't check it all the time unless something changes)
+19:27:16 <wumpus> I agree
+19:27:20 <morcos> s/is bad/is potentially bad/
+19:27:23 <gmaxwell> Sipa is travling now but I expect he'd have more comments on the wallet impact. I hadn't been paying attention to it because he was.
+19:27:27 <wumpus> doesn't need to be part of that
+19:27:59 <morcos> wumpus: the idea of my 7184 implentation is you get access to all the relevant lock state, time , height, hash at which those values are valid
+19:28:00 <wumpus> UI/wallet changes are usually separate from the softfork changes
+19:28:07 <morcos> that could be used by the mempool, by CNB, by the wallet
+19:28:12 <morcos> it just seems the right way to do it
+19:28:12 <wumpus> right
+19:28:23 <wumpus> yes that makes sense
+19:28:29 <jonasschnelli> so 7184 would hide any bip68/113 tx from listtransaction and UI?
+19:28:30 <morcos> using that information i left out of 7184
+19:28:45 <morcos> jonasschnelli: no, they would just not be aware of those txs
+19:28:59 <morcos> sorry, if they were currently locked they wouldn't be aware of them
+19:29:16 <morcos> if they were able to be included, then they would not be aware that they had previously be locked
+19:29:18 <jonasschnelli> because of the isFinal check?
+19:29:28 <morcos> but if they are currently locked, then they're not in the mempool anyway
+19:29:47 <morcos> isFinal has to do with nLockTime, i'm trying to completely separate sequence lock logic from that
+19:30:01 <jonasschnelli> Okay. Well, .. i agree with wumpus: wallet/UI changes can be done later
+19:30:01 <morcos> i think we need to clean up how the wallet/GUI deals with both
+19:30:07 <morcos> correct
+19:30:20 <morcos> the thing is, IsFinal is cheap , so no reason to worry we check that now
+19:31:33 <jonasschnelli> We just need to make sure, the wallet doesn't lack to far behind (RBF).
+19:31:45 <morcos> in any case, i mispoke before.  the proposed wallet behavior is: if a tx is sequence locked and can't be included in a block, it won't ever end up in your wallet (or your mempool) unless it was originally unlocked and in your wallet (and mempool) and then a reorg caused it to be locked, in which case it woudl be evicted from your mempool
+19:31:57 <morcos> in that case your wallet would display it like any other evicted tx
+19:32:42 <morcos> the proposed behavior is the result of not touching wallet/gui code
+19:33:05 <jonasschnelli> thats good. :)
+19:33:05 <morcos> ok , anyway, i didn't want to hijack this whole meeting to discuss one pull
+19:33:37 <morcos> but i'd just like to get some clarity b/c i feel bad hijacking 6312 into a different implementaion if it slows down its merging, since we all would like the functionality
+19:33:48 <morcos> so would be nice to agree on a approach
+19:34:38 <btcdrak> morcos: I wouldnt worry. 7184 is an improvement for sure, as is assuming MTP.
+19:36:13 <morcos> next topic?
+19:36:40 <btcdrak> I'd also like to mention aj wrote some python demos for BIP68/+CSV which will be useful for testers
+19:37:08 <morcos> i'd suggested this question:  mempool containing only txs valid for the next block : is this something it would make sense to relax in the future, under what constraints?
+19:37:09 <btcdrak> Those should be pushed to guthub soon
+19:37:39 <Lightsword> looks like BIP65 will activate soon, Antpool does not appear to be producing any more v3 blocks
+19:38:19 * btcdrak jumps for joy
+19:38:41 <wumpus> great
+19:38:46 <btcdrak> are there any more topics wumpus?
+19:39:17 <gmaxwell> morcos: mempool should only contain things which can be cheaply skipped for the next block? e.g. (near) future locktimes seem mostly fine to me.
+19:39:44 <wumpus> btcdrak: none that I know of
+19:39:57 <btcdrak> looks like BIP65 will enforce on Monday
+19:39:58 <morcos> gmaxwell: ok, thats what i thought, and i'm sure there are lots of implementation things to think about, but i just wondered if people had previously thought about this and had reasons it woudl be a bad idea
+19:42:18 <btcdrak> Seems like we're done?
+19:42:33 <wumpus> if there are no suggestions for topics?
+19:43:11 <btcdrak> *crickets*
+19:43:14 <wumpus> okay
+19:43:18 <wumpus> #endmeeting
