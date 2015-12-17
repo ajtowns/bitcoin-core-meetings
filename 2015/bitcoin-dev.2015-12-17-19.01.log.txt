@@ -1,0 +1,296 @@
+19:01:58 <wumpus> #startmeeting
+19:01:58 <lightningbot> Meeting started Thu Dec 17 19:01:58 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:19 <raa> hey guys
+19:02:31 <raa> alot of people have been complaining about the block size
+19:02:34 <wumpus> anyone have topics to propose?
+19:02:47 <raa> does anyone know why this is such a big deal?
+19:02:48 <jonasschnelli> RBF handling in wallets? Is that a valid topic?
+19:02:52 <raa> like an eli5?
+19:02:53 <petertodd> jonasschnelli: sure
+19:03:06 <jonasschnelli> raa: not here. Please #bitcoin
+19:03:19 <wumpus> #topic RBF handling in wallets
+19:03:24 <raa> jonasschnelli: ah okay, i asked there also. thanks
+19:03:39 <raa> have a nice day everyone
+19:03:51 <petertodd> wumpus: is the RBFhandling in the v0.12 branch what's going to be released? IE, have we feature frozen?
+19:04:12 <wumpus> yes, we have feature frozen at dec 1
+19:04:20 <petertodd> cool
+19:04:31 <petertodd> or I should sau, frozen
+19:04:34 <wumpus> but if there is anything simple and pretty important we can make an exception....
+19:04:36 <sdaftuar> i hope 7062 still gets included in 0.12, which fixes prioritisetransaction for RBF and mempool limiting
+19:04:51 <wumpus> just nothing that will add new bugs
+19:04:57 <wumpus> sdaftuar: fixes are always welcome
+19:05:19 <wumpus> it's a feature freeze not a bugfix freeze :-)
+19:05:24 <petertodd> wumpus: lukejr's #7219 almost certainely won't
+19:05:52 <jonasschnelli> How should we allow to RBF a wtx... is best pratice delete/archive the transaction and release the input or something like "altertransaction"?
+19:06:03 <jonasschnelli> *inputs
+19:06:08 * Luke-Jr thinks 7219 should be at least considered for 0.12
+19:06:31 <petertodd> jonasschnelli: seems that this should have similar handling to mutability, in principle
+19:06:32 <wumpus> #action look at #7062 (fixes prioritisetransaction for RBF and mempool limiting) for 0.12
+19:06:55 <wumpus> what is #7219 Luke-Jr?
+19:07:05 <Luke-Jr> wumpus: -replacebyfee option
+19:07:11 <jonasschnelli> 7219 i think has no consensus.
+19:07:43 <wumpus> ah, right, that one
+19:07:54 <Luke-Jr> jonasschnelli: it's a policy option, not a consensus rule; it doesn't need consensus, just users
+19:08:08 <petertodd> jonasschnelli: well, devils advocate, I'll still be doing a full-RBF fork with code to make the policy option find similarly policy peers
+19:08:08 <wumpus> I think RBF certainly needs to be supported in the wallet at some point, but it's too late for 0.12 probably
+19:08:41 <petertodd> jonasschnelli: just setting RBF to something locally isn't as useful without like-minded peers
+19:08:53 <jonasschnelli> sure... RBF wallet is something for 0.13. But still,... I'd like to get the grip how this should be handled by wallets.
+19:09:03 <wumpus> sure
+19:09:36 <jonasschnelli> IMO a easy way to alter/increase fees is something that users would like to see.
+19:09:37 <harding> I'm also interested in good ideas for wallet policy for writing documentation about it.
+19:10:05 <petertodd> jonasschnelli: are you thinking just for fee bumping or more than that?
+19:10:16 <jonasschnelli> What if someone alters a wtx, and, in the very same moment, the actual/unaltered one gets mined?
+19:10:35 <petertodd> jonasschnelli: conceptually that seems similar to mutability
+19:10:58 <petertodd> jonasschnelli: as a user, what I care about is who my wallet paid, not how
+19:11:09 <jonasschnelli> petertodd: Somehow people have stuck tx (even in bitcoin-core, but mostly in SPV wallets), how could we indicate a low fee wtx and how would the UI path look like to increase fees.
+19:12:13 <petertodd> jonasschnelli: android wallet does it via a click-to-bump UI (though via CPFP)
+19:12:39 * jonasschnelli needs to look at Schildbachs wallet.
+19:12:57 <Luke-Jr> Schildbachs wallet is nothing to imitate, last I checked.
+19:13:35 <petertodd> Luke-Jr: what don't you like about it?
+19:14:45 <Luke-Jr> petertodd: last I checked, it was very buggy; displayed nonsense like "from address", heavily encouraged addr reuse, etc
+19:14:54 <petertodd> Luke-Jr: ah, sure, I agree there
+19:14:57 <jonasschnelli> What if a wtx gets confirmed during the UI process of altering (maybe not just a fee bump, +1in/1ou). What's could be practice in a such case?
+19:15:14 <petertodd> Luke-Jr: but just for the UX of bumping a fee, it's a reasonable first attempt, and very simple
+19:15:22 <jonasschnelli> *best practice
+19:15:56 <Luke-Jr> jonasschnelli: to support more than fee bumping probably hugely complicates the current wallet
+19:16:15 <petertodd> jonasschnelli: well, do we have the info necessary to determine what the intent of the orig tx was, and if confirmed, simply do nothing?
+19:16:40 <petertodd> jonasschnelli: IE, if orig tx desired payment txout exists, we're done and do nothing
+19:17:14 <jonasschnelli> Hm... do nothing could be a way,.. but might confuse the user. Okay for a fee bump, probably problematic when adding a output/input.
+19:17:44 <petertodd> jonasschnelli: yeah, for adding an output you'd have to handle that by tracking intent - probably a fairly big restructuring of how the wallte works
+19:18:17 <jonasschnelli> The chance is relatively height that during altering the tx gets confirmed (if altering takes 15s, its a 2.5% chance)
+19:18:36 <petertodd> jonasschnelli: indeed
+19:19:03 <Luke-Jr> if you're adding an output B to transaction A, and A gets confirmed without B, you'd want to re-issue B as its own transaction
+19:19:14 <petertodd> yup
+19:19:18 <Luke-Jr> probably without re-prompting for passphrase
+19:19:27 <jonasschnelli> I guess this is a conceptual problem with RBF (you can't say for sure that you can alter a transaction, it could get confirmed during altering).
+19:19:39 <Luke-Jr> so up front, you'd want to prepare a signed tx with A+B, and another signed tx with just B spending from a change output created in A
+19:19:55 <petertodd> jonasschnelli: like I say, we need to track user intent and do what needs to be done by the scenes to insure that the txouts the user wants to exist, exist
+19:20:08 <petertodd> jonasschnelli: that's a very different model than transaction based
+19:20:53 <jonasschnelli> Okay. Fair enought. So a fee bump is the type of RBF action that makes sense for a GUI/users wallet.
+19:21:22 <petertodd> jonasschnelli: yeah, lets do that first
+19:21:56 <jonasschnelli> I think for 0.13 we like to see a fee bump option and some rawtx commands to alter a wtx.
+19:22:08 <btcdrak> agreed
+19:22:24 <Luke-Jr> jonasschnelli: well, adding outputs also makes sense; it's just very complicated to get there from where we are now
+19:22:40 <jonasschnelli> What about showing incoming RBF opted in txs?
+19:22:42 <Luke-Jr> fee bumping is the easy and more important use
+19:23:01 <petertodd> jonasschnelli: I strongly advise that we don't do that, because that gives users a false sense of confidence
+19:23:07 <Luke-Jr> jonasschnelli: for the average end user, either all or none would be RBF-optin
+19:23:24 <petertodd> jonasschnelli: we don't attempt to warn users about numerous other cases where they're very likely to be double-spent
+19:23:34 <petertodd> jonasschnelli: nor can we
+19:24:22 <jonasschnelli> But, if people start using/opting in RBF, people won't see incoming transactions immediately. Non experience users will think: "something is wrong with my tx".
+19:24:44 <petertodd> jonasschnelli: why wouldn't they see them immediately? rbf txs are propagated normally
+19:25:10 <Luke-Jr> ^
+19:25:21 <jonasschnelli> It would not be visible because we hide RBF (non final) 0confs?
+19:25:33 <petertodd> jonasschnelli: but we don't do that; RBF are final
+19:25:35 <Luke-Jr> that would be a stupid thing to do
+19:25:57 <petertodd> jonasschnelli: I specifically designed the opt-in mechanism to show up on most wallets
+19:25:59 <sdaftuar> jonasschnelli: nSequence is below int_max()-1, but nLocktime will still be met.
+19:26:00 * jonasschnelli is confused.
+19:26:08 <sdaftuar> so it will still be final
+19:26:24 <petertodd> jonasschnelli: having the ability to create opt-in txs easily would help remove some of this confusion I think...
+19:26:54 <jonasschnelli> yeah... need to create some examples and test it in detail...
+19:26:56 <petertodd> so action item, merge https://github.com/bitcoin/bitcoin/pull/7132
+19:27:42 <wumpus> what is #7132?
+19:27:44 <petertodd> jonasschnelli: see https://github.com/petertodd/replace-by-fee-tools/blob/master/sendmany.py
+19:27:54 <petertodd> wumpus: command line flag to opt into rbf on all outgoing txs
+19:28:00 <jonasschnelli> 7132 is very general. Do users want to opt in all wtx or should they decide when they create a new wtx?
+19:28:20 <jonasschnelli> petertodd: thanks. Will check it out.
+19:28:21 <wumpus> #action look at #7132 (command line flag to opt into rbf on all outgoing txs)
+19:28:23 <petertodd> jonasschnelli: I'm sure they'll want to do both, but there is no harm in having a global command line flag
+19:28:33 <sipa> jonasschnelli: rbf 0-conf transactions are just treated as 0-conf
+19:28:34 <jonasschnelli> petertodd: agree
+19:28:52 <sipa> jonasschnelli: bitcoin core always treats incoming 0-conf as unspendable anyway, so it doesn't matter whether they're rbf or not
+19:29:12 <cfields> suggested next topic: c++11 plans for 0.13
+19:29:21 <sipa> ack on topic
+19:29:24 <jonasschnelli> ack
+19:29:36 <wumpus> #topic c++11 plans for 0.13
+19:29:40 <wumpus> (yes please)
+19:30:01 <cfields> other than grumbles and api/abi snags, what are the current hold-ups ?
+19:30:01 <sipa> so i've been looking into the alleged ABI/stl problems when linking between c++11 and c++ libs
+19:30:16 <sipa> 1) for releases, we control the entire stack, so not an issue
+19:30:29 <wumpus> indeed, for releases it's not an issue
+19:30:31 <Luke-Jr> for binaries*
+19:30:38 <wumpus> yeah
+19:30:43 <sipa> 2) i expect any of those problems to either cause link problems, or immediate crashes
+19:30:59 <wumpus> from what I've noticed they cause link problems immediately
+19:31:06 <sipa> i don't think these are concerns
+19:31:06 <jonasschnelli> I think the advantages of c++11 overweighs the potential risk of leaving "strange" distros in the dark.
+19:31:14 <Luke-Jr> if 2 is correct, that would help significantly
+19:31:32 <sipa> cfields: do you know more about the potential failure scenarios?
+19:31:34 <wumpus> the only risk that would be enough reason to postpone would be if anything used in consensus (that eg uses boost) could become unreliable
+19:31:36 <cfields> sipa: for deps, i would think it would boil down to just boost, in practice?
+19:31:46 <sipa> cfields: Qt?
+19:31:51 <wumpus> eg the unordered_set or multiset
+19:32:02 <wumpus> just boost I think - qt seems wellbehaved in that respect
+19:32:03 <jonasschnelli> Qt works fine with c++11 (just creates a project with Qt and c++11)
+19:32:12 <cfields> sipa: from what i remember, qt isolates itself pretty well
+19:32:13 <sipa> jonasschnelli: not the point
+19:32:24 <wumpus> it turns up with templating etc, qt hardly does that
+19:32:26 <Luke-Jr> jonasschnelli: but the distro is likely compiled in C++98 mode
+19:32:59 <wumpus> and qt isn't consensus critical, boost unfortunately is
+19:33:22 <jonasschnelli> Luke-Jr: yes. This might be a problem. But from what i can tell, c++11 with distro Qt5 worked for me on OSX (brew) Ubuntu 14.04+ and debian7+ (out of the box).
+19:33:24 <cfields> it'd be worth spending some time to try to purposely hit a qt incompatibility
+19:33:38 <cfields> jonasschnelli: that's libc++ though
+19:33:42 <Luke-Jr> jonasschnelli: C++98 and C++11 mix fine with LLVM, just not GCC
+19:33:52 <sipa> wumpus: after c++11 we can reduce the consensus logic on boost significantly, though :)
+19:33:57 <wumpus> I'm much more worried about boost
+19:34:00 <wumpus> sipa: absolutely :)
+19:34:18 <wumpus> yes that's a good point actually
+19:34:19 <cfields> wumpus: for sure. i was just hoping we could narrow it down to _only_ boost, then think in those terms
+19:34:44 <cfields> for ex for boost only, we could probably do some runtime sanity detection
+19:34:50 <cfields> in the case that an incompat build actually linked
+19:34:51 <sipa> from what i read, this always results in link errors
+19:34:56 <wumpus> if we can replace boost usage (at least in consensus before) 0.13 that removes that conern
+19:35:02 <wumpus> sipa: that's also my experience
+19:35:03 <sipa> and only when types are returned across library boundaries
+19:35:13 <cfields> wumpus: +1 to that
+19:35:31 <Luke-Jr> maybe for 0.13, we should at the very least build in C++11 mode by default even if we don't use any of its features? plus one tiny C++11 most-advanced-we-want feature use that can be disabled by configure; and then just watch if anyone complains or gets stuck?
+19:35:42 <wumpus> cfields: the multi indexed set is the only hard thing in that regard IIRC
+19:36:08 <jonasschnelli> atomics!
+19:36:20 <sipa> i would like to preliminarily decide that we'll switch to c++11 for 0.13, and switch the compiler suite in master asap
+19:36:21 <cfields> jonasschnelli: bad starting case :)
+19:36:26 <jonasschnelli> haha
+19:36:28 <sipa> if we encounter no problems with that, we proceed
+19:36:33 <wumpus> me too sipa
+19:36:34 <cfields> jonasschnelli: iirc that's one of the minefields with libstdc++
+19:36:55 <cfields> sipa: sounds fine to me to
+19:37:01 <cfields> wumpus: what are the outstanding build issues?
+19:37:06 <sipa> we wait a few months before actually switching to c++11isms
+19:37:07 <cfields> just depends compat?
+19:37:12 <Luke-Jr> sipa: the risk is that we get entrenched in C++11 irreversibly, and find out when 0.13 is released that a large part of the userbase can't handle it yet
+19:37:14 <sipa> but switch the build env immediately
+19:37:23 <wumpus> cfields: just depends compat, and travis' compiler
+19:37:30 <cfields> ok
+19:37:48 <sipa> how about we only enable c++11 in one of the travis configurations, and for now require compatibility with both c++11 and c++02
+19:37:50 <cfields> there's also the matter of backports, if code starts to diverge too much
+19:37:50 <wumpus> and switching boost in depends to c++11 is pretty easy
+19:37:58 <Luke-Jr> sipa: sgtm
+19:38:07 <sipa> that will teach us about problems
+19:38:09 <wumpus> I've done that. Not tried for qt yet as that didn't seem to be necessary, but probably better to do so just in case
+19:38:34 <cfields> wumpus: may as well for a better representative case.
+19:39:06 <sipa> cfields: what is needed for depends/gitian/travis wrt c++11?
+19:39:28 <wumpus> I think we can start using basic c++11isms immediately, it doesn't matter, release is in half a year no matter what there's enough time
+19:39:42 <cfields> sipa: wumpus has looked into it more recently, but sounds trivial-ish
+19:39:52 <wumpus> as for depends it's easy
+19:39:56 <zookolaptop> FYI, the Zcash team has been building a fork of bitcoind with C++11 for a few months now, and maybe our experiences could be useful.
+19:40:04 <cfields> iirc for travis we can just specify a different compiler version
+19:40:06 <wumpus> I just didn't get it to pass travis
+19:40:08 <sipa> zookolaptop: i read about that; very interesting
+19:40:11 <Luke-Jr> wumpus: "enough time" for what?
+19:40:21 <wumpus> Luke-Jr: to get it working
+19:40:32 <sipa> i don't expect many problems
+19:40:36 <wumpus> if problems turn up we want to see them early as possible in the release cycle
+19:40:49 <sipa> in fact, it may actually improve performance immediately by just switching to it
+19:41:05 <Luke-Jr> that implies it's possible in 6 months time, which sadly doesn't seem conclusive yet
+19:41:09 <sipa> by avoiding some copy constructions where a move is implicitly okay
+19:41:17 <wumpus> what would not be possible in 6 month time?
+19:41:38 <cfields> zookolaptop: any major snags to report?
+19:41:40 <wumpus> I think we can get rid of most of boost in 6 months time
+19:42:08 <nwilcox> cfields: We've been unable to link to boost 1.57.0 w/ c++11 mode as described in https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165498586
+19:42:09 <cfields> wumpus: what's the plan for container replacement? hand-roll our own?
+19:42:22 <sipa> container?
+19:42:25 <sipa> you mean gitian?
+19:42:30 <wumpus> cfields: probably, or find some other implementation
+19:42:34 <wumpus> sipa: the multi index monster
+19:42:52 <sipa> it's not used in consensus code afaik
+19:42:54 <wumpus> it's used for the mempool though not consensus
+19:42:56 <wumpus> right
+19:43:03 <sipa> and it's a massive benefit imho
+19:43:05 <wumpus> thought of that one second later
+19:43:13 <sipa> exactly the right tool for the job
+19:43:26 <sipa> writing something hand-rolled is highly nontrivial
+19:43:31 <nwilcox> cfields: See also my notes here: https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165498136
+19:43:48 <wumpus> there may be some other implementation that is easier to include in the source than boost's though, dunno
+19:43:55 <Luke-Jr> wumpus: getting rid of boost doesn't avoid stdlib issues, does it?
+19:44:20 <cfields> nwilcox: thanks
+19:44:23 <wumpus> Luke-Jr: boost is the worst in that regard, with its heavy use of templating
+19:44:29 <sipa> Luke-Jr: what other libraries-we-use-that-potentially-are-compiled-without-c++11 are you worried about?
+19:44:32 <cfields> wumpus: actually, any chance that's header-only ?
+19:44:33 <wumpus> Luke-Jr: as said I haven't seen issues with qt nor berkeleydb
+19:44:42 <wumpus> cfields: it probably is
+19:45:03 <cfields> wumpus: in that case, other than the large dep, it would be c++11 safe
+19:45:24 <wumpus> cfields: indeed
+19:45:33 <cfields> er retrying that: it would be c++11 safe, only issue with it is that it's a large dep
+19:45:45 <Luke-Jr> sipa: if Qt pulls in the old stdlib to the linker, how does that interact with using the new stdlib?
+19:45:49 <jonasschnelli> "get rid of boost": i guess there is no c++11 alternative for boost::filesystem?
+19:45:53 <nwilcox> BTW- enabling c++11 mode "but not using its features" is not always possible w/out code changes.
+19:46:01 <wumpus> jonasschnelli: yeah boost::filesystem is another annoying one
+19:46:07 <sipa> Luke-Jr: the problem only occurs when you're passing stl structures as arguments across lib boundaries afaik
+19:46:29 <nwilcox> eg: throwing exceptions in dtors switches from possible to abort() unless you modify the dtor to add attributes.
+19:47:06 <nwilcox> wumpus: boost::filesystem "appears to work" or at least link (and make check) passes with boost 1.59.0 atop v0.11.2.
+19:47:23 <wumpus> nwilcox: cool
+19:47:50 <cfields> another kinda invasive change would need to be made to drop the boost::interruption stuff too
+19:48:08 <wumpus> that's easy to emulate
+19:48:17 <wumpus> the only thing that the interruption stuff does is throw an exception
+19:48:35 <nwilcox> I noiced on ticket #7165 requirements for ensuring C++11 support works on a list of distributions.  Are there automated build/make check CI for all of those distros/configs?
+19:48:51 <nwilcox> s/noiced/noticed/
+19:48:53 <Luke-Jr> is there a way to easily test building with C++11 today? --enable-c++11 or something?
+19:49:03 <Luke-Jr> is just throwing -std=c++11 in CXXFLAGS good enough?
+19:49:13 <wumpus> nwilcox: there's no problem as long as your gcc compiler is >=4.8
+19:49:19 <Luke-Jr> nwilcox: there's no realistic way to automate that in Travis :<
+19:49:51 <wumpus> "c++11 support" really isn't anything magical or new anymore at this point
+19:50:02 <nwilcox> Luke-Jr: Hm... we have a fledgling builtbot set up, and it would be worth it to us to have build/test coverage for many different configurations... (but probably not <6 mo time frame).
+19:50:03 <zookolaptop> Luke-Jr: that's one of the main reasons that Zcash switched from Travis to Buildbot.
+19:50:03 <wumpus> many software uses it
+19:50:04 <cfields> we can always add checks to configure as well
+19:50:07 <Luke-Jr> wumpus: I'm not sure 4.8 is sufficient? https://gcc.gnu.org/wiki/Cxx11AbiCompatibility
+19:50:33 <wumpus> Luke-Jr: well my 4.8 support c++11, depends on what features you use obviously
+19:50:52 <Luke-Jr> wumpus: "maps, sets, and trees" apparently has ABI issues until 4.8.2
+19:50:53 <sipa> afaik no compiler on earth implements all of c++11 :)
+19:50:55 <nwilcox> -so if we start adding build configurations for those platforms, we might be able to setup bitcoin-core build/tests for them.
+19:51:35 <wumpus> I don't think we should add more travis configurations
+19:51:55 <wumpus> the pull tester is already sloow
+19:52:04 <sipa> can we give it more juice?
+19:52:13 <sipa> in the form of money
+19:52:21 <jonasschnelli> add a 2nd free travis alternative to build more confs parallel?
+19:52:24 <cfields> Luke-Jr: those are libstdc++ compatibility issues. eg. linking with a newer version than what's found at runtime
+19:52:38 <zookolaptop> wumpus: I think nwilcox is offering that the Zcash company will set up automated testing for you.
+19:52:39 <wumpus> it used to be bitcoin foundation paying for that but... eh nm
+19:52:47 <jonasschnelli> ;)
+19:52:49 <wumpus> zookolaptop: oh that'd be cool
+19:52:49 <cfields> i pinged them a while back but never heard back. i'll try again.
+19:52:57 <nwilcox> jonasschnelli: That's what I was proposing is *possible* with buildbot. I can't commit to effort at the moment, but we have overlapping needs and could reuse infrastructure.
+19:53:21 <zookolaptop> I concur that bitcoin core and zcash both want automated testing of this stuff on many platforms.
+19:53:24 <wumpus> zookolaptop: I thought he meant adding all those to travis, sure another parallel solution would be great @nwilcox
+19:53:28 <nwilcox> zookolaptop: I'm not offering that yet.  Can't commit to it, but it's on my wishlist.
+19:54:21 <cfields> we can also reach out to distros for help. nightly ppa's, ~git versions, etc
+19:54:41 <nwilcox> cfields: +1
+19:54:52 <nwilcox> So do gitian builds use ./depends?  What uses ./depends?
+19:55:01 <cfields> wumpus: so summing up, you're ready to flip the switch on the requirement as soon as travis is building/passing?
+19:55:07 <sipa> nwilcox: travis and gitian use depends
+19:55:08 <cfields> wumpus: or start with one config and don't require it?
+19:55:09 <nwilcox> We've been using it exclusively because we like having more control over transitive dependencies.
+19:55:14 <wumpus> I use depends for cross-compiling to ARM
+19:55:20 <jonasschnelli> cfields: would switching over to travises non-sudo environment speed up building?
+19:55:38 <wumpus> cfields: yep
+19:55:51 <cfields> wumpus: which? :)
+19:56:01 <jonasschnelli> And we should also include codeship.com to build more confs in less time (in parallel with travis)
+19:56:23 <wumpus> cfields: the first one, switch builds to std=c++11 as soon as travis can do it
+19:56:24 <cfields> jonasschnelli: yes, but we can't atm due to caching requirements
+19:56:44 <sipa> #action switch some builds to c++11?
+19:56:50 <wumpus> I think it's clear that everyone wants c++11, we should just push ahead with it
+19:57:07 <cfields> jonasschnelli: though it's worth re-evaluating the status there. I hacked on that a while back, but shelved it to work on some other stuff
+19:57:14 <jgarzik> +1
+19:57:22 <nwilcox> Does this require upgrading boost requirements?  (That was our solution to two issues.)
+19:57:23 <wumpus> and if zookolaptopand nwilcoxcan help with testing that'd be doubly cool
+19:57:27 <petertodd> I'm off, going skiing
+19:57:37 <cfields> wumpus: roger. I'll start working on the PRs
+19:57:44 <sipa> petertodd: i hope you're on a slippery slope there
+19:57:48 <jonasschnelli> ;)
+19:57:49 <nwilcox> wumpus: I can help by testing builds and reviewing changes to the build system.
+19:57:51 <cfields> nwilcox: boost should already be sufficiently bumped
+19:58:17 <nwilcox> Actually doing the latter will probably help me a lot, since I'm new to autoconf/automake and feel like I'm hacking through a jungle.
+19:58:18 <wumpus> I think our boost is very recent?
+19:58:29 <nwilcox> cfields: Ah...  I haven't looked at master.
+19:58:41 * nwilcox examines a diff between v0.11.2 and master.
+19:58:47 <Luke-Jr> we need to support building with stable distro boosts, not just the one in depends…
+19:59:10 <wumpus> Luke-Jr: if we can reduce boost usage to just header-only, that's solved
+19:59:18 <Luke-Jr> wumpus: not really.
+19:59:25 <cfields> Luke-Jr: hmm?
+20:00:01 <sipa> #DING DONG
+20:00:15 <cfields> heh
+20:00:21 <jonasschnelli> hah
+20:00:36 <wumpus> nwilcox: cfields: https://github.com/bitcoin/bitcoin/pull/6980  "[Depends] Bump Boost, miniupnpc, ccache & zeromq #6980"
+20:00:39 <wumpus> oh
+20:00:41 <wumpus> #endmeeting

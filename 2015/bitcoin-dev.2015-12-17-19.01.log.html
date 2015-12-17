@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:58</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Dec 17 19:01:58 2015 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:58</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:19</span><span class="nk"> &lt;raa&gt;</span> hey guys
+<a name="l-5"></a><span class="tm">19:02:31</span><span class="nk"> &lt;raa&gt;</span> alot of people have been complaining about the block size
+<a name="l-6"></a><span class="tm">19:02:34</span><span class="nk"> &lt;wumpus&gt;</span> anyone have topics to propose?
+<a name="l-7"></a><span class="tm">19:02:47</span><span class="nk"> &lt;raa&gt;</span> does anyone know why this is such a big deal?
+<a name="l-8"></a><span class="tm">19:02:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> RBF handling in wallets? Is that a valid topic?
+<a name="l-9"></a><span class="tm">19:02:52</span><span class="nk"> &lt;raa&gt;</span> like an eli5?
+<a name="l-10"></a><span class="tm">19:02:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> sure
+<a name="l-11"></a><span class="tm">19:03:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">raa:</span> not here. Please #bitcoin
+<a name="l-12"></a><span class="tm">19:03:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">RBF handling in wallets</span>
+<a name="l-13"></a><span class="tm">19:03:24</span><span class="nk"> &lt;raa&gt;</span> <span class="hi">jonasschnelli:</span> ah okay, i asked there also. thanks
+<a name="l-14"></a><span class="tm">19:03:39</span><span class="nk"> &lt;raa&gt;</span> have a nice day everyone
+<a name="l-15"></a><span class="tm">19:03:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> is the RBFhandling in the v0.12 branch what's going to be released? IE, have we feature frozen?
+<a name="l-16"></a><span class="tm">19:04:12</span><span class="nk"> &lt;wumpus&gt;</span> yes, we have feature frozen at dec 1
+<a name="l-17"></a><span class="tm">19:04:20</span><span class="nk"> &lt;petertodd&gt;</span> cool
+<a name="l-18"></a><span class="tm">19:04:31</span><span class="nk"> &lt;petertodd&gt;</span> or I should sau, frozen
+<a name="l-19"></a><span class="tm">19:04:34</span><span class="nk"> &lt;wumpus&gt;</span> but if there is anything simple and pretty important we can make an exception....
+<a name="l-20"></a><span class="tm">19:04:36</span><span class="nk"> &lt;sdaftuar&gt;</span> i hope 7062 still gets included in 0.12, which fixes prioritisetransaction for RBF and mempool limiting
+<a name="l-21"></a><span class="tm">19:04:51</span><span class="nk"> &lt;wumpus&gt;</span> just nothing that will add new bugs
+<a name="l-22"></a><span class="tm">19:04:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> fixes are always welcome
+<a name="l-23"></a><span class="tm">19:05:19</span><span class="nk"> &lt;wumpus&gt;</span> it's a feature freeze not a bugfix freeze :-)
+<a name="l-24"></a><span class="tm">19:05:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> lukejr's #7219 almost certainely won't
+<a name="l-25"></a><span class="tm">19:05:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> How should we allow to RBF a wtx... is best pratice delete/archive the transaction and release the input or something like "altertransaction"?
+<a name="l-26"></a><span class="tm">19:06:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> *inputs
+<a name="l-27"></a><span class="tm">19:06:08 </span><span class="nka">* Luke-Jr</span> <span class="ac">thinks 7219 should be at least considered for 0.12</span>
+<a name="l-28"></a><span class="tm">19:06:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> seems that this should have similar handling to mutability, in principle
+<a name="l-29"></a><span class="tm">19:06:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">look at #7062 (fixes prioritisetransaction for RBF and mempool limiting) for 0.12</span>
+<a name="l-30"></a><span class="tm">19:06:55</span><span class="nk"> &lt;wumpus&gt;</span> what is #7219 Luke-Jr?
+<a name="l-31"></a><span class="tm">19:07:05</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> -replacebyfee option
+<a name="l-32"></a><span class="tm">19:07:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> 7219 i think has no consensus.
+<a name="l-33"></a><span class="tm">19:07:43</span><span class="nk"> &lt;wumpus&gt;</span> ah, right, that one
+<a name="l-34"></a><span class="tm">19:07:54</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> it's a policy option, not a consensus rule; it doesn't need consensus, just users
+<a name="l-35"></a><span class="tm">19:08:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> well, devils advocate, I'll still be doing a full-RBF fork with code to make the policy option find similarly policy peers
+<a name="l-36"></a><span class="tm">19:08:08</span><span class="nk"> &lt;wumpus&gt;</span> I think RBF certainly needs to be supported in the wallet at some point, but it's too late for 0.12 probably
+<a name="l-37"></a><span class="tm">19:08:41</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> just setting RBF to something locally isn't as useful without like-minded peers
+<a name="l-38"></a><span class="tm">19:08:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> sure... RBF wallet is something for 0.13. But still,... I'd like to get the grip how this should be handled by wallets.
+<a name="l-39"></a><span class="tm">19:09:03</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-40"></a><span class="tm">19:09:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO a easy way to alter/increase fees is something that users would like to see.
+<a name="l-41"></a><span class="tm">19:09:37</span><span class="nk"> &lt;harding&gt;</span> I'm also interested in good ideas for wallet policy for writing documentation about it.
+<a name="l-42"></a><span class="tm">19:10:05</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> are you thinking just for fee bumping or more than that?
+<a name="l-43"></a><span class="tm">19:10:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> What if someone alters a wtx, and, in the very same moment, the actual/unaltered one gets mined?
+<a name="l-44"></a><span class="tm">19:10:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> conceptually that seems similar to mutability
+<a name="l-45"></a><span class="tm">19:10:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> as a user, what I care about is who my wallet paid, not how
+<a name="l-46"></a><span class="tm">19:11:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> Somehow people have stuck tx (even in bitcoin-core, but mostly in SPV wallets), how could we indicate a low fee wtx and how would the UI path look like to increase fees.
+<a name="l-47"></a><span class="tm">19:12:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> android wallet does it via a click-to-bump UI (though via CPFP)
+<a name="l-48"></a><span class="tm">19:12:39 </span><span class="nka">* jonasschnelli</span> <span class="ac">needs to look at Schildbachs wallet.</span>
+<a name="l-49"></a><span class="tm">19:12:57</span><span class="nk"> &lt;Luke-Jr&gt;</span> Schildbachs wallet is nothing to imitate, last I checked.
+<a name="l-50"></a><span class="tm">19:13:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> what don't you like about it?
+<a name="l-51"></a><span class="tm">19:14:45</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">petertodd:</span> last I checked, it was very buggy; displayed nonsense like "from address", heavily encouraged addr reuse, etc
+<a name="l-52"></a><span class="tm">19:14:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> ah, sure, I agree there
+<a name="l-53"></a><span class="tm">19:14:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> What if a wtx gets confirmed during the UI process of altering (maybe not just a fee bump, +1in/1ou). What's could be practice in a such case?
+<a name="l-54"></a><span class="tm">19:15:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> but just for the UX of bumping a fee, it's a reasonable first attempt, and very simple
+<a name="l-55"></a><span class="tm">19:15:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> *best practice
+<a name="l-56"></a><span class="tm">19:15:56</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> to support more than fee bumping probably hugely complicates the current wallet
+<a name="l-57"></a><span class="tm">19:16:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> well, do we have the info necessary to determine what the intent of the orig tx was, and if confirmed, simply do nothing?
+<a name="l-58"></a><span class="tm">19:16:40</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> IE, if orig tx desired payment txout exists, we're done and do nothing
+<a name="l-59"></a><span class="tm">19:17:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Hm... do nothing could be a way,.. but might confuse the user. Okay for a fee bump, probably problematic when adding a output/input.
+<a name="l-60"></a><span class="tm">19:17:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> yeah, for adding an output you'd have to handle that by tracking intent - probably a fairly big restructuring of how the wallte works
+<a name="l-61"></a><span class="tm">19:18:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> The chance is relatively height that during altering the tx gets confirmed (if altering takes 15s, its a 2.5% chance)
+<a name="l-62"></a><span class="tm">19:18:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> indeed
+<a name="l-63"></a><span class="tm">19:19:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> if you're adding an output B to transaction A, and A gets confirmed without B, you'd want to re-issue B as its own transaction
+<a name="l-64"></a><span class="tm">19:19:14</span><span class="nk"> &lt;petertodd&gt;</span> yup
+<a name="l-65"></a><span class="tm">19:19:18</span><span class="nk"> &lt;Luke-Jr&gt;</span> probably without re-prompting for passphrase
+<a name="l-66"></a><span class="tm">19:19:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess this is a conceptual problem with RBF (you can't say for sure that you can alter a transaction, it could get confirmed during altering).
+<a name="l-67"></a><span class="tm">19:19:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> so up front, you'd want to prepare a signed tx with A+B, and another signed tx with just B spending from a change output created in A
+<a name="l-68"></a><span class="tm">19:19:55</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> like I say, we need to track user intent and do what needs to be done by the scenes to insure that the txouts the user wants to exist, exist
+<a name="l-69"></a><span class="tm">19:20:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> that's a very different model than transaction based
+<a name="l-70"></a><span class="tm">19:20:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Fair enought. So a fee bump is the type of RBF action that makes sense for a GUI/users wallet.
+<a name="l-71"></a><span class="tm">19:21:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> yeah, lets do that first
+<a name="l-72"></a><span class="tm">19:21:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think for 0.13 we like to see a fee bump option and some rawtx commands to alter a wtx.
+<a name="l-73"></a><span class="tm">19:22:08</span><span class="nk"> &lt;btcdrak&gt;</span> agreed
+<a name="l-74"></a><span class="tm">19:22:24</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> well, adding outputs also makes sense; it's just very complicated to get there from where we are now
+<a name="l-75"></a><span class="tm">19:22:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about showing incoming RBF opted in txs?
+<a name="l-76"></a><span class="tm">19:22:42</span><span class="nk"> &lt;Luke-Jr&gt;</span> fee bumping is the easy and more important use
+<a name="l-77"></a><span class="tm">19:23:01</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> I strongly advise that we don't do that, because that gives users a false sense of confidence
+<a name="l-78"></a><span class="tm">19:23:07</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> for the average end user, either all or none would be RBF-optin
+<a name="l-79"></a><span class="tm">19:23:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> we don't attempt to warn users about numerous other cases where they're very likely to be double-spent
+<a name="l-80"></a><span class="tm">19:23:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> nor can we
+<a name="l-81"></a><span class="tm">19:24:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> But, if people start using/opting in RBF, people won't see incoming transactions immediately. Non experience users will think: "something is wrong with my tx".
+<a name="l-82"></a><span class="tm">19:24:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> why wouldn't they see them immediately? rbf txs are propagated normally
+<a name="l-83"></a><span class="tm">19:25:10</span><span class="nk"> &lt;Luke-Jr&gt;</span> ^
+<a name="l-84"></a><span class="tm">19:25:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> It would not be visible because we hide RBF (non final) 0confs?
+<a name="l-85"></a><span class="tm">19:25:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> but we don't do that; RBF are final
+<a name="l-86"></a><span class="tm">19:25:35</span><span class="nk"> &lt;Luke-Jr&gt;</span> that would be a stupid thing to do
+<a name="l-87"></a><span class="tm">19:25:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> I specifically designed the opt-in mechanism to show up on most wallets
+<a name="l-88"></a><span class="tm">19:25:59</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> nSequence is below int_max()-1, but nLocktime will still be met.
+<a name="l-89"></a><span class="tm">19:26:00 </span><span class="nka">* jonasschnelli</span> <span class="ac">is confused.</span>
+<a name="l-90"></a><span class="tm">19:26:08</span><span class="nk"> &lt;sdaftuar&gt;</span> so it will still be final
+<a name="l-91"></a><span class="tm">19:26:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> having the ability to create opt-in txs easily would help remove some of this confusion I think...
+<a name="l-92"></a><span class="tm">19:26:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> yeah... need to create some examples and test it in detail...
+<a name="l-93"></a><span class="tm">19:26:56</span><span class="nk"> &lt;petertodd&gt;</span> so action item, merge https://github.com/bitcoin/bitcoin/pull/7132
+<a name="l-94"></a><span class="tm">19:27:42</span><span class="nk"> &lt;wumpus&gt;</span> what is #7132?
+<a name="l-95"></a><span class="tm">19:27:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> see https://github.com/petertodd/replace-by-fee-tools/blob/master/sendmany.py
+<a name="l-96"></a><span class="tm">19:27:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> command line flag to opt into rbf on all outgoing txs
+<a name="l-97"></a><span class="tm">19:28:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> 7132 is very general. Do users want to opt in all wtx or should they decide when they create a new wtx?
+<a name="l-98"></a><span class="tm">19:28:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> thanks. Will check it out.
+<a name="l-99"></a><span class="tm">19:28:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">look at #7132 (command line flag to opt into rbf on all outgoing txs)</span>
+<a name="l-100"></a><span class="tm">19:28:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> I'm sure they'll want to do both, but there is no harm in having a global command line flag
+<a name="l-101"></a><span class="tm">19:28:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> rbf 0-conf transactions are just treated as 0-conf
+<a name="l-102"></a><span class="tm">19:28:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> agree
+<a name="l-103"></a><span class="tm">19:28:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> bitcoin core always treats incoming 0-conf as unspendable anyway, so it doesn't matter whether they're rbf or not
+<a name="l-104"></a><span class="tm">19:29:12</span><span class="nk"> &lt;cfields&gt;</span> suggested next topic: c++11 plans for 0.13
+<a name="l-105"></a><span class="tm">19:29:21</span><span class="nk"> &lt;sipa&gt;</span> ack on topic
+<a name="l-106"></a><span class="tm">19:29:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-107"></a><span class="tm">19:29:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">c++11 plans for 0.13</span>
+<a name="l-108"></a><span class="tm">19:29:40</span><span class="nk"> &lt;wumpus&gt;</span> (yes please)
+<a name="l-109"></a><span class="tm">19:30:01</span><span class="nk"> &lt;cfields&gt;</span> other than grumbles and api/abi snags, what are the current hold-ups ?
+<a name="l-110"></a><span class="tm">19:30:01</span><span class="nk"> &lt;sipa&gt;</span> so i've been looking into the alleged ABI/stl problems when linking between c++11 and c++ libs
+<a name="l-111"></a><span class="tm">19:30:16</span><span class="nk"> &lt;sipa&gt;</span> 1) for releases, we control the entire stack, so not an issue
+<a name="l-112"></a><span class="tm">19:30:29</span><span class="nk"> &lt;wumpus&gt;</span> indeed, for releases it's not an issue
+<a name="l-113"></a><span class="tm">19:30:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> for binaries*
+<a name="l-114"></a><span class="tm">19:30:38</span><span class="nk"> &lt;wumpus&gt;</span> yeah
+<a name="l-115"></a><span class="tm">19:30:43</span><span class="nk"> &lt;sipa&gt;</span> 2) i expect any of those problems to either cause link problems, or immediate crashes
+<a name="l-116"></a><span class="tm">19:30:59</span><span class="nk"> &lt;wumpus&gt;</span> from what I've noticed they cause link problems immediately
+<a name="l-117"></a><span class="tm">19:31:06</span><span class="nk"> &lt;sipa&gt;</span> i don't think these are concerns
+<a name="l-118"></a><span class="tm">19:31:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think the advantages of c++11 overweighs the potential risk of leaving "strange" distros in the dark.
+<a name="l-119"></a><span class="tm">19:31:14</span><span class="nk"> &lt;Luke-Jr&gt;</span> if 2 is correct, that would help significantly
+<a name="l-120"></a><span class="tm">19:31:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> do you know more about the potential failure scenarios?
+<a name="l-121"></a><span class="tm">19:31:34</span><span class="nk"> &lt;wumpus&gt;</span> the only risk that would be enough reason to postpone would be if anything used in consensus (that eg uses boost) could become unreliable
+<a name="l-122"></a><span class="tm">19:31:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> for deps, i would think it would boil down to just boost, in practice?
+<a name="l-123"></a><span class="tm">19:31:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> Qt?
+<a name="l-124"></a><span class="tm">19:31:51</span><span class="nk"> &lt;wumpus&gt;</span> eg the unordered_set or multiset
+<a name="l-125"></a><span class="tm">19:32:02</span><span class="nk"> &lt;wumpus&gt;</span> just boost I think - qt seems wellbehaved in that respect
+<a name="l-126"></a><span class="tm">19:32:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> Qt works fine with c++11 (just creates a project with Qt and c++11)
+<a name="l-127"></a><span class="tm">19:32:12</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> from what i remember, qt isolates itself pretty well
+<a name="l-128"></a><span class="tm">19:32:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> not the point
+<a name="l-129"></a><span class="tm">19:32:24</span><span class="nk"> &lt;wumpus&gt;</span> it turns up with templating etc, qt hardly does that
+<a name="l-130"></a><span class="tm">19:32:26</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> but the distro is likely compiled in C++98 mode
+<a name="l-131"></a><span class="tm">19:32:59</span><span class="nk"> &lt;wumpus&gt;</span> and qt isn't consensus critical, boost unfortunately is
+<a name="l-132"></a><span class="tm">19:33:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Luke-Jr:</span> yes. This might be a problem. But from what i can tell, c++11 with distro Qt5 worked for me on OSX (brew) Ubuntu 14.04+ and debian7+ (out of the box).
+<a name="l-133"></a><span class="tm">19:33:24</span><span class="nk"> &lt;cfields&gt;</span> it'd be worth spending some time to try to purposely hit a qt incompatibility
+<a name="l-134"></a><span class="tm">19:33:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> that's libc++ though
+<a name="l-135"></a><span class="tm">19:33:42</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> C++98 and C++11 mix fine with LLVM, just not GCC
+<a name="l-136"></a><span class="tm">19:33:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> after c++11 we can reduce the consensus logic on boost significantly, though :)
+<a name="l-137"></a><span class="tm">19:33:57</span><span class="nk"> &lt;wumpus&gt;</span> I'm much more worried about boost
+<a name="l-138"></a><span class="tm">19:34:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> absolutely :)
+<a name="l-139"></a><span class="tm">19:34:18</span><span class="nk"> &lt;wumpus&gt;</span> yes that's a good point actually
+<a name="l-140"></a><span class="tm">19:34:19</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> for sure. i was just hoping we could narrow it down to _only_ boost, then think in those terms
+<a name="l-141"></a><span class="tm">19:34:44</span><span class="nk"> &lt;cfields&gt;</span> for ex for boost only, we could probably do some runtime sanity detection
+<a name="l-142"></a><span class="tm">19:34:50</span><span class="nk"> &lt;cfields&gt;</span> in the case that an incompat build actually linked
+<a name="l-143"></a><span class="tm">19:34:51</span><span class="nk"> &lt;sipa&gt;</span> from what i read, this always results in link errors
+<a name="l-144"></a><span class="tm">19:34:56</span><span class="nk"> &lt;wumpus&gt;</span> if we can replace boost usage (at least in consensus before) 0.13 that removes that conern
+<a name="l-145"></a><span class="tm">19:35:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> that's also my experience
+<a name="l-146"></a><span class="tm">19:35:03</span><span class="nk"> &lt;sipa&gt;</span> and only when types are returned across library boundaries
+<a name="l-147"></a><span class="tm">19:35:13</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> +1 to that
+<a name="l-148"></a><span class="tm">19:35:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> maybe for 0.13, we should at the very least build in C++11 mode by default even if we don't use any of its features? plus one tiny C++11 most-advanced-we-want feature use that can be disabled by configure; and then just watch if anyone complains or gets stuck?
+<a name="l-149"></a><span class="tm">19:35:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> the multi indexed set is the only hard thing in that regard IIRC
+<a name="l-150"></a><span class="tm">19:36:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> atomics!
+<a name="l-151"></a><span class="tm">19:36:20</span><span class="nk"> &lt;sipa&gt;</span> i would like to preliminarily decide that we'll switch to c++11 for 0.13, and switch the compiler suite in master asap
+<a name="l-152"></a><span class="tm">19:36:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> bad starting case :)
+<a name="l-153"></a><span class="tm">19:36:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> haha
+<a name="l-154"></a><span class="tm">19:36:28</span><span class="nk"> &lt;sipa&gt;</span> if we encounter no problems with that, we proceed
+<a name="l-155"></a><span class="tm">19:36:33</span><span class="nk"> &lt;wumpus&gt;</span> me too sipa
+<a name="l-156"></a><span class="tm">19:36:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> iirc that's one of the minefields with libstdc++
+<a name="l-157"></a><span class="tm">19:36:55</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> sounds fine to me to
+<a name="l-158"></a><span class="tm">19:37:01</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> what are the outstanding build issues?
+<a name="l-159"></a><span class="tm">19:37:06</span><span class="nk"> &lt;sipa&gt;</span> we wait a few months before actually switching to c++11isms
+<a name="l-160"></a><span class="tm">19:37:07</span><span class="nk"> &lt;cfields&gt;</span> just depends compat?
+<a name="l-161"></a><span class="tm">19:37:12</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> the risk is that we get entrenched in C++11 irreversibly, and find out when 0.13 is released that a large part of the userbase can't handle it yet
+<a name="l-162"></a><span class="tm">19:37:14</span><span class="nk"> &lt;sipa&gt;</span> but switch the build env immediately
+<a name="l-163"></a><span class="tm">19:37:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> just depends compat, and travis' compiler
+<a name="l-164"></a><span class="tm">19:37:30</span><span class="nk"> &lt;cfields&gt;</span> ok
+<a name="l-165"></a><span class="tm">19:37:48</span><span class="nk"> &lt;sipa&gt;</span> how about we only enable c++11 in one of the travis configurations, and for now require compatibility with both c++11 and c++02
+<a name="l-166"></a><span class="tm">19:37:50</span><span class="nk"> &lt;cfields&gt;</span> there's also the matter of backports, if code starts to diverge too much
+<a name="l-167"></a><span class="tm">19:37:50</span><span class="nk"> &lt;wumpus&gt;</span> and switching boost in depends to c++11 is pretty easy
+<a name="l-168"></a><span class="tm">19:37:58</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> sgtm
+<a name="l-169"></a><span class="tm">19:38:07</span><span class="nk"> &lt;sipa&gt;</span> that will teach us about problems
+<a name="l-170"></a><span class="tm">19:38:09</span><span class="nk"> &lt;wumpus&gt;</span> I've done that. Not tried for qt yet as that didn't seem to be necessary, but probably better to do so just in case
+<a name="l-171"></a><span class="tm">19:38:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> may as well for a better representative case.
+<a name="l-172"></a><span class="tm">19:39:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> what is needed for depends/gitian/travis wrt c++11?
+<a name="l-173"></a><span class="tm">19:39:28</span><span class="nk"> &lt;wumpus&gt;</span> I think we can start using basic c++11isms immediately, it doesn't matter, release is in half a year no matter what there's enough time
+<a name="l-174"></a><span class="tm">19:39:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> wumpus has looked into it more recently, but sounds trivial-ish
+<a name="l-175"></a><span class="tm">19:39:52</span><span class="nk"> &lt;wumpus&gt;</span> as for depends it's easy
+<a name="l-176"></a><span class="tm">19:39:56</span><span class="nk"> &lt;zookolaptop&gt;</span> FYI, the Zcash team has been building a fork of bitcoind with C++11 for a few months now, and maybe our experiences could be useful.
+<a name="l-177"></a><span class="tm">19:40:04</span><span class="nk"> &lt;cfields&gt;</span> iirc for travis we can just specify a different compiler version
+<a name="l-178"></a><span class="tm">19:40:06</span><span class="nk"> &lt;wumpus&gt;</span> I just didn't get it to pass travis
+<a name="l-179"></a><span class="tm">19:40:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">zookolaptop:</span> i read about that; very interesting
+<a name="l-180"></a><span class="tm">19:40:11</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> "enough time" for what?
+<a name="l-181"></a><span class="tm">19:40:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> to get it working
+<a name="l-182"></a><span class="tm">19:40:32</span><span class="nk"> &lt;sipa&gt;</span> i don't expect many problems
+<a name="l-183"></a><span class="tm">19:40:36</span><span class="nk"> &lt;wumpus&gt;</span> if problems turn up we want to see them early as possible in the release cycle
+<a name="l-184"></a><span class="tm">19:40:49</span><span class="nk"> &lt;sipa&gt;</span> in fact, it may actually improve performance immediately by just switching to it
+<a name="l-185"></a><span class="tm">19:41:05</span><span class="nk"> &lt;Luke-Jr&gt;</span> that implies it's possible in 6 months time, which sadly doesn't seem conclusive yet
+<a name="l-186"></a><span class="tm">19:41:09</span><span class="nk"> &lt;sipa&gt;</span> by avoiding some copy constructions where a move is implicitly okay
+<a name="l-187"></a><span class="tm">19:41:17</span><span class="nk"> &lt;wumpus&gt;</span> what would not be possible in 6 month time?
+<a name="l-188"></a><span class="tm">19:41:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">zookolaptop:</span> any major snags to report?
+<a name="l-189"></a><span class="tm">19:41:40</span><span class="nk"> &lt;wumpus&gt;</span> I think we can get rid of most of boost in 6 months time
+<a name="l-190"></a><span class="tm">19:42:08</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">cfields:</span> We've been unable to link to boost 1.57.0 w/ c++11 mode as described in https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165498586
+<a name="l-191"></a><span class="tm">19:42:09</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> what's the plan for container replacement? hand-roll our own?
+<a name="l-192"></a><span class="tm">19:42:22</span><span class="nk"> &lt;sipa&gt;</span> container?
+<a name="l-193"></a><span class="tm">19:42:25</span><span class="nk"> &lt;sipa&gt;</span> you mean gitian?
+<a name="l-194"></a><span class="tm">19:42:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> probably, or find some other implementation
+<a name="l-195"></a><span class="tm">19:42:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> the multi index monster
+<a name="l-196"></a><span class="tm">19:42:52</span><span class="nk"> &lt;sipa&gt;</span> it's not used in consensus code afaik
+<a name="l-197"></a><span class="tm">19:42:54</span><span class="nk"> &lt;wumpus&gt;</span> it's used for the mempool though not consensus
+<a name="l-198"></a><span class="tm">19:42:56</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-199"></a><span class="tm">19:43:03</span><span class="nk"> &lt;sipa&gt;</span> and it's a massive benefit imho
+<a name="l-200"></a><span class="tm">19:43:05</span><span class="nk"> &lt;wumpus&gt;</span> thought of that one second later
+<a name="l-201"></a><span class="tm">19:43:13</span><span class="nk"> &lt;sipa&gt;</span> exactly the right tool for the job
+<a name="l-202"></a><span class="tm">19:43:26</span><span class="nk"> &lt;sipa&gt;</span> writing something hand-rolled is highly nontrivial
+<a name="l-203"></a><span class="tm">19:43:31</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">cfields:</span> See also my notes here: https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165498136
+<a name="l-204"></a><span class="tm">19:43:48</span><span class="nk"> &lt;wumpus&gt;</span> there may be some other implementation that is easier to include in the source than boost's though, dunno
+<a name="l-205"></a><span class="tm">19:43:55</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> getting rid of boost doesn't avoid stdlib issues, does it?
+<a name="l-206"></a><span class="tm">19:44:20</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">nwilcox:</span> thanks
+<a name="l-207"></a><span class="tm">19:44:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> boost is the worst in that regard, with its heavy use of templating
+<a name="l-208"></a><span class="tm">19:44:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> what other libraries-we-use-that-potentially-are-compiled-without-c++11 are you worried about?
+<a name="l-209"></a><span class="tm">19:44:32</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> actually, any chance that's header-only ?
+<a name="l-210"></a><span class="tm">19:44:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> as said I haven't seen issues with qt nor berkeleydb
+<a name="l-211"></a><span class="tm">19:44:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> it probably is
+<a name="l-212"></a><span class="tm">19:45:03</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> in that case, other than the large dep, it would be c++11 safe
+<a name="l-213"></a><span class="tm">19:45:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> indeed
+<a name="l-214"></a><span class="tm">19:45:33</span><span class="nk"> &lt;cfields&gt;</span> er retrying that: it would be c++11 safe, only issue with it is that it's a large dep
+<a name="l-215"></a><span class="tm">19:45:45</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> if Qt pulls in the old stdlib to the linker, how does that interact with using the new stdlib?
+<a name="l-216"></a><span class="tm">19:45:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> "get rid of boost": i guess there is no c++11 alternative for boost::filesystem?
+<a name="l-217"></a><span class="tm">19:45:53</span><span class="nk"> &lt;nwilcox&gt;</span> BTW- enabling c++11 mode "but not using its features" is not always possible w/out code changes.
+<a name="l-218"></a><span class="tm">19:46:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yeah boost::filesystem is another annoying one
+<a name="l-219"></a><span class="tm">19:46:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> the problem only occurs when you're passing stl structures as arguments across lib boundaries afaik
+<a name="l-220"></a><span class="tm">19:46:29</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">eg:</span> throwing exceptions in dtors switches from possible to abort() unless you modify the dtor to add attributes.
+<a name="l-221"></a><span class="tm">19:47:06</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">wumpus:</span> boost::filesystem "appears to work" or at least link (and make check) passes with boost 1.59.0 atop v0.11.2.
+<a name="l-222"></a><span class="tm">19:47:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">nwilcox:</span> cool
+<a name="l-223"></a><span class="tm">19:47:50</span><span class="nk"> &lt;cfields&gt;</span> another kinda invasive change would need to be made to drop the boost::interruption stuff too
+<a name="l-224"></a><span class="tm">19:48:08</span><span class="nk"> &lt;wumpus&gt;</span> that's easy to emulate
+<a name="l-225"></a><span class="tm">19:48:17</span><span class="nk"> &lt;wumpus&gt;</span> the only thing that the interruption stuff does is throw an exception
+<a name="l-226"></a><span class="tm">19:48:35</span><span class="nk"> &lt;nwilcox&gt;</span> I noiced on ticket #7165 requirements for ensuring C++11 support works on a list of distributions.  Are there automated build/make check CI for all of those distros/configs?
+<a name="l-227"></a><span class="tm">19:48:51</span><span class="nk"> &lt;nwilcox&gt;</span> s/noiced/noticed/
+<a name="l-228"></a><span class="tm">19:48:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> is there a way to easily test building with C++11 today? --enable-c++11 or something?
+<a name="l-229"></a><span class="tm">19:49:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> is just throwing -std=c++11 in CXXFLAGS good enough?
+<a name="l-230"></a><span class="tm">19:49:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">nwilcox:</span> there's no problem as long as your gcc compiler is &gt;=4.8
+<a name="l-231"></a><span class="tm">19:49:19</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">nwilcox:</span> there's no realistic way to automate that in Travis :&lt;
+<a name="l-232"></a><span class="tm">19:49:51</span><span class="nk"> &lt;wumpus&gt;</span> "c++11 support" really isn't anything magical or new anymore at this point
+<a name="l-233"></a><span class="tm">19:50:02</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">Luke-Jr:</span> Hm... we have a fledgling builtbot set up, and it would be worth it to us to have build/test coverage for many different configurations... (but probably not &lt;6 mo time frame).
+<a name="l-234"></a><span class="tm">19:50:03</span><span class="nk"> &lt;zookolaptop&gt;</span> <span class="hi">Luke-Jr:</span> that's one of the main reasons that Zcash switched from Travis to Buildbot.
+<a name="l-235"></a><span class="tm">19:50:03</span><span class="nk"> &lt;wumpus&gt;</span> many software uses it
+<a name="l-236"></a><span class="tm">19:50:04</span><span class="nk"> &lt;cfields&gt;</span> we can always add checks to configure as well
+<a name="l-237"></a><span class="tm">19:50:07</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> I'm not sure 4.8 is sufficient? https://gcc.gnu.org/wiki/Cxx11AbiCompatibility
+<a name="l-238"></a><span class="tm">19:50:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> well my 4.8 support c++11, depends on what features you use obviously
+<a name="l-239"></a><span class="tm">19:50:52</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> "maps, sets, and trees" apparently has ABI issues until 4.8.2
+<a name="l-240"></a><span class="tm">19:50:53</span><span class="nk"> &lt;sipa&gt;</span> afaik no compiler on earth implements all of c++11 :)
+<a name="l-241"></a><span class="tm">19:50:55</span><span class="nk"> &lt;nwilcox&gt;</span> -so if we start adding build configurations for those platforms, we might be able to setup bitcoin-core build/tests for them.
+<a name="l-242"></a><span class="tm">19:51:35</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we should add more travis configurations
+<a name="l-243"></a><span class="tm">19:51:55</span><span class="nk"> &lt;wumpus&gt;</span> the pull tester is already sloow
+<a name="l-244"></a><span class="tm">19:52:04</span><span class="nk"> &lt;sipa&gt;</span> can we give it more juice?
+<a name="l-245"></a><span class="tm">19:52:13</span><span class="nk"> &lt;sipa&gt;</span> in the form of money
+<a name="l-246"></a><span class="tm">19:52:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> add a 2nd free travis alternative to build more confs parallel?
+<a name="l-247"></a><span class="tm">19:52:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> those are libstdc++ compatibility issues. eg. linking with a newer version than what's found at runtime
+<a name="l-248"></a><span class="tm">19:52:38</span><span class="nk"> &lt;zookolaptop&gt;</span> <span class="hi">wumpus:</span> I think nwilcox is offering that the Zcash company will set up automated testing for you.
+<a name="l-249"></a><span class="tm">19:52:39</span><span class="nk"> &lt;wumpus&gt;</span> it used to be bitcoin foundation paying for that but... eh nm
+<a name="l-250"></a><span class="tm">19:52:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;)
+<a name="l-251"></a><span class="tm">19:52:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">zookolaptop:</span> oh that'd be cool
+<a name="l-252"></a><span class="tm">19:52:49</span><span class="nk"> &lt;cfields&gt;</span> i pinged them a while back but never heard back. i'll try again.
+<a name="l-253"></a><span class="tm">19:52:57</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">jonasschnelli:</span> That's what I was proposing is *possible* with buildbot. I can't commit to effort at the moment, but we have overlapping needs and could reuse infrastructure.
+<a name="l-254"></a><span class="tm">19:53:21</span><span class="nk"> &lt;zookolaptop&gt;</span> I concur that bitcoin core and zcash both want automated testing of this stuff on many platforms.
+<a name="l-255"></a><span class="tm">19:53:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">zookolaptop:</span> I thought he meant adding all those to travis, sure another parallel solution would be great @nwilcox
+<a name="l-256"></a><span class="tm">19:53:28</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">zookolaptop:</span> I'm not offering that yet.  Can't commit to it, but it's on my wishlist.
+<a name="l-257"></a><span class="tm">19:54:21</span><span class="nk"> &lt;cfields&gt;</span> we can also reach out to distros for help. nightly ppa's, ~git versions, etc
+<a name="l-258"></a><span class="tm">19:54:41</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">cfields:</span> +1
+<a name="l-259"></a><span class="tm">19:54:52</span><span class="nk"> &lt;nwilcox&gt;</span> So do gitian builds use ./depends?  What uses ./depends?
+<a name="l-260"></a><span class="tm">19:55:01</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> so summing up, you're ready to flip the switch on the requirement as soon as travis is building/passing?
+<a name="l-261"></a><span class="tm">19:55:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">nwilcox:</span> travis and gitian use depends
+<a name="l-262"></a><span class="tm">19:55:08</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> or start with one config and don't require it?
+<a name="l-263"></a><span class="tm">19:55:09</span><span class="nk"> &lt;nwilcox&gt;</span> We've been using it exclusively because we like having more control over transitive dependencies.
+<a name="l-264"></a><span class="tm">19:55:14</span><span class="nk"> &lt;wumpus&gt;</span> I use depends for cross-compiling to ARM
+<a name="l-265"></a><span class="tm">19:55:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> would switching over to travises non-sudo environment speed up building?
+<a name="l-266"></a><span class="tm">19:55:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> yep
+<a name="l-267"></a><span class="tm">19:55:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> which? :)
+<a name="l-268"></a><span class="tm">19:56:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> And we should also include codeship.com to build more confs in less time (in parallel with travis)
+<a name="l-269"></a><span class="tm">19:56:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> the first one, switch builds to std=c++11 as soon as travis can do it
+<a name="l-270"></a><span class="tm">19:56:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> yes, but we can't atm due to caching requirements
+<a name="l-271"></a><span class="tm">19:56:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#action </span><span class="cmdline">switch some builds to c++11?</span>
+<a name="l-272"></a><span class="tm">19:56:50</span><span class="nk"> &lt;wumpus&gt;</span> I think it's clear that everyone wants c++11, we should just push ahead with it
+<a name="l-273"></a><span class="tm">19:57:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> though it's worth re-evaluating the status there. I hacked on that a while back, but shelved it to work on some other stuff
+<a name="l-274"></a><span class="tm">19:57:14</span><span class="nk"> &lt;jgarzik&gt;</span> +1
+<a name="l-275"></a><span class="tm">19:57:22</span><span class="nk"> &lt;nwilcox&gt;</span> Does this require upgrading boost requirements?  (That was our solution to two issues.)
+<a name="l-276"></a><span class="tm">19:57:23</span><span class="nk"> &lt;wumpus&gt;</span> and if zookolaptopand nwilcoxcan help with testing that'd be doubly cool
+<a name="l-277"></a><span class="tm">19:57:27</span><span class="nk"> &lt;petertodd&gt;</span> I'm off, going skiing
+<a name="l-278"></a><span class="tm">19:57:37</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> roger. I'll start working on the PRs
+<a name="l-279"></a><span class="tm">19:57:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> i hope you're on a slippery slope there
+<a name="l-280"></a><span class="tm">19:57:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;)
+<a name="l-281"></a><span class="tm">19:57:49</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">wumpus:</span> I can help by testing builds and reviewing changes to the build system.
+<a name="l-282"></a><span class="tm">19:57:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">nwilcox:</span> boost should already be sufficiently bumped
+<a name="l-283"></a><span class="tm">19:58:17</span><span class="nk"> &lt;nwilcox&gt;</span> Actually doing the latter will probably help me a lot, since I'm new to autoconf/automake and feel like I'm hacking through a jungle.
+<a name="l-284"></a><span class="tm">19:58:18</span><span class="nk"> &lt;wumpus&gt;</span> I think our boost is very recent?
+<a name="l-285"></a><span class="tm">19:58:29</span><span class="nk"> &lt;nwilcox&gt;</span> <span class="hi">cfields:</span> Ah...  I haven't looked at master.
+<a name="l-286"></a><span class="tm">19:58:41 </span><span class="nka">* nwilcox</span> <span class="ac">examines a diff between v0.11.2 and master.</span>
+<a name="l-287"></a><span class="tm">19:58:47</span><span class="nk"> &lt;Luke-Jr&gt;</span> we need to support building with stable distro boosts, not just the one in depends…
+<a name="l-288"></a><span class="tm">19:59:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> if we can reduce boost usage to just header-only, that's solved
+<a name="l-289"></a><span class="tm">19:59:18</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> not really.
+<a name="l-290"></a><span class="tm">19:59:25</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> hmm?
+<a name="l-291"></a><span class="tm">20:00:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#DING </span><span class="cmdline">DONG</span>
+<a name="l-292"></a><span class="tm">20:00:15</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-293"></a><span class="tm">20:00:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> hah
+<a name="l-294"></a><span class="tm">20:00:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">nwilcox:</span> cfields: https://github.com/bitcoin/bitcoin/pull/6980  "[Depends] Bump Boost, miniupnpc, ccache &amp; zeromq #6980"
+<a name="l-295"></a><span class="tm">20:00:39</span><span class="nk"> &lt;wumpus&gt;</span> oh
+<a name="l-296"></a><span class="tm">20:00:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
