@@ -1,0 +1,324 @@
+19:00:19 <wumpus> #startmeeting
+19:00:19 <lightningbot`> Meeting started Thu Jan  7 19:00:19 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:19 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:21 <sipa> oh!
+19:00:57 <jonasschnelli> any topics?
+19:01:01 <wumpus> topic: anything still needs to be merged before 0.12.0rc1?
+19:01:07 <MarcoFalke> the wallet stuff
+19:01:18 <wumpus> yeah besides what already has 0.12 milestone
+19:01:26 * sipa at the real world crypto conference; right in thr middle of the bitcoin session
+19:01:56 <wumpus> oh, probably not be a busy meeting then
+19:01:56 <Luke-Jr> >_<
+19:02:27 <jonasschnelli> 0.12.0rc needs some more infos in the release notes
+19:02:28 <Luke-Jr> https://github.com/bitcoin/bitcoin/pull/7151 for 0.12.0 <.<
+19:02:29 <morcos> wumpus: you didn't add #7312 to 0.12 milestone.  i guess there is disagreement
+19:02:43 <Luke-Jr> https://github.com/bitcoin/bitcoin/pull/7149 is a bugfix for 0.12.0 also
+19:02:47 <morcos> but i feel pretty strongly that releasing 0.12 as is, is pretty bad
+19:03:01 <cfields> wumpus: if i work out a quick fix for #7098, ok for 0.12 ?
+19:03:16 <MarcoFalke> jonas, I have a pull open for the release notes.
+19:03:28 <MarcoFalke> Maybe someone can do the rbf part
+19:03:31 <jonasschnelli> MarcoFalke: yes. But some things are missing.
+19:03:49 <MarcoFalke> and morcos the txconfirmtarget part?
+19:03:52 <wumpus> cfields: well I do intend to release rc1 tomorrow, so this was kind of a last minute call
+19:03:58 <jonasschnelli> missed: wallet+prune, setban/banlist
+19:04:02 <jonasschnelli> *misses
+19:04:03 <cfields> ok
+19:04:32 <jonasschnelli> 7312 is nice,.. but not urgent for 0.12 IMO.
+19:04:32 <wumpus> #action look at #7151 #7149 #7312 for 0.12
+19:05:08 <sdaftuar> i think 7312 is a bugfix?  not being able to spend coins after mempool eviction seems like a bad regression
+19:05:10 <wumpus> 7312 is a feature, too late for 0.12.0 I'd think
+19:05:28 <sdaftuar> (i still need to review it)
+19:05:36 <Luke-Jr> sdaftuar: it has always been true that transactions with too little fee get stuck
+19:05:55 <wumpus> if it adds new strings or new RPC functionality that's really hard to put under the bugfix umbrella
+19:05:56 <Luke-Jr> … until they gain sufficient priority, at least
+19:05:57 <sdaftuar> previously those tx's could eventually get mined though
+19:06:02 <Luke-Jr> which may not work anymore in 0.12
+19:06:20 <Luke-Jr> sdaftuar: they can still eventually get mined
+19:06:26 <wumpus> cfields: but this is only rc1, it's quite certain we'll have a rc2, so still worth working on
+19:06:32 <Luke-Jr> sdaftuar: just your local node will fail to broadcast them, which I agree is a bug..
+19:06:52 <morcos> wumpus: the situation for 0.12 will be significantly worse with respect to stuck txs than prior releases
+19:06:53 <cfields> wumpus: ok, will do
+19:07:15 <morcos> in prior releases, txs were eventually mined because the network didn't forget them
+19:07:17 <Luke-Jr> morcos: abandontransaction is IMO not a solution to that though
+19:07:28 <Luke-Jr> it does not guarantee the transaction won't get mined
+19:07:36 <morcos> or if they were not in your mempool for some other reason, like you never broadcast them, then they didn't tie up inputs (this is a NEW change)
+19:07:39 <sipa> do we currently rebroadcast a txn that is not accepted to our mempool?
+19:07:42 <jonasschnelli> morcos: but due to the smartfee (+GUI) changes stuck tx should happen really rare? not?
+19:07:44 <Luke-Jr> which means people will easily be tricked into double-sends
+19:07:46 <wumpus> morcos: I agree it's worse, but I' not sure what to do about that on such short notice
+19:07:47 <Luke-Jr> far worse than stuck
+19:08:09 <Luke-Jr> sipa: I don't think so, but that would be a quick hack that would work I think
+19:08:25 <morcos> also in 0.11, you could probably trick your node to start up with a high relay fee so the tx wouldn't be in yhour mempool any more if it was just taking a long time to mine, and then respend it
+19:08:28 <sipa> i think that's a bad position to be in
+19:08:45 <morcos> the only solution discussed for 0.12, is -zapwallettxes which sounds crazy to me
+19:08:47 <sipa> as it relies on the rest of the world using a policy you're not following yourself
+19:08:52 <sipa> agree with morcos
+19:08:55 <Luke-Jr> how about adding local priority to wallet transactions so they never get pruned?
+19:09:08 <wumpus> yes, -zapwallettxes is crazy
+19:09:10 <sipa> Luke-Jr: privacy leak
+19:09:19 <jonasschnelli> Luke-Jr: yes, open fingerprintig attacks
+19:09:21 <wumpus> so, you want to postpone rc1 then?
+19:09:22 <Luke-Jr> sipa: any solution is a privacy leak?
+19:09:36 <sipa> Luke-Jr: abandontransaction is not a privacy leak
+19:09:39 <jonasschnelli> call mempool p2p message and compare
+19:09:50 <Luke-Jr> abandontransaction is *worse* than a privacy leak..
+19:09:50 <wumpus> mempool p2p message is a privacy leak :(
+19:09:51 <sipa> a GUI way to do "respend with higher fee" is even better
+19:09:56 <morcos> sipa: i think jonasschnelli is right that there will not be too many txs that are not accepted to the mempool in the first place, but more txs that are evicted.
+19:10:01 <Luke-Jr> sipa: +1
+19:10:55 <Luke-Jr> IMO the rare stuck transactions are still rare enough to not be a blocker for 0.12.0
+19:11:07 <jonasschnelli> I think a GUI fix that would re-broadcast the tx would be trivial... but respend with height fees might included some UX changes.
+19:11:16 <morcos> yes there are a lot of options to improve this that will have to wait for 0.13
+19:11:16 <wumpus> that's much nicer, but not realistic for 0.12, we need something that can be written ,tested and reviwed on short notice. abandontransaction could be such if everyone focuses on it I guess.
+19:11:28 <Luke-Jr> we can add a respend option in 0.12.1 or something
+19:11:35 <sipa> agree
+19:11:37 <morcos> but #7312 as is should be reviewable and mergeable quickly
+19:11:46 <Luke-Jr> morcos: but it creates worse problems
+19:11:53 <morcos> its a manual operation
+19:11:59 <morcos> if you don't use it, it doesn't create any problems
+19:12:06 <Luke-Jr> …
+19:12:14 <jonasschnelli> morcos: but won't help the people that have stuck tx... they are mostly GUI users i guess.
+19:12:20 <wumpus> morcos: right
+19:12:22 <morcos> if you want to put a big fat "WARNING: this may cause non opt-in double spends!" thats fine by me
+19:12:32 <Luke-Jr> morcos: we intentionally make dumping private keys hard, and people STILL do it.
+19:12:37 <Luke-Jr> morcos: that's not the problem
+19:12:50 <morcos> jonasschnelli: but when they are asking on #bitcoin, we can tell them to type something into their debug console to clear their tx
+19:12:52 <wumpus> well the GUI could also add a "abandon transaction" in the tx dropdown
+19:13:05 <Luke-Jr> they will abandon a payment to Fred, then resend it to Fred with a higher fee and the wallet will use different inputs
+19:13:07 <morcos> i just tried to rush out the bare bones functionality
+19:13:09 <Luke-Jr> Fred will bribe a miner to mine both
+19:13:11 <wumpus> not sure that's a good idea but heh...
+19:13:14 <jonasschnelli> morcos: yes. almost as quick as tell them to use -zapwallettxes... but i agree, thats worse.
+19:13:18 <wumpus> and that will add strings so definitely not for 0.12.0
+19:13:19 <morcos> it is really annoyingly difficult to deal with stuck txs without this
+19:13:21 <Luke-Jr> and Fred now has 2x the intended payment
+19:13:25 <sdaftuar> Luke-Jr: it can only be used on not-in-mempool transactions i think
+19:13:41 <Luke-Jr> sdaftuar: not-in-YOUR-mempool does not mean someone else does not have it
+19:13:54 <Luke-Jr> sdaftuar: if it was NEVER broadcast, it wouldn't have been completed in the first place
+19:14:38 <morcos> Luke-Jr: if could be never broadcast due to fee estimation error, or due to have broadcast off
+19:14:40 <Luke-Jr> making it possible for Fred to receive 2x payment is far worse than stuck transactions; and I suspect will become far more common than the rare stuck txs would have been
+19:15:05 <Luke-Jr> morcos: the former case, will prevent the tx from ever being completed in the wallet
+19:15:15 <morcos> Fred can just as easily tell people to send the tx twice and say that the old one is stuck now, what difference is there
+19:15:24 <morcos> Luke-Jr: no it wont
+19:15:39 <Luke-Jr> morcos: the difference is Fred has a much more convincing case if the user is told to abandon the old one
+19:15:51 <Luke-Jr> morcos: it should!
+19:15:54 <wumpus> ok... let's discuss this outside the meeting, I think it's clear what pulls still need to be looked at...  any other topics?
+19:15:56 <Luke-Jr> pretty sure it has in the past
+19:15:59 <Luke-Jr> k
+19:16:01 <jonasschnelli> Should't time be involved in abandoning txes? A min delay?
+19:16:13 <wumpus> sounds like overdesign to me
+19:16:22 <jonasschnelli> hmm..
+19:16:27 <Luke-Jr> next topic: BIPs not in bitcoin/bips need to be told to me
+19:16:36 <morcos> We can hide the rpc and/or make a more stern warning
+19:16:37 <wumpus> this is meant to be a quick, advanced fix for people messing up transactions
+19:16:47 <morcos> but not having the functionality is just risking a problem imo
+19:16:53 <morcos> we agreed to put this in back in november
+19:16:59 <wumpus> #topic Luke-jr new BIP editor
+19:17:07 <wumpus> morcos: agree
+19:17:21 <Luke-Jr> morcos: hidden RPC is maybe okay
+19:17:31 <Luke-Jr> morcos: I thought we were talking about GUI exposed somehow
+19:17:44 <wumpus> no, no, this is not GUI, just a RPC pull
+19:18:06 <jonasschnelli> GUI's def. to late.. ok: #topic Luke-jr new BIP editor
+19:18:15 <petertodd> ACK!
+19:18:18 <jonasschnelli> what's the reason for gmaxwells step back?
+19:18:34 <jonasschnelli> (but maybe this is not the topic)
+19:18:39 <wumpus> jonasschnelli: I don't think we need to discuss that publically, you can ask him
+19:18:51 <jonasschnelli> Right.
+19:18:52 <morcos> i think there are no objections to Luke-Jr being bip editor, especially given gmaxwell asked him
+19:19:02 <Luke-Jr> I don't know, and don't think we should pry into gmaxwell's private reasons in a meeting.
+19:19:06 <wumpus> right
+19:19:13 <petertodd> yeah, why gmaxwell doesn't want to do it isn't relevant to how good Luke-Jr will be
+19:19:32 <petertodd> and Luke's email to the list earlier is good evidence he'll do a good job
+19:19:48 <wumpus> he's been active with the repository at least
+19:20:09 <Luke-Jr> so far I haven't had any emails on missing BIP assignments, although it's only been an hour or two
+19:20:37 <wumpus> what do you mean with "BIPs not in bitcoin/bips"? are there BIPs somewhere else?
+19:20:51 <Luke-Jr> wumpus: there are assignments with no draft in the repo, I suspect
+19:20:54 <wumpus> yes, now the difficult task of allocating numbers falls to you
+19:21:30 <MarcoFalke> BIP100 is not in bitcoin/bips
+19:22:01 <wumpus> first priority regarding number assignment is probably the segwit BIP
+19:22:05 <petertodd> MarcoFalke: do we know if BIP100 was ever officially assigned?
+19:22:20 <sipa> it was not
+19:22:32 <MarcoFalke> You can't "unassign" it now
+19:22:47 <wumpus> well at least you can't allocate anything else to it anymore
+19:22:47 <sipa> agree
+19:23:22 <petertodd> pity leaving it off the index will be taken politically
+19:23:32 <Luke-Jr> I'll give people 24 hours to notify me of missing assignments, then I'll get to some priority ones (like BIP 100 and segwit) and wait a little more to go through the rest of the pending ones
+19:23:42 <wumpus> there's no strong need to leave it off the index
+19:23:52 <morcos> suggested topic: more detailed roadmap for next few major projects
+19:24:11 <wumpus> though it should be clear that people should not self-assign numbers, gmaxwell by definition assigned a different number if people claimed their own
+19:24:23 <Luke-Jr> does jgarzik's bips repo have a current BIP 100 draft I can PR?
+19:24:31 <MarcoFalke> yes
+19:24:37 <jgarzik> on a branch
+19:24:39 <Luke-Jr> wumpus: I'll give "202" a different number for that..
+19:24:43 <wumpus> but it's too late to do that for bip100
+19:24:44 <Luke-Jr> jgarzik: can you PR it? ;)
+19:24:48 <wumpus> right
+19:24:50 <jgarzik> Luke-Jr, sure
+19:24:51 <petertodd> Luke-Jr: ack on 202
+19:25:35 <jgarzik> Luke-Jr, with "202", I tried to do a new method of (1) put in drafts/ dir with no number assigned, (2) have BIP editor move-and-assign-num-and-update-index
+19:25:47 <jgarzik> to respond to self-assignment complaints
+19:25:49 <Luke-Jr> jgarzik: thanks; that sounds reasonable
+19:26:39 <petertodd> re: detailed plans, is everyone aware of my segwit previous block proof? I don't think there are any outstanding objections to it if it's structured as a tree for the sake of fraud proofs
+19:26:51 <wumpus> #topic  more detailed roadmap for next few major projects
+19:27:49 <morcos> thanks, i just wanted to make a request for a bit of direction (like your response to gmaxwell's email) on what sort of timelines are and order of implemntation of various work: segwit, versionbits (if its still happening), BIP 68,112,113
+19:28:11 <morcos> And other major features we might want for 0.13, such as RBF functionality in the wallet?
+19:28:35 <petertodd> morcos: anyone willing to work on RBF wallet functionality?
+19:28:35 <wumpus> would be best to ask the people working on those
+19:28:37 <morcos> Seems like we have a lot of things on our plate and having some concentration of effort on various things might be helpful
+19:28:50 <Luke-Jr> morcos: for fee bumping at least
+19:28:56 <jonasschnelli> petertodd: I will work on the RBF features for the wallet.
+19:29:09 <wumpus> nice jonasschnelli!
+19:29:11 <petertodd> jonasschnelli: great, thanks! feel free to ask me any questions
+19:29:13 <sipa> good
+19:29:33 <sipa> i apologize for pretty absent lately
+19:29:38 <Luke-Jr> jonasschnelli: keep in mind some merchants explicitly plan to *reject* RBF-optin transactions
+19:29:50 <morcos> wumpus: i was thinking that perhaps you, sipa, and gmaxwell might have a list of goals for 0.13 , we could obviously give feedback.  but i'm willing to work on many of those things but would appreciate knowing where the effort is requested.
+19:29:57 <Luke-Jr> jonasschnelli: so you may need to implement a "disable RBF for this tx and retry" logic
+19:30:08 <morcos> or not just for 0.13 as there will be SF's before then?
+19:30:11 <wumpus> well you made great progress on segwit sipa
+19:30:28 <sipa> wumpus: thanks, but other things can't be put on hold either
+19:30:31 * Luke-Jr notes segwit is necessarily decoupled from release versions
+19:30:33 <jonasschnelli> Luke-Jr: Yes. We need to focus that. And wisely choose the default.
+19:30:35 <petertodd> Luke-Jr: I'd be inclined to wait and see on that; solution may be to just turn the bit off, with logic otherwise unchanged
+19:30:49 <Luke-Jr> jonasschnelli: default IMO should be to attempt RBF, and if rejected, retry without it ;)
+19:31:01 <cfields> i'm planning to post an rfc for a network stack overhaul in the next week or so as well, i realize it's getting a bit late for that
+19:31:14 <petertodd> sipa: you you planning on working on segwit relative to the v0.12 branch, or v0.13?
+19:31:23 <sipa> petertodd: 0.12
+19:31:31 <Luke-Jr> jonasschnelli: otoh, BIP70 txs already imply the merchant is responsible for getting it mined, so maybe RBF is less important there
+19:31:31 <petertodd> sipa: ok good, that's probably faster
+19:31:34 <sipa> i should stop rebasing on master
+19:31:35 <morcos> cfields: perfect example.  it would be nice to know when we should all spend time looking at that, so we can get it in and merged
+19:31:50 * Luke-Jr suggests the last common commit in 0.12 and master
+19:31:56 <wumpus> sipa: may be better to rebase on 0.12 branch then :)
+19:32:09 <sipa> wumpus: yes, will do soon
+19:32:15 <cfields> morcos: yup. i've held off on requesting review so far. i'll begin that very soon.
+19:32:27 <jonasschnelli> cfields: nice. And sorry,... I still own you some reviews of the current code.
+19:32:37 <Luke-Jr> anything based on 3cd836c1d855b92e7c73ab31979f471c4f8dad68 should merge into 0.12 and master
+19:32:40 <sipa> i think our choice of efforts for working towards consensus changes is independent from releases
+19:32:55 <cfields> jonasschnelli: nah, i just poked you for an idea, wasn't looking for review yet
+19:33:19 <jonasschnelli> Okay. Poke me again if it's time...
+19:33:32 <cfields> will do, thanks
+19:33:47 <morcos> sipa: sure.  i just mean an overall game plan.  for instance i reviewed versionbits, found a bug, got no feedback, and now am not sure we're even doing versionbits.  thats fine, things change.  but it would be nice if other people knew that maybe they shouldn't go review versionbits right now
+19:33:51 <Luke-Jr> gotta run, bbiab
+19:34:13 <wumpus> but yes it makes sense to make a list of goals for 0.13, although as the releases are time-based it's conditional on things being ready on time
+19:34:19 <sipa> ok, i think bip9 is moved a bit back in priority
+19:34:38 <morcos> sipa: yes thats all i'm saying a bit more communication on priorities
+19:34:56 <sipa> agree with that choice?
+19:34:57 <jonasschnelli> agree with morcos. A clear plan could result in investing resources into the right parts.
+19:35:49 <petertodd> morcos: whether or not we definitely need versionbits will depend on whether or not there is a competing fork on the network
+19:36:00 <morcos> sipa: sure. more like no objection. there are many plans that are all good plans.  having one of them though is better than not.
+19:36:10 <wumpus> well I suggest that everyone that is working on something that they plan to have finished for 0.13 sends me proposals, I can merge it into a plan
+19:36:28 <morcos> +1
+19:36:28 <petertodd> morcos: also, in that case, we can do my pseudo-versionbits with very little code
+19:37:50 <btcdrak> petertodd: there are currently two implementations of version bits. one by codeshark and one by rusty
+19:38:01 <sipa> and neither is maintaines at this point
+19:38:11 <sipa> afaik
+19:38:17 <petertodd> btcdrak: I know, I just mean, if we're in a position where we need it ASAP and the actual versionbits isn't production quality
+19:38:48 <petertodd> btcdrak: my version is about two lines of code, at the cost of theoretically being a hardfork in cases where the fork fails
+19:40:15 <Luke-Jr> pfft freenode
+19:40:24 <wumpus> I think we've drifted off topic a bit. versionbits as new topic? or something else?
+19:40:27 <sipa> there is a moral obligation to have VB or something with similar functionality available
+19:40:43 <wumpus> #topic versionbits (BIP9)
+19:40:51 <morcos> sipa:  there is?  or is that a question?
+19:41:13 <morcos> sorry, i read "objection"
+19:41:19 <sdaftuar> sipa: agreed
+19:41:24 <Luke-Jr> "Pieter Wuille proposes a moral requirement to rewrite Bitcoin in Visual Basic."
+19:41:41 <wumpus> heh
+19:41:43 <cfields> haha
+19:41:46 <sipa> hahaha
+19:42:02 * petertodd is thinking of his Compaq 386 running Windows 3.1
+19:42:14 <Luke-Jr> gotta go back to VB 4.0 for that I think
+19:42:21 <sipa> back to topic?
+19:42:23 <btcdrak> urgh, is there a freenode netsplit going on atm?
+19:42:24 <Luke-Jr> sorry
+19:43:05 <sipa> i think there are a few long-lasting things that need a scheduled time to do: consensus refactoring (just moving things to one directory is already a great step)
+19:43:10 <sipa> another is c++11
+19:43:11 <wumpus> agree as well that something like versionbits is "a moral obligation", but indeed not the first priority
+19:43:15 <sipa> another is clang-format
+19:43:23 <wumpus> bleh clang-format
+19:43:23 <petertodd> anyway, I agree that versionbits is a moral requirement, but we also have a moral requirement to release code that works and is well-tested
+19:43:34 <jonasschnelli> +1 for c+11, -1 for clang format
+19:43:41 <sipa> ok, good to hear
+19:43:51 <jonasschnelli> it's just not worth it.
+19:43:55 <wumpus> but yes, jtimon's libconsensus refactoring and c++11 would be nice to do for 0.13
+19:44:01 <sipa> but people still have an epectation that clang-format wilk happen at some point
+19:44:05 <jonasschnelli> MarcoFalkes git diff format script should be recommended.
+19:44:11 <morcos> if there is a spell checker, i could use that so i stop getting so many comment fixups to my pulls.
+19:44:19 <sipa> we need to communicate that it will not happen then
+19:44:35 <wumpus> morcos: there's a way to run spellcheck on your source code and it will check only comments I think
+19:44:40 <Luke-Jr> if we're going to begin using C++11 in 0.13, then I think we should have configure use C++11 to compile 0.12 by default (and fail loudly if unavailable)
+19:44:58 <wumpus> don't know exctly how though :-)
+19:45:04 <Luke-Jr> because once we start actually /using/ C++11, it will be difficult to go back
+19:45:20 <cfields> Luke-Jr: that's not a bad idea.
+19:45:24 <sipa> Luke-Jr: weak nak; i suggest compiling masting in both c++11 and c++03 in master now
+19:45:33 <sipa> *compiling
+19:45:43 <wumpus> I think we should just make the decision to use c++11
+19:45:52 <Luke-Jr> sipa: that's fine, as long as C++11 isn't required for 0.13
+19:45:53 <wumpus> there's no way to go back, and that's ok
+19:46:04 <jonasschnelli> how is c++11 related to a full remove of boost?
+19:46:13 <cfields> wumpus: i believe Luke-Jr was talking about backporting
+19:46:17 <sipa> cfields: after your PR, does c++11 compile?
+19:46:18 <Luke-Jr> wumpus: that's okay, IF it actually is workable. which is far from clear.
+19:46:24 <wumpus> jonasschnelli: c++11 takes over some parts that boost is now used for
+19:46:32 <sipa> are we _ready_ with c++ for gitian/depends/...?
+19:46:52 <wumpus> travis still needs a c++11 compiler
+19:47:00 <cfields> sipa: yes. from my tests, all platforms compile bitcoin 100% now.
+19:47:09 <cfields> sipa: still need to do depends, yes. i have that patch ready
+19:47:23 <Luke-Jr> Users running the latest stable versions of major distros should not need to use depends/ to compile working dynamic binaries.
+19:47:32 <cfields> yes, was working on getting travis in shape first. looking at options. looks like the easiest it just to install an updated gcc :\
+19:47:42 <sipa> ugh
+19:47:50 <droark> sipa: Armory used some C++11 code with Gitian and worked fine. I don't think the Core codebase needs to make Gitian-specific changes.
+19:47:50 <wumpus> travis still can't do a newer distro?
+19:47:52 <cfields> Luke-Jr: they don't. works with system libs
+19:48:02 <morcos> cfields: that should be new Travis success message "all platforms compile bitcoin 100%"
+19:48:03 <cfields> wumpus: yes, but not with caching
+19:48:10 <jonasschnelli> travis can use docker
+19:48:16 <cfields> jonasschnelli: ^^
+19:48:18 <wumpus> cfields: bleh :/
+19:48:21 <sipa> well, the first point is we need travis to build *something* in c++11
+19:48:37 <jonasschnelli> one of my bitcoin-core clone projects is now using c++11 with travis and gitian: https://github.com/digitalbitbox/dbb-app/blob/master/.travis.yml
+19:48:40 <Luke-Jr> cfields: GCC 4.x at least has serious ABI problems that suggest that is unlikely.. and last I checked, I couldn't even compile Bitcoin Core with C++11
+19:48:41 <wumpus> without caching it'd be useless, building depends every time
+19:48:43 <cfields> i can have travis updated today using gcc 4.8, same as release builds
+19:48:45 <sipa> once that is done and merged, i am fine with deciding whether to full switch or not
+19:48:49 <wumpus> cfields: SGTM
+19:49:07 <sipa> #action cfields enables c++11 build in travis
+19:49:09 <cfields> Luke-Jr: see master as of ~12h ago
+19:49:37 <Luke-Jr> cfields: cool, will try
+19:50:09 <cfields> Luke-Jr: please report any build issues. i tried to ensure that any local setup will work
+19:50:44 <Luke-Jr> cfields: report on github, or IRC?
+19:50:47 <cfields> morcos: you can add that to the success message :)
+19:51:18 <Luke-Jr> httpserver.cpp:255:36: warning: ‘auto_ptr’ is deprecated (declared at /usr/lib/gcc/i686-pc-linux-gnu/4.8.5/include/g++-v4/backward/auto_ptr.h:87) [-Wdeprecated-declarations]
+19:51:24 <cfields> Luke-Jr: #7302 would be good, for posterity
+19:51:51 <wumpus> Luke-Jr: ignore that just a warning, we can't replace that without breaking c++03 compat
+19:52:00 <sipa> Luke-Jr: it is a harmless warning; unique_ptr is compatible with auto_ptr's interface, but suoerior
+19:52:07 <cfields> Luke-Jr: deprecated in c++11, but not removed. auto_ptr -> unique_ptr will be one of the first changes after c++11 is enabled
+19:52:08 <Luke-Jr> makes sense
+19:52:15 <Luke-Jr> /usr/include/boost/thread/future_error_code.hpp:36:53: error: ‘enum_type’ is not a member of ‘boost::future_errc’
+19:52:17 <wumpus> but that gets too detailed, any other topics for the meeting?
+19:52:22 <Luke-Jr> maybe my system boost at fault though
+19:52:35 <Luke-Jr> will move this to -core-dev
+19:52:39 <wumpus> whow, future_error_code
+19:53:04 * jonasschnelli is wondering how we solve the c++11 mutex stuff for mingw (one we move away from boost)
+19:53:08 <sipa> small status update: segnet will do a backwark incompatible change soon, to change the commitment structure; after that, first priority is getting mining code to work with it
+19:53:16 <cfields> can we get a very quick/general segwit status update. i've seen a few things flying around
+19:53:27 <cfields> heh, thanks :)
+19:53:27 <sipa> cfields: ^
+19:53:28 <wumpus> #topic segwit status update
+19:53:42 <CodeShark> segnet has been up since dec 31
+19:53:51 <Luke-Jr> sipa: still working on that
+19:53:54 <sipa> i will also produce a separate branch with just consensus changes
+19:54:25 <sipa> which could be perhaos backportable further back than 0.12
+19:54:25 * jtimon agrees with Luke-Jr on working on top of last-0.12.99 3cd836c1 when possible
+19:55:23 <sipa> jtimon: what is the advantage over using 0.12?
+19:55:32 <sipa> ah, 0.12 is still moving
+19:55:42 <sipa> ok, will rebase on that
+19:55:44 <Luke-Jr> sipa: 0.12 won't merge into master nicely
+19:55:48 <wumpus> yes, 0.12 is still moving
+19:55:54 <sipa> jtimon: ack
+19:56:41 <sipa> 4 min
+19:56:58 <btcdrak> sipa: nothing more on segwit?
+19:57:19 <CodeShark> it works? :)
+19:57:48 <jonasschnelli> hah
+19:58:27 <Luke-Jr> meeting over then?
+19:58:32 <wumpus> #endmeeting
