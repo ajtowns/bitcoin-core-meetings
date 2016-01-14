@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:05</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Jan 14 19:00:05 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:05</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:11</span><span class="nk"> &lt;kanzure&gt;</span> can we get some links to the segwit bips?
+<a name="l-5"></a><span class="tm">19:00:23</span><span class="nk"> &lt;wumpus&gt;</span> where?
+<a name="l-6"></a><span class="tm">19:00:57</span><span class="nk"> &lt;kanzure&gt;</span> ah okay, found them.
+<a name="l-7"></a><span class="tm">19:01:00</span><span class="nk"> &lt;wumpus&gt;</span> any topics?
+<a name="l-8"></a><span class="tm">19:01:13</span><span class="nk"> &lt;kanzure&gt;</span> https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0142.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
+<a name="l-9"></a><span class="tm">19:01:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> https://github.com/bitcoin/bips/blob/master/README.mediawiki
+<a name="l-10"></a><span class="tm">19:01:42</span><span class="nk"> &lt;jtimon&gt;</span> I would like to talk about consensus code encapsulation if there's time
+<a name="l-11"></a><span class="tm">19:01:55</span><span class="nk"> &lt;morcos&gt;</span> i would like to talk about versionbits
+<a name="l-12"></a><span class="tm">19:02:09</span><span class="nk"> &lt;jtimon&gt;</span> +1 versionbits as topic
+<a name="l-13"></a><span class="tm">19:02:12</span><span class="nk"> &lt;btcdrak&gt;</span> ack on versionbits
+<a name="l-14"></a><span class="tm">19:02:13</span><span class="nk"> &lt;wumpus&gt;</span> ok, let's start with versionbits
+<a name="l-15"></a><span class="tm">19:02:14</span><span class="nk"> &lt;cfields&gt;</span> second both of those
+<a name="l-16"></a><span class="tm">19:02:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">versionbits</span>
+<a name="l-17"></a><span class="tm">19:02:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/6816</span>
+<a name="l-18"></a><span class="tm">19:02:42</span><span class="nk"> &lt;morcos&gt;</span> ok, i'm volunteering to take over championing this as both rusty and CodeShark say they are busy on other things
+<a name="l-19"></a><span class="tm">19:02:50</span><span class="nk"> &lt;wumpus&gt;</span> great!
+<a name="l-20"></a><span class="tm">19:02:51</span><span class="nk"> &lt;btcdrak&gt;</span> CodeShark updates his implementation #6816 and rebased to current master
+<a name="l-21"></a><span class="tm">19:03:01</span><span class="nk"> &lt;btcdrak&gt;</span> *updated
+<a name="l-22"></a><span class="tm">19:03:04</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> i don't know if i'm going to use his implementation or not
+<a name="l-23"></a><span class="tm">19:03:15</span><span class="nk"> &lt;morcos&gt;</span> i'd like to spend some time reviewing what rusty did first and then decide
+<a name="l-24"></a><span class="tm">19:03:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> sure just a data point.
+<a name="l-25"></a><span class="tm">19:03:26</span><span class="nk"> &lt;morcos&gt;</span> so lets not ask people to review yetg
+<a name="l-26"></a><span class="tm">19:03:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/rustyrussell/bitcoin/compare/bip-9-versionbits</span>
+<a name="l-27"></a><span class="tm">19:03:40</span><span class="nk"> &lt;morcos&gt;</span> but the general point i wanted to make
+<a name="l-28"></a><span class="tm">19:03:53</span><span class="nk"> &lt;jtimon&gt;</span> I had some feedback for the "API" for both CodeShark's and rusty's implementation
+<a name="l-29"></a><span class="tm">19:04:10</span><span class="nk"> &lt;morcos&gt;</span> is i feel fairly strongly about trying to implement segwit in a way that will be compatible with other implementations possibly trying to do something else at the same time
+<a name="l-30"></a><span class="tm">19:04:23</span><span class="nk"> &lt;jtimon&gt;</span> IMO they we're both more complecated than needed while not flexible enough chainparams-wise
+<a name="l-31"></a><span class="tm">19:04:42</span><span class="nk"> &lt;morcos&gt;</span> if the other implementations are not using nVersion for their signaling, then we have no problem doing whatever we want
+<a name="l-32"></a><span class="tm">19:04:44</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I agree, versionbits BIP9 spec should have a final implementation.
+<a name="l-33"></a><span class="tm">19:04:59</span><span class="nk"> &lt;morcos&gt;</span> however if they are, then not conflicting will be important so users of other versions can also support segwit
+<a name="l-34"></a><span class="tm">19:05:06</span><span class="nk"> &lt;morcos&gt;</span> i'm bringing this all up
+<a name="l-35"></a><span class="tm">19:05:07</span><span class="nk"> &lt;sipa&gt;</span> ack there
+<a name="l-36"></a><span class="tm">19:05:30</span><span class="nk"> &lt;morcos&gt;</span> b/c if we agree with this approach, it may be necessary to front burner version bits to go along with segwit
+<a name="l-37"></a><span class="tm">19:05:32</span><span class="nk"> &lt;jtimon&gt;</span> morcos if you are interested on early review of your "API" (the functions that are going to be called from outside) I'm happy to do so
+<a name="l-38"></a><span class="tm">19:05:54</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> ok, well let me get started first
+<a name="l-39"></a><span class="tm">19:06:24</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> sure, or maybe I can suggest an empty skeleton for you to consider?
+<a name="l-40"></a><span class="tm">19:06:28</span><span class="nk"> &lt;morcos&gt;</span> anyway thats all i wanted to say, but i think its helpful to set expectations on priorities
+<a name="l-41"></a><span class="tm">19:07:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> i'm probably going to start from rusty's code or codeshark's.  i think there may be time pressure to get this done quickly so i don't want to start from scratch.
+<a name="l-42"></a><span class="tm">19:07:34</span><span class="nk"> &lt;Luke-Jr&gt;</span> (would like to see versionbits become less tied to Core's implementation if possible)
+<a name="l-43"></a><span class="tm">19:07:51</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">Luke-Jr:</span> what do you mean?
+<a name="l-44"></a><span class="tm">19:07:58</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> fine, I can repeat the same suggestions I had for them I guess
+<a name="l-45"></a><span class="tm">19:07:59</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">Luke-Jr:</span> so long as it follows the BIP9 it shouldnt matter
+<a name="l-46"></a><span class="tm">19:08:02</span><span class="nk"> &lt;morcos&gt;</span> like all that should matter is the spec?
+<a name="l-47"></a><span class="tm">19:08:24</span><span class="nk"> &lt;morcos&gt;</span> i agree with that, but making sure we have it implemented will help make sure there aren't issues with the spec and that we also have it in time to use
+<a name="l-48"></a><span class="tm">19:08:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">morcos:</span> well, right now it implies Core's intepreting the 4 initial bytes of the block header as a little-endian number
+<a name="l-49"></a><span class="tm">19:08:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> whereas it's proposed to deal with individual bits
+<a name="l-50"></a><span class="tm">19:08:42</span><span class="nk"> &lt;morcos&gt;</span> i'm not going to take on the role of trying to handle how anyone else implements it
+<a name="l-51"></a><span class="tm">19:08:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> that's a detail
+<a name="l-52"></a><span class="tm">19:08:50</span><span class="nk"> &lt;Luke-Jr&gt;</span> so it ought to just refer to the bits and bytes in order
+<a name="l-53"></a><span class="tm">19:08:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> well, other things matter too (ie consensus code encapsulation)
+<a name="l-54"></a><span class="tm">19:09:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> right, you shouldn't
+<a name="l-55"></a><span class="tm">19:09:06</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> yes, a minor one, but one I'd prefer to see cleaned up :p
+<a name="l-56"></a><span class="tm">19:09:14</span><span class="nk"> &lt;sipa&gt;</span> i think this discussion is going into details that can be discussed on a PR
+<a name="l-57"></a><span class="tm">19:09:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> don't let too many details and other people's minor concerns distract you
+<a name="l-58"></a><span class="tm">19:09:31</span><span class="nk"> &lt;Luke-Jr&gt;</span> k, drop that topic for now
+<a name="l-59"></a><span class="tm">19:09:43</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> ok.  yes. we can move on from the whole topic now i think.
+<a name="l-60"></a><span class="tm">19:09:49</span><span class="nk"> &lt;btcdrak&gt;</span> topic suggestion, status report on segwit
+<a name="l-61"></a><span class="tm">19:10:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">status of segwit</span>
+<a name="l-62"></a><span class="tm">19:10:04</span><span class="nk"> &lt;btcdrak&gt;</span> topic suggestion, 0.12 status
+<a name="l-63"></a><span class="tm">19:10:10</span><span class="nk"> &lt;sipa&gt;</span> segnet3 coming up soon
+<a name="l-64"></a><span class="tm">19:10:21</span><span class="nk"> &lt;Luke-Jr&gt;</span> we've dropped trying to do merge-mining in the same softfork
+<a name="l-65"></a><span class="tm">19:10:27</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-66"></a><span class="tm">19:10:44</span><span class="nk"> &lt;sipa&gt;</span> sorry, i'm packing and about to travel, little time now
+<a name="l-67"></a><span class="tm">19:11:18</span><span class="nk"> &lt;wumpus&gt;</span> ok, no problem, let's leave the topic for next week
+<a name="l-68"></a><span class="tm">19:11:28</span><span class="nk"> &lt;btcdrak&gt;</span> let me link bips for the logs
+<a name="l-69"></a><span class="tm">19:11:31</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki</span>
+<a name="l-70"></a><span class="tm">19:11:32</span><span class="nk"> &lt;Luke-Jr&gt;</span> also, I assigned the BIP drafts to 141-144 to make 14x a "anti-malleability" range
+<a name="l-71"></a><span class="tm">19:11:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0142.mediawiki</span>
+<a name="l-72"></a><span class="tm">19:11:43</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki</span>
+<a name="l-73"></a><span class="tm">19:11:48</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki</span>
+<a name="l-74"></a><span class="tm">19:12:13</span><span class="nk"> &lt;Luke-Jr&gt;</span> or maybe 14x will just become segwit if it goes active as expected
+<a name="l-75"></a><span class="tm">19:12:32</span><span class="nk"> &lt;wumpus&gt;</span> good to know
+<a name="l-76"></a><span class="tm">19:13:05</span><span class="nk"> &lt;jtimon&gt;</span> 0.12 status?
+<a name="l-77"></a><span class="tm">19:13:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.12 status</span>
+<a name="l-78"></a><span class="tm">19:13:19</span><span class="nk"> &lt;wumpus&gt;</span> I've tagged 0.12.0rc1 yesterday
+<a name="l-79"></a><span class="tm">19:13:23</span><span class="nk"> &lt;morcos&gt;</span> twice!
+<a name="l-80"></a><span class="tm">19:13:31</span><span class="nk"> &lt;btcdrak&gt;</span> do it again :)
+<a name="l-81"></a><span class="tm">19:13:31</span><span class="nk"> &lt;cfields&gt;</span> haha
+<a name="l-82"></a><span class="tm">19:13:46</span><span class="nk"> &lt;Luke-Jr&gt;</span> https://github.com/bitcoin/bitcoin/pull/7149 needs reviews, but maybe too late for 0.12.0
+<a name="l-83"></a><span class="tm">19:13:52</span><span class="nk"> &lt;wumpus&gt;</span> yes, twice, the first time it didn't build due to a last-minute merge, my fault
+<a name="l-84"></a><span class="tm">19:13:59</span><span class="nk"> &lt;sdaftuar&gt;</span> that's ok, i blame morcos
+<a name="l-85"></a><span class="tm">19:14:10</span><span class="nk"> &lt;Luke-Jr&gt;</span> https://github.com/bitcoin/bitcoin/pull/7339 and https://github.com/bitcoin/bitcoin/pull/7340 should have been in 0.12.0, but are extremely late and possibly impractical to get in
+<a name="l-86"></a><span class="tm">19:14:33</span><span class="nk"> &lt;cfields&gt;</span> gitian builders: i pushed sigs, but there's a small issue with attaching the sigs. see #7342 for the fix.
+<a name="l-87"></a><span class="tm">19:15:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> does this mean can we still build rc1, or need a new rc?
+<a name="l-88"></a><span class="tm">19:15:14</span><span class="nk"> &lt;Luke-Jr&gt;</span> mostly minor backports in https://github.com/bitcoin/bitcoin/pull/7338
+<a name="l-89"></a><span class="tm">19:15:20</span><span class="nk"> &lt;wumpus&gt;</span> preliminary release notes:
+<a name="l-90"></a><span class="tm">19:15:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/blob/0.12/doc/release-notes.md</span>
+<a name="l-91"></a><span class="tm">19:15:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> rc1 is fine, just fix up the descriptor locally
+<a name="l-92"></a><span class="tm">19:15:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.12 release nodes needs some overhaul
+<a name="l-93"></a><span class="tm">19:15:55</span><span class="nk"> &lt;cfields&gt;</span> we can discuss in -core-dev after the meeting
+<a name="l-94"></a><span class="tm">19:16:04</span><span class="nk"> &lt;MarcoFalke&gt;</span> jonas, there are two pulls
+<a name="l-95"></a><span class="tm">19:16:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> nice work on the commit list...
+<a name="l-96"></a><span class="tm">19:16:15</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="cmd">#7340 </span><span class="cmdline">also exposed a possible bug that may need to be fixed, but not yet determined if it affects the bundled univalue</span>
+<a name="l-97"></a><span class="tm">19:16:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> well it's good to tell here so that gitian builders that are reading know  what to do
+<a name="l-98"></a><span class="tm">19:16:18</span><span class="nk"> &lt;btcdrak&gt;</span> is #7149 really a bug fix? We tagged RC, doesnt seem right to merge that
+<a name="l-99"></a><span class="tm">19:16:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> but indeed, can just fix up the descriptor when attaching the signature - building itself is  unaffected
+<a name="l-100"></a><span class="tm">19:16:36</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">btcdrak:</span> yes, it fixes bugs..
+<a name="l-101"></a><span class="tm">19:16:45</span><span class="nk"> &lt;cfields&gt;</span> ok...
+<a name="l-102"></a><span class="tm">19:17:06</span><span class="nk"> &lt;Luke-Jr&gt;</span> I mean, I could split the tests out if that's a concern, but IMO tests never hurt
+<a name="l-103"></a><span class="tm">19:17:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> I agree we shouldn't merge too much between RCs, only if it is a critical bug fix
+<a name="l-104"></a><span class="tm">19:17:35</span><span class="nk"> &lt;wumpus&gt;</span> and I don't think #7142 is mature enough to merge
+<a name="l-105"></a><span class="tm">19:17:55</span><span class="nk"> &lt;wumpus&gt;</span> so let's leave it for 0.12.1
+<a name="l-106"></a><span class="tm">19:18:03</span><span class="nk"> &lt;Luke-Jr&gt;</span> 7142? Travis stuff?
+<a name="l-107"></a><span class="tm">19:18:12</span><span class="nk"> &lt;cfields&gt;</span> gitian builders: 0.12rc1's osx sig attach descriptor fails due to a missing package (that's not actually needed). Rather than using the in-tree descriptor, use the one from #7342. This is fixed for rc2.
+<a name="l-108"></a><span class="tm">19:18:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> eh? I'm confused, sorry
+<a name="l-109"></a><span class="tm">19:18:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> you said 7142 instead of 7149.  but leave for discussion in 0.12.1 to be clear.
+<a name="l-110"></a><span class="tm">19:19:15</span><span class="nk"> &lt;MarcoFalke&gt;</span> 7142 can be closed
+<a name="l-111"></a><span class="tm">19:19:29</span><span class="nk"> &lt;MarcoFalke&gt;</span> The nightly builds already cover it
+<a name="l-112"></a><span class="tm">19:19:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes, #7149 I meant, thanks
+<a name="l-113"></a><span class="tm">19:19:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> awesome
+<a name="l-114"></a><span class="tm">19:19:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">close #7149</span>
+<a name="l-115"></a><span class="tm">19:19:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> We should add "fundrawtransaction" and "setban" to the release notes.
+<a name="l-116"></a><span class="tm">19:20:22</span><span class="nk"> &lt;wumpus&gt;</span> I agree those should be documented - though the release notes are really long already
+<a name="l-117"></a><span class="tm">19:20:23</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> close 7142, not 7149 &gt;_&lt;
+<a name="l-118"></a><span class="tm">19:20:23</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> close 7142, 7149 or both?
+<a name="l-119"></a><span class="tm">19:20:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">close #7142 not #7149</span>
+<a name="l-120"></a><span class="tm">19:21:06</span><span class="nk"> &lt;wumpus&gt;</span> at some point it makes more sense to document those commands somewhere else, e.g. in the bitcoin.org developer documentation
+<a name="l-121"></a><span class="tm">19:21:10</span><span class="nk"> &lt;wumpus&gt;</span> then link to itin the release notes
+<a name="l-122"></a><span class="tm">19:21:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. Agreed.
+<a name="l-123"></a><span class="tm">19:21:42</span><span class="nk"> &lt;Luke-Jr&gt;</span> ACK delaying 7149 until 0.12.1, since it mostly fixes things broken in all prior releases anyway and miners can/should just use LJR instead of Core
+<a name="l-124"></a><span class="tm">19:21:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> should we document the regressions in release-notes though? I can write something up.
+<a name="l-125"></a><span class="tm">19:21:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> :/
+<a name="l-126"></a><span class="tm">19:22:19</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> The release notes should mention notable features regardless imo
+<a name="l-127"></a><span class="tm">19:22:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> they are mentioned in the list of pulls at least
+<a name="l-128"></a><span class="tm">19:23:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> shortly mentioning them with a lnk to more documentation also makes sense, but I think the release notes have too much details, they're not meant as a substitute for documentation
+<a name="l-129"></a><span class="tm">19:23:30</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="cmd">#action </span><span class="cmdline">#7149 delayed to 0.12.1 due to lack of reviews; document regressions it fixes for 0.12.0 in the meantime</span>
+<a name="l-130"></a><span class="tm">19:24:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i realized maybe the release notes don't mention the mining code changes
+<a name="l-131"></a><span class="tm">19:24:15</span><span class="nk"> &lt;wumpus&gt;</span> in any case, feel free to improve the release notes, just submit a pull, but make sure you do it on top of https://github.com/bitcoin/bitcoin/pull/7336
+<a name="l-132"></a><span class="tm">19:24:24</span><span class="nk"> &lt;morcos&gt;</span> i'm not sure how much detail you want to go into
+<a name="l-133"></a><span class="tm">19:24:48</span><span class="nk"> &lt;morcos&gt;</span> but it seems reasonable to me to mention the speed increase , lack of blowup on large mempools.
+<a name="l-134"></a><span class="tm">19:25:00</span><span class="nk"> &lt;morcos&gt;</span> but it also might be important to document the new security assumption
+<a name="l-135"></a><span class="tm">19:25:02</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> it's a notable feature IMO
+<a name="l-136"></a><span class="tm">19:25:08</span><span class="nk"> &lt;MarcoFalke&gt;</span> wumpus, you could just merge 7336
+<a name="l-137"></a><span class="tm">19:25:10</span><span class="nk"> &lt;wumpus&gt;</span> just mention that it changed, what is the old behavior, what is the new behavior, but not too much technical details, it would be great to document those but not in the release notes :)
+<a name="l-138"></a><span class="tm">19:25:12</span><span class="nk"> &lt;morcos&gt;</span> that mempool consistency is now used to construct blocks
+<a name="l-139"></a><span class="tm">19:25:35</span><span class="nk"> &lt;morcos&gt;</span> so maybe that last part is too much detail?
+<a name="l-140"></a><span class="tm">19:25:45</span><span class="nk"> &lt;wumpus&gt;</span> no, that sounds fine
+<a name="l-141"></a><span class="tm">19:25:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> I'm going to
+<a name="l-142"></a><span class="tm">19:26:31</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">merge #7336</span>
+<a name="l-143"></a><span class="tm">19:27:22</span><span class="nk"> &lt;wumpus&gt;</span> ok, more topics?
+<a name="l-144"></a><span class="tm">19:27:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">consensus code encapsulation</span>
+<a name="l-145"></a><span class="tm">19:27:44</span><span class="nk"> &lt;wumpus&gt;</span> @jtimon
+<a name="l-146"></a><span class="tm">19:27:58</span><span class="nk"> &lt;MarcoFalke&gt;</span> any discussion needed in regard to the website?
+<a name="l-147"></a><span class="tm">19:28:13</span><span class="nk"> &lt;jtimon&gt;</span> ok, so right now I only 4 libconsensus related opened PRs #7091 #7287 #7311 and #7310
+<a name="l-148"></a><span class="tm">19:28:48</span><span class="nk"> &lt;jtimon&gt;</span> I really think that any "big picture branch" will be highly unreadable without merging something like #7310 first
+<a name="l-149"></a><span class="tm">19:29:01</span><span class="nk"> &lt;wumpus&gt;</span> do we have an idea for an API yet for the extended libconsensus?
+<a name="l-150"></a><span class="tm">19:29:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> a big picture branch will let people see your overall vision.
+<a name="l-151"></a><span class="tm">19:29:19</span><span class="nk"> &lt;jtimon&gt;</span> you mean libconsensus + storage ?
+<a name="l-152"></a><span class="tm">19:29:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i'm happy to help review an encapsulation type pull for correctness, but i'd prefer to see concept ACK from you/sipa first, b/c i don't trust my own judgement on what makes sense.
+<a name="l-153"></a><span class="tm">19:30:01</span><span class="nk"> &lt;jtimon&gt;</span> I'm redoing things in https://github.com/jtimon/bitcoin/commits/libconsensus-f2 that's the longest "big picture" branch I have
+<a name="l-154"></a><span class="tm">19:30:02</span><span class="nk"> &lt;wumpus&gt;</span> I'm not entirely sure what is the enxt step, but I think it's importnat to know what we want to offer in guiding in how to refactor things
+<a name="l-155"></a><span class="tm">19:30:14</span><span class="nk"> &lt;Diablo-D3&gt;</span> ssh client bug: http://undeadly.org/cgi?action=article&amp;sid=20160114142733
+<a name="l-156"></a><span class="tm">19:30:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Diablo-D3:</span> offtopic?
+<a name="l-157"></a><span class="tm">19:30:36</span><span class="nk"> &lt;jtimon&gt;</span> well, I'll create another one libconsensus-f3 on top of that with a candidate complete C API
+<a name="l-158"></a><span class="tm">19:30:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> did you once thought about a bit-picture in a written form .MD, google doc?
+<a name="l-159"></a><span class="tm">19:31:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> I still plan to do the "document with words and pictures" that I was asked to do
+<a name="l-160"></a><span class="tm">19:31:28</span><span class="nk"> &lt;jtimon&gt;</span> but I want to link to code too
+<a name="l-161"></a><span class="tm">19:31:37</span><span class="nk"> &lt;wumpus&gt;</span> yes, makes sense to have both
+<a name="l-162"></a><span class="tm">19:31:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree. Big pic in word and image form, if one needs more, he can check the code.
+<a name="l-163"></a><span class="tm">19:31:59</span><span class="nk"> &lt;btcdrak&gt;</span> The idea of a big picture branch is to let jtimon make the changes he would like ideally without having to think about doing it in stages. That will give everyone else an idea of the big picture implications
+<a name="l-164"></a><span class="tm">19:32:23</span><span class="nk"> &lt;jtimon&gt;</span> and some of the open PRs would really make the document more readable (ie the pictures are basically before-an-after UML diagrams)
+<a name="l-165"></a><span class="tm">19:32:47</span><span class="nk"> &lt;btcdrak&gt;</span> otherwise it seems like we get tons of small PRs and no-one can see the wider picture and thus it is more difficult for review
+<a name="l-166"></a><span class="tm">19:33:08</span><span class="nk"> &lt;jtimon&gt;</span> what about these stages (what I plan to put in the doc)?
+<a name="l-167"></a><span class="tm">19:34:25</span><span class="nk"> &lt;jtimon&gt;</span> 1) have something to call libconsensus: expose verifyScript. Done
+<a name="l-168"></a><span class="tm">19:34:25</span><span class="nk"> &lt;jtimon&gt;</span> 2) put the rest of the consensus critical code, excluding storage in the same building package (see #7091 )
+<a name="l-169"></a><span class="tm">19:34:30</span><span class="nk"> &lt;droark&gt;</span> <span class="hi">jtimon:</span> If you need any assistance with the doc, ping me. I may need a little assistance but I like to help with documentation.
+<a name="l-170"></a><span class="tm">19:34:54</span><span class="nk"> &lt;jtimon&gt;</span> 3) discuss a complete C API for libconsensus
+<a name="l-171"></a><span class="tm">19:34:54</span><span class="nk"> &lt;jtimon&gt;</span> 4) separate it into a sub-repository
+<a name="l-172"></a><span class="tm">19:35:43</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">droark:</span> thanks I'll note that, but usually I have the most problems getting review
+<a name="l-173"></a><span class="tm">19:35:51</span><span class="nk"> &lt;wumpus&gt;</span> sounds good to me, although I like starting with 3 as soon as possible, I reallythink a (preliminary) API would be good to guide this
+<a name="l-174"></a><span class="tm">19:36:27</span><span class="nk"> &lt;wumpus&gt;</span> in any case, it is mostly orthogonal to the moving and refactoring
+<a name="l-175"></a><span class="tm">19:36:49</span><span class="nk"> &lt;droark&gt;</span> <span class="hi">jtimon:</span> Gotcha. I'll look at some of the PRs a little later today.
+<a name="l-176"></a><span class="tm">19:36:50</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> sure, that's why I'm not working on master, we can start discussing phase 3 as soon as we have a phase 2 "prototype" it doesn't need to be fully reviewed or "final"
+<a name="l-177"></a><span class="tm">19:36:59</span><span class="nk"> &lt;wumpus&gt;</span> but it gives something more concrete to talk about than code moves
+<a name="l-178"></a><span class="tm">19:37:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> right
+<a name="l-179"></a><span class="tm">19:38:05</span><span class="nk"> &lt;jtimon&gt;</span> well, it's not completely orthogonal, you can't build the full C API in the libconsensus package before you have eliminated the unwanted dependencies, etc. But yeah, as for discussion they are mostly orthogonal
+<a name="l-180"></a><span class="tm">19:38:23</span><span class="nk"> &lt;wumpus&gt;</span> ok, suggestion for next topic?
+<a name="l-181"></a><span class="tm">19:38:40</span><span class="nk"> &lt;jtimon&gt;</span> phase 4 (basically moving files to the consensus directory) is also orthogonal, can be done in parallel and practically by anyone
+<a name="l-182"></a><span class="tm">19:38:54</span><span class="nk"> &lt;jtimon&gt;</span> action review #7091 #7287 #7311 and #7310 ?
+<a name="l-183"></a><span class="tm">19:38:54</span><span class="nk"> &lt;btcdrak&gt;</span> are we ready to talk about the locktime PRs again?
+<a name="l-184"></a><span class="tm">19:39:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">locktime PRs</span>
+<a name="l-185"></a><span class="tm">19:39:14</span><span class="nk"> &lt;btcdrak&gt;</span> suggested topic bip68
+<a name="l-186"></a><span class="tm">19:39:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes I agree it's not completely orthogonal, but it's something that can be discussed seaprately, and we can involve people that are planning to use the interface
+<a name="l-187"></a><span class="tm">19:40:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> anything specific to say about locktime PRs?
+<a name="l-188"></a><span class="tm">19:40:56</span><span class="nk"> &lt;btcdrak&gt;</span> We need to make a choice between 6312 and 7184
+<a name="l-189"></a><span class="tm">19:41:06</span><span class="nk"> &lt;jtimon&gt;</span> wumpus agree, and they usually won't care about the refactorings or the rest of bitcoin core, they usually will ask "what interface? what files?"
+<a name="l-190"></a><span class="tm">19:41:19</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> no action on #7091 #7287 #7311 and #7310 then?
+<a name="l-191"></a><span class="tm">19:41:40</span><span class="nk"> &lt;btcdrak&gt;</span> CNB optimisations were not compatible with 6312 which is how 7184 resulted.
+<a name="l-192"></a><span class="tm">19:41:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> you requested people to review them, that's fiine
+<a name="l-193"></a><span class="tm">19:42:13</span><span class="nk"> &lt;jtimon&gt;</span> ok, sorry for insisting, next topic
+<a name="l-194"></a><span class="tm">19:42:16</span><span class="nk"> &lt;morcos&gt;</span> sipa was going to look at #7184 but he got busy on some side project he's working on.  in seriousness though, i think 7184 is a better design for BIP 68 than 6312
+<a name="l-195"></a><span class="tm">19:42:20</span><span class="nk"> &lt;btcdrak&gt;</span> I'm leaning towards closing 6312 for 7184
+<a name="l-196"></a><span class="tm">19:42:49</span><span class="nk"> &lt;morcos&gt;</span> i don't think we need code review of BIP 68 now because i think segwit and probably versionbits take precedence
+<a name="l-197"></a><span class="tm">19:42:53</span><span class="nk"> &lt;btcdrak&gt;</span> "side project" being segwit :-)
+<a name="l-198"></a><span class="tm">19:42:53</span><span class="nk"> &lt;wumpus&gt;</span> looks like there is some agreement to focuso n 7184 instead of 6312 then
+<a name="l-199"></a><span class="tm">19:43:02</span><span class="nk"> &lt;morcos&gt;</span> but it would be nice to concentrate on one approach, and update the BIP to match it
+<a name="l-200"></a><span class="tm">19:43:18</span><span class="nk"> &lt;jtimon&gt;</span> well bip68 is certainly more reviewed than versionbits I think
+<a name="l-201"></a><span class="tm">19:43:40</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> yes for sure.  but in terms of priorities to get released.
+<a name="l-202"></a><span class="tm">19:43:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> bip68 spec is ewll reviewed, obviously we'd need to update the reference implementation in the BIP to 7184
+<a name="l-203"></a><span class="tm">19:44:11</span><span class="nk"> &lt;morcos&gt;</span> its possible we'll have BIP 68 and 112/113 ready to go by soft fork
+<a name="l-204"></a><span class="tm">19:44:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> well until you have a versionbits proposal, we have time to look at 7184
+<a name="l-205"></a><span class="tm">19:44:27</span><span class="nk"> &lt;morcos&gt;</span> but we shouldn't be holding up segwit for them
+<a name="l-206"></a><span class="tm">19:44:52</span><span class="nk"> &lt;jtimon&gt;</span> my previous opposition against redoing many parts of 6312 in 7184 was that it was going to slow things down, so if focusing review on 7184 will make things faster, I'm fine with it
+<a name="l-207"></a><span class="tm">19:45:04</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> BIP113 should be deployed with the next softfork regardless.
+<a name="l-208"></a><span class="tm">19:45:09</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-209"></a><span class="tm">19:45:19</span><span class="nk"> &lt;morcos&gt;</span> ok, so lets close 6312 and move to 7184
+<a name="l-210"></a><span class="tm">19:45:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">clsoe #6312 in favor of #7174</span>
+<a name="l-211"></a><span class="tm">19:45:26</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-212"></a><span class="tm">19:45:27</span><span class="nk"> &lt;morcos&gt;</span> if there is objection later , we can always reopen
+<a name="l-213"></a><span class="tm">19:45:31</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-214"></a><span class="tm">19:45:37</span><span class="nk"> &lt;morcos&gt;</span> 7184 wumpus please
+<a name="l-215"></a><span class="tm">19:45:49</span><span class="nk"> &lt;morcos&gt;</span> and don't merge any consensus code changes today
+<a name="l-216"></a><span class="tm">19:45:51</span><span class="nk"> &lt;btcdrak&gt;</span> wumpus has shaky hands today
+<a name="l-217"></a><span class="tm">19:45:55</span><span class="nk"> &lt;jtimon&gt;</span> but nack on "delaying bip68 further because there's higher priorities"
+<a name="l-218"></a><span class="tm">19:46:29</span><span class="nk"> &lt;btcdrak&gt;</span> btw, rusty tested 7184 in combination with 6564 and tACKd both
+<a name="l-219"></a><span class="tm">19:47:15</span><span class="nk"> &lt;btcdrak&gt;</span> aj also has some python demos that test HLTC scripts using CSV, we should pester him for those
+<a name="l-220"></a><span class="tm">19:47:51</span><span class="nk"> &lt;btcdrak&gt;</span> *HTLC,
+<a name="l-221"></a><span class="tm">19:47:55</span><span class="nk"> &lt;jtimon&gt;</span> I just slightly reviewed the diff with 6312 but didn't found anything functionally wrong
+<a name="l-222"></a><span class="tm">19:49:59</span><span class="nk"> &lt;jtimon&gt;</span> so I don't see it as something far away, I think we could merge 7184 relatively soon (after all is based on 6312 which had plenty of testing and review)
+<a name="l-223"></a><span class="tm">19:50:35</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> yes. actually the cumulative work in 7184 is impressive
+<a name="l-224"></a><span class="tm">19:51:28</span><span class="nk"> &lt;morcos&gt;</span> great.  well when 7184 gets the acks it can be merged.  but we still need code to introduce the soft fork for it anyway
+<a name="l-225"></a><span class="tm">19:51:36</span><span class="nk"> &lt;morcos&gt;</span> i'll fix up the open nits on 7184 pronto
+<a name="l-226"></a><span class="tm">19:51:48</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> the softforking code should be a separate PR.
+<a name="l-227"></a><span class="tm">19:51:55</span><span class="nk"> &lt;sdaftuar&gt;</span> and we should update the BIP's reference implementation
+<a name="l-228"></a><span class="tm">19:52:04</span><span class="nk"> &lt;btcdrak&gt;</span> ok I'll do that
+<a name="l-229"></a><span class="tm">19:52:09</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> yes thats fine.   do you want to update BIP.  perfect.
+<a name="l-230"></a><span class="tm">19:52:22</span><span class="nk"> &lt;btcdrak&gt;</span> yup
+<a name="l-231"></a><span class="tm">19:52:26</span><span class="nk"> &lt;Diablo-D3&gt;</span> <span class="hi">wumpus:</span> /amsg
+<a name="l-232"></a><span class="tm">19:53:19</span><span class="nk"> &lt;wumpus&gt;</span> any last topic?
+<a name="l-233"></a><span class="tm">19:53:37</span><span class="nk"> &lt;btcdrak&gt;</span> are we haveing a 0.12 release party?
+<a name="l-234"></a><span class="tm">19:53:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> we will worry about the softfork later, the first step of merging it as relay policy is a huge step
+<a name="l-235"></a><span class="tm">19:53:51</span><span class="nk"> &lt;wumpus&gt;</span> otherwise I'm going to close the meeting, I'm kind of tired
+<a name="l-236"></a><span class="tm">19:53:56</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-237"></a><span class="tm">19:54:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> +!
+<a name="l-238"></a><span class="tm">19:54:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingstop</span><span class="cmdline"></span>
+<a name="l-239"></a><span class="tm">19:54:20</span><span class="nk"> &lt;btcdrak&gt;</span> haha
+<a name="l-240"></a><span class="tm">19:54:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#stopmeeting</span><span class="cmdline"></span>
+<a name="l-241"></a><span class="tm">19:54:22</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#closemeeting</span><span class="cmdline"></span>
+<a name="l-242"></a><span class="tm">19:54:25</span><span class="nk"> &lt;btcdrak&gt;</span> nopw
+<a name="l-243"></a><span class="tm">19:54:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

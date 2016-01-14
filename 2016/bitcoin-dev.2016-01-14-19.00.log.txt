@@ -1,0 +1,243 @@
+19:00:05 <wumpus> #startmeeting
+19:00:05 <lightningbot`> Meeting started Thu Jan 14 19:00:05 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:05 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:11 <kanzure> can we get some links to the segwit bips?
+19:00:23 <wumpus> where?
+19:00:57 <kanzure> ah okay, found them.
+19:01:00 <wumpus> any topics?
+19:01:13 <kanzure> https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0142.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
+19:01:13 <btcdrak> kanzure: https://github.com/bitcoin/bips/blob/master/README.mediawiki
+19:01:42 <jtimon> I would like to talk about consensus code encapsulation if there's time
+19:01:55 <morcos> i would like to talk about versionbits
+19:02:09 <jtimon> +1 versionbits as topic
+19:02:12 <btcdrak> ack on versionbits
+19:02:13 <wumpus> ok, let's start with versionbits
+19:02:14 <cfields> second both of those
+19:02:15 <wumpus> #topic versionbits
+19:02:24 <btcdrak> #link https://github.com/bitcoin/bitcoin/pull/6816
+19:02:42 <morcos> ok, i'm volunteering to take over championing this as both rusty and CodeShark say they are busy on other things
+19:02:50 <wumpus> great!
+19:02:51 <btcdrak> CodeShark updates his implementation #6816 and rebased to current master
+19:03:01 <btcdrak> *updated
+19:03:04 <morcos> btcdrak: i don't know if i'm going to use his implementation or not
+19:03:15 <morcos> i'd like to spend some time reviewing what rusty did first and then decide
+19:03:15 <btcdrak> morcos: sure just a data point.
+19:03:26 <morcos> so lets not ask people to review yetg
+19:03:38 <btcdrak> #link https://github.com/rustyrussell/bitcoin/compare/bip-9-versionbits
+19:03:40 <morcos> but the general point i wanted to make
+19:03:53 <jtimon> I had some feedback for the "API" for both CodeShark's and rusty's implementation
+19:04:10 <morcos> is i feel fairly strongly about trying to implement segwit in a way that will be compatible with other implementations possibly trying to do something else at the same time
+19:04:23 <jtimon> IMO they we're both more complecated than needed while not flexible enough chainparams-wise
+19:04:42 <morcos> if the other implementations are not using nVersion for their signaling, then we have no problem doing whatever we want
+19:04:44 <btcdrak> morcos: I agree, versionbits BIP9 spec should have a final implementation.
+19:04:59 <morcos> however if they are, then not conflicting will be important so users of other versions can also support segwit
+19:05:06 <morcos> i'm bringing this all up
+19:05:07 <sipa> ack there
+19:05:30 <morcos> b/c if we agree with this approach, it may be necessary to front burner version bits to go along with segwit
+19:05:32 <jtimon> morcos if you are interested on early review of your "API" (the functions that are going to be called from outside) I'm happy to do so
+19:05:54 <morcos> jtimon: ok, well let me get started first
+19:06:24 <jtimon> morcos: sure, or maybe I can suggest an empty skeleton for you to consider?
+19:06:28 <morcos> anyway thats all i wanted to say, but i think its helpful to set expectations on priorities
+19:07:07 <morcos> jtimon: i'm probably going to start from rusty's code or codeshark's.  i think there may be time pressure to get this done quickly so i don't want to start from scratch.
+19:07:34 <Luke-Jr> (would like to see versionbits become less tied to Core's implementation if possible)
+19:07:51 <morcos> Luke-Jr: what do you mean?
+19:07:58 <jtimon> morcos: fine, I can repeat the same suggestions I had for them I guess
+19:07:59 <btcdrak> Luke-Jr: so long as it follows the BIP9 it shouldnt matter
+19:08:02 <morcos> like all that should matter is the spec?
+19:08:24 <morcos> i agree with that, but making sure we have it implemented will help make sure there aren't issues with the spec and that we also have it in time to use
+19:08:31 <Luke-Jr> morcos: well, right now it implies Core's intepreting the 4 initial bytes of the block header as a little-endian number
+19:08:39 <Luke-Jr> whereas it's proposed to deal with individual bits
+19:08:42 <morcos> i'm not going to take on the role of trying to handle how anyone else implements it
+19:08:49 <sipa> Luke-Jr: that's a detail
+19:08:50 <Luke-Jr> so it ought to just refer to the bits and bytes in order
+19:08:53 <jtimon> btcdrak: well, other things matter too (ie consensus code encapsulation)
+19:09:04 <wumpus> morcos: right, you shouldn't
+19:09:06 <Luke-Jr> sipa: yes, a minor one, but one I'd prefer to see cleaned up :p
+19:09:14 <sipa> i think this discussion is going into details that can be discussed on a PR
+19:09:22 <wumpus> morcos: don't let too many details and other people's minor concerns distract you
+19:09:31 <Luke-Jr> k, drop that topic for now
+19:09:43 <morcos> wumpus: ok.  yes. we can move on from the whole topic now i think.
+19:09:49 <btcdrak> topic suggestion, status report on segwit
+19:10:03 <wumpus> #topic status of segwit
+19:10:04 <btcdrak> topic suggestion, 0.12 status
+19:10:10 <sipa> segnet3 coming up soon
+19:10:21 <Luke-Jr> we've dropped trying to do merge-mining in the same softfork
+19:10:27 <sipa> indeed
+19:10:44 <sipa> sorry, i'm packing and about to travel, little time now
+19:11:18 <wumpus> ok, no problem, let's leave the topic for next week
+19:11:28 <btcdrak> let me link bips for the logs
+19:11:31 <btcdrak> #link https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
+19:11:32 <Luke-Jr> also, I assigned the BIP drafts to 141-144 to make 14x a "anti-malleability" range
+19:11:38 <btcdrak> #link https://github.com/bitcoin/bips/blob/master/bip-0142.mediawiki
+19:11:43 <btcdrak> #link https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
+19:11:48 <btcdrak> #link https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
+19:12:13 <Luke-Jr> or maybe 14x will just become segwit if it goes active as expected
+19:12:32 <wumpus> good to know
+19:13:05 <jtimon> 0.12 status?
+19:13:06 <wumpus> #topic 0.12 status
+19:13:19 <wumpus> I've tagged 0.12.0rc1 yesterday
+19:13:23 <morcos> twice!
+19:13:31 <btcdrak> do it again :)
+19:13:31 <cfields> haha
+19:13:46 <Luke-Jr> https://github.com/bitcoin/bitcoin/pull/7149 needs reviews, but maybe too late for 0.12.0
+19:13:52 <wumpus> yes, twice, the first time it didn't build due to a last-minute merge, my fault
+19:13:59 <sdaftuar> that's ok, i blame morcos
+19:14:10 <Luke-Jr> https://github.com/bitcoin/bitcoin/pull/7339 and https://github.com/bitcoin/bitcoin/pull/7340 should have been in 0.12.0, but are extremely late and possibly impractical to get in
+19:14:33 <cfields> gitian builders: i pushed sigs, but there's a small issue with attaching the sigs. see #7342 for the fix.
+19:15:10 <wumpus> cfields: does this mean can we still build rc1, or need a new rc?
+19:15:14 <Luke-Jr> mostly minor backports in https://github.com/bitcoin/bitcoin/pull/7338
+19:15:20 <wumpus> preliminary release notes:
+19:15:23 <wumpus> #link https://github.com/bitcoin/bitcoin/blob/0.12/doc/release-notes.md
+19:15:36 <cfields> wumpus: rc1 is fine, just fix up the descriptor locally
+19:15:50 <jonasschnelli> 0.12 release nodes needs some overhaul
+19:15:55 <cfields> we can discuss in -core-dev after the meeting
+19:16:04 <MarcoFalke> jonas, there are two pulls
+19:16:14 <jonasschnelli> wumpus: nice work on the commit list...
+19:16:15 <Luke-Jr> #7340 also exposed a possible bug that may need to be fixed, but not yet determined if it affects the bundled univalue
+19:16:18 <wumpus> cfields: well it's good to tell here so that gitian builders that are reading know  what to do
+19:16:18 <btcdrak> is #7149 really a bug fix? We tagged RC, doesnt seem right to merge that
+19:16:34 <wumpus> cfields: but indeed, can just fix up the descriptor when attaching the signature - building itself is  unaffected
+19:16:36 <Luke-Jr> btcdrak: yes, it fixes bugs..
+19:16:45 <cfields> ok...
+19:17:06 <Luke-Jr> I mean, I could split the tests out if that's a concern, but IMO tests never hurt
+19:17:06 <wumpus> btcdrak: I agree we shouldn't merge too much between RCs, only if it is a critical bug fix
+19:17:35 <wumpus> and I don't think #7142 is mature enough to merge
+19:17:55 <wumpus> so let's leave it for 0.12.1
+19:18:03 <Luke-Jr> 7142? Travis stuff?
+19:18:12 <cfields> gitian builders: 0.12rc1's osx sig attach descriptor fails due to a missing package (that's not actually needed). Rather than using the in-tree descriptor, use the one from #7342. This is fixed for rc2.
+19:18:22 <wumpus> Luke-Jr: eh? I'm confused, sorry
+19:18:45 <morcos> wumpus: you said 7142 instead of 7149.  but leave for discussion in 0.12.1 to be clear.
+19:19:15 <MarcoFalke> 7142 can be closed
+19:19:29 <MarcoFalke> The nightly builds already cover it
+19:19:32 <wumpus> morcos: yes, #7149 I meant, thanks
+19:19:38 <wumpus> MarcoFalke: awesome
+19:19:46 <wumpus> #action close #7149
+19:19:53 <jonasschnelli> We should add "fundrawtransaction" and "setban" to the release notes.
+19:20:22 <wumpus> I agree those should be documented - though the release notes are really long already
+19:20:23 <Luke-Jr> wumpus: close 7142, not 7149 >_<
+19:20:23 <jtimon> wumpus: close 7142, 7149 or both?
+19:20:40 <wumpus> #action close #7142 not #7149
+19:21:06 <wumpus> at some point it makes more sense to document those commands somewhere else, e.g. in the bitcoin.org developer documentation
+19:21:10 <wumpus> then link to itin the release notes
+19:21:41 <jonasschnelli> wumpus: Yes. Agreed.
+19:21:42 <Luke-Jr> ACK delaying 7149 until 0.12.1, since it mostly fixes things broken in all prior releases anyway and miners can/should just use LJR instead of Core
+19:21:53 <Luke-Jr> should we document the regressions in release-notes though? I can write something up.
+19:21:53 <jonasschnelli> :/
+19:22:19 <btcdrak> wumpus: The release notes should mention notable features regardless imo
+19:22:37 <wumpus> btcdrak: they are mentioned in the list of pulls at least
+19:23:05 <wumpus> btcdrak: shortly mentioning them with a lnk to more documentation also makes sense, but I think the release notes have too much details, they're not meant as a substitute for documentation
+19:23:30 <Luke-Jr> #action #7149 delayed to 0.12.1 due to lack of reviews; document regressions it fixes for 0.12.0 in the meantime
+19:24:11 <morcos> wumpus: i realized maybe the release notes don't mention the mining code changes
+19:24:15 <wumpus> in any case, feel free to improve the release notes, just submit a pull, but make sure you do it on top of https://github.com/bitcoin/bitcoin/pull/7336
+19:24:24 <morcos> i'm not sure how much detail you want to go into
+19:24:48 <morcos> but it seems reasonable to me to mention the speed increase , lack of blowup on large mempools.
+19:25:00 <morcos> but it also might be important to document the new security assumption
+19:25:02 <btcdrak> morcos: it's a notable feature IMO
+19:25:08 <MarcoFalke> wumpus, you could just merge 7336
+19:25:10 <wumpus> just mention that it changed, what is the old behavior, what is the new behavior, but not too much technical details, it would be great to document those but not in the release notes :)
+19:25:12 <morcos> that mempool consistency is now used to construct blocks
+19:25:35 <morcos> so maybe that last part is too much detail?
+19:25:45 <wumpus> no, that sounds fine
+19:25:54 <wumpus> MarcoFalke: I'm going to
+19:26:31 <MarcoFalke> #action merge #7336
+19:27:22 <wumpus> ok, more topics?
+19:27:34 <wumpus> #topic consensus code encapsulation
+19:27:44 <wumpus> @jtimon
+19:27:58 <MarcoFalke> any discussion needed in regard to the website?
+19:28:13 <jtimon> ok, so right now I only 4 libconsensus related opened PRs #7091 #7287 #7311 and #7310
+19:28:48 <jtimon> I really think that any "big picture branch" will be highly unreadable without merging something like #7310 first
+19:29:01 <wumpus> do we have an idea for an API yet for the extended libconsensus?
+19:29:15 <btcdrak> jtimon: a big picture branch will let people see your overall vision.
+19:29:19 <jtimon> you mean libconsensus + storage ?
+19:29:34 <morcos> wumpus: i'm happy to help review an encapsulation type pull for correctness, but i'd prefer to see concept ACK from you/sipa first, b/c i don't trust my own judgement on what makes sense.
+19:30:01 <jtimon> I'm redoing things in https://github.com/jtimon/bitcoin/commits/libconsensus-f2 that's the longest "big picture" branch I have
+19:30:02 <wumpus> I'm not entirely sure what is the enxt step, but I think it's importnat to know what we want to offer in guiding in how to refactor things
+19:30:14 <Diablo-D3> ssh client bug: http://undeadly.org/cgi?action=article&sid=20160114142733
+19:30:26 <wumpus> Diablo-D3: offtopic?
+19:30:36 <jtimon> well, I'll create another one libconsensus-f3 on top of that with a candidate complete C API
+19:30:39 <jonasschnelli> jtimon: did you once thought about a bit-picture in a written form .MD, google doc?
+19:31:13 <jtimon> jonasschnelli: I still plan to do the "document with words and pictures" that I was asked to do
+19:31:28 <jtimon> but I want to link to code too
+19:31:37 <wumpus> yes, makes sense to have both
+19:31:54 <jonasschnelli> Agree. Big pic in word and image form, if one needs more, he can check the code.
+19:31:59 <btcdrak> The idea of a big picture branch is to let jtimon make the changes he would like ideally without having to think about doing it in stages. That will give everyone else an idea of the big picture implications
+19:32:23 <jtimon> and some of the open PRs would really make the document more readable (ie the pictures are basically before-an-after UML diagrams)
+19:32:47 <btcdrak> otherwise it seems like we get tons of small PRs and no-one can see the wider picture and thus it is more difficult for review
+19:33:08 <jtimon> what about these stages (what I plan to put in the doc)?
+19:34:25 <jtimon> 1) have something to call libconsensus: expose verifyScript. Done
+19:34:25 <jtimon> 2) put the rest of the consensus critical code, excluding storage in the same building package (see #7091 )
+19:34:30 <droark> jtimon: If you need any assistance with the doc, ping me. I may need a little assistance but I like to help with documentation.
+19:34:54 <jtimon> 3) discuss a complete C API for libconsensus
+19:34:54 <jtimon> 4) separate it into a sub-repository
+19:35:43 <jtimon> droark: thanks I'll note that, but usually I have the most problems getting review
+19:35:51 <wumpus> sounds good to me, although I like starting with 3 as soon as possible, I reallythink a (preliminary) API would be good to guide this
+19:36:27 <wumpus> in any case, it is mostly orthogonal to the moving and refactoring
+19:36:49 <droark> jtimon: Gotcha. I'll look at some of the PRs a little later today.
+19:36:50 <jtimon> wumpus: sure, that's why I'm not working on master, we can start discussing phase 3 as soon as we have a phase 2 "prototype" it doesn't need to be fully reviewed or "final"
+19:36:59 <wumpus> but it gives something more concrete to talk about than code moves
+19:37:31 <wumpus> jtimon: right
+19:38:05 <jtimon> well, it's not completely orthogonal, you can't build the full C API in the libconsensus package before you have eliminated the unwanted dependencies, etc. But yeah, as for discussion they are mostly orthogonal
+19:38:23 <wumpus> ok, suggestion for next topic?
+19:38:40 <jtimon> phase 4 (basically moving files to the consensus directory) is also orthogonal, can be done in parallel and practically by anyone
+19:38:54 <jtimon> action review #7091 #7287 #7311 and #7310 ?
+19:38:54 <btcdrak> are we ready to talk about the locktime PRs again?
+19:39:14 <wumpus> #topic locktime PRs
+19:39:14 <btcdrak> suggested topic bip68
+19:39:55 <wumpus> jtimon: yes I agree it's not completely orthogonal, but it's something that can be discussed seaprately, and we can involve people that are planning to use the interface
+19:40:49 <wumpus> btcdrak: anything specific to say about locktime PRs?
+19:40:56 <btcdrak> We need to make a choice between 6312 and 7184
+19:41:06 <jtimon> wumpus agree, and they usually won't care about the refactorings or the rest of bitcoin core, they usually will ask "what interface? what files?"
+19:41:19 <jtimon> wumpus: no action on #7091 #7287 #7311 and #7310 then?
+19:41:40 <btcdrak> CNB optimisations were not compatible with 6312 which is how 7184 resulted.
+19:41:48 <wumpus> jtimon: you requested people to review them, that's fiine
+19:42:13 <jtimon> ok, sorry for insisting, next topic
+19:42:16 <morcos> sipa was going to look at #7184 but he got busy on some side project he's working on.  in seriousness though, i think 7184 is a better design for BIP 68 than 6312
+19:42:20 <btcdrak> I'm leaning towards closing 6312 for 7184
+19:42:49 <morcos> i don't think we need code review of BIP 68 now because i think segwit and probably versionbits take precedence
+19:42:53 <btcdrak> "side project" being segwit :-)
+19:42:53 <wumpus> looks like there is some agreement to focuso n 7184 instead of 6312 then
+19:43:02 <morcos> but it would be nice to concentrate on one approach, and update the BIP to match it
+19:43:18 <jtimon> well bip68 is certainly more reviewed than versionbits I think
+19:43:40 <morcos> jtimon: yes for sure.  but in terms of priorities to get released.
+19:43:57 <btcdrak> morcos: bip68 spec is ewll reviewed, obviously we'd need to update the reference implementation in the BIP to 7184
+19:44:11 <morcos> its possible we'll have BIP 68 and 112/113 ready to go by soft fork
+19:44:26 <btcdrak> morcos: well until you have a versionbits proposal, we have time to look at 7184
+19:44:27 <morcos> but we shouldn't be holding up segwit for them
+19:44:52 <jtimon> my previous opposition against redoing many parts of 6312 in 7184 was that it was going to slow things down, so if focusing review on 7184 will make things faster, I'm fine with it
+19:45:04 <btcdrak> morcos: BIP113 should be deployed with the next softfork regardless.
+19:45:09 <wumpus> ok
+19:45:19 <morcos> ok, so lets close 6312 and move to 7184
+19:45:25 <wumpus> #action clsoe #6312 in favor of #7174
+19:45:26 <btcdrak> ack
+19:45:27 <morcos> if there is objection later , we can always reopen
+19:45:31 <wumpus> right
+19:45:37 <morcos> 7184 wumpus please
+19:45:49 <morcos> and don't merge any consensus code changes today
+19:45:51 <btcdrak> wumpus has shaky hands today
+19:45:55 <jtimon> but nack on "delaying bip68 further because there's higher priorities"
+19:46:29 <btcdrak> btw, rusty tested 7184 in combination with 6564 and tACKd both
+19:47:15 <btcdrak> aj also has some python demos that test HLTC scripts using CSV, we should pester him for those
+19:47:51 <btcdrak> *HTLC,
+19:47:55 <jtimon> I just slightly reviewed the diff with 6312 but didn't found anything functionally wrong
+19:49:59 <jtimon> so I don't see it as something far away, I think we could merge 7184 relatively soon (after all is based on 6312 which had plenty of testing and review)
+19:50:35 <btcdrak> jtimon: yes. actually the cumulative work in 7184 is impressive
+19:51:28 <morcos> great.  well when 7184 gets the acks it can be merged.  but we still need code to introduce the soft fork for it anyway
+19:51:36 <morcos> i'll fix up the open nits on 7184 pronto
+19:51:48 <btcdrak> morcos: the softforking code should be a separate PR.
+19:51:55 <sdaftuar> and we should update the BIP's reference implementation
+19:52:04 <btcdrak> ok I'll do that
+19:52:09 <morcos> btcdrak: yes thats fine.   do you want to update BIP.  perfect.
+19:52:22 <btcdrak> yup
+19:52:26 <Diablo-D3> wumpus: /amsg
+19:53:19 <wumpus> any last topic?
+19:53:37 <btcdrak> are we haveing a 0.12 release party?
+19:53:38 <jtimon> morcos: we will worry about the softfork later, the first step of merging it as relay policy is a huge step
+19:53:51 <wumpus> otherwise I'm going to close the meeting, I'm kind of tired
+19:53:56 <btcdrak> ack
+19:54:10 <btcdrak> wumpus: +!
+19:54:16 <wumpus> #meetingstop
+19:54:20 <btcdrak> haha
+19:54:20 <wumpus> #stopmeeting
+19:54:22 <MarcoFalke> #closemeeting
+19:54:25 <btcdrak> nopw
+19:54:26 <wumpus> #endmeeting
