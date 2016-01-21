@@ -1,0 +1,288 @@
+18:59:52 <wumpus> #startmeeting
+18:59:52 <lightningbot`> Meeting started Thu Jan 21 18:59:52 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:52 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:07 <wumpus> topic proposals?
+19:00:18 <jonasschnelli> proposed topic opt-in RBF default value
+19:01:35 <wumpus> I'd say there's been enough discussion of that on github already today, but ok
+19:01:35 <cfields> proposed topic: 0.11 backport release for (at least) chainstate obfuscation
+19:01:53 <wumpus> #topic opt-in RBF default value
+19:01:56 <jonasschnelli> proposed topic: leveldb corruption
+19:02:04 <jonasschnelli> okay. RBF...
+19:02:27 <jonasschnelli> today i said lets not get pushed into a corner... but somehow users are afraid of RBF.
+19:02:38 <jeremias> hmm, is leveldb prone for corruption?
+19:03:53 <jonasschnelli> not saying we should make the RBF default false, but maybe we should consider in in terms to not deeper splitting the community
+19:03:58 <wumpus> I've said everything I wanted to say on the topic in https://github.com/bitcoin/bitcoin/pull/7386 https://github.com/bitcoin/bitcoin/pull/7388
+19:04:17 <jonasschnelli> Okay. I agree.
+19:04:49 <wumpus> #topic 0.11 backport release for (at least) chainstate obfuscation
+19:04:53 <jonasschnelli> I think we should then stick to what we said and keep RBF on by default. I'm fine with this it should just be the groups opinion.
+19:06:16 <wumpus> ACK on backport release, the code (#7259) is already in there, so it's just a matter of tagging
+19:06:41 <gmaxwell> I had suggested we do that back at the last 0.11 release... but the changes aren't super small and obviously correct.
+19:06:42 <wumpus> it also has some other fixes like #7381
+19:06:45 <cfields> context: it's not possible to downgrade from 0.12 -> 0.11 in most cases.
+19:06:51 <cfields> right, sounds good
+19:07:02 <phantomcircuit> jonasschnelli, i have yet to see a single entity which accepts unconfirmed transactions raise issue with opt-in RBF
+19:07:04 <sdaftuar> will pruning nodes be able to downgrade withotu redownloading the blockchain?  i havent' reviewed that pull yet
+19:07:04 <gmaxwell> cfields: right, not if you started on 0.12 or reindexed on 0.12.
+19:07:35 <wumpus> jonasschnelli: it seems by far most want to leave it enabled, there are a few people strongly against it, which now have their option
+19:07:51 <cfields> gmaxwell: are you nervous about the backport? or the change itself when it went in?
+19:07:53 <jonasschnelli> wumpus: Yes. Fully agree.
+19:08:01 <wumpus> sdaftuar, downgrading is no issue, unless you've reindexed
+19:08:32 <wumpus> reindexing builds a new chainstate with obfuscation enabled
+19:09:15 <wumpus> which is why we want to backport so that people get a sane error message instead of an assertion fail
+19:09:22 <gmaxwell> cfields: I'm not really nervous, but some expressed nervousness before; and I couldn't disagree. Perhaps we're better now that it's been in master for a long time.
+19:09:43 <sdaftuar> wumpus: ah ok
+19:09:44 <wumpus> gmaxwell, to be clear this is not a backport of the obfuscation code, just an error
+19:10:14 <cfields> wumpus: oh, that wasn't my understanding. guess i need to click on those PRs
+19:10:20 <wumpus> gmaxwell, see #7259
+19:10:32 <wumpus> ^ cfields
+19:10:35 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/7259
+19:10:39 <wumpus> so there's no reason to be nervous
+19:10:43 <cfields> wumpus: right, looking
+19:12:22 <gmaxwell> oh! just an error.
+19:12:24 <cfields> wumpus: i don't care strongly enough to argue, works for me
+19:12:26 <gmaxwell> sorry, missed that.
+19:12:29 <gmaxwell> okay. sounds great.
+19:13:00 <btcdrak> oh i'm late
+19:13:12 <wumpus> gmaxwell, the current assertion has put many people on the wrong track (thinking this was corruption), so an error is better. Even better would be versionoing in chainstate like we have for the wallet, so this can be avoided in the future, but this is good for now
+19:13:16 <e4xit> Hello, is this the right channel to ask a question about failing "make" part of building of bitcoin core 0.12?
+19:13:35 <jonasschnelli> e4xit: use #bitcoin
+19:13:41 <e4xit> ok
+19:13:52 <wumpus> e4xit,  normally it's ok but we're in the middle of a meeeting
+19:14:03 <e4xit> I thought it sounded like that :)
+19:14:25 <cfields> wumpus: version makes sense
+19:15:16 <wumpus> I do think we should do a 0.11 backport release immediately after 0.12 final, instead of before, to avoid confusion
+19:15:43 <gmaxwell> we could do it concurrently and just not announce the 0.11 update.
+19:15:47 <wumpus> (e.g. having both 0.12.0 and 0.11.3 in RC phase)
+19:15:56 <wumpus> sure, could be almost immediately
+19:15:57 <gmaxwell> ah but yes, we'd get no testing on it.
+19:16:26 <wumpus> there's much less testing needed for the 0.11 release than for a new major release, but still makes sense to do one RC
+19:17:03 <gmaxwell> yes, I agree with your reasoning. FWIW.
+19:17:17 <cfields> proposed next topic: c++11 update
+19:17:38 <wumpus> agree this topic is done, but we still had
+19:17:42 <wumpus> #topic leveldb corruption
+19:17:50 <wumpus> (this is news for me btw)
+19:17:55 <cfields> ok
+19:18:24 <wumpus> @jonasschnelli
+19:18:55 <gmaxwell> The issue I saw this morning said the corruption was during IBD. But IIRC we disable fsync on the block files during IBD. Is there more to it than that?
+19:19:06 <jonasschnelli> corruption: https://github.com/bitcoin/bitcoin/issues/7382
+19:19:11 <jonasschnelli> Isn't that leveldb?
+19:19:53 <wumpus> jonasschnelli, that's a strange issue, I don't think it's related to leveldb itself though
+19:20:08 <jonasschnelli> I also had a corrupt database after running 0.12 (maybe not related, was running a external SSD).
+19:20:30 <jonasschnelli> I just think in general, we see lots of db corruptions with bitcoin core.
+19:20:52 <jonasschnelli> Wonder if we like to sketch a plan / roadmap for a better strategy
+19:20:55 <sipa> oops, did i miss meeting?
+19:21:05 <jonasschnelli> (you missed 20 mins)
+19:21:07 <gmaxwell> jonasschnelli: I believe that issue is unrelated.
+19:21:20 <gmaxwell> jonasschnelli: and I think phantomcircuit can reproduce it now.
+19:21:38 <maaku> Jonas well switching to a new, maintained db is the long term plan, no?
+19:21:54 <maaku> But we know what remains to be done there
+19:22:26 <gmaxwell> I'm not aware of any evidence of leveldb corruption on linux, right now, and I've been running the most agressive testing I can perform on 0.12 for the last month.  Eg.  a node with four daemons running under load test and random kill -9ing the process and random power cuts every few hours and no corruption.
+19:22:36 <phantomcircuit> gmaxwell, i reproduced the error once and haven't been able to since
+19:22:40 <phantomcircuit> which has me a bit puzzled
+19:22:42 <wumpus> just don't blame everything on leveldb: application errors that happen to happen with something stored in the leveldb database are not leveldb corruption errors
+19:22:49 <wumpus> this may well be a bug in our code
+19:23:00 <jonasschnelli> Indeed.
+19:23:04 <gmaxwell> or in the OS/filesystem.
+19:23:09 <wumpus> right.
+19:23:31 <wumpus> but as we don't have more information, it's impossible to say. Unfortunately he didn't make a backup before upgrading
+19:23:32 <jonasschnelli> Also not sure about Virtualized envs (sudden shutdowns)... and Windows.
+19:24:09 <jonasschnelli> Okay. I will grab out the logs from the prev. meeting where we did discuss that topic (sqlite, etc.).
+19:24:12 <wumpus> it is the only report of this issue that we have
+19:24:15 <gmaxwell> I think it's likely that many virtualized envs get fsync wrong, in which case there isn't much that any database could do. :(
+19:25:10 <wumpus> ok, next topic?
+19:25:14 <dkog> LevelDB can corrupt due to OS performing out-of-order writes... https://www.usenix.org/conference/osdi14/technical-sessions/presentation/pillai
+19:26:14 <jonasschnelli> <cfields>	proposed next topic: c++11 update
+19:26:16 <wumpus> #topic c++11
+19:26:31 <cfields> just wanted to give a brief update there
+19:26:40 <bsm117532> IIRC there are 6 lines that need to change, relating to the use of shared_ptr/unique_ptr.  I have a patch.
+19:26:43 <cfields> afaik, all changes needed for c++11 have gone in and we're ready to switch. atm, the only hold-out is travis. I've talked with their team, and they've indicated that the features we need (trusty, caching) will be ready by the end of the month. So I've proposed that we wait for that to flip the switch, since it's not that far out.
+19:26:44 <wumpus> did travis already upgrade?
+19:27:17 <wumpus> awesome, thanks for the update cfields
+19:27:21 <cfields> wumpus: nothing new, just posting it here for the record
+19:27:34 <CodeShark> nice, thanks cfields
+19:27:36 <sipa> i agree with waiting until we can test
+19:27:36 <jtimon> we can wait a month, awesome
+19:27:53 <wumpus> agreed
+19:27:59 <btcdrak> proposed topic "EOL policy"
+19:28:04 <gmaxwell> There was a report of wangchung from f2pool that he would not run code that required a C++11 compiler. I don't know if anyone has spoken with him to try to figure out what it would take for him to upgrade his operating systems in the future. I think that conversation should happen.
+19:28:26 <wumpus> or use static linking
+19:28:26 <cfields> gmaxwell: i saw that and i'd really like to understand the concern
+19:28:34 <cfields> wangchun: ping
+19:28:48 <wumpus> the gitian-built executables don't need any special OS support after the C++11 switch
+19:28:48 <cfields> fwiw, official binary releases are statically linked
+19:28:50 <btcdrak> mayeb jl2012 can reach out in Chinese
+19:28:54 <gmaxwell> cfields: not during the meeting. :)
+19:28:54 <wumpus> this is just for compiling
+19:29:16 <cfields> ok, sure
+19:29:22 <gmaxwell> I'm just bringing it up so it's not a surprise at the 0.13 release time.
+19:29:39 <kangx_> let me know anything i can help to bring the message to wangchun.
+19:30:17 <jtimon> next topic?
+19:30:32 <wumpus> #topic EOL policy
+19:30:38 <btcdrak> I have been putting together a software lifecycle document which I'd like further feedback on https://github.com/bitcoin-core/website/pull/37
+19:30:39 <cfields> kangx_: i'll ping him in #bitcoin-core-dev after the meeting. feel free to help relay
+19:30:51 <kangx_> ok. that is fine with me..
+19:30:57 <jtimon> action item talk to wangchun about C++11 eupgrade ?
+19:31:00 <cfields> kangx_: thanks :)
+19:31:15 <wumpus> I've replied there https://github.com/bitcoin-core/website/pull/37#issuecomment-172494669
+19:31:20 <kangx_> sure..
+19:31:48 <jonasschnelli> Agree with wumpus about EOL: "I tend to regard the last two major releases as maintained"
+19:31:49 <btcdrak> wumpus: sure. just wanted bring to everyone's attention for RFC
+19:32:11 <wumpus> btcdrak, yes, just wanted to bring it to attention so I don't have to re-type everything here ;)
+19:32:17 <btcdrak> :)
+19:32:22 <gmaxwell> I don't know how useful or used our backports are, even just one release back. I think in principle we should continue to do it; but perhaps we're wasting resources on things that aren't helpful to anyone.
+19:32:48 <gmaxwell> If there are people who use them (rather than just staying with old versions and not upgrading), they haven't been providing any feedback anyplace I can see them.
+19:32:56 <wumpus> perhaps. But it seems there are people willing to do even more work here, like Luke-Jr
+19:32:59 <cfields> gmaxwell: it may be a useful policy to just play it as "see if anyone yells"
+19:33:12 <jtimon> maybe we could have something like ubuntu's long term support and officially support only the last tw plus the last LTS one ?
+19:33:37 <sipa> jtimon: and how frequently would LTSs be?
+19:33:40 <btcdrak> jtimon: I was waiting to see if anyone brought that up.
+19:33:45 <wumpus> I don't see a strong reason to switch to another policy than has been implicit already all this time
+19:33:57 <jtimon> I don't know, 4 years? I mean, maybe only backport consensus critical stuff
+19:33:58 <btcdrak> The thing about LTS is they are maintained for years.
+19:33:58 <gmaxwell> wumpus: perhaps-- but just luke doing backports doesn't mean there is meaningful testing. I worry a lot that one of these backports will have some awful bug from integration; fortunately if no one runs them that also doesn't matter.
+19:34:05 <sipa> backports are a drain on manpower, and if they end up being unused mostly, they may not get sufficient testing to consider thay safe
+19:34:17 <maaku> I think it would be irresponsible not to have a policy at least with regards to security back ports and consensus changes
+19:34:32 <gmaxwell> But I think the current policy is not bad, I wouldn't want to make it stronger without any evidence that people care.
+19:34:33 <sipa> we should have a policy, i agfee
+19:34:36 <wumpus> maaku, we do those
+19:34:37 <btcdrak> I just wanted to document EOL given the scale at which Core software is used at enterprise level.
+19:34:52 <jtimon> ok, just something that crossed my main, please continue the discussion without the LTS proposal
+19:35:10 <gmaxwell> maaku: it's irrelevant if litterally no one uses them. Right now our last 0.10 backport is totally unused as far as I can tell.
+19:35:18 <jonasschnelli> EOL is something that people can hold onto. Gives trust, makes a project look stable. I think we should have a clear policy and follow it.
+19:35:50 <wumpus> so to be clear: so you're arguing to not do backports at all anymore gmaxwell
+19:35:57 <btcdrak> jonasschnelli: exactly
+19:36:01 <maaku> It also affects development, with respect to whether features have to be back ported or not changes the design.
+19:36:08 <maaku> This has been a point of contention recently.
+19:36:12 <gmaxwell> at the last soft fork we saw people mining on it with a signficant fraction of the hashrate, running git _master_, not even a release.
+19:36:23 <wumpus> features are not backported, the idea is to backport fixes
+19:36:30 <cfields> maaku: good point. c++11 usage will be affected strongly.
+19:36:38 <sipa> wumpus: consensus changes are backported though
+19:36:48 <wumpus> sipa, yes, to help adoption
+19:36:56 <maaku> sipa but how far?
+19:36:57 <btcdrak> My own understanding is maintenance releases get softforks and bug fixes only.
+19:37:10 <jonasschnelli> btcdrak: +1
+19:37:13 <jonasschnelli> Thats a clear policy.
+19:37:16 <btcdrak> maaku: as far back as is required for miners
+19:37:18 <gmaxwell> wumpus: I don't know. I am observing the backports appear to be a waste of time. From a matter of principle, I think they are important, but the industry doesn't appear to agree.
+19:37:20 <sipa> maaku: that's what we're discussion :)
+19:37:34 <wumpus> I disagree with completely stopping backports, but ok, if everyone else thinks that I"m happy to drop that work I'm busy enough
+19:37:39 <jtimon> wumpus: softforks are also backported
+19:37:39 <btcdrak> we dont really have a good way on knowing what miners are running though.
+19:37:59 <sipa> i think we should continue them, and clearly document the policy
+19:38:06 <gmaxwell> wumpus: I think continuing with what we're doing for now is okay, but I do worry that the backports don't see adequate testing (a symptom of no one actually using them)
+19:38:07 <cfields> seems it's hard/impossible to say what will be necessary to backport in the fugure, but imo it'd be reasonable to say explicitly "after version X's release, version Y will receive no more updates"
+19:38:13 <btcdrak> I think we should continue with the status quo wumpus has established
+19:38:14 <maaku> For the record I don't care what the answer is. But I care strongly that we decide on one policy. :)
+19:38:18 <sipa> we should also not feel bad about changing the policy, if we clearly announce
+19:38:39 <sipa> maaku: agree
+19:38:58 <gmaxwell> Well I think our current policy is that we backport bugfixes (based on severity and difficulty of backport) and soft-forks to the last major version.
+19:39:14 <wumpus> indeed gmaxwell
+19:39:19 <jonasschnelli> I would say to the last *two* major versions..
+19:39:22 <sipa> yeah, but it seems to have been pretty adhoc
+19:39:28 <jonasschnelli> 0.11 and 0.10 in the current state.
+19:39:44 <sipa> jonasschnelli: and once 0.12 is released?
+19:39:51 <wumpus> it becomes 0.11 and 0.12
+19:39:51 <gmaxwell> jonasschnelli: do you mean when 0.12 is out we should continue backporting to 0.10?
+19:39:52 <sipa> only 0.11 and 0.12 then?
+19:39:56 <wumpus> yes sipa
+19:40:00 <sipa> sounds good to me
+19:40:07 <wumpus> although Luke-Jr apparently wants to pick up and maintain 0.10
+19:40:14 <jonasschnelli> Once 0.12 is released 0.12 and 0.11 (sorry, was a bit confisuing)
+19:40:20 <gmaxwell> jonasschnelli: okay
+19:40:29 <sipa> final release of 0.X means EOL of 0.(X-2)
+19:40:39 <btcdrak> hurray for math
+19:40:54 <jonasschnelli> The signal of and the value of that signal of supporting older versions is extremely valuable IMO (especially in such times)
+19:40:54 <jtimon> ok ,topic solved?
+19:40:55 <wumpus> it's ad hoc in a way, how ciritical something needs to be to be backported, but there's no way to avoid that
+19:40:57 <CodeShark> why would people download a bugfix to an older version rather than just grab the latest version other than custom patches?
+19:41:11 <cfields> then i agree with wumpus's goal of doing 0.12 before 0.11 backport. that way we don't have to do it for 0.10 :p
+19:41:16 <sipa> CodeShark: custom patches
+19:41:19 <jonasschnelli> cfields: hah
+19:41:24 <maaku> And since we're on a 6mo cadence, that's 1yr support
+19:41:26 <gmaxwell> CodeShark: because they're carrying local patches, or do not want to invalidate integration testing they've performed.
+19:41:38 <wumpus> yes, custom patches. The tagging is mostly symbolic then, I agree, but still
+19:42:07 <wumpus> and "this works and I don't want to risk a large upgrade or read a lot of release notes"
+19:42:37 <jonasschnelli> proposed neighbor topic: shorter release cycles?!
+19:42:47 <jonasschnelli> 0.12 changelog is --- huge!
+19:43:17 <jtimon> jonasschnelli: to what timeframe?
+19:43:47 <wangchun> cfields kangx_: pong, i'm on my way to the aiport for early morning flight
+19:43:49 <wumpus> I don't know,I like a major release per half year, at least you can really call it major
+19:44:01 <gmaxwell> I would like a shorter cycle, but I don't know if it's realistic. Right now the long cycle is like a 3 month RC cycle for high risk features that go in early in the cycle.
+19:44:06 <wumpus> it's a lot of testing and effort to finalize a release
+19:44:07 <jonasschnelli> Not sure, 4month to short?
+19:44:15 <maaku> I think 6mo is pretty fast...
+19:44:25 <sdaftuar> wumpus: agreed, the overhead of a release is time consuming
+19:44:35 <sipa> shorter releases would reduce the "oops release coming we *must* get X in quickly!" fever
+19:44:40 <cfields> wangchun: i'll ping you after the meeting in #bitcoin-core-dev. If you're already gone, we can talk about it later
+19:44:42 <btcdrak> by the time we get around though it's usually 7+ months irrc
+19:44:51 <wumpus> sipa, I don't believe that
+19:44:58 <wumpus> sipa, it just increases the occurence of that
+19:45:02 <gmaxwell> maaku: the cyclelength also contributes to frustration and pressure to get features in.
+19:45:06 <sipa> wumpus: fair enough
+19:45:08 <btcdrak> if we aimed for 5 months, maybe we'd be closer to 6
+19:45:10 <kangx_> ok.
+19:45:19 <jonasschnelli> Yes. Maybe 6 months is good. It just feels 0.11 was ages ago... but maybe that's just how a dev feels it.
+19:45:23 <kangx_> wangcun: what is your wechat account?
+19:45:55 <wumpus> for users it's not really better to have more frequent major releases I think. Upgrading may not always be a trivial process and comes with a risk
+19:46:00 <jtimon> gmaxwell: as in longest = more frustration?
+19:46:25 <wumpus> it compounds the EOL problem
+19:46:26 <jtimon> mo, I guess the opposite
+19:46:35 <gmaxwell> jtimon: yes; as in "my work is a waste of time because it won't see the light of day for another 6 months if it doesn't go in now"
+19:46:51 <gmaxwell> in any case, I don't think we're in a position to consider a change in that process right now.
+19:46:52 <jtimon> gmaxwell: thanks, yeah, makes sense
+19:46:57 <wumpus> what are the release cycles for other mature projects?
+19:47:13 <btcdrak> Ubuntu is 6 monthly
+19:47:40 <maaku> There is a ton of work that goes into releases, like string translation.
+19:47:46 <wumpus> indeed maaku
+19:47:52 <gmaxwell> wumpus: there are many things that are quarterly and many things that are biannually for major releases (and of course many much slower too)
+19:47:59 <jonasschnelli> I think 6 month is perfectly fine... if just the GUI and wallet would be detached, we could to more released there.
+19:48:00 <wumpus> it's surprising how devs, of all, seem to underestimate that
+19:48:08 <sipa> firefox releases every 6 weeks
+19:48:09 <btcdrak> yes. But I think we can wrap up sooner to allow translations/QA and RC
+19:48:17 <wumpus> jonasschnelli, +1 on a faster release cycle for the GUI if that was possible
+19:48:40 <btcdrak> if we finished dev work at 5 months, then we'd have less slippage from the 6mnth mark
+19:48:46 <wumpus> but we have this huge monilithic project and yes everything needs to be synchronized
+19:48:55 <wumpus> btcdrak, I plan a release every 6 months
+19:48:59 <cfields> oh, reminds me. topic suggestion: current server/wallet inter-dependencies
+19:49:00 <jtimon> a year is not multiple of 5 months releases, shorter than 4 months seems to big of a change, I think if we move from 6 months it would be to 4 months no matter what other projects do
+19:49:03 <gmaxwell> wumpus: firefox is now nearly _monthly_ major releases.
+19:49:14 <wumpus> gmaxwell, I don't really want to follow firefox inthat
+19:49:16 <maaku> I think we just need more clarity on things like redactor windows.
+19:49:23 <jtimon> s/to big/too big
+19:49:26 <wumpus> btcdrak, there are always two releases per year now
+19:49:27 <sipa> i am perfectly fine with 6 months
+19:49:43 <gmaxwell> wumpus: I wouldn't suggest that; only pointing out that there are large projects behind basically any schedule you might consider.
+19:49:43 <wumpus> maaku, I always post a release schedule in advance on the mailing list
+19:50:13 <wumpus> I'm fine with adding more deadlines though if that feels better :)
+19:50:20 <gmaxwell> Slower cycles also mean reduced user feedback. Different parts of the system benefit differently from that.
+19:50:21 <jtimon> I'm fine with 6 months but wouldn't oppose to 4 motnhs either
+19:50:55 <wumpus> gmaxwell, as said, I'd be OK with faster release cycle for the GUI if that was possible
+19:50:58 <gmaxwell> e.g. if most of our current activity were UI facing it would be more adventagious to have a faster cycle.
+19:51:00 <wumpus> but not for the core code
+19:51:17 <jonasschnelli> Agree.
+19:51:20 <sipa> ok
+19:51:27 <jonasschnelli> I have to admit wumpus does a awesome job on keeping deadlines for the releases!
+19:51:34 <maaku> wumpus your release schedule did not have a refactoring window
+19:51:40 <btcdrak> jonasschnelli: +1
+19:52:14 <jtimon> yeah, if shortenning it is going to mean not keeping deadlines, let's not do it
+19:52:28 <gmaxwell> in any case, I think this discussion is covered.
+19:52:30 <wumpus> maaku, true
+19:52:57 <btcdrak> so it's basically as written in the EOL PP
+19:52:58 <jonasschnelli> maaku: refactoring? We have a main.cpp. We don't need refactoring. :)
+19:53:00 <btcdrak> PR
+19:53:27 <wumpus> yes, it's the same thing every time, I want 6 months everyone else wants a shorter release cycle, at some point I'm going to make one of you release manager and figure it out :p
+19:53:41 <jonasschnelli> :}
+19:53:44 <gmaxwell> jonasschnelli: can we move everything back into main.cpp? I'd save a lot of time grepping. :P
+19:53:51 <btcdrak> LOL
+19:53:56 <jonasschnelli> haha
+19:53:58 <wumpus> hehe
+19:54:18 <cfields> gmaxwell: and headers.h :)
+19:54:18 <wumpus> ok, any other topics? we're running out of time
+19:54:21 <gmaxwell> wumpus: The solution is to make everything so wonderful that even you will want a shorter cycle. :) Core is not there yet.
+19:54:24 <jtimon> hehe, ok, if wumpus willing is not going to do 4 months then the topic is solved for now
+19:55:29 <jtimon> no more topics? end meeting?
+19:55:30 <cfields> i proposed lib dependencies as a topic above, but there's really no need to do that here. we can discuss later
+19:55:34 <sipa> gmaxwell: ACK on making things wonderful
+19:55:38 <sdaftuar> +1
+19:55:42 <btcdrak> +2
+19:55:48 <wumpus> #endmeeting

@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:52</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Jan 21 18:59:52 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:52</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:07</span><span class="nk"> &lt;wumpus&gt;</span> topic proposals?
+<a name="l-5"></a><span class="tm">19:00:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic opt-in RBF default value
+<a name="l-6"></a><span class="tm">19:01:35</span><span class="nk"> &lt;wumpus&gt;</span> I'd say there's been enough discussion of that on github already today, but ok
+<a name="l-7"></a><span class="tm">19:01:35</span><span class="nk"> &lt;cfields&gt;</span> proposed topic: 0.11 backport release for (at least) chainstate obfuscation
+<a name="l-8"></a><span class="tm">19:01:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">opt-in RBF default value</span>
+<a name="l-9"></a><span class="tm">19:01:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic: leveldb corruption
+<a name="l-10"></a><span class="tm">19:02:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> okay. RBF...
+<a name="l-11"></a><span class="tm">19:02:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> today i said lets not get pushed into a corner... but somehow users are afraid of RBF.
+<a name="l-12"></a><span class="tm">19:02:38</span><span class="nk"> &lt;jeremias&gt;</span> hmm, is leveldb prone for corruption?
+<a name="l-13"></a><span class="tm">19:03:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> not saying we should make the RBF default false, but maybe we should consider in in terms to not deeper splitting the community
+<a name="l-14"></a><span class="tm">19:03:58</span><span class="nk"> &lt;wumpus&gt;</span> I've said everything I wanted to say on the topic in https://github.com/bitcoin/bitcoin/pull/7386 https://github.com/bitcoin/bitcoin/pull/7388
+<a name="l-15"></a><span class="tm">19:04:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I agree.
+<a name="l-16"></a><span class="tm">19:04:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.11 backport release for (at least) chainstate obfuscation</span>
+<a name="l-17"></a><span class="tm">19:04:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should then stick to what we said and keep RBF on by default. I'm fine with this it should just be the groups opinion.
+<a name="l-18"></a><span class="tm">19:06:16</span><span class="nk"> &lt;wumpus&gt;</span> ACK on backport release, the code (#7259) is already in there, so it's just a matter of tagging
+<a name="l-19"></a><span class="tm">19:06:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I had suggested we do that back at the last 0.11 release... but the changes aren't super small and obviously correct.
+<a name="l-20"></a><span class="tm">19:06:42</span><span class="nk"> &lt;wumpus&gt;</span> it also has some other fixes like #7381
+<a name="l-21"></a><span class="tm">19:06:45</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">context:</span> it's not possible to downgrade from 0.12 -&gt; 0.11 in most cases.
+<a name="l-22"></a><span class="tm">19:06:51</span><span class="nk"> &lt;cfields&gt;</span> right, sounds good
+<a name="l-23"></a><span class="tm">19:07:02</span><span class="nk"> &lt;phantomcircuit&gt;</span> jonasschnelli, i have yet to see a single entity which accepts unconfirmed transactions raise issue with opt-in RBF
+<a name="l-24"></a><span class="tm">19:07:04</span><span class="nk"> &lt;sdaftuar&gt;</span> will pruning nodes be able to downgrade withotu redownloading the blockchain?  i havent' reviewed that pull yet
+<a name="l-25"></a><span class="tm">19:07:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> right, not if you started on 0.12 or reindexed on 0.12.
+<a name="l-26"></a><span class="tm">19:07:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> it seems by far most want to leave it enabled, there are a few people strongly against it, which now have their option
+<a name="l-27"></a><span class="tm">19:07:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> are you nervous about the backport? or the change itself when it went in?
+<a name="l-28"></a><span class="tm">19:07:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. Fully agree.
+<a name="l-29"></a><span class="tm">19:08:01</span><span class="nk"> &lt;wumpus&gt;</span> sdaftuar, downgrading is no issue, unless you've reindexed
+<a name="l-30"></a><span class="tm">19:08:32</span><span class="nk"> &lt;wumpus&gt;</span> reindexing builds a new chainstate with obfuscation enabled
+<a name="l-31"></a><span class="tm">19:09:15</span><span class="nk"> &lt;wumpus&gt;</span> which is why we want to backport so that people get a sane error message instead of an assertion fail
+<a name="l-32"></a><span class="tm">19:09:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> I'm not really nervous, but some expressed nervousness before; and I couldn't disagree. Perhaps we're better now that it's been in master for a long time.
+<a name="l-33"></a><span class="tm">19:09:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> ah ok
+<a name="l-34"></a><span class="tm">19:09:44</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell, to be clear this is not a backport of the obfuscation code, just an error
+<a name="l-35"></a><span class="tm">19:10:14</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> oh, that wasn't my understanding. guess i need to click on those PRs
+<a name="l-36"></a><span class="tm">19:10:20</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell, see #7259
+<a name="l-37"></a><span class="tm">19:10:32</span><span class="nk"> &lt;wumpus&gt;</span> ^ cfields
+<a name="l-38"></a><span class="tm">19:10:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/7259
+<a name="l-39"></a><span class="tm">19:10:39</span><span class="nk"> &lt;wumpus&gt;</span> so there's no reason to be nervous
+<a name="l-40"></a><span class="tm">19:10:43</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> right, looking
+<a name="l-41"></a><span class="tm">19:12:22</span><span class="nk"> &lt;gmaxwell&gt;</span> oh! just an error.
+<a name="l-42"></a><span class="tm">19:12:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> i don't care strongly enough to argue, works for me
+<a name="l-43"></a><span class="tm">19:12:26</span><span class="nk"> &lt;gmaxwell&gt;</span> sorry, missed that.
+<a name="l-44"></a><span class="tm">19:12:29</span><span class="nk"> &lt;gmaxwell&gt;</span> okay. sounds great.
+<a name="l-45"></a><span class="tm">19:13:00</span><span class="nk"> &lt;btcdrak&gt;</span> oh i'm late
+<a name="l-46"></a><span class="tm">19:13:12</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell, the current assertion has put many people on the wrong track (thinking this was corruption), so an error is better. Even better would be versionoing in chainstate like we have for the wallet, so this can be avoided in the future, but this is good for now
+<a name="l-47"></a><span class="tm">19:13:16</span><span class="nk"> &lt;e4xit&gt;</span> Hello, is this the right channel to ask a question about failing "make" part of building of bitcoin core 0.12?
+<a name="l-48"></a><span class="tm">19:13:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">e4xit:</span> use #bitcoin
+<a name="l-49"></a><span class="tm">19:13:41</span><span class="nk"> &lt;e4xit&gt;</span> ok
+<a name="l-50"></a><span class="tm">19:13:52</span><span class="nk"> &lt;wumpus&gt;</span> e4xit,  normally it's ok but we're in the middle of a meeeting
+<a name="l-51"></a><span class="tm">19:14:03</span><span class="nk"> &lt;e4xit&gt;</span> I thought it sounded like that :)
+<a name="l-52"></a><span class="tm">19:14:25</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> version makes sense
+<a name="l-53"></a><span class="tm">19:15:16</span><span class="nk"> &lt;wumpus&gt;</span> I do think we should do a 0.11 backport release immediately after 0.12 final, instead of before, to avoid confusion
+<a name="l-54"></a><span class="tm">19:15:43</span><span class="nk"> &lt;gmaxwell&gt;</span> we could do it concurrently and just not announce the 0.11 update.
+<a name="l-55"></a><span class="tm">19:15:47</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. having both 0.12.0 and 0.11.3 in RC phase)
+<a name="l-56"></a><span class="tm">19:15:56</span><span class="nk"> &lt;wumpus&gt;</span> sure, could be almost immediately
+<a name="l-57"></a><span class="tm">19:15:57</span><span class="nk"> &lt;gmaxwell&gt;</span> ah but yes, we'd get no testing on it.
+<a name="l-58"></a><span class="tm">19:16:26</span><span class="nk"> &lt;wumpus&gt;</span> there's much less testing needed for the 0.11 release than for a new major release, but still makes sense to do one RC
+<a name="l-59"></a><span class="tm">19:17:03</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, I agree with your reasoning. FWIW.
+<a name="l-60"></a><span class="tm">19:17:17</span><span class="nk"> &lt;cfields&gt;</span> proposed next topic: c++11 update
+<a name="l-61"></a><span class="tm">19:17:38</span><span class="nk"> &lt;wumpus&gt;</span> agree this topic is done, but we still had
+<a name="l-62"></a><span class="tm">19:17:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">leveldb corruption</span>
+<a name="l-63"></a><span class="tm">19:17:50</span><span class="nk"> &lt;wumpus&gt;</span> (this is news for me btw)
+<a name="l-64"></a><span class="tm">19:17:55</span><span class="nk"> &lt;cfields&gt;</span> ok
+<a name="l-65"></a><span class="tm">19:18:24</span><span class="nk"> &lt;wumpus&gt;</span> @jonasschnelli
+<a name="l-66"></a><span class="tm">19:18:55</span><span class="nk"> &lt;gmaxwell&gt;</span> The issue I saw this morning said the corruption was during IBD. But IIRC we disable fsync on the block files during IBD. Is there more to it than that?
+<a name="l-67"></a><span class="tm">19:19:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">corruption:</span> https://github.com/bitcoin/bitcoin/issues/7382
+<a name="l-68"></a><span class="tm">19:19:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Isn't that leveldb?
+<a name="l-69"></a><span class="tm">19:19:53</span><span class="nk"> &lt;wumpus&gt;</span> jonasschnelli, that's a strange issue, I don't think it's related to leveldb itself though
+<a name="l-70"></a><span class="tm">19:20:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> I also had a corrupt database after running 0.12 (maybe not related, was running a external SSD).
+<a name="l-71"></a><span class="tm">19:20:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> I just think in general, we see lots of db corruptions with bitcoin core.
+<a name="l-72"></a><span class="tm">19:20:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Wonder if we like to sketch a plan / roadmap for a better strategy
+<a name="l-73"></a><span class="tm">19:20:55</span><span class="nk"> &lt;sipa&gt;</span> oops, did i miss meeting?
+<a name="l-74"></a><span class="tm">19:21:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> (you missed 20 mins)
+<a name="l-75"></a><span class="tm">19:21:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I believe that issue is unrelated.
+<a name="l-76"></a><span class="tm">19:21:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> and I think phantomcircuit can reproduce it now.
+<a name="l-77"></a><span class="tm">19:21:38</span><span class="nk"> &lt;maaku&gt;</span> Jonas well switching to a new, maintained db is the long term plan, no?
+<a name="l-78"></a><span class="tm">19:21:54</span><span class="nk"> &lt;maaku&gt;</span> But we know what remains to be done there
+<a name="l-79"></a><span class="tm">19:22:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not aware of any evidence of leveldb corruption on linux, right now, and I've been running the most agressive testing I can perform on 0.12 for the last month.  Eg.  a node with four daemons running under load test and random kill -9ing the process and random power cuts every few hours and no corruption.
+<a name="l-80"></a><span class="tm">19:22:36</span><span class="nk"> &lt;phantomcircuit&gt;</span> gmaxwell, i reproduced the error once and haven't been able to since
+<a name="l-81"></a><span class="tm">19:22:40</span><span class="nk"> &lt;phantomcircuit&gt;</span> which has me a bit puzzled
+<a name="l-82"></a><span class="tm">19:22:42</span><span class="nk"> &lt;wumpus&gt;</span> just don't blame everything on leveldb: application errors that happen to happen with something stored in the leveldb database are not leveldb corruption errors
+<a name="l-83"></a><span class="tm">19:22:49</span><span class="nk"> &lt;wumpus&gt;</span> this may well be a bug in our code
+<a name="l-84"></a><span class="tm">19:23:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed.
+<a name="l-85"></a><span class="tm">19:23:04</span><span class="nk"> &lt;gmaxwell&gt;</span> or in the OS/filesystem.
+<a name="l-86"></a><span class="tm">19:23:09</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-87"></a><span class="tm">19:23:31</span><span class="nk"> &lt;wumpus&gt;</span> but as we don't have more information, it's impossible to say. Unfortunately he didn't make a backup before upgrading
+<a name="l-88"></a><span class="tm">19:23:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also not sure about Virtualized envs (sudden shutdowns)... and Windows.
+<a name="l-89"></a><span class="tm">19:24:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I will grab out the logs from the prev. meeting where we did discuss that topic (sqlite, etc.).
+<a name="l-90"></a><span class="tm">19:24:12</span><span class="nk"> &lt;wumpus&gt;</span> it is the only report of this issue that we have
+<a name="l-91"></a><span class="tm">19:24:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's likely that many virtualized envs get fsync wrong, in which case there isn't much that any database could do. :(
+<a name="l-92"></a><span class="tm">19:25:10</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-93"></a><span class="tm">19:25:14</span><span class="nk"> &lt;dkog&gt;</span> LevelDB can corrupt due to OS performing out-of-order writes... https://www.usenix.org/conference/osdi14/technical-sessions/presentation/pillai
+<a name="l-94"></a><span class="tm">19:26:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> &lt;cfields&gt;	proposed next topic: c++11 update
+<a name="l-95"></a><span class="tm">19:26:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">c++11</span>
+<a name="l-96"></a><span class="tm">19:26:31</span><span class="nk"> &lt;cfields&gt;</span> just wanted to give a brief update there
+<a name="l-97"></a><span class="tm">19:26:40</span><span class="nk"> &lt;bsm117532&gt;</span> IIRC there are 6 lines that need to change, relating to the use of shared_ptr/unique_ptr.  I have a patch.
+<a name="l-98"></a><span class="tm">19:26:43</span><span class="nk"> &lt;cfields&gt;</span> afaik, all changes needed for c++11 have gone in and we're ready to switch. atm, the only hold-out is travis. I've talked with their team, and they've indicated that the features we need (trusty, caching) will be ready by the end of the month. So I've proposed that we wait for that to flip the switch, since it's not that far out.
+<a name="l-99"></a><span class="tm">19:26:44</span><span class="nk"> &lt;wumpus&gt;</span> did travis already upgrade?
+<a name="l-100"></a><span class="tm">19:27:17</span><span class="nk"> &lt;wumpus&gt;</span> awesome, thanks for the update cfields
+<a name="l-101"></a><span class="tm">19:27:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> nothing new, just posting it here for the record
+<a name="l-102"></a><span class="tm">19:27:34</span><span class="nk"> &lt;CodeShark&gt;</span> nice, thanks cfields
+<a name="l-103"></a><span class="tm">19:27:36</span><span class="nk"> &lt;sipa&gt;</span> i agree with waiting until we can test
+<a name="l-104"></a><span class="tm">19:27:36</span><span class="nk"> &lt;jtimon&gt;</span> we can wait a month, awesome
+<a name="l-105"></a><span class="tm">19:27:53</span><span class="nk"> &lt;wumpus&gt;</span> agreed
+<a name="l-106"></a><span class="tm">19:27:59</span><span class="nk"> &lt;btcdrak&gt;</span> proposed topic "EOL policy"
+<a name="l-107"></a><span class="tm">19:28:04</span><span class="nk"> &lt;gmaxwell&gt;</span> There was a report of wangchung from f2pool that he would not run code that required a C++11 compiler. I don't know if anyone has spoken with him to try to figure out what it would take for him to upgrade his operating systems in the future. I think that conversation should happen.
+<a name="l-108"></a><span class="tm">19:28:26</span><span class="nk"> &lt;wumpus&gt;</span> or use static linking
+<a name="l-109"></a><span class="tm">19:28:26</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> i saw that and i'd really like to understand the concern
+<a name="l-110"></a><span class="tm">19:28:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wangchun:</span> ping
+<a name="l-111"></a><span class="tm">19:28:48</span><span class="nk"> &lt;wumpus&gt;</span> the gitian-built executables don't need any special OS support after the C++11 switch
+<a name="l-112"></a><span class="tm">19:28:48</span><span class="nk"> &lt;cfields&gt;</span> fwiw, official binary releases are statically linked
+<a name="l-113"></a><span class="tm">19:28:50</span><span class="nk"> &lt;btcdrak&gt;</span> mayeb jl2012 can reach out in Chinese
+<a name="l-114"></a><span class="tm">19:28:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> not during the meeting. :)
+<a name="l-115"></a><span class="tm">19:28:54</span><span class="nk"> &lt;wumpus&gt;</span> this is just for compiling
+<a name="l-116"></a><span class="tm">19:29:16</span><span class="nk"> &lt;cfields&gt;</span> ok, sure
+<a name="l-117"></a><span class="tm">19:29:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm just bringing it up so it's not a surprise at the 0.13 release time.
+<a name="l-118"></a><span class="tm">19:29:39</span><span class="nk"> &lt;kangx_&gt;</span> let me know anything i can help to bring the message to wangchun.
+<a name="l-119"></a><span class="tm">19:30:17</span><span class="nk"> &lt;jtimon&gt;</span> next topic?
+<a name="l-120"></a><span class="tm">19:30:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">EOL policy</span>
+<a name="l-121"></a><span class="tm">19:30:38</span><span class="nk"> &lt;btcdrak&gt;</span> I have been putting together a software lifecycle document which I'd like further feedback on https://github.com/bitcoin-core/website/pull/37
+<a name="l-122"></a><span class="tm">19:30:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">kangx_:</span> i'll ping him in #bitcoin-core-dev after the meeting. feel free to help relay
+<a name="l-123"></a><span class="tm">19:30:51</span><span class="nk"> &lt;kangx_&gt;</span> ok. that is fine with me..
+<a name="l-124"></a><span class="tm">19:30:57</span><span class="nk"> &lt;jtimon&gt;</span> action item talk to wangchun about C++11 eupgrade ?
+<a name="l-125"></a><span class="tm">19:31:00</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">kangx_:</span> thanks :)
+<a name="l-126"></a><span class="tm">19:31:15</span><span class="nk"> &lt;wumpus&gt;</span> I've replied there https://github.com/bitcoin-core/website/pull/37#issuecomment-172494669
+<a name="l-127"></a><span class="tm">19:31:20</span><span class="nk"> &lt;kangx_&gt;</span> sure..
+<a name="l-128"></a><span class="tm">19:31:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree with wumpus about EOL: "I tend to regard the last two major releases as maintained"
+<a name="l-129"></a><span class="tm">19:31:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> sure. just wanted bring to everyone's attention for RFC
+<a name="l-130"></a><span class="tm">19:32:11</span><span class="nk"> &lt;wumpus&gt;</span> btcdrak, yes, just wanted to bring it to attention so I don't have to re-type everything here ;)
+<a name="l-131"></a><span class="tm">19:32:17</span><span class="nk"> &lt;btcdrak&gt;</span> :)
+<a name="l-132"></a><span class="tm">19:32:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't know how useful or used our backports are, even just one release back. I think in principle we should continue to do it; but perhaps we're wasting resources on things that aren't helpful to anyone.
+<a name="l-133"></a><span class="tm">19:32:48</span><span class="nk"> &lt;gmaxwell&gt;</span> If there are people who use them (rather than just staying with old versions and not upgrading), they haven't been providing any feedback anyplace I can see them.
+<a name="l-134"></a><span class="tm">19:32:56</span><span class="nk"> &lt;wumpus&gt;</span> perhaps. But it seems there are people willing to do even more work here, like Luke-Jr
+<a name="l-135"></a><span class="tm">19:32:59</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> it may be a useful policy to just play it as "see if anyone yells"
+<a name="l-136"></a><span class="tm">19:33:12</span><span class="nk"> &lt;jtimon&gt;</span> maybe we could have something like ubuntu's long term support and officially support only the last tw plus the last LTS one ?
+<a name="l-137"></a><span class="tm">19:33:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> and how frequently would LTSs be?
+<a name="l-138"></a><span class="tm">19:33:40</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> I was waiting to see if anyone brought that up.
+<a name="l-139"></a><span class="tm">19:33:45</span><span class="nk"> &lt;wumpus&gt;</span> I don't see a strong reason to switch to another policy than has been implicit already all this time
+<a name="l-140"></a><span class="tm">19:33:57</span><span class="nk"> &lt;jtimon&gt;</span> I don't know, 4 years? I mean, maybe only backport consensus critical stuff
+<a name="l-141"></a><span class="tm">19:33:58</span><span class="nk"> &lt;btcdrak&gt;</span> The thing about LTS is they are maintained for years.
+<a name="l-142"></a><span class="tm">19:33:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> perhaps-- but just luke doing backports doesn't mean there is meaningful testing. I worry a lot that one of these backports will have some awful bug from integration; fortunately if no one runs them that also doesn't matter.
+<a name="l-143"></a><span class="tm">19:34:05</span><span class="nk"> &lt;sipa&gt;</span> backports are a drain on manpower, and if they end up being unused mostly, they may not get sufficient testing to consider thay safe
+<a name="l-144"></a><span class="tm">19:34:17</span><span class="nk"> &lt;maaku&gt;</span> I think it would be irresponsible not to have a policy at least with regards to security back ports and consensus changes
+<a name="l-145"></a><span class="tm">19:34:32</span><span class="nk"> &lt;gmaxwell&gt;</span> But I think the current policy is not bad, I wouldn't want to make it stronger without any evidence that people care.
+<a name="l-146"></a><span class="tm">19:34:33</span><span class="nk"> &lt;sipa&gt;</span> we should have a policy, i agfee
+<a name="l-147"></a><span class="tm">19:34:36</span><span class="nk"> &lt;wumpus&gt;</span> maaku, we do those
+<a name="l-148"></a><span class="tm">19:34:37</span><span class="nk"> &lt;btcdrak&gt;</span> I just wanted to document EOL given the scale at which Core software is used at enterprise level.
+<a name="l-149"></a><span class="tm">19:34:52</span><span class="nk"> &lt;jtimon&gt;</span> ok, just something that crossed my main, please continue the discussion without the LTS proposal
+<a name="l-150"></a><span class="tm">19:35:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> it's irrelevant if litterally no one uses them. Right now our last 0.10 backport is totally unused as far as I can tell.
+<a name="l-151"></a><span class="tm">19:35:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> EOL is something that people can hold onto. Gives trust, makes a project look stable. I think we should have a clear policy and follow it.
+<a name="l-152"></a><span class="tm">19:35:50</span><span class="nk"> &lt;wumpus&gt;</span> so to be clear: so you're arguing to not do backports at all anymore gmaxwell
+<a name="l-153"></a><span class="tm">19:35:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> exactly
+<a name="l-154"></a><span class="tm">19:36:01</span><span class="nk"> &lt;maaku&gt;</span> It also affects development, with respect to whether features have to be back ported or not changes the design.
+<a name="l-155"></a><span class="tm">19:36:08</span><span class="nk"> &lt;maaku&gt;</span> This has been a point of contention recently.
+<a name="l-156"></a><span class="tm">19:36:12</span><span class="nk"> &lt;gmaxwell&gt;</span> at the last soft fork we saw people mining on it with a signficant fraction of the hashrate, running git _master_, not even a release.
+<a name="l-157"></a><span class="tm">19:36:23</span><span class="nk"> &lt;wumpus&gt;</span> features are not backported, the idea is to backport fixes
+<a name="l-158"></a><span class="tm">19:36:30</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">maaku:</span> good point. c++11 usage will be affected strongly.
+<a name="l-159"></a><span class="tm">19:36:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> consensus changes are backported though
+<a name="l-160"></a><span class="tm">19:36:48</span><span class="nk"> &lt;wumpus&gt;</span> sipa, yes, to help adoption
+<a name="l-161"></a><span class="tm">19:36:56</span><span class="nk"> &lt;maaku&gt;</span> sipa but how far?
+<a name="l-162"></a><span class="tm">19:36:57</span><span class="nk"> &lt;btcdrak&gt;</span> My own understanding is maintenance releases get softforks and bug fixes only.
+<a name="l-163"></a><span class="tm">19:37:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">btcdrak:</span> +1
+<a name="l-164"></a><span class="tm">19:37:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Thats a clear policy.
+<a name="l-165"></a><span class="tm">19:37:16</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">maaku:</span> as far back as is required for miners
+<a name="l-166"></a><span class="tm">19:37:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I don't know. I am observing the backports appear to be a waste of time. From a matter of principle, I think they are important, but the industry doesn't appear to agree.
+<a name="l-167"></a><span class="tm">19:37:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> that's what we're discussion :)
+<a name="l-168"></a><span class="tm">19:37:34</span><span class="nk"> &lt;wumpus&gt;</span> I disagree with completely stopping backports, but ok, if everyone else thinks that I"m happy to drop that work I'm busy enough
+<a name="l-169"></a><span class="tm">19:37:39</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> softforks are also backported
+<a name="l-170"></a><span class="tm">19:37:39</span><span class="nk"> &lt;btcdrak&gt;</span> we dont really have a good way on knowing what miners are running though.
+<a name="l-171"></a><span class="tm">19:37:59</span><span class="nk"> &lt;sipa&gt;</span> i think we should continue them, and clearly document the policy
+<a name="l-172"></a><span class="tm">19:38:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think continuing with what we're doing for now is okay, but I do worry that the backports don't see adequate testing (a symptom of no one actually using them)
+<a name="l-173"></a><span class="tm">19:38:07</span><span class="nk"> &lt;cfields&gt;</span> seems it's hard/impossible to say what will be necessary to backport in the fugure, but imo it'd be reasonable to say explicitly "after version X's release, version Y will receive no more updates"
+<a name="l-174"></a><span class="tm">19:38:13</span><span class="nk"> &lt;btcdrak&gt;</span> I think we should continue with the status quo wumpus has established
+<a name="l-175"></a><span class="tm">19:38:14</span><span class="nk"> &lt;maaku&gt;</span> For the record I don't care what the answer is. But I care strongly that we decide on one policy. :)
+<a name="l-176"></a><span class="tm">19:38:18</span><span class="nk"> &lt;sipa&gt;</span> we should also not feel bad about changing the policy, if we clearly announce
+<a name="l-177"></a><span class="tm">19:38:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> agree
+<a name="l-178"></a><span class="tm">19:38:58</span><span class="nk"> &lt;gmaxwell&gt;</span> Well I think our current policy is that we backport bugfixes (based on severity and difficulty of backport) and soft-forks to the last major version.
+<a name="l-179"></a><span class="tm">19:39:14</span><span class="nk"> &lt;wumpus&gt;</span> indeed gmaxwell
+<a name="l-180"></a><span class="tm">19:39:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would say to the last *two* major versions..
+<a name="l-181"></a><span class="tm">19:39:22</span><span class="nk"> &lt;sipa&gt;</span> yeah, but it seems to have been pretty adhoc
+<a name="l-182"></a><span class="tm">19:39:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.11 and 0.10 in the current state.
+<a name="l-183"></a><span class="tm">19:39:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> and once 0.12 is released?
+<a name="l-184"></a><span class="tm">19:39:51</span><span class="nk"> &lt;wumpus&gt;</span> it becomes 0.11 and 0.12
+<a name="l-185"></a><span class="tm">19:39:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> do you mean when 0.12 is out we should continue backporting to 0.10?
+<a name="l-186"></a><span class="tm">19:39:52</span><span class="nk"> &lt;sipa&gt;</span> only 0.11 and 0.12 then?
+<a name="l-187"></a><span class="tm">19:39:56</span><span class="nk"> &lt;wumpus&gt;</span> yes sipa
+<a name="l-188"></a><span class="tm">19:40:00</span><span class="nk"> &lt;sipa&gt;</span> sounds good to me
+<a name="l-189"></a><span class="tm">19:40:07</span><span class="nk"> &lt;wumpus&gt;</span> although Luke-Jr apparently wants to pick up and maintain 0.10
+<a name="l-190"></a><span class="tm">19:40:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Once 0.12 is released 0.12 and 0.11 (sorry, was a bit confisuing)
+<a name="l-191"></a><span class="tm">19:40:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> okay
+<a name="l-192"></a><span class="tm">19:40:29</span><span class="nk"> &lt;sipa&gt;</span> final release of 0.X means EOL of 0.(X-2)
+<a name="l-193"></a><span class="tm">19:40:39</span><span class="nk"> &lt;btcdrak&gt;</span> hurray for math
+<a name="l-194"></a><span class="tm">19:40:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> The signal of and the value of that signal of supporting older versions is extremely valuable IMO (especially in such times)
+<a name="l-195"></a><span class="tm">19:40:54</span><span class="nk"> &lt;jtimon&gt;</span> ok ,topic solved?
+<a name="l-196"></a><span class="tm">19:40:55</span><span class="nk"> &lt;wumpus&gt;</span> it's ad hoc in a way, how ciritical something needs to be to be backported, but there's no way to avoid that
+<a name="l-197"></a><span class="tm">19:40:57</span><span class="nk"> &lt;CodeShark&gt;</span> why would people download a bugfix to an older version rather than just grab the latest version other than custom patches?
+<a name="l-198"></a><span class="tm">19:41:11</span><span class="nk"> &lt;cfields&gt;</span> then i agree with wumpus's goal of doing 0.12 before 0.11 backport. that way we don't have to do it for 0.10 :p
+<a name="l-199"></a><span class="tm">19:41:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> custom patches
+<a name="l-200"></a><span class="tm">19:41:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> hah
+<a name="l-201"></a><span class="tm">19:41:24</span><span class="nk"> &lt;maaku&gt;</span> And since we're on a 6mo cadence, that's 1yr support
+<a name="l-202"></a><span class="tm">19:41:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> because they're carrying local patches, or do not want to invalidate integration testing they've performed.
+<a name="l-203"></a><span class="tm">19:41:38</span><span class="nk"> &lt;wumpus&gt;</span> yes, custom patches. The tagging is mostly symbolic then, I agree, but still
+<a name="l-204"></a><span class="tm">19:42:07</span><span class="nk"> &lt;wumpus&gt;</span> and "this works and I don't want to risk a large upgrade or read a lot of release notes"
+<a name="l-205"></a><span class="tm">19:42:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed neighbor topic: shorter release cycles?!
+<a name="l-206"></a><span class="tm">19:42:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.12 changelog is --- huge!
+<a name="l-207"></a><span class="tm">19:43:17</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> to what timeframe?
+<a name="l-208"></a><span class="tm">19:43:47</span><span class="nk"> &lt;wangchun&gt;</span> cfields kangx_: pong, i'm on my way to the aiport for early morning flight
+<a name="l-209"></a><span class="tm">19:43:49</span><span class="nk"> &lt;wumpus&gt;</span> I don't know,I like a major release per half year, at least you can really call it major
+<a name="l-210"></a><span class="tm">19:44:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I would like a shorter cycle, but I don't know if it's realistic. Right now the long cycle is like a 3 month RC cycle for high risk features that go in early in the cycle.
+<a name="l-211"></a><span class="tm">19:44:06</span><span class="nk"> &lt;wumpus&gt;</span> it's a lot of testing and effort to finalize a release
+<a name="l-212"></a><span class="tm">19:44:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not sure, 4month to short?
+<a name="l-213"></a><span class="tm">19:44:15</span><span class="nk"> &lt;maaku&gt;</span> I think 6mo is pretty fast...
+<a name="l-214"></a><span class="tm">19:44:25</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> agreed, the overhead of a release is time consuming
+<a name="l-215"></a><span class="tm">19:44:35</span><span class="nk"> &lt;sipa&gt;</span> shorter releases would reduce the "oops release coming we *must* get X in quickly!" fever
+<a name="l-216"></a><span class="tm">19:44:40</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wangchun:</span> i'll ping you after the meeting in #bitcoin-core-dev. If you're already gone, we can talk about it later
+<a name="l-217"></a><span class="tm">19:44:42</span><span class="nk"> &lt;btcdrak&gt;</span> by the time we get around though it's usually 7+ months irrc
+<a name="l-218"></a><span class="tm">19:44:51</span><span class="nk"> &lt;wumpus&gt;</span> sipa, I don't believe that
+<a name="l-219"></a><span class="tm">19:44:58</span><span class="nk"> &lt;wumpus&gt;</span> sipa, it just increases the occurence of that
+<a name="l-220"></a><span class="tm">19:45:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> the cyclelength also contributes to frustration and pressure to get features in.
+<a name="l-221"></a><span class="tm">19:45:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> fair enough
+<a name="l-222"></a><span class="tm">19:45:08</span><span class="nk"> &lt;btcdrak&gt;</span> if we aimed for 5 months, maybe we'd be closer to 6
+<a name="l-223"></a><span class="tm">19:45:10</span><span class="nk"> &lt;kangx_&gt;</span> ok.
+<a name="l-224"></a><span class="tm">19:45:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Maybe 6 months is good. It just feels 0.11 was ages ago... but maybe that's just how a dev feels it.
+<a name="l-225"></a><span class="tm">19:45:23</span><span class="nk"> &lt;kangx_&gt;</span> <span class="hi">wangcun:</span> what is your wechat account?
+<a name="l-226"></a><span class="tm">19:45:55</span><span class="nk"> &lt;wumpus&gt;</span> for users it's not really better to have more frequent major releases I think. Upgrading may not always be a trivial process and comes with a risk
+<a name="l-227"></a><span class="tm">19:46:00</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> as in longest = more frustration?
+<a name="l-228"></a><span class="tm">19:46:25</span><span class="nk"> &lt;wumpus&gt;</span> it compounds the EOL problem
+<a name="l-229"></a><span class="tm">19:46:26</span><span class="nk"> &lt;jtimon&gt;</span> mo, I guess the opposite
+<a name="l-230"></a><span class="tm">19:46:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> yes; as in "my work is a waste of time because it won't see the light of day for another 6 months if it doesn't go in now"
+<a name="l-231"></a><span class="tm">19:46:51</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, I don't think we're in a position to consider a change in that process right now.
+<a name="l-232"></a><span class="tm">19:46:52</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> thanks, yeah, makes sense
+<a name="l-233"></a><span class="tm">19:46:57</span><span class="nk"> &lt;wumpus&gt;</span> what are the release cycles for other mature projects?
+<a name="l-234"></a><span class="tm">19:47:13</span><span class="nk"> &lt;btcdrak&gt;</span> Ubuntu is 6 monthly
+<a name="l-235"></a><span class="tm">19:47:40</span><span class="nk"> &lt;maaku&gt;</span> There is a ton of work that goes into releases, like string translation.
+<a name="l-236"></a><span class="tm">19:47:46</span><span class="nk"> &lt;wumpus&gt;</span> indeed maaku
+<a name="l-237"></a><span class="tm">19:47:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> there are many things that are quarterly and many things that are biannually for major releases (and of course many much slower too)
+<a name="l-238"></a><span class="tm">19:47:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think 6 month is perfectly fine... if just the GUI and wallet would be detached, we could to more released there.
+<a name="l-239"></a><span class="tm">19:48:00</span><span class="nk"> &lt;wumpus&gt;</span> it's surprising how devs, of all, seem to underestimate that
+<a name="l-240"></a><span class="tm">19:48:08</span><span class="nk"> &lt;sipa&gt;</span> firefox releases every 6 weeks
+<a name="l-241"></a><span class="tm">19:48:09</span><span class="nk"> &lt;btcdrak&gt;</span> yes. But I think we can wrap up sooner to allow translations/QA and RC
+<a name="l-242"></a><span class="tm">19:48:17</span><span class="nk"> &lt;wumpus&gt;</span> jonasschnelli, +1 on a faster release cycle for the GUI if that was possible
+<a name="l-243"></a><span class="tm">19:48:40</span><span class="nk"> &lt;btcdrak&gt;</span> if we finished dev work at 5 months, then we'd have less slippage from the 6mnth mark
+<a name="l-244"></a><span class="tm">19:48:46</span><span class="nk"> &lt;wumpus&gt;</span> but we have this huge monilithic project and yes everything needs to be synchronized
+<a name="l-245"></a><span class="tm">19:48:55</span><span class="nk"> &lt;wumpus&gt;</span> btcdrak, I plan a release every 6 months
+<a name="l-246"></a><span class="tm">19:48:59</span><span class="nk"> &lt;cfields&gt;</span> oh, reminds me. topic suggestion: current server/wallet inter-dependencies
+<a name="l-247"></a><span class="tm">19:49:00</span><span class="nk"> &lt;jtimon&gt;</span> a year is not multiple of 5 months releases, shorter than 4 months seems to big of a change, I think if we move from 6 months it would be to 4 months no matter what other projects do
+<a name="l-248"></a><span class="tm">19:49:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> firefox is now nearly _monthly_ major releases.
+<a name="l-249"></a><span class="tm">19:49:14</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell, I don't really want to follow firefox inthat
+<a name="l-250"></a><span class="tm">19:49:16</span><span class="nk"> &lt;maaku&gt;</span> I think we just need more clarity on things like redactor windows.
+<a name="l-251"></a><span class="tm">19:49:23</span><span class="nk"> &lt;jtimon&gt;</span> s/to big/too big
+<a name="l-252"></a><span class="tm">19:49:26</span><span class="nk"> &lt;wumpus&gt;</span> btcdrak, there are always two releases per year now
+<a name="l-253"></a><span class="tm">19:49:27</span><span class="nk"> &lt;sipa&gt;</span> i am perfectly fine with 6 months
+<a name="l-254"></a><span class="tm">19:49:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I wouldn't suggest that; only pointing out that there are large projects behind basically any schedule you might consider.
+<a name="l-255"></a><span class="tm">19:49:43</span><span class="nk"> &lt;wumpus&gt;</span> maaku, I always post a release schedule in advance on the mailing list
+<a name="l-256"></a><span class="tm">19:50:13</span><span class="nk"> &lt;wumpus&gt;</span> I'm fine with adding more deadlines though if that feels better :)
+<a name="l-257"></a><span class="tm">19:50:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Slower cycles also mean reduced user feedback. Different parts of the system benefit differently from that.
+<a name="l-258"></a><span class="tm">19:50:21</span><span class="nk"> &lt;jtimon&gt;</span> I'm fine with 6 months but wouldn't oppose to 4 motnhs either
+<a name="l-259"></a><span class="tm">19:50:55</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell, as said, I'd be OK with faster release cycle for the GUI if that was possible
+<a name="l-260"></a><span class="tm">19:50:58</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. if most of our current activity were UI facing it would be more adventagious to have a faster cycle.
+<a name="l-261"></a><span class="tm">19:51:00</span><span class="nk"> &lt;wumpus&gt;</span> but not for the core code
+<a name="l-262"></a><span class="tm">19:51:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree.
+<a name="l-263"></a><span class="tm">19:51:20</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-264"></a><span class="tm">19:51:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have to admit wumpus does a awesome job on keeping deadlines for the releases!
+<a name="l-265"></a><span class="tm">19:51:34</span><span class="nk"> &lt;maaku&gt;</span> wumpus your release schedule did not have a refactoring window
+<a name="l-266"></a><span class="tm">19:51:40</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> +1
+<a name="l-267"></a><span class="tm">19:52:14</span><span class="nk"> &lt;jtimon&gt;</span> yeah, if shortenning it is going to mean not keeping deadlines, let's not do it
+<a name="l-268"></a><span class="tm">19:52:28</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, I think this discussion is covered.
+<a name="l-269"></a><span class="tm">19:52:30</span><span class="nk"> &lt;wumpus&gt;</span> maaku, true
+<a name="l-270"></a><span class="tm">19:52:57</span><span class="nk"> &lt;btcdrak&gt;</span> so it's basically as written in the EOL PP
+<a name="l-271"></a><span class="tm">19:52:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">maaku:</span> refactoring? We have a main.cpp. We don't need refactoring. :)
+<a name="l-272"></a><span class="tm">19:53:00</span><span class="nk"> &lt;btcdrak&gt;</span> PR
+<a name="l-273"></a><span class="tm">19:53:27</span><span class="nk"> &lt;wumpus&gt;</span> yes, it's the same thing every time, I want 6 months everyone else wants a shorter release cycle, at some point I'm going to make one of you release manager and figure it out :p
+<a name="l-274"></a><span class="tm">19:53:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> :}
+<a name="l-275"></a><span class="tm">19:53:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> can we move everything back into main.cpp? I'd save a lot of time grepping. :P
+<a name="l-276"></a><span class="tm">19:53:51</span><span class="nk"> &lt;btcdrak&gt;</span> LOL
+<a name="l-277"></a><span class="tm">19:53:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> haha
+<a name="l-278"></a><span class="tm">19:53:58</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-279"></a><span class="tm">19:54:18</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> and headers.h :)
+<a name="l-280"></a><span class="tm">19:54:18</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics? we're running out of time
+<a name="l-281"></a><span class="tm">19:54:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> The solution is to make everything so wonderful that even you will want a shorter cycle. :) Core is not there yet.
+<a name="l-282"></a><span class="tm">19:54:24</span><span class="nk"> &lt;jtimon&gt;</span> hehe, ok, if wumpus willing is not going to do 4 months then the topic is solved for now
+<a name="l-283"></a><span class="tm">19:55:29</span><span class="nk"> &lt;jtimon&gt;</span> no more topics? end meeting?
+<a name="l-284"></a><span class="tm">19:55:30</span><span class="nk"> &lt;cfields&gt;</span> i proposed lib dependencies as a topic above, but there's really no need to do that here. we can discuss later
+<a name="l-285"></a><span class="tm">19:55:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ACK on making things wonderful
+<a name="l-286"></a><span class="tm">19:55:38</span><span class="nk"> &lt;sdaftuar&gt;</span> +1
+<a name="l-287"></a><span class="tm">19:55:42</span><span class="nk"> &lt;btcdrak&gt;</span> +2
+<a name="l-288"></a><span class="tm">19:55:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
