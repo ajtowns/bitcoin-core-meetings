@@ -1,0 +1,304 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:09</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Jan 28 19:01:09 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:09</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:26</span><span class="nk"> &lt;petertodd&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">refactoring window</span>
+<a name="l-6"></a><span class="tm">19:02:06</span><span class="nk"> &lt;jtimon&gt;</span> I just want to have a clearer idea of when those are
+<a name="l-7"></a><span class="tm">19:02:27</span><span class="nk"> &lt;wumpus&gt;</span> I'm fine with starting moveonly stuff at least - I've already merged #7348
+<a name="l-8"></a><span class="tm">19:02:32</span><span class="nk"> &lt;jtimon&gt;</span> and what it means when we're on a "refactoring window"
+<a name="l-9"></a><span class="tm">19:02:55</span><span class="nk"> &lt;wumpus&gt;</span> we're nearing the 0.12 release, and there's not that much urgent to be merged otherwise
+<a name="l-10"></a><span class="tm">19:03:10</span><span class="nk"> &lt;petertodd&gt;</span> note that there is significant segwit work that is affected by this, OTOH, it may not be affected in a way that matters
+<a name="l-11"></a><span class="tm">19:03:29</span><span class="nk"> &lt;what_now&gt;</span> Hello, sometimes I get a time out on rpc calls to bitcoind. I am using 0.11.2. I have a big wallet file(big keypool). The slowdown occurrs upon all commands(example wallet decryption too) not just sending out funds.
+<a name="l-12"></a><span class="tm">19:03:44</span><span class="nk"> &lt;wumpus&gt;</span> not sure about that petertodd, but they're based on 0.12 AFAIK
+<a name="l-13"></a><span class="tm">19:03:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">what_now:</span> we're in the middle of a dev meeting; best if you ask again in an hour
+<a name="l-14"></a><span class="tm">19:03:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">what_now:</span> please use #bitcoin-core-dev (meeting in this channel)
+<a name="l-15"></a><span class="tm">19:03:58</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jtimon:</span> can you prioritise refactors gthat dont conflict segwit?
+<a name="l-16"></a><span class="tm">19:04:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> yeah, being based on v0.12 is part of what helps here
+<a name="l-17"></a><span class="tm">19:04:23</span><span class="nk"> &lt;wumpus&gt;</span> so it doesn't affect segwit immedaitely, although at some point it needs to be forward-ported over the moves
+<a name="l-18"></a><span class="tm">19:04:34</span><span class="nk"> &lt;what_now&gt;</span> Ok thanks
+<a name="l-19"></a><span class="tm">19:04:47</span><span class="nk"> &lt;wumpus&gt;</span> (which for pure move-only isn't too much effort, at least)
+<a name="l-20"></a><span class="tm">19:04:55</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I'm assuming we're most likely to release segwit first as a 0.12.x?
+<a name="l-21"></a><span class="tm">19:05:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> I suppose so
+<a name="l-22"></a><span class="tm">19:05:21</span><span class="nk"> &lt;wumpus&gt;</span> 0.13 will be june-july
+<a name="l-23"></a><span class="tm">19:05:22</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> ofc, 0.13 isnt scheduled for months yet
+<a name="l-24"></a><span class="tm">19:05:24</span><span class="nk"> &lt;gmaxwell&gt;</span> It previously occured to me that having refactor windows at the beginning of a version cycle may interfear with the constant backporting we do then.
+<a name="l-25"></a><span class="tm">19:05:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> but it should be merged to master first
+<a name="l-26"></a><span class="tm">19:05:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> my longest consensus refactoring branch is based on last-0.11.99 3cd836c
+<a name="l-27"></a><span class="tm">19:06:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it does, but 0.12.0 final is near, I don't expect much more backporting to be needed now
+<a name="l-28"></a><span class="tm">19:07:17</span><span class="nk"> &lt;wumpus&gt;</span> we'll do a rc3 next week and if really necessary a rc4 the week after that and then that's that
+<a name="l-29"></a><span class="tm">19:07:44</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> if we don't want to backport refactors with segwit and we want to wait for segwit, then the 0.13 refactor window may be missed again for really simple things like #7310, which I assume you consider conflicting with segwit
+<a name="l-30"></a><span class="tm">19:08:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> yeah, that's what I've been saying since the first time we talked about this windows, I think they are far best at the end of the release cycle, before forking the next version to release from master
+<a name="l-31"></a><span class="tm">19:09:08</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jtimon:</span> I was thinking more like closing refactors a week after segwsit
+<a name="l-32"></a><span class="tm">19:09:17</span><span class="nk"> &lt;gmaxwell&gt;</span> I guess the thing to admit is that there is no good time for refactors, and that we'll just have to deal with their costs.
+<a name="l-33"></a><span class="tm">19:09:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> thats a point.
+<a name="l-34"></a><span class="tm">19:09:43</span><span class="nk"> &lt;wumpus&gt;</span> yes, otherwise you keep postponing
+<a name="l-35"></a><span class="tm">19:09:58</span><span class="nk"> &lt;jtimon&gt;</span> if we had done it before forking 0.12...I really think that's the best time (doesn't mean that it won't have costs)
+<a name="l-36"></a><span class="tm">19:10:06</span><span class="nk"> &lt;wumpus&gt;</span> as said above, I'd say now is a pretty good time, but if people prefer postponing I won't complain, it's always a bad time
+<a name="l-37"></a><span class="tm">19:10:25</span><span class="nk"> &lt;wumpus&gt;</span> no, before forking 0.12 it was *really* busy
+<a name="l-38"></a><span class="tm">19:10:35</span><span class="nk"> &lt;wumpus&gt;</span> all kinds of stuff that needs to b e merged as soon as possible
+<a name="l-39"></a><span class="tm">19:10:56</span><span class="nk"> &lt;wumpus&gt;</span> at least it came to rest a bit now
+<a name="l-40"></a><span class="tm">19:12:25</span><span class="nk"> &lt;btcdrak&gt;</span> yeah, a lot of PRs are mergeable now without needing rebased.
+<a name="l-41"></a><span class="tm">19:12:39</span><span class="nk"> &lt;Luke-Jr&gt;</span> imo do non-SW-conlicts first and if we end up conflicting anyway so be it
+<a name="l-42"></a><span class="tm">19:12:40</span><span class="nk"> &lt;wumpus&gt;</span> but there's nothing that needs to be merged urgently
+<a name="l-43"></a><span class="tm">19:13:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Luke-Jr:</span> better yet, what about not bip68-112-conflicting, not versionbits conflicting and non-segwit conflicting ?
+<a name="l-44"></a><span class="tm">19:13:33</span><span class="nk"> &lt;btcdrak&gt;</span> I do think it's time to start thinking about merging #7184 and #6564 after they get a few more ACKs
+<a name="l-45"></a><span class="tm">19:13:42</span><span class="nk"> &lt;wumpus&gt;</span> in contrast to before a release deadline, when there's pressure to get things in
+<a name="l-46"></a><span class="tm">19:13:46</span><span class="nk"> &lt;jtimon&gt;</span> &lt;/sarcasm&gt;
+<a name="l-47"></a><span class="tm">19:13:47</span><span class="nk"> &lt;petertodd&gt;</span> I'd vote for getting it over with now, as jtimon's been rather patient :)
+<a name="l-48"></a><span class="tm">19:14:00</span><span class="nk"> &lt;petertodd&gt;</span> (for dev branch)
+<a name="l-49"></a><span class="tm">19:15:17</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-50"></a><span class="tm">19:15:23</span><span class="nk"> &lt;Tasoshi&gt;</span> Everyone complains that the blocksize is not discussed in these meetings. So maybe it can be discussed for once?
+<a name="l-51"></a><span class="tm">19:15:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Tasoshi:</span> no
+<a name="l-52"></a><span class="tm">19:15:37</span><span class="nk"> &lt;Tasoshi&gt;</span> why not?
+<a name="l-53"></a><span class="tm">19:15:47</span><span class="nk"> &lt;Tasoshi&gt;</span> has a decision been made on it?
+<a name="l-54"></a><span class="tm">19:16:03</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">Tasoshi:</span> this is not the place
+<a name="l-55"></a><span class="tm">19:16:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> this is a technical meeting to discuss relatively short-term dev work
+<a name="l-56"></a><span class="tm">19:16:23</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Tasoshi:</span> these meetings are for our day-to-day work. We need a place for that, even if it's not sexy topics. Please respect that.
+<a name="l-57"></a><span class="tm">19:16:28</span><span class="nk"> &lt;Tasoshi&gt;</span> maaku of course it is, it is a technical meeting, so lets discuss a technical topic, the blocksize question
+<a name="l-58"></a><span class="tm">19:16:31</span><span class="nk"> &lt;wumpus&gt;</span> yes, we'll not do a blocksize hardfork for now
+<a name="l-59"></a><span class="tm">19:16:52</span><span class="nk"> &lt;Tasoshi&gt;</span> so the decision is to not maxbloklimit_increase?
+<a name="l-60"></a><span class="tm">19:16:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> +1. Next topic?
+<a name="l-61"></a><span class="tm">19:17:06</span><span class="nk"> &lt;Tasoshi&gt;</span> until when?
+<a name="l-62"></a><span class="tm">19:17:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Tasoshi:</span> Core has a published capacity roadmap, feel free to comment about that on the list.
+<a name="l-63"></a><span class="tm">19:17:21</span><span class="nk"> &lt;Tasoshi&gt;</span> this isn't the core chan
+<a name="l-64"></a><span class="tm">19:17:26</span><span class="nk"> &lt;Tasoshi&gt;</span> this is general bitcoin development
+<a name="l-65"></a><span class="tm">19:17:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Tasoshi:</span> this is a bitcoin core meeting
+<a name="l-66"></a><span class="tm">19:17:47</span><span class="nk"> &lt;Tasoshi&gt;</span> maybe core should have it's meetings in the core chan?
+<a name="l-67"></a><span class="tm">19:17:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Tasoshi:</span> stop interfering
+<a name="l-68"></a><span class="tm">19:17:56</span><span class="nk"> &lt;Tasoshi&gt;</span> I thought this was a general bitcoin dev meeting
+<a name="l-69"></a><span class="tm">19:18:00</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> it is genereal bitcoin meeting..
+<a name="l-70"></a><span class="tm">19:18:11</span><span class="nk"> &lt;jtimon&gt;</span> actually he has a point, maybe these meetings should happen in #bitcoin-core-dev
+<a name="l-71"></a><span class="tm">19:18:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Tasoshi:</span> please you're disrupting the meeting.
+<a name="l-72"></a><span class="tm">19:18:22</span><span class="nk"> &lt;jtimon&gt;</span> but yeah, not the time
+<a name="l-73"></a><span class="tm">19:18:24</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">Tasoshi:</span> still nlo decisions are made in meetings
+<a name="l-74"></a><span class="tm">19:18:30</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> seems reasonable if this keeps coming up, but that's for next meeting
+<a name="l-75"></a><span class="tm">19:18:33</span><span class="nk"> &lt;Luke-Jr&gt;</span> no*
+<a name="l-76"></a><span class="tm">19:19:10</span><span class="nk"> &lt;wallet42&gt;</span> getrawtransaction works as long as a pruning is not enabled and at least 1 spendable output is still available right?
+<a name="l-77"></a><span class="tm">19:19:29</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">Tasoshi:</span> email the ML to schedule a new meeting another day, maybe?
+<a name="l-78"></a><span class="tm">19:19:43</span><span class="nk"> &lt;wumpus&gt;</span> we can move the meeting to #bitcoin-core-dev, sure
+<a name="l-79"></a><span class="tm">19:19:46</span><span class="nk"> &lt;Tasoshi&gt;</span> or maybe you guys can actually discuss it
+<a name="l-80"></a><span class="tm">19:19:48</span><span class="nk"> &lt;Tasoshi&gt;</span> but whatever
+<a name="l-81"></a><span class="tm">19:19:54</span><span class="nk"> &lt;Tasoshi&gt;</span> the users are about to vote
+<a name="l-82"></a><span class="tm">19:19:57</span><span class="nk"> &lt;jtimon&gt;</span> anyway, so the refactor window is from now to when? and what does it mean that there's a refactor window?
+<a name="l-83"></a><span class="tm">19:19:58</span><span class="nk"> &lt;maaku&gt;</span> NEXT TOPIC
+<a name="l-84"></a><span class="tm">19:20:00</span><span class="nk"> &lt;Tasoshi&gt;</span> you can bury your heads all you want
+<a name="l-85"></a><span class="tm">19:20:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Topic suggestion: Any outstanding issues for 0.12RC?
+<a name="l-86"></a><span class="tm">19:20:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">outstanding issues for 0.12.0</span>
+<a name="l-87"></a><span class="tm">19:20:55</span><span class="nk"> &lt;Luke-Jr&gt;</span> not declaring removal of priority
+<a name="l-88"></a><span class="tm">19:20:56</span><span class="nk"> &lt;cfields&gt;</span> uhmm, it was brought to my attention that we may need to sign the win32 release with a new key for win7+
+<a name="l-89"></a><span class="tm">19:21:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> expired?
+<a name="l-90"></a><span class="tm">19:21:23</span><span class="nk"> &lt;cfields&gt;</span> so, ignoring the fact that we need a new key in general, we can upgrade ours to work for this release
+<a name="l-91"></a><span class="tm">19:21:34</span><span class="nk"> &lt;wumpus&gt;</span> it needs to use sha256
+<a name="l-92"></a><span class="tm">19:21:36</span><span class="nk"> &lt;cfields&gt;</span> i believe it doesn't take long. I'll be starting that process today
+<a name="l-93"></a><span class="tm">19:21:41</span><span class="nk"> &lt;cfields&gt;</span> right, current is sha1
+<a name="l-94"></a><span class="tm">19:21:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> ^^
+<a name="l-95"></a><span class="tm">19:21:49</span><span class="nk"> &lt;btcdrak&gt;</span> ouch
+<a name="l-96"></a><span class="tm">19:22:10</span><span class="nk"> &lt;cfields&gt;</span> i'll get an eta on that asap so we'll know if it's worth holding up rc3
+<a name="l-97"></a><span class="tm">19:22:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">cfields: new key for win release signing</span>
+<a name="l-98"></a><span class="tm">19:22:24</span><span class="nk"> &lt;what_now&gt;</span> Topic suggestion: creating a roadmap for aspiring devs to catch up with code?
+<a name="l-99"></a><span class="tm">19:22:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">cfields:</span> do we have an idea of how many windows users test rc's btw?
+<a name="l-100"></a><span class="tm">19:22:36</span><span class="nk"> &lt;btcdrak&gt;</span> otherwise jonasschnelli could sign, he has a key iirc
+<a name="l-101"></a><span class="tm">19:22:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">btcdrak:</span> only OSX
+<a name="l-102"></a><span class="tm">19:23:18</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">what_now:</span> I'd suggest posting that to the dev list; also, first look at bitcoin.org's documentation efforts
+<a name="l-103"></a><span class="tm">19:23:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> I test them.. have serval win VMs here. Although only "smoke" tests.
+<a name="l-104"></a><span class="tm">19:23:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">btcdrak:</span> not nice to change keys during the release cycle. I believe this keeps the current chain intact
+<a name="l-105"></a><span class="tm">19:23:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">cfields:</span> agree
+<a name="l-106"></a><span class="tm">19:23:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">what_now:</span> not really a meeting topic, better to ask that outside the meeting
+<a name="l-107"></a><span class="tm">19:23:46</span><span class="nk"> &lt;what_now&gt;</span> Thank you petter see you in 2 years :(
+<a name="l-108"></a><span class="tm">19:23:56</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">petertodd:</span> same as jonasschnelli above. I verify that they start up and are infact the correct tagged release
+<a name="l-109"></a><span class="tm">19:23:59</span><span class="nk"> &lt;what_now&gt;</span> Roger, gonna shut up now
+<a name="l-110"></a><span class="tm">19:24:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> cool - I was thinking that if we're not getting many windows testers, that suggests we shouldn't hold back the rc releases because of a windows-specific issue.
+<a name="l-111"></a><span class="tm">19:24:27</span><span class="nk"> &lt;wumpus&gt;</span> well we need some key for signing, it doesn't matter too much which one
+<a name="l-112"></a><span class="tm">19:24:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> I can offer to sign the OSX binaries in future (maybe from 0.13)
+<a name="l-113"></a><span class="tm">19:25:38</span><span class="nk"> &lt;cfields&gt;</span> makes sense to me, since you're the most active on osx these days
+<a name="l-114"></a><span class="tm">19:25:38</span><span class="nk"> &lt;wumpus&gt;</span> cool jonasschnelli
+<a name="l-115"></a><span class="tm">19:26:30</span><span class="nk"> &lt;wumpus&gt;</span> ok, that concludes the topic I think, we don't know how long it will take to get a new key, if it takes too long someone else can sign this time
+<a name="l-116"></a><span class="tm">19:27:34</span><span class="nk"> &lt;wumpus&gt;</span> I mean concludes the signing topic, not the "outstanding issues" topic
+<a name="l-117"></a><span class="tm">19:28:27</span><span class="nk"> &lt;wumpus&gt;</span> it seems there is still some controversy re: priority, or at least how the changes should be noted in the release notes
+<a name="l-118"></a><span class="tm">19:28:42</span><span class="nk"> &lt;wumpus&gt;</span> e.g. https://github.com/bitcoin/bitcoin/pull/7346
+<a name="l-119"></a><span class="tm">19:28:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1 for keep it as it is
+<a name="l-120"></a><span class="tm">19:29:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I realized tht we never did anything about the issue I raised with localhost being banning whitelisted + autoonion support; do we care?
+<a name="l-121"></a><span class="tm">19:29:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> is there anything we can do to make it easier for LJR to support priority if Core doesn't?
+<a name="l-122"></a><span class="tm">19:29:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I'd say so too - though it makes sense to mention the plans to remove priority in the release notes
+<a name="l-123"></a><span class="tm">19:30:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Luke-Jr:</span> or i should say, Bitcoin &lt;insert-snappy-name-here&gt; :)
+<a name="l-124"></a><span class="tm">19:30:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I follow the majority.
+<a name="l-125"></a><span class="tm">19:30:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> link?
+<a name="l-126"></a><span class="tm">19:30:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> of course we do
+<a name="l-127"></a><span class="tm">19:30:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> I think that's a good question
+<a name="l-128"></a><span class="tm">19:31:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess there is no reported issue.
+<a name="l-129"></a><span class="tm">19:31:30</span><span class="nk"> &lt;paveljanik&gt;</span> The plan should have been announced even earlier. Even the change in the default priority settings.
+<a name="l-130"></a><span class="tm">19:31:35</span><span class="nk"> &lt;gmaxwell&gt;</span> there is a blinking _pr_
+<a name="l-131"></a><span class="tm">19:31:36</span><span class="nk"> &lt;wumpus&gt;</span> I mean some people are bound to want to keep some semblance of priority support, but supporting it in the current mempool framework is hard/inefficient
+<a name="l-132"></a><span class="tm">19:31:39 </span><span class="nka">* jtimon</span> <span class="ac">remembers asking a similar question to Luke-Jr some time ago...</span>
+<a name="l-133"></a><span class="tm">19:31:50</span><span class="nk"> &lt;gmaxwell&gt;</span> I'll go rebase it and cut it down.
+<a name="l-134"></a><span class="tm">19:31:58</span><span class="nk"> &lt;paveljanik&gt;</span> What we can do now is to announce the removal of prio code - special section in release notes, probably?
+<a name="l-135"></a><span class="tm">19:32:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">paveljanik:</span> yes , we should certainly announce it somewher
+<a name="l-136"></a><span class="tm">19:32:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I'm happy to work on the banning whitelisted + autoonion support issue (start end of feb.).
+<a name="l-137"></a><span class="tm">19:32:34</span><span class="nk"> &lt;wumpus&gt;</span> if only to get an idea what people outside direct dev circles think about it
+<a name="l-138"></a><span class="tm">19:32:50</span><span class="nk"> &lt;gmaxwell&gt;</span> the original PR got hung up because of the locking mess around nodestats.
+<a name="l-139"></a><span class="tm">19:32:59</span><span class="nk"> &lt;wumpus&gt;</span> I'm happing to work on it too, but after 0.12.0 release
+<a name="l-140"></a><span class="tm">19:33:02</span><span class="nk"> &lt;wumpus&gt;</span> happy*
+<a name="l-141"></a><span class="tm">19:33:10</span><span class="nk"> &lt;gmaxwell&gt;</span> (it's PR 7082) but I can make the change more minimal.
+<a name="l-142"></a><span class="tm">19:33:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I guess after some changes there i'm familiar with the locking concept in CNode CNodeStat
+<a name="l-143"></a><span class="tm">19:33:47</span><span class="nk"> &lt;wumpus&gt;</span> it's not something I have enough confidence in to get correct for a last minute fixup
+<a name="l-144"></a><span class="tm">19:34:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> Wasn't aware of that PR (7082). Will test / rebase and or extend.
+<a name="l-145"></a><span class="tm">19:34:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes, I can just change the patch to remove the privledging of localhost only.
+<a name="l-146"></a><span class="tm">19:34:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yep, if we can slip in some simpler fix that'd be better
+<a name="l-147"></a><span class="tm">19:34:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> No. I guess its for 0.13 or 0.12.1?
+<a name="l-148"></a><span class="tm">19:34:36</span><span class="nk"> &lt;wumpus&gt;</span> then leave the rest for 0.13/0.12.1
+<a name="l-149"></a><span class="tm">19:34:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> please lt me. I just wanted confirmation that it wasn't intentionally dropped.
+<a name="l-150"></a><span class="tm">19:34:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> Sure.
+<a name="l-151"></a><span class="tm">19:35:04</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, just the one line change should at least avoid the simple attack, I'll do that.
+<a name="l-152"></a><span class="tm">19:35:08</span><span class="nk"> &lt;wumpus&gt;</span> no, certainly not intentionally, it's just easy to forget about things
+<a name="l-153"></a><span class="tm">19:35:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Do we need a solution for this in 0.12.0?
+<a name="l-154"></a><span class="tm">19:35:27</span><span class="nk"> &lt;gmaxwell&gt;</span> Thats why I brought it up.
+<a name="l-155"></a><span class="tm">19:35:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> the one line change ?
+<a name="l-156"></a><span class="tm">19:35:53</span><span class="nk"> &lt;gmaxwell&gt;</span> Please see the PR, without doing something the autoonion support makes connection exhaustion attacks much easier.
+<a name="l-157"></a><span class="tm">19:35:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">gmaxwell: "one line change" to fix #7082 in 0.12.0</span>
+<a name="l-158"></a><span class="tm">19:36:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks.
+<a name="l-159"></a><span class="tm">19:36:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> +75 −37 in main/net seems to late for a after-rc2-change
+<a name="l-160"></a><span class="tm">19:36:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> ok. Agree.
+<a name="l-161"></a><span class="tm">19:36:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> so, specifically you're worried about exhausting all incoming connections right?
+<a name="l-162"></a><span class="tm">19:37:38</span><span class="nk"> &lt;wumpus&gt;</span> yes, it's about incoming connections
+<a name="l-163"></a><span class="tm">19:38:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> yes we have eviction to protect from that but localhost is excempted.
+<a name="l-164"></a><span class="tm">19:38:29</span><span class="nk"> &lt;paveljanik&gt;</span> I think we should also announce somewhere that current openssl bugs do not affect Bitcoin Core...
+<a name="l-165"></a><span class="tm">19:38:50</span><span class="nk"> &lt;wumpus&gt;</span> good idea paveljanik
+<a name="l-166"></a><span class="tm">19:39:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1
+<a name="l-167"></a><span class="tm">19:39:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">how does this new "critical" OpenSSL release affect us</span>
+<a name="l-168"></a><span class="tm">19:39:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">btcdrak:</span> a website blog post?
+<a name="l-169"></a><span class="tm">19:39:37</span><span class="nk"> &lt;wumpus&gt;</span> &lt;kanzure&gt; https://mta.openssl.org/pipermail/openssl-announce/2016-January/000061.html
+<a name="l-170"></a><span class="tm">19:39:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> sure.
+<a name="l-171"></a><span class="tm">19:39:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://mta.openssl.org/pipermail/openssl-announce/2016-January/000061.html</span>
+<a name="l-172"></a><span class="tm">19:40:00</span><span class="nk"> &lt;wumpus&gt;</span> nothing that affect us in any way?
+<a name="l-173"></a><span class="tm">19:40:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Does it not affect bip70 / GUI? (haven't checked)
+<a name="l-174"></a><span class="tm">19:40:16</span><span class="nk"> &lt;wumpus&gt;</span> also not for qt payment protocol TLS stuff?
+<a name="l-175"></a><span class="tm">19:41:13</span><span class="nk"> &lt;gmaxwell&gt;</span> I wish we had some way of measureing if that stuff was ever used, it seems barely usable (send only, gui only) to me and has been a source of multiple problems.
+<a name="l-176"></a><span class="tm">19:41:19</span><span class="nk"> &lt;jtimon&gt;</span> did the replacement for the wallet encription PR get merged? what other parts of core still depend on openssl apart from bip70?
+<a name="l-177"></a><span class="tm">19:41:30</span><span class="nk"> &lt;wumpus&gt;</span> yes, it is being used
+<a name="l-178"></a><span class="tm">19:42:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> entropy, AES (wallet), bip70
+<a name="l-179"></a><span class="tm">19:42:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> no, I think those all need rebase
+<a name="l-180"></a><span class="tm">19:42:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> and the wallet encryption PR from cfields is not yet merged.
+<a name="l-181"></a><span class="tm">19:42:40</span><span class="nk"> &lt;wumpus&gt;</span> I think they're all labeled 0.13
+<a name="l-182"></a><span class="tm">19:42:43</span><span class="nk"> &lt;jtimon&gt;</span> thanks
+<a name="l-183"></a><span class="tm">19:42:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> and sipa/gmaxwells fortuna change needs also rebase.
+<a name="l-184"></a><span class="tm">19:43:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> (although we should pack it into a sep. library)
+<a name="l-185"></a><span class="tm">19:43:04</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> according to that mail, 1.0.1 isn't affected
+<a name="l-186"></a><span class="tm">19:43:17</span><span class="nk"> &lt;gmaxwell&gt;</span> vetting if any particular openssl release impacts the BIP70 implementation is too much work; I'd generally be unwilling to sign off on a claim that it didn't.  The amount of involved code is huge, including a bunch of code in QT.
+<a name="l-187"></a><span class="tm">19:43:19</span><span class="nk"> &lt;cfields&gt;</span> (not discounting self-builders of course, just pointing that out)
+<a name="l-188"></a><span class="tm">19:43:36</span><span class="nk"> &lt;wumpus&gt;</span> yes, fortuna needs to be a separate lib
+<a name="l-189"></a><span class="tm">19:43:50</span><span class="nk"> &lt;jtimon&gt;</span> are there any plans to replace openssl for entropy?
+<a name="l-190"></a><span class="tm">19:44:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would say static builds are nice,.. but the once we need to care about are the once that self-compile.
+<a name="l-191"></a><span class="tm">19:44:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes
+<a name="l-192"></a><span class="tm">19:44:29</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> oh, I see, that's the fortuna thing
+<a name="l-193"></a><span class="tm">19:44:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> that's what the fortuna thing would be basically
+<a name="l-194"></a><span class="tm">19:44:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> https://github.com/bitcoin/bitcoin/pull/5885
+<a name="l-195"></a><span class="tm">19:44:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> agree on that
+<a name="l-196"></a><span class="tm">19:45:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I don't expect that from you either - my question was more "does it affect TLS usage"
+<a name="l-197"></a><span class="tm">19:45:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would also see it as a plain C(89 or 99) library
+<a name="l-198"></a><span class="tm">19:46:00</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> fortuna? why isn't C++ ok here?
+<a name="l-199"></a><span class="tm">19:46:07</span><span class="nk"> &lt;wumpus&gt;</span> as openssl is basically one huge TLS library I expect the answer to that is "yes"
+<a name="l-200"></a><span class="tm">19:46:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> MCU
+<a name="l-201"></a><span class="tm">19:46:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> oh, you mean for microprocessors?
+<a name="l-202"></a><span class="tm">19:46:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> there are many difficult complications in making a safe, generic RNG, first among them is fork detection; which is more or less impossible to do completely safely on linux. :(
+<a name="l-203"></a><span class="tm">19:46:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> we only have to be better than openssl
+<a name="l-204"></a><span class="tm">19:47:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would say libsecp256k1 together with a C based fort. implementation would be a very good team.
+<a name="l-205"></a><span class="tm">19:47:13</span><span class="nk"> &lt;gmaxwell&gt;</span> (even if you do the slow thing of testing the PID on every call, a sequence of multiple forks could leave you with the same PID as a now-gone grandparent process)
+<a name="l-206"></a><span class="tm">19:47:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> we still have to be better than /dev/urandom :)
+<a name="l-207"></a><span class="tm">19:47:21</span><span class="nk"> &lt;wumpus&gt;</span> if it's impossible to do safely on linux, then openssl doesn't do that either
+<a name="l-208"></a><span class="tm">19:47:41</span><span class="nk"> &lt;wumpus&gt;</span> note also that bitcoin never forks
+<a name="l-209"></a><span class="tm">19:47:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> Long term, i don't think entropy really matters for bitcoin core
+<a name="l-210"></a><span class="tm">19:47:55</span><span class="nk"> &lt;wumpus&gt;</span> (well, it does, but only to launch ancillary processes)
+<a name="l-211"></a><span class="tm">19:47:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes but when we must be a library we need to be safe for more than bitcoin.
+<a name="l-212"></a><span class="tm">19:48:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> Mainly for the const time hack in libsecp
+<a name="l-213"></a><span class="tm">19:48:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> I don't expect people generating keys on the same machine then core runs.
+<a name="l-214"></a><span class="tm">19:48:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> just add a disclaimer 'not fork safe'
+<a name="l-215"></a><span class="tm">19:48:35</span><span class="nk"> &lt;wumpus&gt;</span> I don't think it needs to satisfy any possible use case everyone can have
+<a name="l-216"></a><span class="tm">19:48:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> 'not fork safe'? HW or SF....
+<a name="l-217"></a><span class="tm">19:48:42</span><span class="nk"> &lt;btcdrak&gt;</span> "&lt;@wumpus&gt; note also that bitcoin never forks"
+<a name="l-218"></a><span class="tm">19:48:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> &lt;/funmode&gt;
+<a name="l-219"></a><span class="tm">19:48:47</span><span class="nk"> &lt;cfields&gt;</span> lol
+<a name="l-220"></a><span class="tm">19:48:54</span><span class="nk"> &lt;wumpus&gt;</span> LOL btcdrak
+<a name="l-221"></a><span class="tm">19:48:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> see, that's one of the reasons I'd lean towards C++ - I'm not sure we want to be in the business of making these libraries if others' will use them
+<a name="l-222"></a><span class="tm">19:48:58</span><span class="nk"> &lt;wumpus&gt;</span> hadn't even thought of that
+<a name="l-223"></a><span class="tm">19:49:03</span><span class="nk"> &lt;gmaxwell&gt;</span> thata going to get misunderstood by the public...
+<a name="l-224"></a><span class="tm">19:49:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> hehe
+<a name="l-225"></a><span class="tm">19:49:35</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">petertodd:</span> c++11 even has fancy prngs built-in...
+<a name="l-226"></a><span class="tm">19:49:41</span><span class="nk"> &lt;cfields&gt;</span> though i doubt that would go over well
+<a name="l-227"></a><span class="tm">19:50:31</span><span class="nk"> &lt;wumpus&gt;</span> in any case, I thin kfor seperation of concerns it needs to be a seperate lib, if it ever turns out useful for anyone else is not our problem ;)
+<a name="l-228"></a><span class="tm">19:50:59</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, these also need locking; ... regardless, I spent a fair amount of time talking to nick from tor about this, and I'm also on a mailing list of people trying to replace the RNG in openssl.  I'm now pretty confident that we wouldn't be able to satisify that many people; lots of people care greatly about really high performance, which we more or less don't care about. (OpenSSL's is exception
+<a name="l-229"></a><span class="tm">19:51:05</span><span class="nk"> &lt;gmaxwell&gt;</span> ally slow, and we've seldom noticed)
+<a name="l-230"></a><span class="tm">19:51:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> Sorry, I don't beleive in that "not our problem" approach. :)
+<a name="l-231"></a><span class="tm">19:51:17</span><span class="nk"> &lt;wumpus&gt;</span> though if jonasschnelli has applications in mind himself then it makes sense to keep those in mind
+<a name="l-232"></a><span class="tm">19:51:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> we can't do everything for everyone
+<a name="l-233"></a><span class="tm">19:51:43 </span><span class="nka">* jtimon</span> <span class="ac">resists to bring the C vs C++ for ultra-long-term future libconsensus topic</span>
+<a name="l-234"></a><span class="tm">19:51:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well you are welcome to try, of course :)
+<a name="l-235"></a><span class="tm">19:52:16</span><span class="nk"> &lt;gmaxwell&gt;</span> We're going off on a tangent here in any case.
+<a name="l-236"></a><span class="tm">19:52:28</span><span class="nk"> &lt;btcdrak&gt;</span> -wizards
+<a name="l-237"></a><span class="tm">19:52:36</span><span class="nk"> &lt;wumpus&gt;</span> but sure, we can stay with openssl's RNG if that's what is preferred
+<a name="l-238"></a><span class="tm">19:52:44</span><span class="nk"> &lt;wumpus&gt;</span> no decision needs to be made today
+<a name="l-239"></a><span class="tm">19:52:44</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not saying that.
+<a name="l-240"></a><span class="tm">19:52:46</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-241"></a><span class="tm">19:53:21</span><span class="nk"> &lt;wumpus&gt;</span> only ~7 minutes left
+<a name="l-242"></a><span class="tm">19:53:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I just posted some important stuff re: segwit upgrades, but I don't think it needs to be discussed here yet
+<a name="l-243"></a><span class="tm">19:53:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> (posted to the -dev list)
+<a name="l-244"></a><span class="tm">19:53:32</span><span class="nk"> &lt;jtimon&gt;</span> wumpus let's leave openssl only for bip70, even if it's not today
+<a name="l-245"></a><span class="tm">19:53:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I agree with that in theory, but if making our own RNG is really so dangerous I don't want to risk it
+<a name="l-246"></a><span class="tm">19:54:47</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I'd feel happier if this was part of an effort including non-bitcoin users (e.g mailing list &amp; tor that gmaxwell mentioned above)
+<a name="l-247"></a><span class="tm">19:54:52</span><span class="nk"> &lt;wumpus&gt;</span> it is a really risky endavour to implement this kind of stuff ourselves and get it completely right, many people are messed up before with hand rolled RNGs in the bitcoin space
+<a name="l-248"></a><span class="tm">19:54:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> maybe not for 0.13, but I trust that we will have done it already be 0.20 :p
+<a name="l-249"></a><span class="tm">19:55:02</span><span class="nk"> &lt;jtimon&gt;</span> s/be/by
+<a name="l-250"></a><span class="tm">19:55:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> agree
+<a name="l-251"></a><span class="tm">19:55:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> please don't punish me for speaking frankly. The prior efforts to upgrade ours were derailed by a desire to make something generic. I've determined that making something generic is quite hard to do right.
+<a name="l-252"></a><span class="tm">19:55:35</span><span class="nk"> &lt;wumpus&gt;</span> so I'm just trying to be pragmatic, yes we'd like to get rid of openssl dependency but not at all cost
+<a name="l-253"></a><span class="tm">19:55:49</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it would be a worthwhile thing to do, but I don't think the resources can be spared to do something generic right now.
+<a name="l-254"></a><span class="tm">19:55:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> how am I punuishing you?
+<a name="l-255"></a><span class="tm">19:55:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Agree. It takes much more time..
+<a name="l-256"></a><span class="tm">19:56:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> But maybe other are ready to contribute.
+<a name="l-257"></a><span class="tm">19:56:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> by jumping to not doing it at all when I raised a single complaints.
+<a name="l-258"></a><span class="tm">19:56:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> (and I have use cases)
+<a name="l-259"></a><span class="tm">19:56:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm not saying we should do it, just that we should be careful
+<a name="l-260"></a><span class="tm">19:56:40</span><span class="nk"> &lt;gmaxwell&gt;</span> Sure.
+<a name="l-261"></a><span class="tm">19:56:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I've been saying that from the beginning and you convinced me to be even more
+<a name="l-262"></a><span class="tm">19:56:49</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> if your usecases are solidly separated from Bitcoin Core, that'd help re: review
+<a name="l-263"></a><span class="tm">19:56:57</span><span class="nk"> &lt;wumpus&gt;</span> that's *agreeing* with you, not punishment.
+<a name="l-264"></a><span class="tm">19:57:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> nice!
+<a name="l-265"></a><span class="tm">19:57:28</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> ok, I misinterpreted your "let's be careful when doint it" as well
+<a name="l-266"></a><span class="tm">19:58:06</span><span class="nk"> &lt;btcdrak&gt;</span> On another note: aj has written some functional test scripts for OP_CSV (requires #7184 + #6564) https://github.com/ajtowns/op_csv-test - so anyone who wants to test those PRs has another tool at their disposal. We do need to think about wrapping those PRs up next month to keep on the roadmap schedule.
+<a name="l-267"></a><span class="tm">19:58:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I haven't said "let's never do this", but I'd be fine postponing it a year or so so there can be a serious generic effort
+<a name="l-268"></a><span class="tm">19:58:18</span><span class="nk"> &lt;wumpus&gt;</span> (as petertodd says)
+<a name="l-269"></a><span class="tm">19:58:36</span><span class="nk"> &lt;petertodd&gt;</span> RNG's are weird after all - they're not really the same skillset as normal cryptographic code
+<a name="l-270"></a><span class="tm">19:58:42</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-271"></a><span class="tm">19:59:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> lets disuss later in the 0.13 cycle. I think getting off of OpenSSL's is important.
+<a name="l-272"></a><span class="tm">19:59:55</span><span class="nk"> &lt;wumpus&gt;</span> I mean for the wallet the RNG is pretty much what it all hinges on, I don't even want to think about the consequences of a bug there
+<a name="l-273"></a><span class="tm">19:59:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sure
+<a name="l-274"></a><span class="tm">20:00:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span>  I don't think I can contribute so I can't say much dates, just nacking the "never" I thought I heard but you didn't say
+<a name="l-275"></a><span class="tm">20:00:42</span><span class="nk"> &lt;paveljanik&gt;</span> Getting rid of openssl sounds like a plan. Lets announce it somewhere...
+<a name="l-276"></a><span class="tm">20:00:43 </span><span class="nka">* btcdrak</span> <span class="ac">rings the bell</span>
+<a name="l-277"></a><span class="tm">20:00:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

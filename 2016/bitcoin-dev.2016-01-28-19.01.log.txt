@@ -1,0 +1,277 @@
+19:01:09 <wumpus> #startmeeting
+19:01:09 <lightningbot`> Meeting started Thu Jan 28 19:01:09 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:09 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:26 <petertodd> hi
+19:01:43 <wumpus> #topic refactoring window
+19:02:06 <jtimon> I just want to have a clearer idea of when those are
+19:02:27 <wumpus> I'm fine with starting moveonly stuff at least - I've already merged #7348
+19:02:32 <jtimon> and what it means when we're on a "refactoring window"
+19:02:55 <wumpus> we're nearing the 0.12 release, and there's not that much urgent to be merged otherwise
+19:03:10 <petertodd> note that there is significant segwit work that is affected by this, OTOH, it may not be affected in a way that matters
+19:03:29 <what_now> Hello, sometimes I get a time out on rpc calls to bitcoind. I am using 0.11.2. I have a big wallet file(big keypool). The slowdown occurrs upon all commands(example wallet decryption too) not just sending out funds.
+19:03:44 <wumpus> not sure about that petertodd, but they're based on 0.12 AFAIK
+19:03:46 <petertodd> what_now: we're in the middle of a dev meeting; best if you ask again in an hour
+19:03:49 <jonasschnelli> what_now: please use #bitcoin-core-dev (meeting in this channel)
+19:03:58 <Luke-Jr> jtimon: can you prioritise refactors gthat dont conflict segwit?
+19:04:21 <petertodd> wumpus: yeah, being based on v0.12 is part of what helps here
+19:04:23 <wumpus> so it doesn't affect segwit immedaitely, although at some point it needs to be forward-ported over the moves
+19:04:34 <what_now> Ok thanks
+19:04:47 <wumpus> (which for pure move-only isn't too much effort, at least)
+19:04:55 <petertodd> wumpus: I'm assuming we're most likely to release segwit first as a 0.12.x?
+19:05:09 <wumpus> petertodd: I suppose so
+19:05:21 <wumpus> 0.13 will be june-july
+19:05:22 <btcdrak> petertodd: ofc, 0.13 isnt scheduled for months yet
+19:05:24 <gmaxwell> It previously occured to me that having refactor windows at the beginning of a version cycle may interfear with the constant backporting we do then.
+19:05:39 <Luke-Jr> but it should be merged to master first
+19:05:40 <jtimon> petertodd: my longest consensus refactoring branch is based on last-0.11.99 3cd836c
+19:06:02 <wumpus> gmaxwell: it does, but 0.12.0 final is near, I don't expect much more backporting to be needed now
+19:07:17 <wumpus> we'll do a rc3 next week and if really necessary a rc4 the week after that and then that's that
+19:07:44 <jtimon> Luke-Jr: if we don't want to backport refactors with segwit and we want to wait for segwit, then the 0.13 refactor window may be missed again for really simple things like #7310, which I assume you consider conflicting with segwit
+19:08:53 <jtimon> gmaxwell: yeah, that's what I've been saying since the first time we talked about this windows, I think they are far best at the end of the release cycle, before forking the next version to release from master
+19:09:08 <Luke-Jr> jtimon: I was thinking more like closing refactors a week after segwsit
+19:09:17 <gmaxwell> I guess the thing to admit is that there is no good time for refactors, and that we'll just have to deal with their costs.
+19:09:40 <gmaxwell> jtimon: thats a point.
+19:09:43 <wumpus> yes, otherwise you keep postponing
+19:09:58 <jtimon> if we had done it before forking 0.12...I really think that's the best time (doesn't mean that it won't have costs)
+19:10:06 <wumpus> as said above, I'd say now is a pretty good time, but if people prefer postponing I won't complain, it's always a bad time
+19:10:25 <wumpus> no, before forking 0.12 it was *really* busy
+19:10:35 <wumpus> all kinds of stuff that needs to b e merged as soon as possible
+19:10:56 <wumpus> at least it came to rest a bit now
+19:12:25 <btcdrak> yeah, a lot of PRs are mergeable now without needing rebased.
+19:12:39 <Luke-Jr> imo do non-SW-conlicts first and if we end up conflicting anyway so be it
+19:12:40 <wumpus> but there's nothing that needs to be merged urgently
+19:13:25 <jtimon> Luke-Jr: better yet, what about not bip68-112-conflicting, not versionbits conflicting and non-segwit conflicting ?
+19:13:33 <btcdrak> I do think it's time to start thinking about merging #7184 and #6564 after they get a few more ACKs
+19:13:42 <wumpus> in contrast to before a release deadline, when there's pressure to get things in
+19:13:46 <jtimon> </sarcasm>
+19:13:47 <petertodd> I'd vote for getting it over with now, as jtimon's been rather patient :)
+19:14:00 <petertodd> (for dev branch)
+19:15:17 <wumpus> ok, next topic?
+19:15:23 <Tasoshi> Everyone complains that the blocksize is not discussed in these meetings. So maybe it can be discussed for once?
+19:15:32 <wumpus> Tasoshi: no
+19:15:37 <Tasoshi> why not?
+19:15:47 <Tasoshi> has a decision been made on it?
+19:16:03 <maaku> Tasoshi: this is not the place
+19:16:14 <petertodd> Tasoshi: this is a technical meeting to discuss relatively short-term dev work
+19:16:23 <cfields> Tasoshi: these meetings are for our day-to-day work. We need a place for that, even if it's not sexy topics. Please respect that.
+19:16:28 <Tasoshi> maaku of course it is, it is a technical meeting, so lets discuss a technical topic, the blocksize question
+19:16:31 <wumpus> yes, we'll not do a blocksize hardfork for now
+19:16:52 <Tasoshi> so the decision is to not maxbloklimit_increase?
+19:16:53 <jonasschnelli> wumpus: +1. Next topic?
+19:17:06 <Tasoshi> until when?
+19:17:13 <gmaxwell> Tasoshi: Core has a published capacity roadmap, feel free to comment about that on the list.
+19:17:21 <Tasoshi> this isn't the core chan
+19:17:26 <Tasoshi> this is general bitcoin development
+19:17:35 <wumpus> Tasoshi: this is a bitcoin core meeting
+19:17:47 <Tasoshi> maybe core should have it's meetings in the core chan?
+19:17:50 <wumpus> Tasoshi: stop interfering
+19:17:56 <Tasoshi> I thought this was a general bitcoin dev meeting
+19:18:00 <Luke-Jr> wumpus: it is genereal bitcoin meeting..
+19:18:11 <jtimon> actually he has a point, maybe these meetings should happen in #bitcoin-core-dev
+19:18:11 <gmaxwell> Tasoshi: please you're disrupting the meeting.
+19:18:22 <jtimon> but yeah, not the time
+19:18:24 <Luke-Jr> Tasoshi: still nlo decisions are made in meetings
+19:18:30 <petertodd> jtimon: seems reasonable if this keeps coming up, but that's for next meeting
+19:18:33 <Luke-Jr> no*
+19:19:10 <wallet42> getrawtransaction works as long as a pruning is not enabled and at least 1 spendable output is still available right?
+19:19:29 <Luke-Jr> Tasoshi: email the ML to schedule a new meeting another day, maybe?
+19:19:43 <wumpus> we can move the meeting to #bitcoin-core-dev, sure
+19:19:46 <Tasoshi> or maybe you guys can actually discuss it
+19:19:48 <Tasoshi> but whatever
+19:19:54 <Tasoshi> the users are about to vote
+19:19:57 <jtimon> anyway, so the refactor window is from now to when? and what does it mean that there's a refactor window?
+19:19:58 <maaku> NEXT TOPIC
+19:20:00 <Tasoshi> you can bury your heads all you want
+19:20:02 <gmaxwell> Topic suggestion: Any outstanding issues for 0.12RC?
+19:20:34 <wumpus> #topic outstanding issues for 0.12.0
+19:20:55 <Luke-Jr> not declaring removal of priority
+19:20:56 <cfields> uhmm, it was brought to my attention that we may need to sign the win32 release with a new key for win7+
+19:21:16 <jonasschnelli> expired?
+19:21:23 <cfields> so, ignoring the fact that we need a new key in general, we can upgrade ours to work for this release
+19:21:34 <wumpus> it needs to use sha256
+19:21:36 <cfields> i believe it doesn't take long. I'll be starting that process today
+19:21:41 <cfields> right, current is sha1
+19:21:45 <jonasschnelli> ^^
+19:21:49 <btcdrak> ouch
+19:22:10 <cfields> i'll get an eta on that asap so we'll know if it's worth holding up rc3
+19:22:18 <wumpus> #action cfields: new key for win release signing
+19:22:24 <what_now> Topic suggestion: creating a roadmap for aspiring devs to catch up with code?
+19:22:33 <petertodd> cfields: do we have an idea of how many windows users test rc's btw?
+19:22:36 <btcdrak> otherwise jonasschnelli could sign, he has a key iirc
+19:22:52 <jonasschnelli> btcdrak: only OSX
+19:23:18 <petertodd> what_now: I'd suggest posting that to the dev list; also, first look at bitcoin.org's documentation efforts
+19:23:20 <jonasschnelli> petertodd: I test them.. have serval win VMs here. Although only "smoke" tests.
+19:23:24 <cfields> btcdrak: not nice to change keys during the release cycle. I believe this keeps the current chain intact
+19:23:37 <btcdrak> cfields: agree
+19:23:39 <wumpus> what_now: not really a meeting topic, better to ask that outside the meeting
+19:23:46 <what_now> Thank you petter see you in 2 years :(
+19:23:56 <cfields> petertodd: same as jonasschnelli above. I verify that they start up and are infact the correct tagged release
+19:23:59 <what_now> Roger, gonna shut up now
+19:24:08 <petertodd> jonasschnelli: cool - I was thinking that if we're not getting many windows testers, that suggests we shouldn't hold back the rc releases because of a windows-specific issue.
+19:24:27 <wumpus> well we need some key for signing, it doesn't matter too much which one
+19:24:47 <jonasschnelli> I can offer to sign the OSX binaries in future (maybe from 0.13)
+19:25:38 <cfields> makes sense to me, since you're the most active on osx these days
+19:25:38 <wumpus> cool jonasschnelli
+19:26:30 <wumpus> ok, that concludes the topic I think, we don't know how long it will take to get a new key, if it takes too long someone else can sign this time
+19:27:34 <wumpus> I mean concludes the signing topic, not the "outstanding issues" topic
+19:28:27 <wumpus> it seems there is still some controversy re: priority, or at least how the changes should be noted in the release notes
+19:28:42 <wumpus> e.g. https://github.com/bitcoin/bitcoin/pull/7346
+19:28:50 <jonasschnelli> +1 for keep it as it is
+19:29:02 <gmaxwell> I realized tht we never did anything about the issue I raised with localhost being banning whitelisted + autoonion support; do we care?
+19:29:31 <petertodd> Luke-Jr: is there anything we can do to make it easier for LJR to support priority if Core doesn't?
+19:29:39 <wumpus> jonasschnelli: I'd say so too - though it makes sense to mention the plans to remove priority in the release notes
+19:30:04 <petertodd> Luke-Jr: or i should say, Bitcoin <insert-snappy-name-here> :)
+19:30:08 <jonasschnelli> Okay. I follow the majority.
+19:30:23 <petertodd> gmaxwell: link?
+19:30:42 <wumpus> gmaxwell: of course we do
+19:30:56 <wumpus> petertodd: I think that's a good question
+19:31:26 <jonasschnelli> I guess there is no reported issue.
+19:31:30 <paveljanik> The plan should have been announced even earlier. Even the change in the default priority settings.
+19:31:35 <gmaxwell> there is a blinking _pr_
+19:31:36 <wumpus> I mean some people are bound to want to keep some semblance of priority support, but supporting it in the current mempool framework is hard/inefficient
+19:31:39 * jtimon remembers asking a similar question to Luke-Jr some time ago...
+19:31:50 <gmaxwell> I'll go rebase it and cut it down.
+19:31:58 <paveljanik> What we can do now is to announce the removal of prio code - special section in release notes, probably?
+19:32:18 <wumpus> paveljanik: yes , we should certainly announce it somewher
+19:32:23 <jonasschnelli> Okay. I'm happy to work on the banning whitelisted + autoonion support issue (start end of feb.).
+19:32:34 <wumpus> if only to get an idea what people outside direct dev circles think about it
+19:32:50 <gmaxwell> the original PR got hung up because of the locking mess around nodestats.
+19:32:59 <wumpus> I'm happing to work on it too, but after 0.12.0 release
+19:33:02 <wumpus> happy*
+19:33:10 <gmaxwell> (it's PR 7082) but I can make the change more minimal.
+19:33:16 <jonasschnelli> Yes. I guess after some changes there i'm familiar with the locking concept in CNode CNodeStat
+19:33:47 <wumpus> it's not something I have enough confidence in to get correct for a last minute fixup
+19:34:08 <jonasschnelli> Wasn't aware of that PR (7082). Will test / rebase and or extend.
+19:34:09 <gmaxwell> wumpus: yes, I can just change the patch to remove the privledging of localhost only.
+19:34:26 <wumpus> gmaxwell: yep, if we can slip in some simpler fix that'd be better
+19:34:30 <jonasschnelli> No. I guess its for 0.13 or 0.12.1?
+19:34:36 <wumpus> then leave the rest for 0.13/0.12.1
+19:34:46 <gmaxwell> jonasschnelli: please lt me. I just wanted confirmation that it wasn't intentionally dropped.
+19:34:59 <jonasschnelli> Sure.
+19:35:04 <gmaxwell> yea, just the one line change should at least avoid the simple attack, I'll do that.
+19:35:08 <wumpus> no, certainly not intentionally, it's just easy to forget about things
+19:35:14 <jonasschnelli> Do we need a solution for this in 0.12.0?
+19:35:27 <gmaxwell> Thats why I brought it up.
+19:35:40 <jtimon> jonasschnelli: the one line change ?
+19:35:53 <gmaxwell> Please see the PR, without doing something the autoonion support makes connection exhaustion attacks much easier.
+19:35:56 <wumpus> #action gmaxwell: "one line change" to fix #7082 in 0.12.0
+19:36:02 <gmaxwell> Thanks.
+19:36:04 <jonasschnelli> +75 −37 in main/net seems to late for a after-rc2-change
+19:36:17 <jonasschnelli> ok. Agree.
+19:36:58 <petertodd> gmaxwell: so, specifically you're worried about exhausting all incoming connections right?
+19:37:38 <wumpus> yes, it's about incoming connections
+19:38:29 <gmaxwell> petertodd: yes we have eviction to protect from that but localhost is excempted.
+19:38:29 <paveljanik> I think we should also announce somewhere that current openssl bugs do not affect Bitcoin Core...
+19:38:50 <wumpus> good idea paveljanik
+19:39:07 <jonasschnelli> +1
+19:39:14 <wumpus> #topic how does this new "critical" OpenSSL release affect us
+19:39:17 <jonasschnelli> btcdrak: a website blog post?
+19:39:37 <wumpus> <kanzure> https://mta.openssl.org/pipermail/openssl-announce/2016-January/000061.html
+19:39:42 <btcdrak> jonasschnelli: sure.
+19:39:43 <wumpus> #link https://mta.openssl.org/pipermail/openssl-announce/2016-January/000061.html
+19:40:00 <wumpus> nothing that affect us in any way?
+19:40:15 <jonasschnelli> Does it not affect bip70 / GUI? (haven't checked)
+19:40:16 <wumpus> also not for qt payment protocol TLS stuff?
+19:41:13 <gmaxwell> I wish we had some way of measureing if that stuff was ever used, it seems barely usable (send only, gui only) to me and has been a source of multiple problems.
+19:41:19 <jtimon> did the replacement for the wallet encription PR get merged? what other parts of core still depend on openssl apart from bip70?
+19:41:30 <wumpus> yes, it is being used
+19:42:00 <jonasschnelli> jtimon: entropy, AES (wallet), bip70
+19:42:19 <wumpus> jtimon: no, I think those all need rebase
+19:42:23 <jonasschnelli> jtimon: and the wallet encryption PR from cfields is not yet merged.
+19:42:40 <wumpus> I think they're all labeled 0.13
+19:42:43 <jtimon> thanks
+19:42:44 <jonasschnelli> and sipa/gmaxwells fortuna change needs also rebase.
+19:43:01 <jonasschnelli> (although we should pack it into a sep. library)
+19:43:04 <cfields> wumpus: according to that mail, 1.0.1 isn't affected
+19:43:17 <gmaxwell> vetting if any particular openssl release impacts the BIP70 implementation is too much work; I'd generally be unwilling to sign off on a claim that it didn't.  The amount of involved code is huge, including a bunch of code in QT.
+19:43:19 <cfields> (not discounting self-builders of course, just pointing that out)
+19:43:36 <wumpus> yes, fortuna needs to be a separate lib
+19:43:50 <jtimon> are there any plans to replace openssl for entropy?
+19:44:01 <jonasschnelli> I would say static builds are nice,.. but the once we need to care about are the once that self-compile.
+19:44:02 <wumpus> jtimon: yes
+19:44:29 <jtimon> wumpus: oh, I see, that's the fortuna thing
+19:44:32 <petertodd> jtimon: that's what the fortuna thing would be basically
+19:44:41 <wumpus> jtimon: https://github.com/bitcoin/bitcoin/pull/5885
+19:44:44 <wumpus> gmaxwell: agree on that
+19:45:25 <wumpus> gmaxwell: I don't expect that from you either - my question was more "does it affect TLS usage"
+19:45:28 <jonasschnelli> I would also see it as a plain C(89 or 99) library
+19:46:00 <petertodd> jonasschnelli: fortuna? why isn't C++ ok here?
+19:46:07 <wumpus> as openssl is basically one huge TLS library I expect the answer to that is "yes"
+19:46:08 <jonasschnelli> petertodd: MCU
+19:46:26 <petertodd> jonasschnelli: oh, you mean for microprocessors?
+19:46:28 <gmaxwell> jonasschnelli: there are many difficult complications in making a safe, generic RNG, first among them is fork detection; which is more or less impossible to do completely safely on linux. :(
+19:46:55 <wumpus> gmaxwell: we only have to be better than openssl
+19:47:13 <jonasschnelli> I would say libsecp256k1 together with a C based fort. implementation would be a very good team.
+19:47:13 <gmaxwell> (even if you do the slow thing of testing the PID on every call, a sequence of multiple forks could leave you with the same PID as a now-gone grandparent process)
+19:47:14 <petertodd> wumpus: we still have to be better than /dev/urandom :)
+19:47:21 <wumpus> if it's impossible to do safely on linux, then openssl doesn't do that either
+19:47:41 <wumpus> note also that bitcoin never forks
+19:47:46 <jonasschnelli> Long term, i don't think entropy really matters for bitcoin core
+19:47:55 <wumpus> (well, it does, but only to launch ancillary processes)
+19:47:56 <gmaxwell> wumpus: yes but when we must be a library we need to be safe for more than bitcoin.
+19:48:02 <jonasschnelli> Mainly for the const time hack in libsecp
+19:48:14 <jonasschnelli> I don't expect people generating keys on the same machine then core runs.
+19:48:15 <wumpus> gmaxwell: just add a disclaimer 'not fork safe'
+19:48:35 <wumpus> I don't think it needs to satisfy any possible use case everyone can have
+19:48:39 <jonasschnelli> 'not fork safe'? HW or SF....
+19:48:42 <btcdrak> "<@wumpus> note also that bitcoin never forks"
+19:48:44 <jonasschnelli> </funmode>
+19:48:47 <cfields> lol
+19:48:54 <wumpus> LOL btcdrak
+19:48:56 <petertodd> wumpus: see, that's one of the reasons I'd lean towards C++ - I'm not sure we want to be in the business of making these libraries if others' will use them
+19:48:58 <wumpus> hadn't even thought of that
+19:49:03 <gmaxwell> thata going to get misunderstood by the public...
+19:49:08 <jonasschnelli> hehe
+19:49:35 <cfields> petertodd: c++11 even has fancy prngs built-in...
+19:49:41 <cfields> though i doubt that would go over well
+19:50:31 <wumpus> in any case, I thin kfor seperation of concerns it needs to be a seperate lib, if it ever turns out useful for anyone else is not our problem ;)
+19:50:59 <gmaxwell> in any case, these also need locking; ... regardless, I spent a fair amount of time talking to nick from tor about this, and I'm also on a mailing list of people trying to replace the RNG in openssl.  I'm now pretty confident that we wouldn't be able to satisify that many people; lots of people care greatly about really high performance, which we more or less don't care about. (OpenSSL's is exception
+19:51:05 <gmaxwell> ally slow, and we've seldom noticed)
+19:51:16 <gmaxwell> wumpus: Sorry, I don't beleive in that "not our problem" approach. :)
+19:51:17 <wumpus> though if jonasschnelli has applications in mind himself then it makes sense to keep those in mind
+19:51:30 <wumpus> gmaxwell: we can't do everything for everyone
+19:51:43 * jtimon resists to bring the C vs C++ for ultra-long-term future libconsensus topic
+19:51:44 <wumpus> gmaxwell: well you are welcome to try, of course :)
+19:52:16 <gmaxwell> We're going off on a tangent here in any case.
+19:52:28 <btcdrak> -wizards
+19:52:36 <wumpus> but sure, we can stay with openssl's RNG if that's what is preferred
+19:52:44 <wumpus> no decision needs to be made today
+19:52:44 <gmaxwell> I'm not saying that.
+19:52:46 <wumpus> next topic?
+19:53:21 <wumpus> only ~7 minutes left
+19:53:23 <petertodd> wumpus: I just posted some important stuff re: segwit upgrades, but I don't think it needs to be discussed here yet
+19:53:32 <petertodd> wumpus: (posted to the -dev list)
+19:53:32 <jtimon> wumpus let's leave openssl only for bip70, even if it's not today
+19:53:53 <wumpus> jtimon: I agree with that in theory, but if making our own RNG is really so dangerous I don't want to risk it
+19:54:47 <petertodd> wumpus: I'd feel happier if this was part of an effort including non-bitcoin users (e.g mailing list & tor that gmaxwell mentioned above)
+19:54:52 <wumpus> it is a really risky endavour to implement this kind of stuff ourselves and get it completely right, many people are messed up before with hand rolled RNGs in the bitcoin space
+19:54:53 <jtimon> wumpus: maybe not for 0.13, but I trust that we will have done it already be 0.20 :p
+19:55:02 <jtimon> s/be/by
+19:55:07 <wumpus> petertodd: agree
+19:55:25 <gmaxwell> wumpus: please don't punish me for speaking frankly. The prior efforts to upgrade ours were derailed by a desire to make something generic. I've determined that making something generic is quite hard to do right.
+19:55:35 <wumpus> so I'm just trying to be pragmatic, yes we'd like to get rid of openssl dependency but not at all cost
+19:55:49 <gmaxwell> I think it would be a worthwhile thing to do, but I don't think the resources can be spared to do something generic right now.
+19:55:52 <wumpus> gmaxwell: how am I punuishing you?
+19:55:59 <jonasschnelli> gmaxwell: Agree. It takes much more time..
+19:56:07 <jonasschnelli> But maybe other are ready to contribute.
+19:56:19 <gmaxwell> wumpus: by jumping to not doing it at all when I raised a single complaints.
+19:56:22 <jonasschnelli> (and I have use cases)
+19:56:33 <wumpus> gmaxwell: I'm not saying we should do it, just that we should be careful
+19:56:40 <gmaxwell> Sure.
+19:56:45 <wumpus> gmaxwell: I've been saying that from the beginning and you convinced me to be even more
+19:56:49 <petertodd> jonasschnelli: if your usecases are solidly separated from Bitcoin Core, that'd help re: review
+19:56:57 <wumpus> that's *agreeing* with you, not punishment.
+19:57:09 <jonasschnelli> petertodd: nice!
+19:57:28 <jtimon> wumpus: ok, I misinterpreted your "let's be careful when doint it" as well
+19:58:06 <btcdrak> On another note: aj has written some functional test scripts for OP_CSV (requires #7184 + #6564) https://github.com/ajtowns/op_csv-test - so anyone who wants to test those PRs has another tool at their disposal. We do need to think about wrapping those PRs up next month to keep on the roadmap schedule.
+19:58:10 <wumpus> jtimon: I haven't said "let's never do this", but I'd be fine postponing it a year or so so there can be a serious generic effort
+19:58:18 <wumpus> (as petertodd says)
+19:58:36 <petertodd> RNG's are weird after all - they're not really the same skillset as normal cryptographic code
+19:58:42 <wumpus> right.
+19:59:22 <gmaxwell> wumpus: lets disuss later in the 0.13 cycle. I think getting off of OpenSSL's is important.
+19:59:55 <wumpus> I mean for the wallet the RNG is pretty much what it all hinges on, I don't even want to think about the consequences of a bug there
+19:59:59 <wumpus> gmaxwell: sure
+20:00:15 <jtimon> wumpus:  I don't think I can contribute so I can't say much dates, just nacking the "never" I thought I heard but you didn't say
+20:00:42 <paveljanik> Getting rid of openssl sounds like a plan. Lets announce it somewhere...
+20:00:43 * btcdrak rings the bell
+20:00:47 <wumpus> #endmeeting
