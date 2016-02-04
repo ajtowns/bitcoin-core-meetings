@@ -1,0 +1,142 @@
+19:01:06 <wumpus> #startmeeting
+19:01:06 <lightningbot`> Meeting started Thu Feb  4 19:01:06 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:06 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:13 <wumpus> petertodd: should have been announced on the mailing list
+19:01:19 <petertodd> wumpus: good point!
+19:01:25 <wumpus> proposed topics?
+19:01:29 <petertodd> sipa: I need to reply to you and think about your points raised
+19:01:43 <sipa> petertodd: what where when?
+19:01:53 <petertodd> sipa: mailing list, re: segwit upgrade procedures
+19:01:54 <sipa> ah, the segwit proposed changes?
+19:01:59 <petertodd> sipa: yup
+19:02:00 <sipa> yeah, let's do that there
+19:02:03 <petertodd> sipa: agreed
+19:02:14 <jtimon> proposed topic move the meeting to -core-dev next time?
+19:02:16 <wumpus> #topic segwit proposed changes
+19:02:17 <petertodd> sipa: just wanted to be clear discussion was ongoing
+19:02:52 <sipa> petertodd proposed a change that would make future consensus-data-adding softforks easier to deploy; discussion ongoing
+19:03:09 <petertodd> so... I'm working on that prev-block-proof thing still, and I think I'll have that ready for review in a few more days
+19:03:50 <jtimon> petertodd: can you give more details about the "prev-block-proof thing"?
+19:04:01 <petertodd> as for the consensus-data-adding thing, I'm leaning towards saying it should be the last thing we make a decision about, with anything more complex than adding another field have the onus on me/whomever to have running code implementing it
+19:04:36 <petertodd> jtimon: sure. So, I want to make sure miners must prove they, or a trusted third-party, had a copy of the previous block's data to be able to create a new block.
+19:05:10 <petertodd> jtimon: issue being fixed is the fact that with segwit, it's possible to only transfer the data required to update the UTXO set, without the data showing that those changes were valid
+19:05:39 <petertodd> jtimon: so to fix that, basically rehash the previous block with a nonce
+19:06:00 <jtimon> did this affected SPV mining or that was another thing?
+19:06:26 <petertodd> jtimon: this *can* be used to stop SPV mining entirely, although whether we do this or not is an implementation detail
+19:06:33 <petertodd> jtimon: er, I should say, implementation decision
+19:06:48 <jtimon> ok, thanks
+19:06:56 <Tasoshi> wouldn't lack of SPV mining make mining fully inefficient?
+19:07:10 <petertodd> for instance, we could say validationless mining of empty blocks is allowed, but not blocks with transactions in them
+19:07:21 <Tasoshi> by delaying block propagation
+19:07:49 <petertodd> Tasoshi: validationless mining breaks the security assumptions of SPV wallets, so we have good reasons to either stop it fully, or restrict it to just empty blocks
+19:07:54 <wumpus> the whole point of miners is to validate
+19:08:20 <Tasoshi> yes, and they can spv mining in a way that ensures security is maintained
+19:08:25 <petertodd> wumpus: in the current design of bitcoin :) possibly miners could also be seen as proving publication of data, but that's *not* the way bitcoin is designed right now
+19:08:38 <jtimon> yeah, I don't see how having fast-propagating empty blocks helps in any way
+19:08:41 <sipa> Tasoshi: that sounds suspcisious to me
+19:08:43 <petertodd> Tasoshi: yes, e.g. the mining of empty blocks
+19:08:58 <petertodd> Tasoshi: mining blocks with transactions in them breaks the security assumptions in the current design
+19:09:15 <sipa> petertodd: just empty blocks is no solution; you can trivially add a single miner-generated transaction that's known to be valid
+19:09:24 <Tasoshi> https://bitslog.wordpress.com/2016/01/08/spv-mining-is-the-solution-not-the-problem/
+19:09:40 <phantomcircuit> Tasoshi, spv mining or spv clients, pick one
+19:09:54 <petertodd> sipa: oh, but I'm proposing potentially doing a version where you can enforce that the block must be empty to validationless mine
+19:10:12 <Tasoshi> segwit will provide fraud proofs which I should think will ensure spv wallets follow the longest chain
+19:10:16 <gmaxwell> or arbritary transactions, if you have some trusted aux data of whats already been mined.
+19:10:51 <Tasoshi> that is no reason to stop mining from being efficient in my view anyway
+19:10:53 <petertodd> Tasoshi: segwit is a long way from providing fraud proofs, and fraud proofs are *not* the current security model of bitcoin, and may not even work in general
+19:11:07 <sipa> Tasoshi: fraud proofs are not part of the current proposal; they just enable them
+19:11:29 <petertodd> Tasoshi: note that what I'm proposing does not preclude later redsigns that re-enable validationless mining
+19:11:42 <shea256> Hi everyone, just wanted to introduce myself. This is the first meeting I'm sitting in on.
+19:11:48 <sipa> shea256: hi there!
+19:11:51 <jtimon> petertodd: between completely removing SPV mining and allowing it for empty blocks...I can't really think of a reason for chosing the latter
+19:12:21 <petertodd> jtimon: my preference is the former too, but we'll have to see what's viable politically
+19:12:28 <sipa> i'm a bit skeptical about whether the segwit-enabled download-only-base-data model is one that is interesting
+19:12:37 <Tasoshi> because by stopping spv mining you are stopping block propagation which creates a fully inefficient system
+19:12:47 <wumpus> Tasoshi: you're repeating yourself, stop it
+19:12:51 <cfields> this discussion seems a bit out of scope for an irc meeting :)
+19:12:52 <Tasoshi> we could instead work on making spv mining fully safe and secure
+19:12:58 <petertodd> cfields: agrees
+19:13:01 <sipa> cfields: agree
+19:13:02 <petertodd> cfields: er, agreed
+19:13:26 <sipa> we can discuss this after the meeting
+19:13:26 <phantomcircuit> petertodd, have you written up the proposal for this?
+19:13:30 <petertodd> Tasoshi: sorry, but the above gets into very technical details about the nuance of what exactly bitcoin is and how it functions - probably not appropriate for a IRC meeting focusing on short-term development
+19:13:40 <jtimon> petertodd: I don't remember saying I had any preference here, but I still don't see how allowing it for empty blocks would make it more viable politically, what's the alleged advantage?
+19:13:42 <Tasoshi> sure
+19:13:57 <petertodd> jtimon: basically if miners really like their validationless mining setups :)
+19:14:07 <Tasoshi> just wanted to raise my objections...
+19:14:13 <petertodd> jtimon: personally, I'll explaing it in terms of leveling the playing field
+19:14:15 <phantomcircuit> jtimon, everybody doing validation-less mining is already creating empty blocks anyways
+19:14:18 <petertodd> Tasoshi: I'd suggest you raise them on list
+19:14:47 <sipa> other topic?
+19:14:56 <sipa> how is 0.12 doing?
+19:15:08 <wumpus> #topic 0.12.0
+19:15:13 <jtimon> petertodd: oh, to keep miners happy mining empty blocks with subsidy...but nobody is arguing that "fast" empty blocks are an advantage for anyone else, right?
+19:15:15 <btcdrak> We're at RC3
+19:15:16 <wumpus> we've just tagged rc3
+19:15:25 <wumpus> hopefully nothing critical comes up and this can be final
+19:15:48 <jtimon> did something critical came up in rc2?
+19:16:10 <wumpus> yes
+19:16:31 <cfields> gitian builders: we've requested a new windows signing cert so that we don't run into problems with win7+ and it's sha1 deprecation. Sigs should be pushed today barring any complications.
+19:16:35 <jtimon> ok, just wanted to confirm what was the criteria for creating a new rc
+19:16:37 <wumpus> e.g. the seeds update
+19:16:55 <wumpus> and #7438
+19:18:00 <wumpus> ok, next topic?
+19:18:24 <btcdrak> sequence locks
+19:18:34 <Tasoshi> is there an update on segwit?
+19:18:39 <wumpus> #topic sequence locks
+19:18:54 <wumpus> Tasoshi: we had segwit as first topic
+19:19:14 <btcdrak> OK so this is more information than anything, but #7184 (the BIP68 implementation) is done and gathering Tested ACKs, including from some of the Lightning guys.
+19:19:16 <Tasoshi> ah, sorry, sequence locks it is
+19:19:27 <petertodd> btw: re, sequence locks, something that maybe whasn't been widely pointed out is that BIP68 is useful by itself with segwit
+19:19:27 <btcdrak> It's really time to look at getting this stuff merged
+19:19:32 <btcdrak> same for #6564
+19:19:43 <wumpus> yes it's looking quite good
+19:19:49 <wumpus> is the BIP finalized and merged now?
+19:19:57 <btcdrak> so I'd like an action point if possible to review and test ACK #7184 and  #6564
+19:20:08 <btcdrak> wumpus: BIPs are all merged and final
+19:20:09 <wumpus> #action review and test ACK #7184 and  #6564
+19:20:15 <wumpus> btcdrak: awesome
+19:20:35 <btcdrak> one last point
+19:20:48 <jtimon> yes please, let's finally merge this
+19:20:55 <btcdrak> there are sme test scripts from aj  at https://github.com/ajtowns/op_csv-test
+19:21:16 <btcdrak> you need to merge both PRs together to use them ofc. I did so at https://github.com/btcdrak/bitcoin/tree/sequenceandcsv
+19:21:30 <btcdrak> that's it :)
+19:21:57 <jtimon> or just merge #7184 first and add those tests to #6564 ?
+19:23:22 <petertodd> jtimon: I think merging $7184 first is fine
+19:24:10 <petertodd> jtimon: previously I've been against separating the two, but I think I was wrong about that given that BIP68 is useful w/ segwit on it's own
+19:24:21 <btcdrak> jtimon: we dont have a framework to add those kinds of tests that I am aware of
+19:25:04 <jtimon> well I was never against doing both together, but maybe separating them could have accelerated the process (it clearly hasn)
+19:25:07 <wumpus> #link https://github.com/ajtowns/op_csv-test
+19:25:09 <btcdrak> petertodd: I'm especially pleased that downstream consumers have done extensive testing and found the code useful for their cases.
+19:25:09 <jtimon> t
+19:25:26 <petertodd> btcdrak: +1 - that's one of the most important steps!
+19:25:30 <wumpus> #link https://github.com/btcdrak/bitcoin/tree/sequenceandcsv
+19:26:22 <jtimon> btcdrak: oh, I thought you had added those tests to btcdrak/sequenceandcsv, never mind then
+19:26:35 <wumpus> what kind of tests are these?
+19:27:18 <wumpus> we have unit tests, and functinoal RPC tests + P2P tests, large chance they can be integrated somehow?
+19:28:08 <jtimon> I believe they are testing an specific smart contract protocol, like a payment channel or something, but I'm not really sure
+19:28:29 <wumpus> okay, well if there's something you need re : test integration let me know
+19:28:36 <btcdrak> wumpus: python smart contract tests, depends on petertodd's python-bitcoinlib
+19:29:06 <petertodd> note that I think we're still missing transaction-level unit tests, and I'd NACK an actual soft-fork on that basis
+19:29:12 <btcdrak> wumpus: I think they are good as documentation rather than automated tests
+19:29:38 <btcdrak> petertodd: well we're at mempool-only stage now. softforking PR is a new round :)
+19:29:41 <wumpus> petertodd: having the mempool-only pulls merged is good for testing, though
+19:29:50 <petertodd> btcdrak: yup, I am happy for this to be merged mempool only
+19:29:59 <wumpus> petertodd: I think NACKing ahead of ourselves is not constructive
+19:30:04 <petertodd> btcdrak: backing out a mempool-only opcoe isn't a big deal
+19:30:13 <wumpus> right, it's been done before
+19:30:15 <petertodd> wumpus: just wanted to be clear :)
+19:30:18 <btcdrak> wumpus: He's the Clief Naysayer, he must!
+19:30:26 <btcdrak> err Chief even
+19:30:33 <wumpus> though I prefer fixing over reverting :)
+19:30:35 <petertodd> btcdrak: I Naysay your speling :P
+19:31:33 <jtimon> other topic?
+19:31:38 <wumpus> ok, more topics?
+19:31:39 <btcdrak> well I'll get cracking the whip this week and maybe we can look at merge possibility next meeting
+19:32:32 <btcdrak> wumpus: I just want to point out I published the EOL policy on the website as we discussed a while back https://bitcoincore.org/en/lifecycle/
+19:32:33 <jtimon> or the meeting after the next meeting
+19:32:51 <wumpus> btcdrak: yes should be pretty close now
+19:33:02 <wumpus> #link  https://bitcoincore.org/en/lifecycle/
+19:33:25 <wumpus> ok, if there's no further topics
+19:33:33 <wumpus> #endmeeting

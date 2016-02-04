@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:06</span><span class="nk"> &lt;lightningbot`&gt;</span> Meeting started Thu Feb  4 19:01:06 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:06</span><span class="nk"> &lt;lightningbot`&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> should have been announced on the mailing list
+<a name="l-5"></a><span class="tm">19:01:19</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> good point!
+<a name="l-6"></a><span class="tm">19:01:25</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-7"></a><span class="tm">19:01:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I need to reply to you and think about your points raised
+<a name="l-8"></a><span class="tm">19:01:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> what where when?
+<a name="l-9"></a><span class="tm">19:01:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> mailing list, re: segwit upgrade procedures
+<a name="l-10"></a><span class="tm">19:01:54</span><span class="nk"> &lt;sipa&gt;</span> ah, the segwit proposed changes?
+<a name="l-11"></a><span class="tm">19:01:59</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> yup
+<a name="l-12"></a><span class="tm">19:02:00</span><span class="nk"> &lt;sipa&gt;</span> yeah, let's do that there
+<a name="l-13"></a><span class="tm">19:02:03</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> agreed
+<a name="l-14"></a><span class="tm">19:02:14</span><span class="nk"> &lt;jtimon&gt;</span> proposed topic move the meeting to -core-dev next time?
+<a name="l-15"></a><span class="tm">19:02:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit proposed changes</span>
+<a name="l-16"></a><span class="tm">19:02:17</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> just wanted to be clear discussion was ongoing
+<a name="l-17"></a><span class="tm">19:02:52</span><span class="nk"> &lt;sipa&gt;</span> petertodd proposed a change that would make future consensus-data-adding softforks easier to deploy; discussion ongoing
+<a name="l-18"></a><span class="tm">19:03:09</span><span class="nk"> &lt;petertodd&gt;</span> so... I'm working on that prev-block-proof thing still, and I think I'll have that ready for review in a few more days
+<a name="l-19"></a><span class="tm">19:03:50</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> can you give more details about the "prev-block-proof thing"?
+<a name="l-20"></a><span class="tm">19:04:01</span><span class="nk"> &lt;petertodd&gt;</span> as for the consensus-data-adding thing, I'm leaning towards saying it should be the last thing we make a decision about, with anything more complex than adding another field have the onus on me/whomever to have running code implementing it
+<a name="l-21"></a><span class="tm">19:04:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> sure. So, I want to make sure miners must prove they, or a trusted third-party, had a copy of the previous block's data to be able to create a new block.
+<a name="l-22"></a><span class="tm">19:05:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> issue being fixed is the fact that with segwit, it's possible to only transfer the data required to update the UTXO set, without the data showing that those changes were valid
+<a name="l-23"></a><span class="tm">19:05:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> so to fix that, basically rehash the previous block with a nonce
+<a name="l-24"></a><span class="tm">19:06:00</span><span class="nk"> &lt;jtimon&gt;</span> did this affected SPV mining or that was another thing?
+<a name="l-25"></a><span class="tm">19:06:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> this *can* be used to stop SPV mining entirely, although whether we do this or not is an implementation detail
+<a name="l-26"></a><span class="tm">19:06:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> er, I should say, implementation decision
+<a name="l-27"></a><span class="tm">19:06:48</span><span class="nk"> &lt;jtimon&gt;</span> ok, thanks
+<a name="l-28"></a><span class="tm">19:06:56</span><span class="nk"> &lt;Tasoshi&gt;</span> wouldn't lack of SPV mining make mining fully inefficient?
+<a name="l-29"></a><span class="tm">19:07:10</span><span class="nk"> &lt;petertodd&gt;</span> for instance, we could say validationless mining of empty blocks is allowed, but not blocks with transactions in them
+<a name="l-30"></a><span class="tm">19:07:21</span><span class="nk"> &lt;Tasoshi&gt;</span> by delaying block propagation
+<a name="l-31"></a><span class="tm">19:07:49</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> validationless mining breaks the security assumptions of SPV wallets, so we have good reasons to either stop it fully, or restrict it to just empty blocks
+<a name="l-32"></a><span class="tm">19:07:54</span><span class="nk"> &lt;wumpus&gt;</span> the whole point of miners is to validate
+<a name="l-33"></a><span class="tm">19:08:20</span><span class="nk"> &lt;Tasoshi&gt;</span> yes, and they can spv mining in a way that ensures security is maintained
+<a name="l-34"></a><span class="tm">19:08:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> in the current design of bitcoin :) possibly miners could also be seen as proving publication of data, but that's *not* the way bitcoin is designed right now
+<a name="l-35"></a><span class="tm">19:08:38</span><span class="nk"> &lt;jtimon&gt;</span> yeah, I don't see how having fast-propagating empty blocks helps in any way
+<a name="l-36"></a><span class="tm">19:08:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Tasoshi:</span> that sounds suspcisious to me
+<a name="l-37"></a><span class="tm">19:08:43</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> yes, e.g. the mining of empty blocks
+<a name="l-38"></a><span class="tm">19:08:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> mining blocks with transactions in them breaks the security assumptions in the current design
+<a name="l-39"></a><span class="tm">19:09:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> just empty blocks is no solution; you can trivially add a single miner-generated transaction that's known to be valid
+<a name="l-40"></a><span class="tm">19:09:24</span><span class="nk"> &lt;Tasoshi&gt;</span> https://bitslog.wordpress.com/2016/01/08/spv-mining-is-the-solution-not-the-problem/
+<a name="l-41"></a><span class="tm">19:09:40</span><span class="nk"> &lt;phantomcircuit&gt;</span> Tasoshi, spv mining or spv clients, pick one
+<a name="l-42"></a><span class="tm">19:09:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> oh, but I'm proposing potentially doing a version where you can enforce that the block must be empty to validationless mine
+<a name="l-43"></a><span class="tm">19:10:12</span><span class="nk"> &lt;Tasoshi&gt;</span> segwit will provide fraud proofs which I should think will ensure spv wallets follow the longest chain
+<a name="l-44"></a><span class="tm">19:10:16</span><span class="nk"> &lt;gmaxwell&gt;</span> or arbritary transactions, if you have some trusted aux data of whats already been mined.
+<a name="l-45"></a><span class="tm">19:10:51</span><span class="nk"> &lt;Tasoshi&gt;</span> that is no reason to stop mining from being efficient in my view anyway
+<a name="l-46"></a><span class="tm">19:10:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> segwit is a long way from providing fraud proofs, and fraud proofs are *not* the current security model of bitcoin, and may not even work in general
+<a name="l-47"></a><span class="tm">19:11:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Tasoshi:</span> fraud proofs are not part of the current proposal; they just enable them
+<a name="l-48"></a><span class="tm">19:11:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> note that what I'm proposing does not preclude later redsigns that re-enable validationless mining
+<a name="l-49"></a><span class="tm">19:11:42</span><span class="nk"> &lt;shea256&gt;</span> Hi everyone, just wanted to introduce myself. This is the first meeting I'm sitting in on.
+<a name="l-50"></a><span class="tm">19:11:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">shea256:</span> hi there!
+<a name="l-51"></a><span class="tm">19:11:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> between completely removing SPV mining and allowing it for empty blocks...I can't really think of a reason for chosing the latter
+<a name="l-52"></a><span class="tm">19:12:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> my preference is the former too, but we'll have to see what's viable politically
+<a name="l-53"></a><span class="tm">19:12:28</span><span class="nk"> &lt;sipa&gt;</span> i'm a bit skeptical about whether the segwit-enabled download-only-base-data model is one that is interesting
+<a name="l-54"></a><span class="tm">19:12:37</span><span class="nk"> &lt;Tasoshi&gt;</span> because by stopping spv mining you are stopping block propagation which creates a fully inefficient system
+<a name="l-55"></a><span class="tm">19:12:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Tasoshi:</span> you're repeating yourself, stop it
+<a name="l-56"></a><span class="tm">19:12:51</span><span class="nk"> &lt;cfields&gt;</span> this discussion seems a bit out of scope for an irc meeting :)
+<a name="l-57"></a><span class="tm">19:12:52</span><span class="nk"> &lt;Tasoshi&gt;</span> we could instead work on making spv mining fully safe and secure
+<a name="l-58"></a><span class="tm">19:12:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">cfields:</span> agrees
+<a name="l-59"></a><span class="tm">19:13:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> agree
+<a name="l-60"></a><span class="tm">19:13:02</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">cfields:</span> er, agreed
+<a name="l-61"></a><span class="tm">19:13:26</span><span class="nk"> &lt;sipa&gt;</span> we can discuss this after the meeting
+<a name="l-62"></a><span class="tm">19:13:26</span><span class="nk"> &lt;phantomcircuit&gt;</span> petertodd, have you written up the proposal for this?
+<a name="l-63"></a><span class="tm">19:13:30</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> sorry, but the above gets into very technical details about the nuance of what exactly bitcoin is and how it functions - probably not appropriate for a IRC meeting focusing on short-term development
+<a name="l-64"></a><span class="tm">19:13:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> I don't remember saying I had any preference here, but I still don't see how allowing it for empty blocks would make it more viable politically, what's the alleged advantage?
+<a name="l-65"></a><span class="tm">19:13:42</span><span class="nk"> &lt;Tasoshi&gt;</span> sure
+<a name="l-66"></a><span class="tm">19:13:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> basically if miners really like their validationless mining setups :)
+<a name="l-67"></a><span class="tm">19:14:07</span><span class="nk"> &lt;Tasoshi&gt;</span> just wanted to raise my objections...
+<a name="l-68"></a><span class="tm">19:14:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> personally, I'll explaing it in terms of leveling the playing field
+<a name="l-69"></a><span class="tm">19:14:15</span><span class="nk"> &lt;phantomcircuit&gt;</span> jtimon, everybody doing validation-less mining is already creating empty blocks anyways
+<a name="l-70"></a><span class="tm">19:14:18</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Tasoshi:</span> I'd suggest you raise them on list
+<a name="l-71"></a><span class="tm">19:14:47</span><span class="nk"> &lt;sipa&gt;</span> other topic?
+<a name="l-72"></a><span class="tm">19:14:56</span><span class="nk"> &lt;sipa&gt;</span> how is 0.12 doing?
+<a name="l-73"></a><span class="tm">19:15:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.12.0</span>
+<a name="l-74"></a><span class="tm">19:15:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> oh, to keep miners happy mining empty blocks with subsidy...but nobody is arguing that "fast" empty blocks are an advantage for anyone else, right?
+<a name="l-75"></a><span class="tm">19:15:15</span><span class="nk"> &lt;btcdrak&gt;</span> We're at RC3
+<a name="l-76"></a><span class="tm">19:15:16</span><span class="nk"> &lt;wumpus&gt;</span> we've just tagged rc3
+<a name="l-77"></a><span class="tm">19:15:25</span><span class="nk"> &lt;wumpus&gt;</span> hopefully nothing critical comes up and this can be final
+<a name="l-78"></a><span class="tm">19:15:48</span><span class="nk"> &lt;jtimon&gt;</span> did something critical came up in rc2?
+<a name="l-79"></a><span class="tm">19:16:10</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-80"></a><span class="tm">19:16:31</span><span class="nk"> &lt;cfields&gt;</span> gitian builders: we've requested a new windows signing cert so that we don't run into problems with win7+ and it's sha1 deprecation. Sigs should be pushed today barring any complications.
+<a name="l-81"></a><span class="tm">19:16:35</span><span class="nk"> &lt;jtimon&gt;</span> ok, just wanted to confirm what was the criteria for creating a new rc
+<a name="l-82"></a><span class="tm">19:16:37</span><span class="nk"> &lt;wumpus&gt;</span> e.g. the seeds update
+<a name="l-83"></a><span class="tm">19:16:55</span><span class="nk"> &lt;wumpus&gt;</span> and #7438
+<a name="l-84"></a><span class="tm">19:18:00</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-85"></a><span class="tm">19:18:24</span><span class="nk"> &lt;btcdrak&gt;</span> sequence locks
+<a name="l-86"></a><span class="tm">19:18:34</span><span class="nk"> &lt;Tasoshi&gt;</span> is there an update on segwit?
+<a name="l-87"></a><span class="tm">19:18:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">sequence locks</span>
+<a name="l-88"></a><span class="tm">19:18:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Tasoshi:</span> we had segwit as first topic
+<a name="l-89"></a><span class="tm">19:19:14</span><span class="nk"> &lt;btcdrak&gt;</span> OK so this is more information than anything, but #7184 (the BIP68 implementation) is done and gathering Tested ACKs, including from some of the Lightning guys.
+<a name="l-90"></a><span class="tm">19:19:16</span><span class="nk"> &lt;Tasoshi&gt;</span> ah, sorry, sequence locks it is
+<a name="l-91"></a><span class="tm">19:19:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btw:</span> re, sequence locks, something that maybe whasn't been widely pointed out is that BIP68 is useful by itself with segwit
+<a name="l-92"></a><span class="tm">19:19:27</span><span class="nk"> &lt;btcdrak&gt;</span> It's really time to look at getting this stuff merged
+<a name="l-93"></a><span class="tm">19:19:32</span><span class="nk"> &lt;btcdrak&gt;</span> same for #6564
+<a name="l-94"></a><span class="tm">19:19:43</span><span class="nk"> &lt;wumpus&gt;</span> yes it's looking quite good
+<a name="l-95"></a><span class="tm">19:19:49</span><span class="nk"> &lt;wumpus&gt;</span> is the BIP finalized and merged now?
+<a name="l-96"></a><span class="tm">19:19:57</span><span class="nk"> &lt;btcdrak&gt;</span> so I'd like an action point if possible to review and test ACK #7184 and  #6564
+<a name="l-97"></a><span class="tm">19:20:08</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> BIPs are all merged and final
+<a name="l-98"></a><span class="tm">19:20:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review and test ACK #7184 and  #6564</span>
+<a name="l-99"></a><span class="tm">19:20:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> awesome
+<a name="l-100"></a><span class="tm">19:20:35</span><span class="nk"> &lt;btcdrak&gt;</span> one last point
+<a name="l-101"></a><span class="tm">19:20:48</span><span class="nk"> &lt;jtimon&gt;</span> yes please, let's finally merge this
+<a name="l-102"></a><span class="tm">19:20:55</span><span class="nk"> &lt;btcdrak&gt;</span> there are sme test scripts from aj  at https://github.com/ajtowns/op_csv-test
+<a name="l-103"></a><span class="tm">19:21:16</span><span class="nk"> &lt;btcdrak&gt;</span> you need to merge both PRs together to use them ofc. I did so at https://github.com/btcdrak/bitcoin/tree/sequenceandcsv
+<a name="l-104"></a><span class="tm">19:21:30</span><span class="nk"> &lt;btcdrak&gt;</span> that's it :)
+<a name="l-105"></a><span class="tm">19:21:57</span><span class="nk"> &lt;jtimon&gt;</span> or just merge #7184 first and add those tests to #6564 ?
+<a name="l-106"></a><span class="tm">19:23:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> I think merging $7184 first is fine
+<a name="l-107"></a><span class="tm">19:24:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> previously I've been against separating the two, but I think I was wrong about that given that BIP68 is useful w/ segwit on it's own
+<a name="l-108"></a><span class="tm">19:24:21</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> we dont have a framework to add those kinds of tests that I am aware of
+<a name="l-109"></a><span class="tm">19:25:04</span><span class="nk"> &lt;jtimon&gt;</span> well I was never against doing both together, but maybe separating them could have accelerated the process (it clearly hasn)
+<a name="l-110"></a><span class="tm">19:25:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/ajtowns/op_csv-test</span>
+<a name="l-111"></a><span class="tm">19:25:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> I'm especially pleased that downstream consumers have done extensive testing and found the code useful for their cases.
+<a name="l-112"></a><span class="tm">19:25:09</span><span class="nk"> &lt;jtimon&gt;</span> t
+<a name="l-113"></a><span class="tm">19:25:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> +1 - that's one of the most important steps!
+<a name="l-114"></a><span class="tm">19:25:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/btcdrak/bitcoin/tree/sequenceandcsv</span>
+<a name="l-115"></a><span class="tm">19:26:22</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> oh, I thought you had added those tests to btcdrak/sequenceandcsv, never mind then
+<a name="l-116"></a><span class="tm">19:26:35</span><span class="nk"> &lt;wumpus&gt;</span> what kind of tests are these?
+<a name="l-117"></a><span class="tm">19:27:18</span><span class="nk"> &lt;wumpus&gt;</span> we have unit tests, and functinoal RPC tests + P2P tests, large chance they can be integrated somehow?
+<a name="l-118"></a><span class="tm">19:28:08</span><span class="nk"> &lt;jtimon&gt;</span> I believe they are testing an specific smart contract protocol, like a payment channel or something, but I'm not really sure
+<a name="l-119"></a><span class="tm">19:28:29</span><span class="nk"> &lt;wumpus&gt;</span> okay, well if there's something you need re : test integration let me know
+<a name="l-120"></a><span class="tm">19:28:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> python smart contract tests, depends on petertodd's python-bitcoinlib
+<a name="l-121"></a><span class="tm">19:29:06</span><span class="nk"> &lt;petertodd&gt;</span> note that I think we're still missing transaction-level unit tests, and I'd NACK an actual soft-fork on that basis
+<a name="l-122"></a><span class="tm">19:29:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I think they are good as documentation rather than automated tests
+<a name="l-123"></a><span class="tm">19:29:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> well we're at mempool-only stage now. softforking PR is a new round :)
+<a name="l-124"></a><span class="tm">19:29:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> having the mempool-only pulls merged is good for testing, though
+<a name="l-125"></a><span class="tm">19:29:50</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> yup, I am happy for this to be merged mempool only
+<a name="l-126"></a><span class="tm">19:29:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> I think NACKing ahead of ourselves is not constructive
+<a name="l-127"></a><span class="tm">19:30:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> backing out a mempool-only opcoe isn't a big deal
+<a name="l-128"></a><span class="tm">19:30:13</span><span class="nk"> &lt;wumpus&gt;</span> right, it's been done before
+<a name="l-129"></a><span class="tm">19:30:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> just wanted to be clear :)
+<a name="l-130"></a><span class="tm">19:30:18</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> He's the Clief Naysayer, he must!
+<a name="l-131"></a><span class="tm">19:30:26</span><span class="nk"> &lt;btcdrak&gt;</span> err Chief even
+<a name="l-132"></a><span class="tm">19:30:33</span><span class="nk"> &lt;wumpus&gt;</span> though I prefer fixing over reverting :)
+<a name="l-133"></a><span class="tm">19:30:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> I Naysay your speling :P
+<a name="l-134"></a><span class="tm">19:31:33</span><span class="nk"> &lt;jtimon&gt;</span> other topic?
+<a name="l-135"></a><span class="tm">19:31:38</span><span class="nk"> &lt;wumpus&gt;</span> ok, more topics?
+<a name="l-136"></a><span class="tm">19:31:39</span><span class="nk"> &lt;btcdrak&gt;</span> well I'll get cracking the whip this week and maybe we can look at merge possibility next meeting
+<a name="l-137"></a><span class="tm">19:32:32</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I just want to point out I published the EOL policy on the website as we discussed a while back https://bitcoincore.org/en/lifecycle/
+<a name="l-138"></a><span class="tm">19:32:33</span><span class="nk"> &lt;jtimon&gt;</span> or the meeting after the next meeting
+<a name="l-139"></a><span class="tm">19:32:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> yes should be pretty close now
+<a name="l-140"></a><span class="tm">19:33:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link  </span><span class="cmdline">https://bitcoincore.org/en/lifecycle/</span>
+<a name="l-141"></a><span class="tm">19:33:25</span><span class="nk"> &lt;wumpus&gt;</span> ok, if there's no further topics
+<a name="l-142"></a><span class="tm">19:33:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
