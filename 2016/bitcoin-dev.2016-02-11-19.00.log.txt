@@ -1,0 +1,278 @@
+19:00:45 <wumpus> #startmeeting
+19:00:45 <lightningbot`> Meeting started Thu Feb 11 19:00:45 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:45 <lightningbot`> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:04 <wumpus> well thanks I guess :)
+19:01:36 <wumpus> topic proposals?
+19:01:50 <gmaxwell> Plans for RC37?
+19:01:58 <wumpus> last meeting we had as action items ACTION: review and test ACK #7184 and #6564 (wumpus, 19:20:09)
+19:02:03 <wumpus> almost gmaxwell
+19:02:24 <bittrex-richie> ok.. we'll see what happens if i empty this awllet out
+19:03:22 <gmaxwell> If cfields is around I'd like to hear an update about how his networking stack reworking is going.
+19:03:41 <wumpus> rc4 and rc5 were just tagged in quick succession, so we'll skip executables for rc4
+19:04:28 <cfields> gmaxwell: i'm hacking furiously trying to get it cleaned up. I've rewritten much of it a dozen or so times, but i've never considered it to be in a state where it's a good starting point for review.
+19:05:13 <wumpus> rc6 to rc∞-1 can hopefully be skipped and this is finally final :)
+19:05:13 <cfields> gmaxwell: as i've been saying for ages now, hope to have it ready for review in the next week or so.
+19:05:35 <wumpus> #topic P2P code refactor
+19:06:37 <wumpus> yes I think it's time to seriously look at that now
+19:06:47 <sipa> agree
+19:06:55 <gmaxwell> cfields: okay, -- sounds totally reasonable. I was worrying a bit that you've gone heads down on it long enough that the result might be big enough to make reviewing really hard; ... but if you're spending all that time redoing it rather than adding more code, then it should be no issue. :)
+19:07:17 <cfields> gmaxwell: for a bit more info: i've whittled it down to little more than a replacement of the current networking threads. message parsing/processing/etc is intact for the sake of easier review/merge. I have refactors for those elsewhere, but as next steps
+19:07:26 <_maddy> Where do I find the format of the blk0001.dat file in source code?
+19:07:26 <wumpus> the time for something invasive like that to be merged is at the beginning of the release window, so around now, otherwise we'll probably have to postpone it to 0.14
+19:07:31 <cfields> wumpus / gmaxwell / sipa: understood
+19:08:20 <wumpus> okay clear, next topic?
+19:08:55 <sipa> BIP112/68/113 plans?
+19:08:57 <wumpus> #topic BIP68 review
+19:09:06 <morcos> is maaku here?
+19:09:09 <wumpus> how is the review of the BIP68 pulls going?
+19:09:27 <morcos> sdaftuar found some more mistakes, i need to fix those, can do this afternoon
+19:09:29 <wumpus> (sorry, wasn't able to look at it much myself this week)
+19:09:41 <morcos> but there is other work that needs to be done, such as the soft fork logic
+19:09:55 <wumpus> ok, yes let's focus on the mempool only stuf now
+19:10:11 <morcos> wumpus: i think i disagree
+19:10:15 <wumpus> I think that's quite enough
+19:10:30 <wumpus> why?
+19:10:31 <petertodd> morcos: soft fork needs better unit tests IMO
+19:10:34 <sipa> the GetMedianTimePast behaviour is already in, right?
+19:10:40 <morcos> several months ago sdaftuar found a mistake in the mempool code only be thinking about how the soft fork logic would apply
+19:11:11 <wumpus> yes, but I mean the softfork code won't be considered until the mempool-only enforcement is in for a while
+19:11:17 <wumpus> thinking about it can't hurt, sure
+19:11:23 <morcos> wumpus: not necessary, its already non standard
+19:11:27 <morcos> tx version 2
+19:11:34 <jtimon> morcos: the softfork logic is not going to be merged with the policy-only implementations, we've never done it, why change now?
+19:11:50 <wumpus> well that's completely different than what was discussed last week ...
+19:11:58 <jtimon> specially when we would hopefully deploy it with bip9...
+19:12:05 <morcos> sorry , i don't think i was in the meeting last week
+19:12:18 <sipa> BIP113 needed mempool deployment before being safe as a softfork
+19:12:18 <morcos> i thought i skimmed the conversation but i must have missed that
+19:12:25 <sipa> but BIP68 and BIP112 don't, afaik
+19:12:47 <wumpus> introducing the softfork is going to require much more scrutiny, and tests, as petertodd says
+19:12:55 <morcos> in any case, i don't care if we merge the mempool code first and it might indeed make sense to do so, i just think we should look at the soft fork logic
+19:13:14 <sipa> how about we merge mempool logic in master only
+19:13:15 <maaku> morcos: yes I'm here
+19:13:24 <jtimon> last week my hope was that at least bip68 would finally be merged today or before today...
+19:13:51 <wumpus> jtimon: you mean mempool-only right?
+19:13:58 <morcos> maaku: i was wondering whether you were going to take over BIP 68 etc.. stuff again..  in particular the soft fork logic for it.
+19:14:04 <sipa> and then backport mempool+softfork to 0.12.x when the softfork is ready
+19:14:05 <petertodd> morcos: by "soft fork logic" - i assume you mean something like bip9? I mean, the IsSuperMajority() mechanism is just a few lines of code
+19:14:13 <wumpus> sipa: agree
+19:14:31 <jtimon> wumpus: of course, and I meant on master only as well (we cannot backport for 12.1 until we actually have 12.0, right?)
+19:14:40 <wumpus> jtimon: absolutely
+19:14:45 <sipa> jtimon: yeah
+19:14:55 <gmaxwell> we really need to migrate to a BIP9 style way of doing soft-forks...
+19:14:59 <morcos> ok i guess thats not unreasonable... if there is a change needed to the consensus logic in the mempool brought out by the softfork code , it doesn't matter if its only in master
+19:15:08 <sipa> gmaxwell: yes, but that needs usable code...
+19:15:37 <morcos> consensus logic that is (re)used by the mempool only version
+19:16:21 <maaku> morcos: I intended to rebase the CSV code against your BIP 68 branch once that merges
+19:16:29 <morcos> ok, well i think 7184 can be merged after i fix sdaftuars comments, they are relatively straight forward, i'll leave as a separate commit and maybe a couple of people that reviewed prior can just ack and we can squash on merge
+19:17:07 <maaku> petertodd: BIP 68 hasn't really been reviewed with a mindset of consensus validation
+19:17:09 <sipa> oh, topic suggestion: squash/rebase/merge recommendations
+19:17:18 <morcos> maaku: yes, thats why i thought you were working on it again.  but all of 68,112,113 need soft fork logic at some point...
+19:17:19 <sipa> maaku: i have
+19:17:50 <maaku> (I know because serious bugs were found in the enforcement long after ACKs of 6312)
+19:17:59 <morcos> maaku: thats my point, some of us have been trying to review it with that mindset but it would be easier to do so if we see the soft fork logic
+19:18:00 <maaku> some by sipa some by sdaftuar, thank you
+19:18:31 <jtimon> great! next action review/test/merge #6564 after we finally merge #7148 ?
+19:18:45 <petertodd> maaku: I did that with BIP68, and quickly came to the conclusion that it needed better unittests for consensus validation :)
+19:18:52 <maaku> morcos: imho we should merge BIP 68 policy-only, and open another PR with the soft-fork enforcement, just to get another round of ACKs specifically with an eye towards that
+19:18:54 <jtimon> I mean, it will need rebase first
+19:19:10 <wumpus> #action review/test/merge #7148 and #6564
+19:19:11 <morcos> maaku: yeah ok, as long as we are not backporting/releasing until we do that other PR, thats fine with me
+19:19:28 <morcos> wumpus: it's 7184, and we should hold off on 6564 till maaku rebases
+19:19:47 <jtimon> morcos: why that condition? we can backport as soon as we have a 12.0, no?
+19:19:50 <maaku> morcos: yeah the point is there's confusion about who has reviewed with an eye towards enforcement, and that's just delaying everything
+19:20:08 <sipa> jtimon: i would backport only as soon as there is softfork logic too
+19:20:20 <wumpus> yeah, it makes only sense to backport something complete
+19:20:32 <maaku> people are happy with 7184 (modulo some last minute fixes I saw go through), if we can merge that asap I'd be happy
+19:20:33 <sdaftuar> is the plan to only backport to 0.12?
+19:20:37 <wumpus> let's focus on getting the damn thing merged in master, this has been dragging along for too long
+19:20:38 <jtimon> I mean, I plan to backport it to https://github.com/jtimon/bitcoin/tree/backports-0.12 soon after it gets merged
+19:20:49 <maaku> (and I'll immediately rebase 6564 thereafter)
+19:20:55 <jtimon> why not merge it as policy only for 12.01?
+19:21:25 <maaku> when the soft-fork code is merged, it will be back ported to the two most recent releases, as per our recently adopted support policy
+19:21:27 <wumpus> because we need to make sure it's correct first
+19:21:27 <sipa> jtimon: what's the point?
+19:21:32 <wumpus> master is a good place to test things
+19:21:45 <maaku> BIP 68 and 112 don't need to be back ported until enforcement
+19:21:47 <wumpus> can always be adapted, or reverted there
+19:21:52 <gmaxwell> a policy only softfork merge for an already non-standard softfork will disrupt deployment of the feature if it needs to change.
+19:21:53 <maaku> *until soft-fork deployment
+19:21:53 <wumpus> I dont like doing that on a release version
+19:22:23 <jtimon> sipa: having it ready? if it's not ready for 12.1 at least users will have it as policy-only...what's the reason not to do it?
+19:22:32 <gmaxwell> (because if the behavior changes we may need to first policy out the old behavior before the soft-fork can begin.)
+19:22:35 <sipa> jtimon: having it as policy only has no use
+19:22:40 <sipa> except testing
+19:22:45 <wumpus> right sipa
+19:22:49 <gmaxwell> it's not that it has no use, it has potential anti-use.
+19:22:51 <morcos> ok, so to summarize.  i will add a small commit that address sdaftuars bugs within an hour of meeting end.  a couple people will review/ACK and we can merge this thing today
+19:23:04 <morcos> then we'll leave in master until we write the soft fork logic
+19:23:09 <morcos> maybe that should be the next topic
+19:23:15 <jtimon> gmaxwell: mhmm, I hadn't thought about the potential anti-use...
+19:23:16 <morcos> what should that look like and who is doing it
+19:23:33 <wumpus> #topic soft fork logic
+19:24:05 <gmaxwell> (I'm fine with policy only for things where were quite sure that the logic is final, but are only delaying deployment e.g. because of other soft-forks in flight-- in this case, it should just be done as soon as it's final)
+19:24:09 <jtimon> depends on bip9, proposed topic bip9 implementations and plan forward
+19:24:50 <morcos> i'm sorry that i volunteered and withdrew from bip9 work, but i'm trying to find things to do that it is easier to do head down and not lose concentration.
+19:25:37 <maaku> imho the issue of bip9 vs ISM should be determined by what is ready at the time that we are preparing the soft-fork enforcement code
+19:26:02 <maaku> so the question really is, when is the BIP 68/112(/113?) soft-fork going out?
+19:26:25 <morcos> maaku: the issue is there are so many outstanding potential soft forks, that if each keeps waiting for the others, that might delay them all.  and if we just decided to do BIP 9 we'd stop having that problem
+19:26:30 <morcos> don't forget segwit
+19:26:50 <morcos> and don't forget we're far more likely now to have soft forks that we think are going to activate but maybe struggle to do so
+19:27:08 <maaku> morcos: I don't think the delay argument stands up for uncontroversial soft-forks
+19:27:12 <wumpus> yes, BIP 9 still makes a lot of sense.
+19:27:25 <petertodd> morcos: granted, we've got code actually written for what, two of them basically? (csv stuff and segwit stuff)
+19:27:52 <jtimon> I don't want to stop anyone from do it, but I'm considering to write my own implementation, resuing some code from both CodeShark's and Rusty's implementation
+19:28:01 <morcos> petertodd: or BIP 68 could be viewed spearately from 112/113 actually
+19:28:07 <maaku> if CSV is ready next week, we can do ISV. and we can start segwit deployment via bip9 even if CSV deployment isn't finished
+19:28:12 <maaku> *ISM
+19:28:40 <petertodd> morcos: true, although even then, you *can* do concurrent ISM soft forks
+19:29:10 <maaku> My opinion is only that we shouldn't be holding up a valuable soft-fork due only to delay in bip9 development.
+19:29:21 <jtimon> maaku ack
+19:29:26 <paveljanik> +1
+19:29:29 <gmaxwell> petertodd: only if they're additive.
+19:29:46 <jtimon> that doesn't mean we don't want bip9 asap as well though
+19:29:49 <gmaxwell> Fortunately I don't think we're actually faced with a hold up question there.
+19:29:51 <wumpus> yes I think that's clear, we can use only what is there, if there is no BIP9 implmentation ready then we can't use it
+19:29:55 <petertodd> gmaxwell: you mean, only if they don't conflict with each other?
+19:30:39 <wumpus> there's no super hurry, but we can't hold up all softforks until BIP9 if there is no clear idea when it will be ready
+19:31:13 <gmaxwell> sure.
+19:31:17 <sipa> we should have a BIP9 implementation before we can even talk about delaying things for it
+19:31:24 <gmaxwell> ^ that.
+19:31:26 <wumpus> yeah
+19:31:28 <jtimon> I didn't knew that morcos had stopped working on it
+19:31:46 <morcos> and we're not concerned about an ISM soft fork activating too early because of miners runnign another implementation?
+19:32:00 <maaku> sipa: we should have *one* bip9 implementation ;) problem is we have 2 (soon to be 3)
+19:32:10 <morcos> jtimon: never started, but i got too depressed.
+19:32:13 <sipa> maaku: i don't mind trying to write one myself :p
+19:32:28 <sipa> (don't worry, i have enough other things to do...)
+19:32:35 <wumpus> maaku: it's more about having one that is ready to merge, having 100 half-finished implementations isn't going to help :)
+19:32:46 <sipa> s/ready to merge/merged/
+19:33:13 <petertodd> sipa: heh, I'm gonna have to actualy write my pseudo-versionbits implementation - the one that's about two lines of code :)
+19:33:18 <wumpus> what is the main problem with bip9 implementations?
+19:33:19 <maaku> morcos: thankfully CSV is non-controversial. if there was significant uptake on a hard fork block.nVersion voting, we can get those miners to patch CSV support in
+19:33:22 <wumpus> why do they peter out?
+19:33:26 <jtimon> morcos: that's fine (not that you got depressed), I was just pointing out that I found out today
+19:33:44 <maaku> (actually scratch that, partially bad logic because they leave the network)
+19:33:58 <sipa> wumpus: CodeShark's was a ton of code that seemed to do a dozen unrelated things, and rusty's never had the caching layer on top to make it efficient
+19:34:11 <petertodd> wumpus: frankly, bip9 is stateful and requires a bunch of stuff added to the database, which means there's a whole bunch of things to get right and test, among other issues
+19:34:18 <wumpus> sipa: ok thanks
+19:34:23 <sipa> petertodd: nope, no database changes needed
+19:34:50 <petertodd> sipa: huh? maybe I'm describing it misleadingly, but you have to store flags in the chainstate
+19:35:14 <wumpus> right, you have to somehow keep track of the current flags
+19:35:40 <petertodd> wumpus: which *is* a relatively big change, and has a lot of possible design space and testing to consider
+19:35:45 <sipa> petertodd: my idea was to have a versionbits state that you compute for every block % 2016, compute once, and remain immutable after that
+19:35:54 <sipa> petertodd: everything can be efficiently computed from that
+19:36:22 <sipa> and recompute at startup
+19:36:43 <sipa> anyway, off topic i guess
+19:36:44 <petertodd> sipa: ah, so you can get away without actually storing it... clever
+19:36:50 <wumpus> does that need 2016 blocks stored?
+19:36:52 <maaku> ok, an in-memory std::map database ;)
+19:37:06 <jtimon> maaku: aka cache
+19:37:12 <sipa> wumpus: no, a map of size (mapBlockIndex.size() / 2016)
+19:37:34 <wumpus> ok
+19:38:02 <sipa> i'd like to bring up the topic of squash/rebase recommendations (there was some recent discussion about that on the bip68 PR)
+19:38:13 <wumpus> #topic  squash/rebase recommendations
+19:38:29 <morcos> can i suggest that we make some sort of decision as to how to move forward on the soft forks first
+19:38:35 <morcos> its ok if that decision is ISM for now
+19:38:57 <sipa> morcos: whenever ready, we see what is ready; if BIP9 implementation is ready, use that, otherwise use ISM
+19:39:03 <jtimon> I believe decision is "no other choice than ISM until bip9 is merged"
+19:39:09 <sdaftuar> we need a volunteer to implement, do we have one?
+19:39:11 <morcos> sipa: what do you mean whenever ready
+19:39:12 <wumpus> I pretty much thin kthat was what said in the BIP68 topic says it all regarding this topic: https://github.com/bitcoin/bitcoin/pull/7184#issuecomment-182594295
+19:39:13 <sipa> perhaps we'll need to patch ISM to be nVersion & nFlags
+19:39:36 <jtimon> if there's no other volunteer, I think I can do it
+19:40:18 <wumpus> <jtimon> I believe decision is "no other choice than ISM until bip9 is merged" ACK
+19:41:40 <sipa> ok
+19:41:43 <jtimon> squash topic?
+19:41:56 <sipa> morcos: do you feel we're done with softforks?
+19:42:06 <morcos> ha ha ...   yes?
+19:42:10 <sipa> ok
+19:43:06 <sipa> so, maaku: maybe this wasn't clear from my comment on the morcos' BIP68 PR, but I didn't mean to say "this has to be squashed into a single commit, no matter what" - there were just a list of several fixup and nit addressing commits, and i don't believe those belong in the final merged history
+19:43:26 <sipa> but i'd like to hear what your opinion is there
+19:43:35 <wumpus> I think that's clear
+19:43:58 <morcos> my biggest concern with squashing/rebasing is knowing WHEN to do it.  its easier for future reviewers to do it but if other people are still in the midst of reviewing its annoying.
+19:44:28 <wumpus> commits have a logical function, you want to tell a story how you changed the code that is easy to review, not necessarily your chronological order of changes
+19:44:57 <sipa> we need a local review script, that stores which commit/tree you've reviewed, and later on, shows you the differences compared to what has been reviewed before :)
+19:45:02 <morcos> yes!
+19:45:02 <wumpus> if you have tons of 'fix issue X' where X was introduced in the same pull, that's not useful
+19:45:07 <petertodd> unfortunately there will be cases where "easy to review" is to squash, and cases where "easy to review" is to just add more commits
+19:45:10 <petertodd> sipa: +1
+19:45:35 <wumpus> sure, and mostly that's up to the developer to make that judgement
+19:46:02 <maaku> sipa: my position is the same as torvalds regarding squashing and rebasing in git: fine to do up until the point of submitting a PR.
+19:46:07 <wumpus> and also depending on what is changed, e.g. if you make a move+change pull it's clear that that's better as two commits
+19:46:11 <paveljanik> It can be worth to review the changes in two separate commits (e.g. MOVE-ONLY and a simple change) than in one merged commit (which is perfectly OK for merging). The question is when to move from separate commits and squash.
+19:46:23 <paveljanik> exactly
+19:46:24 <petertodd> wumpus: yes, and also, that's likely to depend on who is reviewing - more likely for a fresh reviewer to find a squash easier
+19:46:26 <jtimon> I think 7184 should have just built on top of its reviewed precessors during development, there's always time to squash later
+19:46:42 <sipa> paveljanik: i think it's always valuable to keep moveonly changes and others separate
+19:46:47 <maaku> few people if ever read the git history. far more benefit is had by having commit id's not change and use merge commits
+19:47:02 <morcos> jtimon: it would would be 30 commits now, half of which were undoing changes in earlier ones
+19:47:23 <wumpus> morcos: yes that's awful
+19:47:37 <wumpus> at least before merge those should be squashed
+19:47:43 <jtimon> and now (or a few weeks ago) you could have squashed, I really don't see the problem
+19:47:45 <maaku> rewriting history breaks linkage between what the review record of ACKS say, and what actually gets in the repo
+19:48:04 <paveljanik> sipa, for file renames, sure.
+19:48:13 <wumpus> maaku: with the commit ids in the replies you can still compare the trees
+19:48:18 <sipa> maaku: i recently did an ACK on a tree id rather than a commit, which doesn't break with a squash
+19:48:44 <morcos> maaku: yes i think thats the key.  a rebase/squash could maybe be accompied with more detailed information of which ACKS are still valid or something..
+19:49:14 <maaku> wumpus: if you have those commits.
+19:49:21 <wumpus> maaku: github has them
+19:49:22 <sdaftuar> should we all switch to what sipa did going forward, ack the tree id?
+19:49:31 <wumpus> nah, I don't know
+19:49:34 <petertodd> worth noting that even ACKing with commit ids isn't sufficient for security purposes, so we're still trusting maintainers not to merge malicious stuff, which means trusting them to fairly interpret how squashes interact with previous ACK's is more reasonable
+19:49:49 <sipa> maaku: only the people who looked at former state of the PR care about that
+19:49:51 <petertodd> sdaftuar: I don't think we need to do that, simply because github saves the information for us in the form of old commits
+19:49:54 <wumpus> I don't look forward to teaching everyone that
+19:50:01 <jtimon> the only time I reviewed 7184 is through one branch that morcos prepared rebasing 7184 on top of maaku's because that was simpler for me
+19:50:06 <maaku> sipa: how do you recover the tree id once there are no commits left in the available branches that create that tree?
+19:50:12 <petertodd> wumpus: it's also kinda inconvenient, especially for utACK's done on github
+19:50:16 <morcos> in any case, i think what works best for wumpus/sipa shoudl carry some weight here and then to the extent that other people do more heavy lifting on the code base, the process can evolve.  but if wumpus is the one who has to decide everytime if the ACK's are valid
+19:50:19 <wumpus> petertodd: yes
+19:50:20 <morcos> lets do what makes sense for him
+19:50:24 <sipa> maaku: i don't understand
+19:50:28 <maaku> this process is basically relying on the fact that github acts as a trusted repository of past tree state. i don't like that
+19:50:53 <petertodd> maaku: well, as long as we're putting our ACK's on github itself w/o signatures, it's mostly a trusted repo anyway
+19:51:04 <wumpus> if you really want to be paranoid then you should also sign your ACKs, as github posts can be edited
+19:51:30 * petertodd wonders if anyone is systematically saving + timestamping github state for /bitcoin/bitcoin
+19:51:40 <wumpus> feel free do do so, but I'm not going to make it a rule
+19:51:45 <wumpus> petertodd: yes, iwilcox is
+19:51:56 <maaku> petertodd: the issue isn't so much trust as process and standard practice. it's something that only works with a trusted, central party, which means the same behavior doesn't work so well in other contexts
+19:51:57 <paveljanik> looks like btcdrak is taking screenshots ;-)
+19:52:06 <wumpus> petertodd: https://github.com/zw/bitcoin-gh-meta
+19:52:19 <sipa> wumpus: ha, nice
+19:52:50 <petertodd> wumpus: ah cool - should figure out how to timestamp that!
+19:52:53 <jtimon> I think the general rule should be "whatever is easier to read and review", but of course sounds like some vague software engineering recommendation "things should be done the right way"...
+19:52:58 <maaku> or if github ever decides to clean house and purge old, unreferenced tree states, our historical record would be screwed
+19:53:20 <wumpus> it even come with the ghrip script so you can do your own version, if you don't trust him :)
+19:53:41 <sipa> maaku: why do you care about the historical state, if you're not one of the people who reviewed it in a non-final state?
+19:53:56 <jtimon> I think we're moving away from the topic
+19:54:00 <wumpus> any other topic? only few minutes to go
+19:54:24 <wumpus> jtimon: yes it sounds vague, but in complex subjects like this it's very hard to give exact procedures that makes sense in every case, if even possible
+19:54:26 <paveljanik> what is the status of BIP62 and namely handling High S?
+19:54:34 <sipa> paveljanik: retracted
+19:54:41 <wumpus> BIP62 is dead
+19:54:45 <paveljanik> yes, but any future plans?
+19:54:50 <sipa> paveljanik: segwit
+19:54:51 <paveljanik> for at east High S?
+19:55:05 <paveljanik> ok
+19:55:12 <jtimon> wumpus: yes, I'm afraid vague recommendations and examples is the best you can do with many of these things
+19:55:13 <petertodd> update on segwit prev-block-proofs: I'm deep in the rabbit hole of writing an article/paper/blog-post on fraud proofs, along with what data structures work for them
+19:55:40 <petertodd> AKA, saving a herd of goats :)
+19:55:44 <petertodd> *shaving
+19:56:13 <wumpus> great!
+19:56:25 <gmaxwell> paveljanik: for high-S specfically, it still may be soft-forked out at some point-- though with it non-standard I see no reason to rush into it.
+19:56:26 <maaku> petertodd: I would like to work with you on that
+19:56:53 <maaku> not the article, the fraud proofs and prev-block proofs
+19:56:58 <maaku> i've done my own explorations on that
+19:57:08 <petertodd> maaku: cool, be good to compare notes then
+19:57:19 <paveljanik> gmaxwell, people ask for it and I think that non-standardness is not enough for their use cases...
+19:57:20 <sipa> maaku, petertodd: perhaps you should also talk about the commitment structure
+19:57:37 <petertodd> what I'm writing is actually very heavily based on my explorations for fintech clients, e.g. my proofchains work
+19:57:57 <wumpus> #topic fraud proofs
+19:58:02 <gmaxwell> paveljanik: just inhibiting highS is not enough for any usecase I've ever seen expressed.
+19:58:23 <sipa> wumpus: i think that can be discussed outside of the meeting
+19:58:24 <petertodd> article is shaping up to mainly be an ideal redesign of bitcoin from scratch, to serve as example for comparison
+19:58:27 <petertodd> sipa: +1
+19:58:32 <wumpus> sipa: ok, closing the meeting then
+19:58:35 <jtimon> fisnish meeting?
+19:58:35 <wumpus> #endmeeting
