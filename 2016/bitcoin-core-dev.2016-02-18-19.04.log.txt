@@ -1,0 +1,60 @@
+19:04:07 <wumpus> #startmeeting
+19:04:07 <lightningbot> Meeting started Thu Feb 18 19:04:07 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:04:07 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:04:37 <wumpus> topics?
+19:05:02 <btcdrak> suggested topic #7187 since it relates to the recent merge og 7184
+19:05:08 <paveljanik> release status? :-)
+19:05:32 <wumpus> from previous meeting: ACTION: review/test/merge #7148 and #6564 (wumpus, 19:19:10)
+19:05:43 <morcos> i'm happy to discuss fee filter if anyone wants
+19:06:26 <btcdrak> wumpus typo it was #7184. which has been merged. #6564 became #7524 which has been merged too
+19:06:59 <btcdrak> paveljanik: just waiting on gitian signers
+19:07:04 <wumpus> yes, mempool only BIP-112 and BIP-68 were merged
+19:07:08 <wumpus> paveljanik: it has been tagged
+19:07:26 <btcdrak> wumpus: so 7187 is an optimisation patch that builds on 7184
+19:07:43 <wumpus> I haven't really looked at the fee filter, maybe better to make that an action point and discuss it next week
+19:07:51 <btcdrak> "Keep reorgs fast for SequenceLocks checks #7187"
+19:08:15 <michagogo> My linux build's done, Windows being prepped now
+19:08:19 <wumpus> #action reviw 'Implement "feefilter" P2P message' #7542
+19:08:21 <morcos> wumpus: sure.
+19:08:33 <michagogo> Oh, sorry! Didn't realize meeting was going on
+19:08:51 <morcos> is the topic 7187 now?
+19:09:22 <wumpus> we dont' have a topic yet :)
+19:09:32 * btcdrak makes wumpus a coffee
+19:09:36 <wumpus> #topic Keep reorgs fast for SequenceLocks checks 7187
+19:09:56 <morcos> The idea behind 7187 is that checking sequence locks to determine whether the tx is valid requires looking up the heights of all its inputs.  In a reorg, as it stands now, this will require reevaluating the inputs of every single tx in the mempool
+19:10:03 <morcos> That is obviously painful
+19:10:24 <wumpus> yes, that sounds expensive
+19:10:39 <morcos> 7187 attempts to cache for each tx the block hash of the latest block containing an input which had a sequence lock
+19:11:12 <morcos> In the event of a reorg, if that hash is still on the chain, you know the previously calculated height and time (also cached) are still valid.
+19:11:20 <morcos> thus ideally you won't have to look up most txs
+19:11:21 <wumpus> sounds sensible
+19:11:36 <morcos> so i think we should backport that to at least 0.12
+19:11:46 <btcdrak> morcos: without a doubt.
+19:11:49 <wumpus> yes
+19:11:57 <morcos> it's not clear to me whether its worth the effort for 0.11, which already is way slower
+19:12:07 <morcos> it'll still be functionally correct without it
+19:12:21 <morcos> just reorgs will be slow
+19:12:24 <wumpus> probably not - better to keep the patch for 0.11 as small and simple as possible
+19:12:40 <wumpus> it will get less testing after all
+19:13:28 <morcos> so now we need to review/test 7187 and get it merged?
+19:13:34 <wumpus> and  with all the changes to the mempool in 0.12 it will probably be non-trivial to backport that optimization
+19:13:46 <morcos> wumpus: thats what i'd be afraid of
+19:14:07 <wumpus> which increses the risk further
+19:14:24 <wumpus> #action review/test #7187 Keep reorgs fast for SequenceLocks checks
+19:14:30 <btcdrak> morcos was telling me the bip68-sequence.py RPC tests should test regression
+19:14:30 <wumpus> I've already added the needs backport tag
+19:14:45 <morcos> ha ha, thats more assertiveness than i intended
+19:15:13 <btcdrak> morcos: maybe add a specific test for regression?
+19:15:36 <morcos> there are some reorgs in the bip68 test, but i haven't looked at exactly what they do recently
+19:16:28 <sdaftuar> i think there's a test that at least is theoretically checking that sequence locked transactions are correctly removed during a reorg
+19:18:30 <morcos> great, well quick meeting today?
+19:18:41 <wumpus> I think so
+19:18:56 <btcdrak> no more topics?
+19:18:59 <btcdrak> I have one
+19:19:13 <morcos> congrats on getting 0.12 tagged wumpus.  you should take a long weekend!
+19:19:16 <wumpus> don't think there's much to discuss, no snags yet with the mempool BIP68/112 merges
+19:19:41 <btcdrak> yeah went well. I'm working on a patch for the softforks btw.
+19:19:42 <shea256> yes great work!
+19:19:42 <wumpus> morcos: thanks :)
+19:20:14 <wumpus> congrats to everyone on 0.12
+19:20:36 <wumpus> #endmeeting

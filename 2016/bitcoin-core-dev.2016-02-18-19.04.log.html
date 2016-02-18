@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:04:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:04:07</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Feb 18 19:04:07 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:04:07</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:04:37</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-5"></a><span class="tm">19:05:02</span><span class="nk"> &lt;btcdrak&gt;</span> suggested topic #7187 since it relates to the recent merge og 7184
+<a name="l-6"></a><span class="tm">19:05:08</span><span class="nk"> &lt;paveljanik&gt;</span> release status? :-)
+<a name="l-7"></a><span class="tm">19:05:32</span><span class="nk"> &lt;wumpus&gt;</span> from previous meeting: ACTION: review/test/merge #7148 and #6564 (wumpus, 19:19:10)
+<a name="l-8"></a><span class="tm">19:05:43</span><span class="nk"> &lt;morcos&gt;</span> i'm happy to discuss fee filter if anyone wants
+<a name="l-9"></a><span class="tm">19:06:26</span><span class="nk"> &lt;btcdrak&gt;</span> wumpus typo it was #7184. which has been merged. #6564 became #7524 which has been merged too
+<a name="l-10"></a><span class="tm">19:06:59</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">paveljanik:</span> just waiting on gitian signers
+<a name="l-11"></a><span class="tm">19:07:04</span><span class="nk"> &lt;wumpus&gt;</span> yes, mempool only BIP-112 and BIP-68 were merged
+<a name="l-12"></a><span class="tm">19:07:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">paveljanik:</span> it has been tagged
+<a name="l-13"></a><span class="tm">19:07:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> so 7187 is an optimisation patch that builds on 7184
+<a name="l-14"></a><span class="tm">19:07:43</span><span class="nk"> &lt;wumpus&gt;</span> I haven't really looked at the fee filter, maybe better to make that an action point and discuss it next week
+<a name="l-15"></a><span class="tm">19:07:51</span><span class="nk"> &lt;btcdrak&gt;</span> "Keep reorgs fast for SequenceLocks checks #7187"
+<a name="l-16"></a><span class="tm">19:08:15</span><span class="nk"> &lt;michagogo&gt;</span> My linux build's done, Windows being prepped now
+<a name="l-17"></a><span class="tm">19:08:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">reviw 'Implement "feefilter" P2P message' #7542</span>
+<a name="l-18"></a><span class="tm">19:08:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> sure.
+<a name="l-19"></a><span class="tm">19:08:33</span><span class="nk"> &lt;michagogo&gt;</span> Oh, sorry! Didn't realize meeting was going on
+<a name="l-20"></a><span class="tm">19:08:51</span><span class="nk"> &lt;morcos&gt;</span> is the topic 7187 now?
+<a name="l-21"></a><span class="tm">19:09:22</span><span class="nk"> &lt;wumpus&gt;</span> we dont' have a topic yet :)
+<a name="l-22"></a><span class="tm">19:09:32 </span><span class="nka">* btcdrak</span> <span class="ac">makes wumpus a coffee</span>
+<a name="l-23"></a><span class="tm">19:09:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Keep reorgs fast for SequenceLocks checks 7187</span>
+<a name="l-24"></a><span class="tm">19:09:56</span><span class="nk"> &lt;morcos&gt;</span> The idea behind 7187 is that checking sequence locks to determine whether the tx is valid requires looking up the heights of all its inputs.  In a reorg, as it stands now, this will require reevaluating the inputs of every single tx in the mempool
+<a name="l-25"></a><span class="tm">19:10:03</span><span class="nk"> &lt;morcos&gt;</span> That is obviously painful
+<a name="l-26"></a><span class="tm">19:10:24</span><span class="nk"> &lt;wumpus&gt;</span> yes, that sounds expensive
+<a name="l-27"></a><span class="tm">19:10:39</span><span class="nk"> &lt;morcos&gt;</span> 7187 attempts to cache for each tx the block hash of the latest block containing an input which had a sequence lock
+<a name="l-28"></a><span class="tm">19:11:12</span><span class="nk"> &lt;morcos&gt;</span> In the event of a reorg, if that hash is still on the chain, you know the previously calculated height and time (also cached) are still valid.
+<a name="l-29"></a><span class="tm">19:11:20</span><span class="nk"> &lt;morcos&gt;</span> thus ideally you won't have to look up most txs
+<a name="l-30"></a><span class="tm">19:11:21</span><span class="nk"> &lt;wumpus&gt;</span> sounds sensible
+<a name="l-31"></a><span class="tm">19:11:36</span><span class="nk"> &lt;morcos&gt;</span> so i think we should backport that to at least 0.12
+<a name="l-32"></a><span class="tm">19:11:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> without a doubt.
+<a name="l-33"></a><span class="tm">19:11:49</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-34"></a><span class="tm">19:11:57</span><span class="nk"> &lt;morcos&gt;</span> it's not clear to me whether its worth the effort for 0.11, which already is way slower
+<a name="l-35"></a><span class="tm">19:12:07</span><span class="nk"> &lt;morcos&gt;</span> it'll still be functionally correct without it
+<a name="l-36"></a><span class="tm">19:12:21</span><span class="nk"> &lt;morcos&gt;</span> just reorgs will be slow
+<a name="l-37"></a><span class="tm">19:12:24</span><span class="nk"> &lt;wumpus&gt;</span> probably not - better to keep the patch for 0.11 as small and simple as possible
+<a name="l-38"></a><span class="tm">19:12:40</span><span class="nk"> &lt;wumpus&gt;</span> it will get less testing after all
+<a name="l-39"></a><span class="tm">19:13:28</span><span class="nk"> &lt;morcos&gt;</span> so now we need to review/test 7187 and get it merged?
+<a name="l-40"></a><span class="tm">19:13:34</span><span class="nk"> &lt;wumpus&gt;</span> and  with all the changes to the mempool in 0.12 it will probably be non-trivial to backport that optimization
+<a name="l-41"></a><span class="tm">19:13:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> thats what i'd be afraid of
+<a name="l-42"></a><span class="tm">19:14:07</span><span class="nk"> &lt;wumpus&gt;</span> which increses the risk further
+<a name="l-43"></a><span class="tm">19:14:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review/test #7187 Keep reorgs fast for SequenceLocks checks</span>
+<a name="l-44"></a><span class="tm">19:14:30</span><span class="nk"> &lt;btcdrak&gt;</span> morcos was telling me the bip68-sequence.py RPC tests should test regression
+<a name="l-45"></a><span class="tm">19:14:30</span><span class="nk"> &lt;wumpus&gt;</span> I've already added the needs backport tag
+<a name="l-46"></a><span class="tm">19:14:45</span><span class="nk"> &lt;morcos&gt;</span> ha ha, thats more assertiveness than i intended
+<a name="l-47"></a><span class="tm">19:15:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> maybe add a specific test for regression?
+<a name="l-48"></a><span class="tm">19:15:36</span><span class="nk"> &lt;morcos&gt;</span> there are some reorgs in the bip68 test, but i haven't looked at exactly what they do recently
+<a name="l-49"></a><span class="tm">19:16:28</span><span class="nk"> &lt;sdaftuar&gt;</span> i think there's a test that at least is theoretically checking that sequence locked transactions are correctly removed during a reorg
+<a name="l-50"></a><span class="tm">19:18:30</span><span class="nk"> &lt;morcos&gt;</span> great, well quick meeting today?
+<a name="l-51"></a><span class="tm">19:18:41</span><span class="nk"> &lt;wumpus&gt;</span> I think so
+<a name="l-52"></a><span class="tm">19:18:56</span><span class="nk"> &lt;btcdrak&gt;</span> no more topics?
+<a name="l-53"></a><span class="tm">19:18:59</span><span class="nk"> &lt;btcdrak&gt;</span> I have one
+<a name="l-54"></a><span class="tm">19:19:13</span><span class="nk"> &lt;morcos&gt;</span> congrats on getting 0.12 tagged wumpus.  you should take a long weekend!
+<a name="l-55"></a><span class="tm">19:19:16</span><span class="nk"> &lt;wumpus&gt;</span> don't think there's much to discuss, no snags yet with the mempool BIP68/112 merges
+<a name="l-56"></a><span class="tm">19:19:41</span><span class="nk"> &lt;btcdrak&gt;</span> yeah went well. I'm working on a patch for the softforks btw.
+<a name="l-57"></a><span class="tm">19:19:42</span><span class="nk"> &lt;shea256&gt;</span> yes great work!
+<a name="l-58"></a><span class="tm">19:19:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> thanks :)
+<a name="l-59"></a><span class="tm">19:20:14</span><span class="nk"> &lt;wumpus&gt;</span> congrats to everyone on 0.12
+<a name="l-60"></a><span class="tm">19:20:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
