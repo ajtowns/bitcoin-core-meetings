@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:14</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Feb 25 19:01:14 2016 UTC.  The chair is gmaxwell. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:14</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:35</span><span class="nk"> &lt;gmaxwell&gt;</span> Hello. Welcome to today's meeting (bot is broken in #bitcoin-dev. Topics?
+<a name="l-5"></a><span class="tm">19:02:08</span><span class="nk"> &lt;morcos&gt;</span> Did anyone review 7187 as per last weeks action item?
+<a name="l-6"></a><span class="tm">19:02:14</span><span class="nk"> &lt;morcos&gt;</span> We need punishments
+<a name="l-7"></a><span class="tm">19:02:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> heh, you're making me glad I was on a plane :)
+<a name="l-8"></a><span class="tm">19:02:30</span><span class="nk"> &lt;btcdrak&gt;</span> I got stuck in traffic, honest
+<a name="l-9"></a><span class="tm">19:03:05</span><span class="nk"> &lt;morcos&gt;</span> Actually to make a topic out of it, lets gameplan a 68/112/113 rollout
+<a name="l-10"></a><span class="tm">19:03:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> we'll end up with people showing up every other meeting it seems. I also wasn't in last week.
+<a name="l-11"></a><span class="tm">19:03:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic  </span><span class="topicline">68/112/113 rollout</span>
+<a name="l-12"></a><span class="tm">19:03:18</span><span class="nk"> &lt;btcdrak&gt;</span> +1 morcos
+<a name="l-13"></a><span class="tm">19:03:37</span><span class="nk"> &lt;petertodd&gt;</span> so, rollout is made more complex by a non-trivial amount of hashing power nVersion voting for classic
+<a name="l-14"></a><span class="tm">19:03:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> could a bip 68/112/113 softfork be a timestopper for SW?
+<a name="l-15"></a><span class="tm">19:04:09</span><span class="nk"> &lt;gmaxwell&gt;</span> This... again. :(
+<a name="l-16"></a><span class="tm">19:04:11</span><span class="nk"> &lt;morcos&gt;</span> sorry btcdrak i haven't checked recently, but it seemed to me that the soft fork logic was relatively easy to review (except for gmaxwells concern), but that we still needed more extensive testing
+<a name="l-17"></a><span class="tm">19:04:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> what do you mean by 'timestopper'?
+<a name="l-18"></a><span class="tm">19:04:17</span><span class="nk"> &lt;btcdrak&gt;</span> Yes. I have written an ISM rollout in https://github.com/bitcoin/bitcoin/pull/7561 but we may need to consider BIP9 now
+<a name="l-19"></a><span class="tm">19:04:21</span><span class="nk"> &lt;sdaftuar&gt;</span> has anyone reviewed either of the new versionbits proposals? (i haven't)
+<a name="l-20"></a><span class="tm">19:04:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">timestopper:</span> I guess we can't run two SF at the same time.
+<a name="l-21"></a><span class="tm">19:04:38</span><span class="nk"> &lt;morcos&gt;</span> yes, that should be action item for next week.
+<a name="l-22"></a><span class="tm">19:05:01</span><span class="nk"> &lt;btcdrak&gt;</span> sipa started a BIP9 implementation in https://github.com/bitcoin/bitcoin/pull/7575
+<a name="l-23"></a><span class="tm">19:05:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I don't think so; at least we can roll multiple ISM sofforks at once so long as they are strictly additive. No one that I'm aware of is clamoring againsst 68/112/113.
+<a name="l-24"></a><span class="tm">19:05:12</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> fwiw I asked f2pool and bitmain to use coinbase to allow hashers to show support rather than nVersion
+<a name="l-25"></a><span class="tm">19:05:37</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> 68/112/113 were briefly discussed in HK, with no objections, fwiw
+<a name="l-26"></a><span class="tm">19:05:40</span><span class="nk"> &lt;gmaxwell&gt;</span> I am pretty fond of sipa's BIP9 implementation.
+<a name="l-27"></a><span class="tm">19:05:46</span><span class="nk"> &lt;btcdrak&gt;</span> I've been working on converting the tests in #7561 to work with versionbits so we have both options. But I have a couple of technical nits I'd like to discuss
+<a name="l-28"></a><span class="tm">19:06:52</span><span class="nk"> &lt;morcos&gt;</span> I think it would be the wiser move technically and politically to do BIP9 first if we don't think the delay is too long.  It's kind of the whole point of the thign.
+<a name="l-29"></a><span class="tm">19:06:52</span><span class="nk"> &lt;btcdrak&gt;</span> BIP68 obviously requires v2 transactions, which currently dont relay. So we need to bump the relay policy. the question is do we go for sf enforcement first, and then bump the policy or do we change the relay policy with the sf deployment?
+<a name="l-30"></a><span class="tm">19:07:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> it's hard to be sure, it may be that it only becomes a constructed political hot potato once merged as we've seen for at least one other thing. But we can't plan based on my cyncicism. Maybe a last call to the mailing list would be useful.  "We're thinking about moving this into deployment, what if any complaints remain?"
+<a name="l-31"></a><span class="tm">19:07:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> I think changing the relay policy in the release that supports it is fine - that's basically what we did with CLTV after all
+<a name="l-32"></a><span class="tm">19:07:36</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes thats my point exactly, i think much less likely to have complaints if we are doing it via bip9
+<a name="l-33"></a><span class="tm">19:07:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> just don't bump the default tx version number yet!
+<a name="l-34"></a><span class="tm">19:07:55</span><span class="nk"> &lt;btcdrak&gt;</span> We also have a sort of chicken and egg situation for changing the default tx version, so I proposed this https://github.com/btcdrak/bitcoin/commit/957d59043b1eb3a2525eae6cae6a2a15b2eab401 so it can be done in two steps
+<a name="l-35"></a><span class="tm">19:08:18</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> looks good
+<a name="l-36"></a><span class="tm">19:08:50</span><span class="nk"> &lt;morcos&gt;</span> two steps seems logical, and bumping the default isn't particularly important while we don't have wallet code for sending BIP68 locked txs anyway right?
+<a name="l-37"></a><span class="tm">19:08:52</span><span class="nk"> &lt;btcdrak&gt;</span> Unless miners were change their signalling, I think we should go for BIP9 this time. It shouldnt take too long to convert the RPC tests over to sipa's PR.
+<a name="l-38"></a><span class="tm">19:09:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I haven't spoken to the BTCD folks in a bit, they've provided useful feedback on protocol changes in the past. I'll take an action to go talk to them about 9/68/112/113.
+<a name="l-39"></a><span class="tm">19:09:14</span><span class="nk"> &lt;btcdrak&gt;</span> I'm building a patch based on #7575
+<a name="l-40"></a><span class="tm">19:09:36</span><span class="nk"> &lt;CodeShark&gt;</span> I personally dislike adding these constants to the CTransaction class
+<a name="l-41"></a><span class="tm">19:09:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#action </span><span class="cmdline">talk to BTCD folk about bips 9/68/112/113</span>
+<a name="l-42"></a><span class="tm">19:10:02</span><span class="nk"> &lt;btcdrak&gt;</span> maybe also action review 7575?
+<a name="l-43"></a><span class="tm">19:10:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Should we send a last call-ish like message about 68/112/113 ?
+<a name="l-44"></a><span class="tm">19:10:27</span><span class="nk"> &lt;CodeShark&gt;</span> CTransaction should be relay policy independent as well as consensus independent
+<a name="l-45"></a><span class="tm">19:10:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-46"></a><span class="tm">19:10:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> in what way?
+<a name="l-47"></a><span class="tm">19:10:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> "We're thinkin about moving these to deployment. Speak now or be mocked when you complain later."
+<a name="l-48"></a><span class="tm">19:10:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">CodeShark:</span> are you referring to BIP68 stuff.  (I mostly agree, but we merged that already)
+<a name="l-49"></a><span class="tm">19:10:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> I think that's a reasonable concern
+<a name="l-50"></a><span class="tm">19:10:59</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-51"></a><span class="tm">19:11:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> yes that would be great. I had been contemplating this.
+<a name="l-52"></a><span class="tm">19:11:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#action </span><span class="cmdline">Send email re-68/112/113 deployment.</span>
+<a name="l-53"></a><span class="tm">19:11:30</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> probably worth mentioning that we're considering version bits due to classic conflicts
+<a name="l-54"></a><span class="tm">19:11:40</span><span class="nk"> &lt;morcos&gt;</span> Who is taking that action item
+<a name="l-55"></a><span class="tm">19:11:46</span><span class="nk"> &lt;sipa&gt;</span> hi, i'm on bad internet in barbados
+<a name="l-56"></a><span class="tm">19:12:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I could do it but I'm not ideal; not super up to date on the history there.
+<a name="l-57"></a><span class="tm">19:12:10</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> i think we should not mention that, lets just see if we can get bip 9 ready quickly and then say we're doing it
+<a name="l-58"></a><span class="tm">19:12:16</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> what's the status on bip 9?
+<a name="l-59"></a><span class="tm">19:12:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> eh, that's reasonable if we think we're close
+<a name="l-60"></a><span class="tm">19:13:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> i started working on some other changes to the bip (disambiguate some things, add a state transition diagram, and add start time)
+<a name="l-61"></a><span class="tm">19:13:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> do you want to take the action-item for email re-68/112/113 deployment?
+<a name="l-62"></a><span class="tm">19:13:17</span><span class="nk"> &lt;morcos&gt;</span> sure unless btcdrak wants it
+<a name="l-63"></a><span class="tm">19:13:31</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> I'll pass :)
+<a name="l-64"></a><span class="tm">19:13:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> but not submitted yet
+<a name="l-65"></a><span class="tm">19:13:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> morocs has "a white vest".
+<a name="l-66"></a><span class="tm">19:14:02</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> is #7575 not up to date?
+<a name="l-67"></a><span class="tm">19:14:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> 7575 was updated today
+<a name="l-68"></a><span class="tm">19:14:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> is that my pr?
+<a name="l-69"></a><span class="tm">19:14:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> all the better to show the gunshot wounds.
+<a name="l-70"></a><span class="tm">19:14:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> gmaxwell... haha
+<a name="l-71"></a><span class="tm">19:14:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> it impkements a start time, which is not in bip9
+<a name="l-72"></a><span class="tm">19:14:56</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> oh, _that_ is why my RPC tests did not work....
+<a name="l-73"></a><span class="tm">19:14:58</span><span class="nk"> &lt;morcos&gt;</span> uhh
+<a name="l-74"></a><span class="tm">19:14:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> and i had to make some interoretation as bip9 is ambiguous about what hapoens when both transitiin to failed and lockedin happen simultaneously
+<a name="l-75"></a><span class="tm">19:15:04</span><span class="nk"> &lt;gmaxwell&gt;</span> We had previously discussed a start time esp with the debacle that happened with CLTV being used by 1/4 to 1/3 of the hashpower before any released software supported it.
+<a name="l-76"></a><span class="tm">19:15:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I was going bananas
+<a name="l-77"></a><span class="tm">19:15:27</span><span class="nk"> &lt;sipa&gt;</span> sorry for typing, in a bumpy car
+<a name="l-78"></a><span class="tm">19:15:42</span><span class="nk"> &lt;CodeShark&gt;</span> argh...I added and removed a start time several times to the bip :p
+<a name="l-79"></a><span class="tm">19:15:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> i know, sorry
+<a name="l-80"></a><span class="tm">19:16:06</span><span class="nk"> &lt;sipa&gt;</span> i believe we need one, but i want some other explanations on the bip too
+<a name="l-81"></a><span class="tm">19:16:07</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I agree with starttime, prefer it.
+<a name="l-82"></a><span class="tm">19:16:22</span><span class="nk"> &lt;sipa&gt;</span> there are different ways to do it
+<a name="l-83"></a><span class="tm">19:16:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> so to be clear, is your bip 9 pr (7575) where you want it to be?  if so i think that should be primary action item for everyone else to review and feedback
+<a name="l-84"></a><span class="tm">19:16:58</span><span class="nk"> &lt;gmaxwell&gt;</span> I can't imagine doin BIP9 without a start time. Rusty was opposed on principle, I think, but expirence trumps.
+<a name="l-85"></a><span class="tm">19:17:00</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> so I'll have to mock time for the RPC test
+<a name="l-86"></a><span class="tm">19:17:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> by start time, you mean minimum possible activation data right?
+<a name="l-87"></a><span class="tm">19:17:13</span><span class="nk"> &lt;morcos&gt;</span> btcdrak can simultaneously work on getting the 68/112/113 ready to use it
+<a name="l-88"></a><span class="tm">19:17:19</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> or grace period post-activation?
+<a name="l-89"></a><span class="tm">19:17:20</span><span class="nk"> &lt;sdaftuar&gt;</span> fyi 7575 is still failing travis, haven't dived in to see what is wrong
+<a name="l-90"></a><span class="tm">19:17:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> people reviewing should keep in mind that intentional discrepency with the BIP at the moment.
+<a name="l-91"></a><span class="tm">19:17:28</span><span class="nk"> &lt;morcos&gt;</span> we need both of those and 7187 merged for backport
+<a name="l-92"></a><span class="tm">19:17:36</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> noted.  :)
+<a name="l-93"></a><span class="tm">19:17:49</span><span class="nk"> &lt;CodeShark&gt;</span> https://github.com/bitcoin/bips/pull/219 didn't even get merged over this whole starttime crap :(
+<a name="l-94"></a><span class="tm">19:18:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> former, in what the PR implements there is a time where the bit in the header becomes defined as counting for the soft-fork.
+<a name="l-95"></a><span class="tm">19:18:07</span><span class="nk"> &lt;CodeShark&gt;</span> Which wasn't even the main point of that PR
+<a name="l-96"></a><span class="tm">19:18:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> yeah it's basically done, modulo converting the RPC tests from my ISM PR.
+<a name="l-97"></a><span class="tm">19:18:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> right, any idea on how many months after final release that should be?
+<a name="l-98"></a><span class="tm">19:18:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> starttime is blocktime based, not real time; you don't need mocktime
+<a name="l-99"></a><span class="tm">19:19:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> 7575 is where i want it to be, but the logic should also go in bip9
+<a name="l-100"></a><span class="tm">19:19:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I think it's OKAY for it to be relatively near the release. considering that we've survived with an effectively negative start time.
+<a name="l-101"></a><span class="tm">19:19:43</span><span class="nk"> &lt;sipa&gt;</span> CodeSharki'll have a look at your pr to the bip again
+<a name="l-102"></a><span class="tm">19:19:55</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ok, so maybe 1-2 months?
+<a name="l-103"></a><span class="tm">19:20:11</span><span class="nk"> &lt;btcdrak&gt;</span> our roadmap FAQ tentatively pencilled BIP68,112,113 for March.
+<a name="l-104"></a><span class="tm">19:20:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> if tests still fails, the pr is certainly not where it should be regarding tests
+<a name="l-105"></a><span class="tm">19:20:31</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> i'm not following, you think you shouldn't be able to start soft fork activation for 1-2 months after code release?
+<a name="l-106"></a><span class="tm">19:20:53</span><span class="nk"> &lt;morcos&gt;</span> why not? at 95% miner threshold and with innocous soft forks, it should be ok to do it sooner.
+<a name="l-107"></a><span class="tm">19:20:56</span><span class="nk"> &lt;CodeShark&gt;</span> We need to start getting into the habit of publishing less optimistic schedules ;)
+<a name="l-108"></a><span class="tm">19:21:14</span><span class="nk"> &lt;morcos&gt;</span> maybe something a bit more invasive (like segwit) then you could put a couple 1000 block delay
+<a name="l-109"></a><span class="tm">19:21:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> ideally nodes are updated first, though it's not strictly needed.
+<a name="l-110"></a><span class="tm">19:21:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> yes, that's gmaxwell's argument, to give non-miners some time to upgrade their nodes (even in a soft-fork that's a good thing)
+<a name="l-111"></a><span class="tm">19:21:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> we want to avoid the situation we had with CLTV where f2pool were mining v4 blocks before we'd actually released the code.
+<a name="l-112"></a><span class="tm">19:21:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> because you want them rejecting any blocks from that 5% that are not valid.
+<a name="l-113"></a><span class="tm">19:21:35</span><span class="nk"> &lt;CodeShark&gt;</span> However long you think anything could reasonably take, double it for public expectations
+<a name="l-114"></a><span class="tm">19:21:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> one argument for it, is it can be done in about one line of code - cheap protection
+<a name="l-115"></a><span class="tm">19:22:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> yeah, so a practical problem, is you'd be changing unit tests right up until the last minute pre-release
+<a name="l-116"></a><span class="tm">19:22:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> a grace period - if it could be implemented easily enough - is better in that regard as it's defined from after the point at which the fork activates
+<a name="l-117"></a><span class="tm">19:22:50</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">petertodd:</span> i'm mostly just thinking about making changes take even longer..  and also perhaps losing attention focused on what's happening...   oh maybe i'm misunderstanding.  you could signal for it immediately, but it couldn't activate until start time
+<a name="l-118"></a><span class="tm">19:22:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> less important if the minimum start time is far into the future, but 1-2 months isn't
+<a name="l-119"></a><span class="tm">19:22:54</span><span class="nk"> &lt;morcos&gt;</span> that might be good
+<a name="l-120"></a><span class="tm">19:23:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> yeah, 100% ok to signal immediately
+<a name="l-121"></a><span class="tm">19:23:05</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> I think we get the PR into a mergable state, once agreed (and decided on deployment of code), we can set the start date for a reasonable amount of time into the future.
+<a name="l-122"></a><span class="tm">19:23:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> well, so long as we can co-ordinate that with the bitcoin core release schedule - which admittedly is much easier if we continue to do that in minor version releases
+<a name="l-123"></a><span class="tm">19:23:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> exactly.
+<a name="l-124"></a><span class="tm">19:24:15</span><span class="nk"> &lt;petertodd&gt;</span> alright, ack 1-2 month min start time
+<a name="l-125"></a><span class="tm">19:25:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I would caution any merging consensus refactoring PRs until we get the sf code emerged. It will make backporting to 0.12 easier and easier to verify (basically an easy cherrypick).
+<a name="l-126"></a><span class="tm">19:26:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> I suggest we buy jtimom a time machine so he can do his refactors in the past :)
+<a name="l-127"></a><span class="tm">19:26:40</span><span class="nk"> &lt;petertodd&gt;</span> *jtimon
+<a name="l-128"></a><span class="tm">19:28:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Any other topics? (we can discuss BIP9 more out of meeting and maybe when sipa has better connectivity?
+<a name="l-129"></a><span class="tm">19:29:04</span><span class="nk"> &lt;sipa&gt;</span> i'm going afk now; i'll look at bip9 and 7575 and tests next week
+<a name="l-130"></a><span class="tm">19:30:02</span><span class="nk"> &lt;petertodd&gt;</span> I'm working on a tech writeup re: HK
+<a name="l-131"></a><span class="tm">19:30:46</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">FYI:</span> probably need to be ready to analyze and act on https://mta.openssl.org/pipermail/openssl-announce/2016-February/000063.html if necessary
+<a name="l-132"></a><span class="tm">19:31:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">warren:</span> interesting!
+<a name="l-133"></a><span class="tm">19:31:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">openssl drama again</span>
+<a name="l-134"></a><span class="tm">19:31:54</span><span class="nk"> &lt;gmaxwell&gt;</span> our response needs to get openssl out of the software to the greatest extent possible. It's already out of consensus, it's close to out of bitcoind.
+<a name="l-135"></a><span class="tm">19:32:37</span><span class="nk"> &lt;gmaxwell&gt;</span> The only thing we don't have an answer for is payment protocol, and the feedback I'm getting is that PP is virtually unused esp in core. We could consider making PP off by default and have a setting in the UI to enable it.
+<a name="l-136"></a><span class="tm">19:32:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> and fortunately, PP isn't consensus critical, which helps a bit
+<a name="l-137"></a><span class="tm">19:33:04</span><span class="nk"> &lt;morcos&gt;</span> oh so i don't need to ever bother figuring out what PP is?
+<a name="l-138"></a><span class="tm">19:33:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> payment protocol
+<a name="l-139"></a><span class="tm">19:33:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> still means we need to roll emergency updates for serious openssl vulnerabilties.
+<a name="l-140"></a><span class="tm">19:33:27</span><span class="nk"> &lt;morcos&gt;</span> i just mean i haven't looked at the code
+<a name="l-141"></a><span class="tm">19:33:43</span><span class="nk"> &lt;warren&gt;</span> Does anyone use rpcssl?
+<a name="l-142"></a><span class="tm">19:33:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> interesting question re: PP - does the average install of Bitcoin Core's qt wallet actually let people click on a PP link and have their wallet pop up? if not, strongly suggests it isn't being used much
+<a name="l-143"></a><span class="tm">19:33:49</span><span class="nk"> &lt;gmaxwell&gt;</span> It's written in QT, uses QT for HTTP.
+<a name="l-144"></a><span class="tm">19:33:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">warren:</span> thats gone.
+<a name="l-145"></a><span class="tm">19:33:56</span><span class="nk"> &lt;warren&gt;</span> oh good
+<a name="l-146"></a><span class="tm">19:34:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I know nothing about windows packaging. I did believe we installed a URL handler.
+<a name="l-147"></a><span class="tm">19:35:24</span><span class="nk"> &lt;gmaxwell&gt;</span> If PP continues in the long run it should be process seperated at least, I tried to do this before (and also to make it useful from cli/rpc) but the implementation was such that it didn't lend itself to that.
+<a name="l-148"></a><span class="tm">19:35:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> we can always do a release where you need a command line flag to enable it and see if anyone notices :)
+<a name="l-149"></a><span class="tm">19:35:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> thats kind of what I was thinking with the GUI option too "If you've turned this on, please report to..."
+<a name="l-150"></a><span class="tm">19:36:32</span><span class="nk"> &lt;petertodd&gt;</span> also, PP w/o multisig has somewhat dubious advantages right now, and even with multisig I'm not sure there are any wallets that really do it well
+<a name="l-151"></a><span class="tm">19:37:16</span><span class="nk"> &lt;petertodd&gt;</span> more likely that PP will have worse CA verification than your browser, which benefits from the massive amount of work done to make SSL secure in the face of bad cert authorities
+<a name="l-152"></a><span class="tm">19:38:15</span><span class="nk"> &lt;CodeShark&gt;</span> PP is dumb
+<a name="l-153"></a><span class="tm">19:38:50</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> eh, it goes in the right direction, it's just not so useful in the current environment
+<a name="l-154"></a><span class="tm">19:39:36</span><span class="nk"> &lt;CodeShark&gt;</span> silly to try to specify it when so many more fundamental things still aren't solved ;)
+<a name="l-155"></a><span class="tm">19:39:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> in the far future I'd be surprised if we aren't using something like PP for all txs, probably on a mandatory basis (but I assume treechains will eventually happen!)
+<a name="l-156"></a><span class="tm">19:40:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay any other topics?
+<a name="l-157"></a><span class="tm">19:41:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Otherwise, I'm going to call the end.
+<a name="l-158"></a><span class="tm">19:41:15</span><span class="nk"> &lt;petertodd&gt;</span> ack
+<a name="l-159"></a><span class="tm">19:41:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
