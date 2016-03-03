@@ -1,0 +1,253 @@
+19:06:26 <gmaxwell> #startmeeting
+19:06:26 <lightningbot> Meeting started Thu Mar  3 19:06:26 2016 UTC.  The chair is gmaxwell. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:06:26 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:06:33 <gmaxwell> #topic Agenda
+19:06:52 <gmaxwell> What things need to be discussed today?
+19:07:21 <CodeShark> Versionbits, segwit status
+19:08:06 <gmaxwell> okay lets start on versionbits for now and we'll see what else gets raised?
+19:08:12 <gmaxwell> #topic Versionbits (BIP9)
+19:08:21 <btcdrak> hi
+19:08:42 <sipa> i'm about to push a few changes to 7575 (non semantic ones), and it should be ready for review
+19:08:49 <gmaxwell> Sipa has been working on refining the proposal and has made some recent changes which I think are pretty good-- eliminate some corner cases around start/stop.
+19:09:12 <btcdrak> The BIP update is looking nice.
+19:09:15 <CodeShark> Yes, I like the latest changes
+19:09:16 <sipa> so BIP9 currently guarantees that as long as the start/end times of deployments are non-overlapping, the bits are never ambiguous
+19:09:44 <sipa> so no need for dependency tracking between different deployments, just choose start/end times sanely
+19:10:28 <CodeShark> Yes, that's what I had in mind in my implementation but sipa did it better :)
+19:10:38 <sipa> 7575 currently implements that, and has tests (for the low-level logic, not for the integration with consensus logic)
+19:11:05 <gmaxwell> I continue to be a little concerned that the activation threshold may be too high considering the low variance triggering mechenism, and activation delay. But I see nothing to do about that except try it and see if our first versionbits fork attempt fails to activate in a reasonable time.
+19:11:29 <sipa> we can reduce the threshold if needed
+19:11:49 <sipa> increasing is harder, as it may cause warning to not fire
+19:12:08 <sdaftuar> sipa: is 7575 going to eventually include deployment code for BIP68/112/113, or are you going to remove the last commit for a different PR?
+19:12:27 <sipa> sdaftuar: going to remove the last commit, and replace with whatever is agreed
+19:12:29 <gmaxwell> Thats a good argument. (that it's easier to reduce the threshold)
+19:12:47 <btcdrak> sdaftuar: I have the deployment code done for VB
+19:13:07 <morcos> sipa: should the regtest window be smaller than 2016?
+19:13:19 <sdaftuar> btcdrak: ok great.  i was just going to say that saving the deployment for a subsequent PR might be easier for reviewing tests, etc
+19:13:49 <morcos> just seems like it'll make the tests less cumbersome if you want to watch what happens as you go up and down through a couple different windows
+19:13:50 <btcdrak> I was going to say, regtest with 2016 retarget is cumbersome
+19:13:55 <gmaxwell> we need to fix regtest to not fall over at retargeting.
+19:14:01 <sdaftuar> i think that is fixed
+19:14:03 <morcos> didn't we do that
+19:14:08 <gmaxwell> oh sorry! :)
+19:14:10 <sdaftuar> but it still might be cumbersome to generate long chains
+19:14:18 <sipa> yes, regtest just never changes difficulty now
+19:14:27 <btcdrak> it's cumbersome to generate long chains, since there are two retarget windows required.
+19:14:40 <sipa> but good point; i can set the regtest window/threshold lower
+19:14:49 <cfields> whoops, present. thanks gmaxwell.
+19:14:51 <btcdrak> sipa: +1
+19:14:52 <gmaxwell> why is typing setgenerate 4032 a problem?
+19:15:01 <sdaftuar> however i also worry that we're no longer testing mainnet parameters, and the consensus parameters are duplicated for each chain
+19:15:07 <sipa> gmaxwell: you want generate 4032
+19:15:16 <btcdrak> gmaxwell: it's too much for RPC tests
+19:15:24 <sipa> gmaxwell: setgenerate starts the internal miner with the specified number of cores; it no longer has special casing for regtest
+19:15:28 <morcos> it just takes a little longer...
+19:15:39 <gmaxwell> I do like to avoid avoidable differences between regtest and mainnet.
+19:16:16 <gmaxwell> perhaps the answer if it's taking to long is to make regtest even faster?
+19:16:36 <sipa> reintroduce SSE mining code? :p
+19:16:44 <btcdrak> :p
+19:16:52 <gmaxwell> I meant lower the difficulty. :)
+19:17:07 <morcos> 12 secs
+19:17:08 <sipa> the regtest difficulty is 1/2000000000
+19:17:25 <sipa> you can at most get a 2x speedup
+19:17:38 <morcos> i think it would make the rpc test for this pretty slow as i imagine you'd need to do that many times
+19:17:50 <gmaxwell> OK, suggestion withdrawn.
+19:18:08 * paveljanik is late, sorry
+19:18:23 <sdaftuar> i worry more that a typo in the mainnet chain's deployment bitmask might go unnoticed/untested
+19:18:40 <gmaxwell> (why is it so slow? 6 seconds for 4k blocks seems like a lot)
+19:19:13 <sdaftuar> would anything catch that?
+19:19:17 <sipa> i'm still fine with lower window for regtest
+19:19:41 <gmaxwell> sdaftuar: review; I guess. (hahaha)
+19:20:06 <btcdrak> gmaxwell: it's much slower on RPC tests
+19:20:40 <sdaftuar> especially if there's stuff in your mempool right?
+19:21:08 <sdaftuar> blockindex consistency checks and mempool consistency checks both add up i guess
+19:21:21 <morcos> maybe we didn't fix everything...  blocks 4k -> 8k = 32 secs,   blocks 8k -> 12k = 53 secs
+19:21:22 <sdaftuar> i'd guess*
+19:21:30 <btcdrak> yeah it's like 45 seconds for me
+19:21:32 <sdaftuar> blockindex checks are n^2 no?
+19:21:38 <sdaftuar> er
+19:21:45 <morcos> i suppose..  i think we're in the weeds
+19:21:48 <sdaftuar> yeah sorry
+19:22:20 <gmaxwell> So, sipa what do you need now for versionbits?
+19:23:09 <sipa> let me push a few changes, and then review
+19:23:18 <sipa> and tests are welcome
+19:23:43 <gmaxwell> #action after sipa pushes a few changes; reivew/test 7575, review BIP9
+19:24:11 <gmaxwell> Move on to segwit status? anyone have other agenda items to add?
+19:24:24 <paveljanik> feefilter review etc. please
+19:24:36 <morcos> and i hae a quick comment on tx backlog
+19:24:39 <paveljanik> BIP113
+19:24:58 <gmaxwell> k, lets do txbacklog right now.
+19:24:58 <Luke-Jr> I still think feefilter should be a little more flexible.
+19:25:02 <gmaxwell> #topic txbacklog
+19:25:30 <Luke-Jr> is there one?
+19:25:33 <morcos> i was wondering what kind of improvements are acceptable for minor releases
+19:25:37 <paveljanik> s/113/133/
+19:25:51 <sdaftuar> CPFP mining! :)
+19:25:56 <sipa> morcos: in response to an urgent problem, i'd say "anything"
+19:26:03 <morcos> i've noticed block validation seems to have slowed down significantly..  my theory is this is due to the daily cache flush and now many txs in blocks are older than that
+19:26:09 <morcos> this isn't urgent for sure
+19:26:12 <sipa> ok
+19:26:32 <gmaxwell> Right now there has been an increase in tx with fees over 1 satoshi per byte. The months standing background spam load of a around a gigabyte below that seems largely unchanged to me.
+19:26:36 <morcos> but it seems to me if we can correctly fix the "write but don't flush" aspect of the coinsviewcache, then that should be a significant performance boost
+19:27:08 <morcos> i guess it depends on whether we think validation times are a significant bottleneck for anything
+19:27:08 <sipa> morcos: yes...
+19:27:19 <gmaxwell> morcos: I've noticed the startup checks being much slower and was wondering if we'd made some regression someplace. Haven't tried bisecting.
+19:27:27 <petertodd> morcos: until we change to sending blocks before validating them they do add up
+19:27:44 <Luke-Jr> has anyone looked into whether the new txs are real or spam?
+19:28:05 <gmaxwell> Luke-Jr: some people have, petertodd was tweeting some analysis that strongly supported the latter.
+19:28:08 <petertodd> Luke-Jr: yeah, they look like long chains where eventually everything goes back to the sender, apaprently
+19:28:15 <petertodd> Luke-Jr: but no formal writeups exist yet
+19:28:15 <Luke-Jr> hmm
+19:28:21 <morcos> heh, you mean short chains..  woo hoo for chain limits!
+19:28:40 <Luke-Jr> any patterns to identify it with?
+19:28:40 <petertodd> morcos: no, they're long chains - once the txs confirm the chain is extended further
+19:29:29 <gmaxwell> in general most wallets are responding well (hurray! big improvement from 6 months ago) though not all.
+19:29:53 <petertodd> gmaxwell: speaking of, I noticed greenaddress has rbf code in their github repo
+19:29:57 <morcos> it looks to me like the backlog is diminishing as well
+19:29:57 <petertodd> gmaxwell: (for sending)
+19:30:56 <gmaxwell> petertodd: interesting, yes.. gait has been working on that; I think he was off in a design rathole on how to best support updating with additional outputs.
+19:31:23 <petertodd> gmaxwell: yeah, lots of possible ways wallets can do that, some of them quite different from how wallets work right now
+19:31:24 <gmaxwell> FWIW, with the new proposal for schnorr aggregate signatures, updating for more outputs will be much more attractive.
+19:31:38 <cfields> gmaxwell: speaking of, the -mintxfee behavior change may be worth a quick discussion.
+19:32:06 <sipa> cfields: the -paytxfee change you mean? :)
+19:32:12 <sipa> (too many fee parameters...)
+19:32:19 <petertodd> gmaxwell: oh! that's a good point!
+19:33:03 <cfields> sipa: er yes
+19:33:06 <morcos> i think we just bungled not more clearly announcing the change in semantics for paytxfee
+19:33:52 <morcos> surprising none of us flagged that as important at the time of the PR...  which does raise another issue, we should have a checklist of things to revisit before release
+19:34:00 <gmaxwell> Did we know we really changed them? my view on the history was that it was changed to not round a long time ago, but another bug covered it up. That bug was fixed, and no one realized an announcement was needed.
+19:34:10 <morcos> multiple times now we've said, ok we'll just need to fix that before release, and then forgotten or almost so
+19:34:24 <morcos> gmaxwell: oh perhaps?
+19:34:27 <Luke-Jr> morcos: well, the change in behaviour is definitely correct
+19:34:43 <gmaxwell> I'm not sure that even if I realized it was a change I would have put "fee computation more accurate" as high importance-- since mining priority was changed to be precise a really long time ago. (0.6?)
+19:35:01 <sipa> morcos: when i saw that discussion, i remembered the "fPayAtLeastCustomFee" global and associated problems, but I don't think I ever realized that that global and its default value equal to true was ever released
+19:35:45 <gmaxwell> yea, I saw that fix but don't think I realized that it was ever in a release. When sipa asked me about paytxfee yesturday I told him it was changed to be accurate forever ago.
+19:35:56 <gmaxwell> So I think thats the sequence of errors here.
+19:36:13 <gmaxwell> A checklist would be useful, though I don't know if it would have saved us here.
+19:36:31 <sipa> so what i think happened is that at some point we switched the mining code to be per byte instead of per kb, later that global was introduced which implicitly retained the behaviour of "rounding up to 1000 bytes for fee calculation" even though the rest of the code was updated to be per byte, and only now, with the global going away, we actually get the accurate change
+19:36:34 <gmaxwell> asking people to document if a bug being fixed was ever released might have helped.
+19:36:36 <morcos> yeah , a checklist on changing behavior of any options or rpc calls being properly documented
+19:36:58 <morcos> another example is -maxsigcachesize
+19:37:04 <sipa> and i expect that people who made these changes were aware of it, as they updated the rpc tests accordingly, but not review
+19:37:08 <morcos> i pity the poor fool who has that set to 100000
+19:37:50 <gmaxwell> you don't have 100 gb ram?
+19:37:52 <Luke-Jr> ideally we should probably do the release notes in the PR itself
+19:37:59 <morcos> i'm not sure how many people would catch all these warnings in the 2 foot think binder of release notes, but its still good to have them
+19:38:37 <gmaxwell> I don't think it was a big deal here, but it could have been one.
+19:38:37 <sipa> well if we'd have warning for unknown options, we can just switch to a practice of renaming them whenever their meaning changes
+19:38:41 <CodeShark> make sure to say "WARNING" first so it's searchable :)
+19:38:57 <btcdrak> yeah I've been meaning to suggest we add at least brief release note documentation in PRs
+19:39:14 <sipa> btcdrak: i always do (or try to...)
+19:39:23 <gmaxwell> okay, we're going on a tangent.
+19:39:36 <sipa> going on a tangent is a sin
+19:39:41 <gmaxwell> Anything more to say about backlog before we move to talk fee filter?
+19:39:43 <morcos> oh no
+19:39:48 <CodeShark> no trig puns
+19:39:58 <sipa> CodeShark: i co-sign that
+19:39:58 <gmaxwell> My sides hurt.
+19:40:00 <btcdrak> sipa: can you cosign this?
+19:40:12 <Luke-Jr> lol
+19:40:23 <Luke-Jr> ♥ sipa
+19:40:26 <sdaftuar> so how about that fee filter
+19:40:33 <gmaxwell> #topic feefilter
+19:40:45 <morcos> it seems to work pretty well
+19:40:49 <gmaxwell> Feefilter is awesome. I have not yet run it.
+19:41:00 <Luke-Jr> sorry, I need to run.. I think feefilter at least needs some kind of "mode" for things like "how do we measure size" etc, but not a huge deal
+19:41:05 <morcos> i mentioned in another context, it reduces tx send and rx bandwidth by around 40+%
+19:41:28 <gmaxwell> thats fantastic.
+19:41:28 <morcos> Luke-Jr: I'm basically of the mindset that we don't introduce complication until we need it
+19:41:47 <morcos> its totally optional, so no reason not to replace it later with a more generic one if we ever bother implementing
+19:42:02 <gmaxwell> We will not run out of message types, so we could introduce a modefilter later. I support that thinking.
+19:42:11 <morcos> it seems to me the message type is the version, yep
+19:42:19 <gmaxwell> I expect the way relay works to change substantially in the next couple years; so we should probably not overdesign here.
+19:43:09 <morcos> i need to do a trivial pr rebase, but i guess it just needs more review
+19:43:23 <morcos> i'm not sure what there is to discuss
+19:43:38 <gmaxwell> Okay, I will test and review. Thanks for working on this.
+19:43:50 <morcos> sure
+19:43:58 <gmaxwell> #action Test and review fee filter. Morcos reports unicorns and rainbows result.
+19:44:09 <paveljanik> great!
+19:44:14 <morcos> well all depends on your test setup i guess.. :)
+19:44:20 <gmaxwell> #topic CPFP mining
+19:44:31 <gmaxwell> sdaftuar: hows it going?
+19:44:33 <sdaftuar> it's awesome.
+19:44:53 <sdaftuar> i've been running live for the last two days
+19:45:16 <btcdrak> The PR number is #7600
+19:45:20 <sdaftuar> comparing existing mining algorithm to new one
+19:45:25 <sdaftuar> every ~128 tx's or so
+19:45:57 <sdaftuar> looking at the last call to CNB before a block is found, i see a 72% increase in fee/block on the last 144 data points
+19:45:58 <gmaxwell> I believe it should be making some pretty significant differences in selection from what I've seen. A number of users of OTHERBRAND wallet that has no fee estimation and always spends unconfirmed change seem to frequently produce chains of very low fee, very high fee (after realizing they needed more fee from the first tx).
+19:46:08 <morcos> 72% ?!?!??!
+19:46:15 <sdaftuar> that could obviously be due to a small number of tx's that aren't getting mined for extended periods
+19:46:26 <sdaftuar> but geez we need this deployed, i think
+19:46:41 <btcdrak> amazing
+19:46:42 <sipa> sdaftuar: i believe that test would result in an exaggerated result
+19:46:48 <gmaxwell> the effect is likely exagerated due to the pattern I just described: the human controlled fees are exagerating the needed increase.
+19:47:06 <sipa> sdaftuar: as you're not actually creating blocks on the network with the new CPFP algorithm, i guess?
+19:47:09 <sdaftuar> yep
+19:47:10 <sdaftuar> correct
+19:47:21 <sdaftuar> so if a tx stays around for a day, and isn't selected by the old code, you'd count it over and over
+19:47:33 <sipa> sdaftuar: meaning that in a real setting, those "better" transactions would be mined once and cleaned up, reducing the effect for later blocks
+19:47:37 <sipa> right,
+19:47:37 <sdaftuar> correct
+19:47:47 <sipa> sdaftuar: how about performance?
+19:48:01 <sdaftuar> so there are three areas of performance to consider
+19:48:11 <sdaftuar> one is the additional work of the mempool to keep the index
+19:48:19 <sdaftuar> another is the part of CNB before TestBlockValidity is called
+19:48:38 <sdaftuar> and the last is the time TestBlockValidity takes (much larger than the rest of CNB, which is why i think it makes sense to split it out)
+19:48:58 <gmaxwell> (whom ever makes the lay summary, please don't report 72% increase as what CPFP does; in consideration of sipa's above point about N-fold counting)
+19:49:19 <sdaftuar> the mempool work isn't really a steady state increase, the concern i think is in what happens when a block is connected
+19:49:29 <sdaftuar> because then we have to update all the scores for every in-block transaction's descendants
+19:49:54 <morcos> gmaxwell: also the previous number he reported to me was 1%.. :)
+19:50:08 <sdaftuar> (when you add a tx to the mempool, you statically count its ancestors once, so that's basically negligible additional work)
+19:50:40 <sdaftuar> so i timed that extra delay in mempool.removeForBlock
+19:50:44 <morcos> but i think it is a good point, that if the increase is sometimes very big, its important for miners to take it...  presumably the average increase wouldn't ever be much different from 0, as we don't see txs permantely residing in mempool
+19:50:46 <sdaftuar> and reported some numbers in #7594
+19:51:14 <sdaftuar> looks like what i saw was an increase from an average of 10.9ms to 11.2ms
+19:51:26 <sdaftuar> that was on half a month's data from october
+19:51:32 <sdaftuar> er 10 days i guess actually
+19:52:04 <sdaftuar> so i figure that's negligible enough to not really worry about, especially because if we really cared, we could make block relay happen while the mempool was still being updated, though it'd take some work
+19:52:13 <gmaxwell> do we worry that CPFP's utility is compromised without package relay? -- I guess these measurements suggest its not.
+19:52:22 <sdaftuar> moving on to CreateNewBlock's performance:
+19:52:36 <sdaftuar> vast majority of CNB's total time is taken up by TestBlockValidity
+19:53:06 <CodeShark> sorry to interrupt - we only have 8 minutes and I wanted to discuss segwit
+19:53:16 <sdaftuar> somehow, TBV is slightly faster using the new code than the old one.  i haven't dived into it, but my guess is that maybe it's faster to look up mempool inputs than pcoinsTip inputs?
+19:53:43 <sdaftuar> that speed increase is actually larger than the small hit to performance on the rest of CNB, so it's actually faster in total.  anyway numbers are in the PR #7600
+19:53:45 <morcos> gmaxwell: i don't see that as a big concern...  i think it'll likely become common practice to avoid fees so small that they get evicted unless its actual spam.  and CPFP will be useful for when you guess wrong on getting confirmed quickly
+19:53:46 <sdaftuar> i think this is a clear win
+19:54:06 <gmaxwell> sdaftuar: it sounds great, what now do you think we need to do to move forward?
+19:54:27 <sdaftuar> review! i broke the work into 3 PR's for review.  one just adds the ancestor feerate index to the mempool (7594)
+19:54:29 <gmaxwell> morcos: I guess thats one upside over the overly large mempool default size.
+19:54:38 <sdaftuar> another is by morcos, which refactors CNB
+19:54:49 <sdaftuar> and then 7600 builds on both with the change to CNB
+19:55:13 <morcos> #7598
+19:55:30 <gmaxwell> #action whip people into wroking on review for CFPF 7594 / 7598 / 7600  it's nicely broken up.
+19:55:39 <gmaxwell> Can we segwit for CodeShark?
+19:55:43 <CodeShark> lol
+19:55:44 <gmaxwell> #topic segwit status
+19:55:52 <CodeShark> we had a fork a few days ago
+19:56:05 <sipa> i haven't had time to investigate
+19:56:19 <sipa> my hope is that it is caused by miners running older versions of the code
+19:56:23 <sipa> and not something else
+19:56:27 <gmaxwell> Time for science then.
+19:56:43 <CodeShark> that's most probable - but we haven't narrowed down the conditional that actually caused it
+19:56:48 <sipa> i was planning on doing a segnet4 very soon, but we'd need to understand what's causing this first
+19:56:59 <morcos> well is there anyone stuck on the short fork?
+19:57:13 <CodeShark> I think there might still be a few
+19:57:26 <morcos> seems like would be helpful to know what errors they have and what code they are running
+19:57:36 <cfields> hmm, i'd be interested in taking a look there. sipa: any helpful references/context ?
+19:57:45 <gmaxwell> might be useful if regtest networks put their git build info in their version numbers. awful for privacy... but would be useful here.
+19:57:50 <sipa> cfields: CodeShark probably knows more
+19:58:10 <gmaxwell> (e.g. a chainparam to put that info in the subver)
+19:58:11 <cfields> ok. will ping CodeShark after
+19:58:22 <CodeShark> I think the offending block was something like 22130
+19:58:26 <CodeShark> or 22132
+19:58:29 <CodeShark> or somewhere around there
+19:59:12 <gmaxwell> okay So-- sounds good, a fleet of flying monkies will contemplate the segnet fork.  Posting forked IPs in the segwit IRC channel might get someone's attention.
+19:59:18 <btcdrak> it's in the logs of #segwit-dev
+19:59:22 <cfields> ok, thanks
+19:59:24 <morcos> whats the actual block we're on now?
+19:59:40 <CodeShark> 22769
+20:00:06 <CodeShark> https://segnet.smartbit.com.au/ is still stuck on 22153
+20:00:09 <gmaxwell> okay any emergencies worth going over?
+20:00:11 <CodeShark> so it's still running he old code
+20:00:31 <gmaxwell> #endmeeting
