@@ -1,0 +1,300 @@
+18:59:59 <wumpus> #startmeeting
+18:59:59 <lightningbot> Meeting started Thu Mar 10 18:59:59 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:59 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:03 <wumpus> topics?
+19:00:23 <evoskuil> here
+19:01:05 <morcos> we have a list of remaining segwit items that were written on whiteboard at MIT...  should we assign those?
+19:01:16 <wumpus> sure
+19:01:18 * sipa hides
+19:01:25 * btcdrak locked the door
+19:01:44 <wumpus> #topic remaining segwit items
+19:01:56 <jonasschnelli> I'm happy to help,... probably in the wallet section.
+19:02:05 <morcos> seems to me it would nice to buckle down and prioritize  BIP 9,  BIPs 68,112,113  ,   segwit.   i mean i think we are all working on those things, but there is still more to do on all of them
+19:02:06 <sipa> my plan was to rebase segwit on top of bip9, add the rewind logic to continie after post-softfork uograde, and do a new testnet
+19:02:10 <sipa> eh, new segnet
+19:02:21 <btcdrak> great
+19:02:33 <CodeShark> when do you think to deploy the new testnet?
+19:02:40 <sdaftuar> we also need to discuss standardness rules
+19:02:50 <sdaftuar> (or rather, propose and discuss)
+19:02:55 <warren> What was decided for safety on the edge of the rule change in case of reorg?
+19:03:45 <morcos> I think my suggestion would be to push that problem to wallet users
+19:03:49 <sdaftuar> warren: i believe we decided to advise wallet authors to wait some time after segwit activates before using
+19:03:51 <sipa> one possibility is not enabling relay/mempool logic for segwit transactions until 2 period after activatation
+19:03:56 <morcos> yes authors i meant
+19:04:04 <gmaxwell> warren: I don't understand the context of your question.  Generall new soft fork rules should not be used immediately.
+19:04:14 <sipa> another is to just be cautious and nit enable the functionality in wallets until a post segwit release
+19:04:15 <sdaftuar> gmaxwell: this one is more dangerous than usual though
+19:04:24 <gmaxwell> sdaftuar: it's just like p2sh.
+19:04:29 <warren> OK, that seems adequate enough.
+19:04:42 <CodeShark> I'm not that concerned about edge case reorg situations
+19:04:55 <morcos> gmaxwell: its a bit riskier than p2sh...  don't need a preimage
+19:04:55 <sipa> it's not situation*s*
+19:05:08 <gmaxwell> in core I would recommend that we would switch to using segwit as default in a subsiquent release after the SF activates.
+19:05:40 <jonasschnelli> so have it ready and auto-use it whiteout creating another release?
+19:06:00 <morcos> so in any case, i think we just advise wallet authors to wait some minimum amount of time after activation to send segwit txs.. they are already going to have to put in some code to wait until it activates
+19:06:00 <jonasschnelli> *without
+19:06:01 <CodeShark> either wait until next release - or wait a few blocks after activation before enabling it in wallet
+19:06:11 <sipa> ok
+19:06:43 <jonasschnelli> auto-enable in in the wallet after 95%?
+19:06:47 <gmaxwell> no.
+19:06:57 <btcdrak> I think better to wait a release code afterwards
+19:06:58 <sipa> not even at 100%
+19:07:19 <jonasschnelli> Okay. Then do it over the release-cycle..
+19:07:31 <gmaxwell> I recommend using a release. Automatic behavior is not needed here. Also-- it's a pretty big behavioral change to use it, e.g. you'd be issuing other address styles in response.
+19:07:43 <jonasschnelli> Agree.
+19:07:48 <morcos> also we haven't written that code yet anyway
+19:07:52 <sipa> that is an open question
+19:07:53 <jonasschnelli> I just think there is a hight incentive to use it (fees)
+19:07:54 <CodeShark> this is something that can be decided once segwit has already been deployed and is awaiting activation
+19:07:56 <gmaxwell> having that triggered by invisible-to-the-user network behavior isn't reat.
+19:08:16 <gmaxwell> great*
+19:08:31 <sipa> i wish we had an address style for segwit part of the standard :(
+19:09:10 <gmaxwell> sipa: no you don't. Deploying a new address style takes forever. :P what you wish for is a magic wand.
+19:09:15 <btcdrak> sipa I thought we did? BIP142?
+19:09:37 <CodeShark> btcdrak: we haven't been pushing it because of concerns regarding scary "new addresses"
+19:09:41 <jonasschnelli> P2WPKH?
+19:09:53 <sipa> i think we have more buy-in from wallet authors about segwit now, than p2sh had at the timr
+19:09:54 <morcos> i think we should do that though, otherwise everyone is going to embed them in p2sh which is kind of silly
+19:10:22 <CodeShark> p2sh was almost entirely under the radar as far as the community at large
+19:10:24 <gmaxwell> also, continued use of base58 is awful. I am going to refuse to discuss address encodings with anyone who hasn't read an address to me over the phone. :)
+19:10:48 <btcdrak> CodeShark: I would suggest brining it back. There's no problem.
+19:10:57 <gmaxwell> CodeShark: thats not the case; besides there is a material difference in the sheer mass of code that must be updated. Besides why is this being discussed there.
+19:11:02 <CodeShark> btcdrak: there sort of is a problem still...
+19:11:06 <gmaxwell> btcdrak: I oppose it in the strongest possible terms.
+19:11:08 <CodeShark> both internal and external
+19:11:22 <btcdrak> CodeShark: you can change you mind :)
+19:11:33 <CodeShark> internally some people hate base58, externally some people are still grandstanding with the "segwit is too hard" crap
+19:11:56 <BlueMatt> gmaxwell: there is certain value in user expectations of things that look like base58
+19:12:13 <CodeShark> I think it's a battle not worth fighting right now
+19:12:18 <jonasschnelli> +1
+19:12:22 <btcdrak> +1
+19:12:24 <morcos> gmaxwell: whats your number
+19:12:29 <jonasschnelli> haha
+19:12:31 <gmaxwell> BlueMatt: You are on subject-matter-ignore until you call me and successfully read me a base58 address.  :)
+19:13:04 <sipa> i would really like to have some psegwit afdressddress as part of the "package"
+19:13:10 <gmaxwell> morcos: PM :P
+19:13:40 <BlueMatt> gmaxwell: I'm not suggesting I'm necessarily in support of base58 addresses, but my point is that it is not up to us here to figure out addressing for segwit...that is something WALLETS need to be involved in...people who actually have some ux experience, which does not exist here
+19:14:16 <morcos> gmaxwell: BlueMatt says "..."
+19:14:17 <gmaxwell> yes indeed. but thats also why taking on a new address type at the same time is not a good idea, it would get in the way of that kind of collaboration.
+19:14:22 <gmaxwell> hahha
+19:14:30 <BlueMatt> agreed
+19:14:30 <sipa> do you think so?
+19:14:37 <sipa> i think it's the opposite
+19:14:46 <BlueMatt> I think the idea of pushing off address types for segwit for broader feedback is a good thing
+19:14:47 <Luke-Jr> sipa: that was a lot of backspaces.
+19:15:07 <CodeShark> good UI design wouldn't even burden users with having to deal with copy/pasting cryptographic keys
+19:15:20 <CodeShark> but that's an entirely separate discussion
+19:15:28 <Luke-Jr> FWIW, I've been thinking of implementing the payment protocol better in Core
+19:15:37 <Luke-Jr> including the new BIP 75 stuff
+19:15:39 <jonasschnelli> We are far away from designing the UX... this is a topic we can talk about in 2-3 years.
+19:16:33 <sipa> :)
+19:16:42 <sipa> ok, let's postpone that address discussion
+19:16:42 <jonasschnelli> But sipa: is the P2WPKH address type not okay?,.. addresses like "p2xtZoXeX5X8BP8JfFhQK2nD3emtjch7UeFm"?
+19:16:53 <sipa> jonasschnelli: you mean bip142?
+19:17:08 <jonasschnelli> Yes. Easy to handle by existing wallets?
+19:17:17 <BlueMatt> jonasschnelli: ACK
+19:17:24 <gmaxwell> sipa was raising the concern that if something weren't done sooner we'd be left stuck with 80 bit security forever, I reminded him in PM that we have an upcoming checksig improvement to reduce transaction sizes by 30% which would be a nice time to do a new address type too. :)
+19:17:42 <wumpus> would be good to have concrete proposals for address formats ,say as BIPs
+19:17:50 <CodeShark> we'll have plenty of opportunities to introduce new stuff in the future
+19:18:00 <CodeShark> right now we should focus on the path of least resistance
+19:18:14 <sipa> the reason against incorporating bip142 is people yelling "see! sehwit needs new address types! everyone has to upgrade! not backward compatible!"
+19:18:17 <gmaxwell> The amount going on right now is too great to be able to afford forced seralization.
+19:18:27 <CodeShark> eventually my hope is we'll actually have a competent ecosystem that can actually do tech
+19:18:36 <CodeShark> but for now we must deal with what we have
+19:18:40 <morcos> Yeah I think it would make a lot of sense to release just the P2WPKH address
+19:18:44 <Luke-Jr> sipa: we could add sending support, and discourage anyone from using it to receive for now
+19:18:45 <jonasschnelli> sipa: You could still uses it over P2SH... but we don't live for the critics.
+19:18:56 <morcos> sipa: don't you think everyone is going to say that even more if we don't have address types
+19:19:12 <sipa> i don't know
+19:19:20 <sipa> i'm an engineer, not a marketer
+19:19:31 <jonasschnelli> +1 for P2WPKH bip142
+19:19:43 <wumpus> shouldn't be expected from you to act as marketeer sipa
+19:19:47 <wumpus> you have enough on your plate
+19:19:51 <sipa> next topic?
+19:19:59 <CodeShark> yes please
+19:20:07 <wumpus> suggestions?
+19:20:23 <Luke-Jr> (I don't see value in p2wpkh, but let's move on)
+19:21:14 <wumpus> ok, if not, that was a quick meeting
+19:21:28 <gmaxwell> there were many things last week that got cut off.
+19:21:29 <wumpus> (I'm still too tired and jetlaggy to contribute much now)
+19:21:38 <jonasschnelli> If no one has something important... what do you think about my approach of IBD with a pregenerated signed UTXOset?
+19:21:57 <btcdrak> Can I ask people to review the backport PRs for BIP68 and 112? They were straight cherry-picks into 0.12 but they do need a couple eyes on them.
+19:22:10 <morcos> jonasschnelli: i think thats a bad idea
+19:22:11 <Luke-Jr> jonasschnelli: sounds like a waste of time at best, to be frank. :x
+19:22:23 <wumpus> #action review backport PRs for BIP68 and 112
+19:22:33 <morcos> jonasschnelli: core devs (or anybody for that matter) should not be authorizing the state of the ledger at any time
+19:22:40 <wumpus> #topic IBD with a pregenerated signed UTXOse
+19:22:52 <wumpus> it's risky, it brings trust into the system
+19:22:56 <Luke-Jr> much prefer to see SPV mode until IBD completes
+19:23:15 <jonasschnelli> Luke-Jr: Yes. Agree.
+19:23:19 <wumpus> who would you trust to sign something like that?
+19:23:30 <sipa> Bob.
+19:23:32 <jonasschnelli> Just thought we might want to reduce the amount of block-serving even more.
+19:23:36 <wumpus> yes, definitely Bob
+19:23:38 <Luke-Jr> XD
+19:23:52 <jonasschnelli> wumpus: could be signed by the same users/devs who are signing the gitian builds.
+19:24:00 <sipa> jonasschnelli: that's not reducing block serving; it's changing the trust model instead
+19:24:22 <jonasschnelli> I agree. It does change the trust model.
+19:24:24 <wumpus> jonasschnelli: hmm don't put too much on their shoulders
+19:24:27 <CodeShark> without TXO commitments it's unfixable
+19:24:31 <CodeShark> :p
+19:24:35 <morcos> if we go back to the backport question, we also need to backport all these SF's to 0.11 is that correct?
+19:24:55 <jonasschnelli> Okay... so. Then let me not implement it. :)
+19:25:01 <wumpus> yea, UTXO commitments would make this somewhat more realistic, although it'd still reduce the overall trust model to SPV
+19:25:21 <wumpus> jonasschnelli: yes, better not for now I think
+19:25:28 <wumpus> #topic backports to 0.11
+19:25:33 <gmaxwell> morcos: I was thinking about this this morning. The normal release cadance would have us do so, I believe.
+19:25:42 <jonasschnelli> SPV during IBD and a throttled(CPU) IBD is the better approach.
+19:26:03 <wumpus> jonasschnelli: yes, definitely those would be good to have
+19:26:07 <Luke-Jr> how practical is it to backport to 0.10?
+19:26:14 <warren> why 0.10?
+19:26:20 <wumpus> topic is backport to 0.11 Luke-Jr :p
+19:26:20 <sipa> 0.10 and 0.11 are close
+19:26:22 <morcos> 0.10?  i'd hoped you guys would be willing to skip 0.11
+19:26:29 <sipa> but agree; just 0.11
+19:26:32 <btcdrak> morcos: I would skip 0.11
+19:26:38 <sipa> we have a published release schedule, no?
+19:26:51 <wumpus> I think backporting to 0.11 is fairly necessary, that's only one release back
+19:26:51 <Luke-Jr> sipa: of guaranteed support, not limited-to
+19:27:07 <Luke-Jr> 0.11 is necessary; 0.10 would be ideal
+19:27:09 <morcos> wumpus: i suppose, i'm worried about how well tested these major changes will be
+19:27:20 <sipa> master, 0.12, 0.11
+19:27:21 <Luke-Jr> but I'll deal with 0.10 later I guess
+19:27:24 <jonasschnelli> 0.10 is not necessary... we once agree in supporting only two major versions.
+19:27:28 <btcdrak> sipa: our lifecycle doc is at https://bitcoincore.org/en/lifecycle/
+19:28:00 <Luke-Jr> jonasschnelli: it was never agreed to drop support for older ones, only to not promise support for them; but that's on me for 0.10 I think
+19:28:05 <wumpus> morcos: it's a challenge, but I think you can't get around it, some people won't be ready yet to upgrade to 0.12
+19:28:06 <btcdrak> the backports to 0.12 are trivial, but 0.11 will be a little more annoying, especially for BIP68 I believe
+19:29:03 <morcos> btcdrak: we should just backport them kind of altogether right?
+19:29:10 <btcdrak> btw the backports for BIP68,112 are #7543 and #7544, I forgot to mention the numbers earlier
+19:29:14 <morcos> i suppose they don't overlap that much
+19:29:31 <morcos> i think i can make sure BIP68 for 0.11 backports properly
+19:30:02 <btcdrak> morcos: you'd be the best person to backport BIP68 to 0.11.
+19:30:10 <morcos> i will take the approach of not keeping the mempool consistent and checking sequence values in the mining code, which will probably not make much of an effect on the already absurdly slow mining code
+19:30:30 <morcos> thats why 7187 was separate, that won't be backported to 0.11
+19:30:42 <btcdrak> morcos: plenty miners have upgraded to 0.12 fwiw
+19:30:51 <btcdrak> well pools*
+19:31:26 <morcos> ok. i'll work on that
+19:31:33 <wumpus> the other path would be to wait for 0.13, then only backport to 0.12, but then you'll have to wait 6 months :p
+19:31:50 <Luke-Jr> >_<
+19:31:55 <btcdrak> wumpus: nice joke there :-P
+19:31:58 <wumpus> well not exactly 6 anymore but ok...
+19:32:14 <wumpus> I don't think it's realistic no
+19:32:39 <sipa> i think we can do 9/68/112/113 soon
+19:32:49 <wumpus> aim for 0.13 would be july
+19:33:04 <morcos> sipa: agreed!
+19:33:14 <wumpus> sipa: I hope so!
+19:33:16 <btcdrak> sipa: I also believe so. 68/112/113 are done from my side, morcos wants to add more RPC tests which is fine.
+19:33:22 <morcos> did you ever reply to my comment on block version = 4
+19:33:29 <morcos> btcdrak: there are NONE!
+19:33:43 <CodeShark> any plans to remove the default version crap out of primitives?
+19:33:50 <btcdrak> morcos: yes there are. same standard as for BIP65
+19:33:54 <sipa> CodeShark: yes, see bip9
+19:34:12 <sipa> morcos: it was needed in combination with the warning logic
+19:34:18 <btcdrak> morcos: see #7648
+19:34:20 <sipa> it may not be needed anymore with imoroved logic
+19:34:36 <morcos> btcdrak: i saw, and i agree, BIP65 made it out withotu adequate tests
+19:35:05 <sdaftuar> sipa: right now #7575 will revert back to version 4 blocks after the first soft fork activates, if no other soft forks are in the queue
+19:35:06 <jonasschnelli> bip65 had rpc tests from petertodd?!
+19:35:13 <sdaftuar> i assume that is unintentional?
+19:35:18 <btcdrak> morcos: I would disagree they were not adaquet, you can always have more sure.
+19:35:26 <btcdrak> bip65 had RPC tests.
+19:35:29 <sipa> sdaftuar: that seems correct to mr
+19:35:39 <sdaftuar> oh, i didn't realize that!
+19:35:50 <morcos> sipa: huh?  correct as in you wanted that?
+19:36:03 <sipa> the old version is used to indicate "no versionbits"
+19:36:04 <btcdrak> bip68/112/113 have the p2p RPC tests in #7648
+19:36:30 <sipa> morcos: yes, otherwise the version is ambiguous based on what software miners use, ignoring deploymemts
+19:36:37 <sipa> which the warning logic can't deal with
+19:36:55 <sipa> it must be absolute "these deployments -> this nVersion"
+19:37:05 <morcos> sipa: all prior soft forks required minors to upgrade
+19:37:14 <sipa> miners :p
+19:37:19 <btcdrak> lol
+19:37:25 <CodeShark> minors can always get a fake ID
+19:37:27 <morcos> sipa: what i would like to do is with this first soft fork, require nVersion > 4
+19:37:44 <sipa> why?
+19:37:50 <btcdrak> morcos: why?
+19:37:51 <morcos> then we can warn on anything that is not 001...  unless it is <=4 which we know are invalid
+19:38:00 <morcos> that seems consistent with how we've done other soft forks
+19:38:10 <morcos> there is an expected version number, unknown differences are warned on
+19:38:24 <gmaxwell> so old software versions warn.
+19:38:34 <gmaxwell> and continue warning.
+19:38:50 <morcos> gmaxwell: yes, old software versions are incapable of noticing transient changes
+19:39:06 <morcos> thats why we need to rework alerts/warning to correctly identify them now
+19:39:25 <morcos> in fact if you turned off a 0.12 node for a couple months
+19:39:34 <morcos> and then turned it back on after all these SF's activated
+19:39:36 <morcos> you would have no idea
+19:39:43 <morcos> even if you looked at your debug logs
+19:39:49 <morcos> b/c the warning logic doesn't run in IBD
+19:40:08 <morcos> i feel like that makes it a requirement that we permanently increase the version number
+19:40:24 <sdaftuar> agreed
+19:40:51 <sipa> wth are you talking about?
+19:40:56 <morcos> who?
+19:41:01 <CodeShark> I don't follow
+19:41:03 <morcos> me?  which part?
+19:41:09 <sipa> versionbits is deterministic based on the chain histotu
+19:41:18 <morcos> yes 0.12 doesn't have version bits
+19:41:20 <morcos> 0.12.0
+19:41:25 <CodeShark> after versionbits deployment, all block versions would be > 4
+19:41:26 <sipa> ah
+19:41:28 <gmaxwell> sipa: he's talking about software which doesn't have versionbits.
+19:41:32 <sipa> oh, now i get it
+19:41:37 <sipa> sorry
+19:41:43 <morcos> CodeShark: thats what i'm trying to say, thats not how its written
+19:42:17 <sipa> so increase to 5 after the first vb deployment?
+19:42:23 <morcos> no no no
+19:42:23 <sdaftuar> why not increase to 001...?
+19:42:24 <morcos> not 5
+19:42:33 <sdaftuar> consensus rule is >= 5 i guess
+19:42:39 <morcos> just > 4, but you expect to see 001
+19:43:03 <sipa> consensus >=4, but by default set 001...000....?
+19:43:16 <morcos> >4
+19:43:18 <morcos> yes
+19:43:57 <jonasschnelli> morcos: but you should see it in the debug log? https://github.com/bitcoin/bitcoin/blob/master/src/main.cpp#L2464
+19:44:13 <jonasschnelli> Agree that we should also warn in IDB (but low prio IMO).
+19:44:14 <sdaftuar> jonasschnelli: that code doesn't run during initialblockdownload
+19:44:35 <morcos> the assumption is if you see something that starts with 001 you think you know whats happening and you're unknown activation detector can alert you with specific information
+19:44:51 <jonasschnelli> Then lets improve that and BP.
+19:44:55 <morcos> and if you see soemthing that doesn't start with 001  such as a 5  or  a 110...
+19:45:07 <morcos> jonasschnelli: thats what we're doing , but we can't retroactively change old code
+19:45:29 <CodeShark> 110... would be treated as negative, no? because for some reason signed types were used
+19:45:31 <morcos> then you assume that someone is doing something you really don't understand
+19:45:38 <jonasschnelli> Yes. Sure... we might not be capable of warning for the next SF.
+19:45:41 <morcos> CodeShark: sure i mean 010
+19:45:54 <btcdrak> morcos: there is already 011 on the network too
+19:46:24 <morcos> btcdrak: exactly, and we should be warning about that (and we are now) b/c its changes our software doesn't understand
+19:46:35 <btcdrak> right
+19:46:38 <morcos> and if > 50/100 blocks then we turn that warning into an alert
+19:47:55 <jonasschnelli> Agree. But that raises also the question how to deploy an alert... debug.log? Yes. No.
+19:48:08 <morcos> jonasschnelli: see scroll back before meeting
+19:48:29 * jonasschnelli has only a 500 lines scrollback >_<
+19:48:53 <morcos> sipa: so agreed that we should increase version number?  should i make a new BIP for that?  and we'll just soft fork it in at same time, or add to existing BIP
+19:49:25 <sipa> morcos: consensus or not?
+19:49:53 <morcos> sipa: consensus rule that nVersion must be >= 5.
+19:50:25 <sipa> morcos: why consensus?
+19:50:31 <btcdrak> morcos: confused
+19:51:00 <CodeShark> before or after versionbits activation?
+19:51:02 <CodeShark> still don't follow
+19:51:03 <morcos> sipa: well i suppose it doesn't have to be a consensus rule...
+19:51:11 <morcos> CodeShark: with the first SF that activates
+19:51:30 <morcos> sipa: but i think its more clear to me that it doesn't have problems if it is a consensus rule
+19:51:36 <morcos> b/c thats how the other ones worked
+19:51:44 <gmaxwell> making it consensus would cause gratitious orphaning, which we were generally trying to avoid in the design of segwit.
+19:51:54 <morcos> gmaxwell: this will be before segwit
+19:52:04 <sipa> i prefer not introducing new consensus logic, especially when the only argument for it is better guarantees for warnings
+19:52:33 <morcos> sipa: yes thats the only difference i see.  is that now we somehow can't warn on version = 4 blocks
+19:52:58 <sipa> and if it's not consnesus, we can say bip9 miners without active rollouts use 001000...
+19:53:38 <gmaxwell> I like 001000 in that it would encourage visualization tools to parse the bitfield instead of just displaying an integer.
+19:53:43 <btcdrak> yes
+19:53:50 <morcos> sipa: if its not a consensus rule, you can't be SURE that old nodes will be warned that the rules have changed... perhaps thats not worth worrying about
+19:54:27 <sipa> miners can already cause total network forks
+19:54:28 <btcdrak> That was my initial understanding that the new version would be 00100..0 when no sfs are being deployed
+19:54:28 <morcos> its just cleaner to me
+19:54:38 <sipa> are we worried that they can bypass a warning mechanism?
+19:54:50 <btcdrak> sipa: no
+19:56:51 <morcos> sipa: ok i guess. i'm ok with not making it a consensus rule..  but just seems weird to me...  i feel like we're transitioning from an old system to a new system, and the transition should conform to the old system
+19:57:09 <gmaxwell> Lets wrap the metting now and talk more about warning after. Unless there are any other subject to squeek in at the end?
+19:57:10 <wumpus> meeting: 3 minutes to go
+19:57:17 <morcos> but as long as we make the default 00100  then i think its just theoretical concerns
+19:57:21 <sipa> yeah
+19:58:17 <wumpus> #endmeeting
