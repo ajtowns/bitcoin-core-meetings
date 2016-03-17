@@ -1,0 +1,214 @@
+19:00:37 <wumpus> #startmeeting
+19:00:37 <lightningbot> Meeting started Thu Mar 17 19:00:37 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:37 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:47 <sipa> ohai
+19:01:17 <wumpus> ok, that will be first morcos, anyone else with topic suggestions?
+19:02:12 <wumpus> we had an action item last time to review the backports for r BIP68 and 112
+19:02:36 <wumpus> #topic c: Scheduling the first BIP 9 sort fork for BIPs 68, 112, 113
+19:02:44 <morcos> that wasn't the whole topic
+19:02:57 <sdaftuar> i think merging is an action item, not a topic :)
+19:03:19 <btcdrak> how happy is everyone with 7575?
+19:03:25 * sipa happy
+19:03:28 <sdaftuar> +1
+19:03:29 <wumpus> well if you want to discuss 7575 that's fine with me too
+19:03:32 * btcdrak happy
+19:04:00 <morcos> wumpus: well its the blocker on the schedule
+19:04:04 <wumpus> #action merge #7575
+19:04:06 <morcos> i'm happy with it as well
+19:04:47 <morcos> ok so then we just need to adequately review the backports, and we can discuss release?
+19:04:57 <morcos> what is the start date?  is april 1st too soon?
+19:05:00 <wumpus> I see it got a lot of new acks last day
+19:05:24 <sipa> thanks to all of sdaftuar's tests :)
+19:05:31 <morcos> i had suggested that the backports be put all together in 1 PR, but i'm not sure thats actually what you guys would prefer.  although i think thats the safest way to test them.
+19:05:43 <morcos> (well 1 pr for 0.11 and 1 for 0.12)
+19:05:52 <jonasschnelli> +1
+19:05:58 <sipa> the moment miners uograde to a release with 7575 in it, the warning.logic will trigger on old nodes
+19:06:01 <btcdrak> Assuming 7575 is merged, the softfork deployment code is in #7648. morcos and I have backported the mempool stuff
+19:06:04 <wumpus> morcos: I think it makes sense - you can always separate out commits
+19:06:21 <sipa> even if it only has softforks with a start time in the guture
+19:06:25 <sipa> future
+19:06:42 <sipa> so we shouldn't put it too far in the future
+19:06:52 <morcos> btcdrak: so will you create a pull that backports it all together for 0.12 (including 7575) and i'll do for 0.11
+19:06:55 <btcdrak> wumpus: the mempool backports are all done, they only need verification that the cherry-picks are correct
+19:07:07 <wumpus> okay, good
+19:07:08 <btcdrak> morcos: ok
+19:07:58 <btcdrak> who has reviewed https://github.com/bitcoin/bitcoin/pull/7648?
+19:08:40 <wumpus> no one yet, I think
+19:08:42 <btcdrak> this is built on #7575 and has additional RPC tests that exercise the BIP9 softfork process and the BIP enforcements for 68,112 and 113
+19:08:44 <morcos> i think we should announce the start date and bit number on the -dev list as soon as we've agreed on it, so that Classic and other implementations can implement it as well
+19:09:22 <jonasschnelli> btcdrak: It probably better reviewable after 7575 is merged
+19:09:39 <gmaxwell> +1
+19:09:39 <wumpus> #action review #7648 after #7575 is merged
+19:09:39 <sdaftuar> the final version of the versionbits BIP should similarly be announced i think?
+19:09:39 <btcdrak> I'll rebase 7648 after 7575 is merged
+19:10:03 <jonasschnelli> I think we don't need to announce the merge,.. but the release/deployment.
+19:10:07 <morcos> back in 3 mins
+19:11:28 <wumpus> yes the start date and bit number certainly needs to be announced
+19:11:48 <btcdrak> wumpus: and we need to plan the release date to be able to set the start date.
+19:12:35 <btcdrak> wumpus: morcos and I will have the backport PRs ready to go for 0.12 and 0.11. We've done most of the work already.
+19:12:49 <wumpus> great!
+19:13:08 <wumpus> release date is not entirely predictable, we do want a RC cycle
+19:13:16 <btcdrak> really, the only holdup is review of #7648. Once that's merged final, the backports are as good as done. They'd only need to be verified for correctness.
+19:13:24 <sipa> maybe set the date to may 1st?
+19:13:27 <morcos> I'd suggest moving the start date to April 15th
+19:13:28 <morcos> oh
+19:13:29 <morcos> ok
+19:13:38 <wumpus> may 1st sounds good to me
+19:14:12 <btcdrak> is that the start date for BIP9?
+19:14:17 <wumpus> better to leave some time for issues, which will always arise
+19:14:33 <morcos> so BIP 9 itself is up to date in the BIP repo, I guess that's what matters most for other implementations, not our code readiness
+19:14:46 <sdaftuar> others may not be aware of that though
+19:14:57 <sdaftuar> as it's been in flux until recently
+19:15:24 <morcos> I'm happy to send the follow up to my original email with these announcements.  Perhaps we should update BIP's 68,112,113 with the soft fork info
+19:15:34 <sipa> we want to announce out intention to go ahead with a deployment based on bip9, for 68/112/113, with a given start date
+19:15:34 <btcdrak> morcos: BIP9 text is uptodate with the implementation
+19:15:52 <sdaftuar> good point about updating BIP68/112/113
+19:16:02 <wumpus> yes
+19:16:03 <btcdrak> OK I'll do that
+19:16:25 <btcdrak> so is the BIP9 start date May 1st?
+19:16:47 <morcos> btcdrak: that language is confusing.  the date for the first BIP9 soft fork is May 1st
+19:16:49 <sdaftuar> May 1st is the startdate for the CSV deployment
+19:16:53 <morcos> yep
+19:16:56 <sdaftuar> (or whatever we're calling it)
+19:17:20 <sipa> once we have code running anywhere in production with a given start date, that date cannot be postponed anymore
+19:17:27 <sipa> or there is a fork risk
+19:17:31 <morcos> CSV deployment makes sense to me, it captures most of it, perhaps it would be helpful to add a comment next to the deployment, which BIPS it implements
+19:17:37 <sipa> moving the start time back is possible
+19:17:45 <btcdrak> yeah, it's already called CSV deployment in the code.
+19:18:39 <wumpus> ok, so aim is may 1st
+19:18:41 <btcdrak> ok so action point is update BIP68/112/113 deployment section
+19:18:58 <wumpus> let's make sure to review everything necessary as soon as possible so that it can be merged as soon as possible and we can do the release as soon as possible
+19:18:58 <morcos> I think it makes sense to include that we Bitcoin Core will have a release well in advance of the start date implementing the fork
+19:19:36 <btcdrak> regarding choosing the bit, I guess bit 0 makes sense.
+19:19:53 <sdaftuar> just please don't choose bit 28
+19:20:09 <wumpus> or 13 :)
+19:20:19 <btcdrak> The Chinese like 8
+19:20:20 <btcdrak> ha
+19:20:44 <wumpus> but yes it makes sense just to allocate 0
+19:21:09 <wumpus> easier to keep track if they're simply dealt out in order
+19:21:22 <morcos> what is the block number classic uses?
+19:21:57 <btcdrak> BIP109 uses one of the top 3 ::sigh::
+19:22:19 <jonasschnelli> https://github.com/bitcoinclassic/bitcoinclassic/blob/develop/src/primitives/block.h#L13
+19:22:32 <btcdrak> top bit 010, so it's not actually part of the BIP9 spec
+19:23:23 <morcos> btcdrak: huh, it looks like they use 001 and then use bit 28 to signal their hard fork
+19:23:37 <btcdrak> yup
+19:23:41 <sdaftuar> TESTDUMMY!
+19:23:42 <sdaftuar> er
+19:23:49 <jonasschnelli> ;-)
+19:23:51 <sdaftuar> so that works out fine then?
+19:23:51 <btcdrak> bwahahaha
+19:23:55 <wumpus> hehehe
+19:23:55 <btcdrak> yes
+19:23:58 <morcos> sdaftuar: thats what i'm hoping you'll answer
+19:24:20 <morcos> it should, i think
+19:24:24 <sdaftuar> i think so too
+19:25:09 <btcdrak> TESTDUMMY is a past deployment, in 2008 so no problem.
+19:25:13 <wumpus> ok, let's try to be sure about that before committing to one
+19:25:37 <morcos> jonasschnelli: so we'd like to get that listunspent abandon flag in for 0.12.1 too (but not the gui changes)...
+19:25:42 <btcdrak> wumpus: it's fine. TESTDUMMY timeout is December 31, 2008
+19:25:48 <jonasschnelli> morcos: opening PR in 30secs.
+19:25:50 <morcos> topic: anything else needed for 0.12.1 ?
+19:26:08 <jonasschnelli> What about the GUI warning capabilities for 0.12.1?
+19:26:15 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/7579
+19:26:18 <wumpus> if it's going to be a softfork release, there shouldn't be much else in 0.12.1
+19:26:28 <btcdrak> yeah let's keep it small
+19:26:31 <jonasschnelli> I'm not entierly happy with 7579,... but could be a small step.
+19:26:47 <btcdrak> postpone 7579
+19:26:57 <wumpus> 2008? well, let's get into our deloreans
+19:27:11 <jtimon> sorry, late, reading, super happy with bip9
+19:27:36 <morcos> jonasschnelli: oh, i'm glad you pointed me to that PR, i didn't know about it, and was separately going to rework warnings.   we should fix them for rpc and gui at the same time.  so yeah not for 0.12.1
+19:27:57 <jonasschnelli> 7579 aims for a simple change that is BP compatibile.
+19:28:01 <wumpus> let's leave that to 0.12.2
+19:28:07 <jonasschnelli> It does not prevent the whole rework.
+19:28:11 <wumpus> focus on the softfork
+19:28:16 <jonasschnelli> +1
+19:28:20 <btcdrak> wumpus: +1
+19:28:40 <wumpus> anything that is also required will unpredictably affect the release date
+19:28:42 <jonasschnelli> The internal warning system was always bad. So no hurry. :)
+19:28:47 <wumpus> yea...
+19:29:17 <wumpus> jonasschnelli: I do like 7579 btw
+19:29:34 <morcos> wumpus: right, so lets review 7706 and jonasschnelli's pull that is now 2 mins overdue as well, b/c i think we need those
+19:31:06 <wumpus> which one?
+19:31:21 <morcos> (the flag for abandontransaction in listunspent)
+19:31:29 <btcdrak> we probably need a new #topic, we've strayed off the original topic
+19:31:41 <morcos> well its all related to getting 0.12.1 released
+19:31:47 <wumpus> oh that makes sense, probably a few line change with no impoact outside listunspent
+19:31:56 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/7707 (not 7706!)
+19:31:58 <GitHub84> [13bitcoin] 15jonasschnelli opened pull request #7707: [RPC][QT] UI support for abandoned transactions (06master...062016/03/abandon_ui) 02https://github.com/bitcoin/bitcoin/pull/7707
+19:32:07 <morcos> jonasschnelli: yeah, mine is 7706, we need both
+19:32:08 <btcdrak> morcos: but the topic was "Scheduling the first BIP 9 sort fork for BIPs 68, 112, 113"
+19:32:20 <sipa> i think we should get dgenr8's partition detection improvement reviewed for 0.12.1
+19:32:28 <jonasschnelli> morcos: Ah. Right.
+19:32:45 <wumpus> ok, now everyone wants their favorite thing in 0.12.1
+19:32:46 <jonasschnelli> sipa: PR URL?
+19:32:46 <morcos> sipa: oh, i like that idea.  thats the most effective way to fix the poor situation with the warnings
+19:32:47 <wumpus> I was trying to avoid this
+19:32:52 <wumpus> and focus on the softfork
+19:33:11 <morcos> wumpus: well lets see if the list we come up wiht in the next 5 mins is reasonable
+19:33:21 <morcos> we don't have to keep adding stuff for the next week
+19:33:58 <btcdrak> improving the partition warnings would be a great help, because it's currently a _disaster_
+19:34:00 <jonasschnelli> dgenr8 partition check PR: https://github.com/bitcoin/bitcoin/pull/7568/files
+19:34:14 <wumpus> minimum risk would be to release 0.12.0 + only softfork backports
+19:34:48 <wumpus> but I agree if there are critical bugfixes they should be in too
+19:34:57 <jonasschnelli> I agree. 0.13 Release is 2016-07-01
+19:35:04 <wumpus> yes
+19:35:06 <morcos> wumpus: i think the conflict detection issue is potentially large. i'm kind of surprised we haven't seen more complaints about it.  i guess people might not rely on unconfirmed balance too much
+19:35:06 <jonasschnelli> (so not so far away)
+19:35:08 <sipa> if we don't fix the partition warnings, we should disable them. maintaining the system longer in the current state will just make people ignore them
+19:35:21 <btcdrak> sipa: +1
+19:35:33 <wumpus> I agree sipa and morcos
+19:35:37 <morcos> sipa: have you reviewed the partition PR
+19:35:38 <wumpus> so let's fix those
+19:35:39 <wumpus> no more
+19:36:47 <wumpus> but the softfork is still priority #1
+19:37:46 <sipa> ok
+19:38:28 <wumpus> #action for 0.12.1, apart from softfork: fix partition warnings (review #7568), conflict detection issue (#7706)
+19:39:06 <sipa> morcos: only the concept; i'll review the code too
+19:39:45 <wumpus> jonasschnelli: we probably want a RPC-only #7707 for 0.12.1
+19:40:01 <morcos> yep, its one line of code.  : )
+19:40:06 <wumpus> heh
+19:40:09 <jonasschnelli> wumpus: Agree. You could cherry pick or tell me if i should open a RPC-only PR against 0.12
+19:40:37 <wumpus> jonasschnelli: oh it's one line, I'll manage :)
+19:40:46 <jonasschnelli> +1
+19:41:10 <jonasschnelli> Is a independent commit: 42e945d79fd54ab11ad48978910b42d10c1c7cf8
+19:41:24 <morcos> i marked 7706 as WIP, but i just want to flesh out the tests.  but wouldn't mind somoene else to think about whether its doing the right thing
+19:41:25 <wumpus> #action for 0.12.1, #7707 (: 42e945d79fd54ab11ad48978910b42d10c1c7cf8 only)
+19:41:55 <jtimon> wumpus: ACK on just using bits in order
+19:44:13 <wumpus> that concludes the topic, I think
+19:44:20 <jonasschnelli> topic prop.: state of SW
+19:44:35 <wumpus> #topic state of SW
+19:45:00 * jonasschnelli thinks is rude to look at sipa now...
+19:45:01 <sipa> i'm working on the post-fork upgrade problem in the current segnet code
+19:45:19 <jtimon> morcos: the right bit to signal hardforks is the one that helps old nodes declare the first hardfork block invalid. see outdated https://github.com/bitcoin/bitcoin/pull/7566/commits/990dda87b258c1e8d4d35b1fcbae4106303664f0
+19:45:21 <sipa> next thing after that is rebase on top of versionbitd and do a new segnet
+19:45:49 <morcos> sipa: new segnet or testnet?
+19:45:59 <jonasschnelli> samesame?
+19:46:14 <sipa> new segnet
+19:46:29 <sipa> though we can independently test on testnet too, of course
+19:47:20 <jonasschnelli> Are we aiming SW for 0.13.1?
+19:47:52 <sipa> i'm aiming for SW in 0.11.something, 0.12.something, 0
+19:47:55 <sipa> 0.13
+19:48:14 <sipa> it's a softfork, we'll need to backport
+19:48:20 <morcos> btcdrak: btw, you should make the start date for CSV deployment earlier on testnet.  we didn't talk about that.  but any reason not to make the start date march 1st?
+19:48:34 <jonasschnelli> sipa: Agree. Just on the "timeline".
+19:48:45 <sipa> jonasschnelli: "soon"
+19:48:57 <jonasschnelli> I love that "soon". :)
+19:50:10 <jonasschnelli> I'm just asking because some Core Devs did agree a timeline for SW on a a miners/devs/etc. meeting.
+19:50:19 <jonasschnelli> *agree on a timeline
+19:50:31 <btcdrak> morcos: ok
+19:51:04 <sipa> jonasschnelli: i don't care what some people think; a timeline is something you can't promise
+19:51:12 <sipa> but we can do our best
+19:51:18 <wumpus> good to watch that timeline but most important is that we don't deploy before it's ready, quality shouldn't suffer under time pressure
+19:51:19 <jonasschnelli> sipa: fully agree.
+19:51:36 <btcdrak> sipa: that's fine, so long as we communicate how things are going, that's good enough.
+19:51:42 <wumpus> worst outcome would be to be scared into delivering something that breaks
+19:51:48 <jonasschnelli> btcdrak: yes. We just need to communicate.
+19:51:50 <sipa> yes
+19:52:21 <jonasschnelli> Lets just say "soon". :)
+19:52:39 <sipa> i'm glad bip9 seems final
+19:52:45 <wumpus> me too
+19:52:59 <jonasschnelli> Yes. Finally.
+19:53:07 <btcdrak> sipa: party at your house. we'll bring the beers.
+19:53:13 <wumpus> I think that concludes the meeting?
+19:53:44 <jonasschnelli> btcdrak finally de-anonymizes at the party.
+19:53:48 <wumpus> #endmeeting
