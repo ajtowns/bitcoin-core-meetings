@@ -1,0 +1,330 @@
+19:00:25 <wumpus> #startmeeting
+19:00:25 <lightningbot> Meeting started Thu Mar 24 19:00:25 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:25 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:47 <wumpus> jonasschnelli: scope creep is a very bitcoin-y thing
+19:00:52 <wumpus> ok, topic proposals?
+19:01:05 <MarcoFalke> python 3 and rpc tests?
+19:01:14 <wumpus> from last meeitng we have ACTION: merge #7575 (wumpus, 19:04:04)  ... that was done
+19:01:19 <btcdrak> softfork #7648 status
+19:01:31 <wumpus> next was ACTION: review #7648 after #7575 is merged (wumpus, 19:09:39)
+19:01:32 <Luke-Jr> topic proposal: v0.11.3 and v0.10.5
+19:01:42 <wumpus> how is that going?
+19:01:53 <wumpus> #topic softfork #7648 status
+19:02:08 <wumpus> MarcoFalke: will get to python3 at the end, I think the softfork stuff is most important right now
+19:02:12 <btcdrak> #7648 has received some tested ACKs.
+19:02:37 <MarcoFalke> sure
+19:03:08 <wumpus> okay, good
+19:03:46 <wumpus> I think it needs more review still
+19:04:15 <btcdrak> time to crack the whip.
+19:04:24 <wumpus> for a softfork the bar is somewhat higher than for random pull #1234
+19:04:39 <wumpus> yes
+19:05:03 <jonasschnelli> 7648 looks good and will also review it in details soon (during weekend)
+19:05:08 <wumpus> I mean I've seen some acks but very little comment on the actual code, that could be a sign everything is perfect, or people need to look better
+19:05:29 <wumpus> thanks jonasschnelli
+19:05:40 <btcdrak> MarcFalke: can you look as well please?
+19:05:42 <wumpus> #action review more at https://github.com/bitcoin/bitcoin/pull/7648
+19:05:47 <btcdrak> and CodeShark
+19:05:52 <wumpus> I'll take a more in-depth look at it as well
+19:05:55 <btcdrak> ty
+19:05:57 <MarcoFalke> sure
+19:06:08 <gmaxwell> has anyone looked to see if there are MTP violations still being accepted on the network?
+19:06:39 <gmaxwell> I wouldn't consider them a hard blocker to 113 deployment, but if any are, we should make a concerted effort to extinguish them first.
+19:06:59 <btcdrak> gmaxwell: there should be 100% coverage of 113 since the upgrade to 0.11.2
+19:07:16 <gmaxwell> btcdrak: there may be miners with order or modified code, however.
+19:07:28 <gmaxwell> er, s/order/older/
+19:07:51 <sipa> s/may be/are/
+19:08:25 <gmaxwell> if there are any, we should try to find them and get them to stop mining MTP violations.
+19:09:34 <wumpus> yes
+19:09:39 <gmaxwell> I can work on this.
+19:09:49 <cfields> sipa: missed you earlier. ack on allowing for chunked decrypt/decode.
+19:10:02 <btcdrak> cfields: can you put 7648 review on your tasklist too please?
+19:10:08 <wumpus> #action hunt down miners that mine MTP violations
+19:10:35 <cfields> btcdrak: yes
+19:11:34 <wumpus> ok
+19:11:54 <wumpus> next topic I guess
+19:12:01 <wumpus> #topic proposal: v0.11.3 and v0.10.5
+19:12:29 <sipa> we discussed what would go in last week; did anythkng chang
+19:12:30 <sipa> ?
+19:13:03 <wumpus> I don't know, luke-jr requested the topic
+19:13:10 <btcdrak> well we didnt discuss 0.10.5, we discussed 0.12.1
+19:13:12 <Luke-Jr> I'm going through https://github.com/bitcoin/bitcoin/pull/7047 again, to check everything included is in 0.12 and make it mergable again
+19:14:00 <wumpus> that's way too much for a softfork release at least
+19:14:01 <Luke-Jr> what isn't clear to me is what the plan is for v0.11.3 being released - I assume wumpus is doing that at some point? - and whether I'm taking over for v0.10.5, or if wumpus wanted to do one final 0.10 before passing it off
+19:14:27 <wumpus> for a normal minor release it'd make more sense
+19:14:52 <wumpus> yes I'll do the 0.11.x release
+19:14:58 <MarcoFalke> 7047 also includes a lot of "comment-fixed". I am not sure if they are useful in our branch
+19:15:01 <gmaxwell> whats deployment of 0.11.2 vs 0.12 look like right now?
+19:15:06 <MarcoFalke> I'd rather only have bugfixes
+19:15:08 <wumpus> I'll leave 0.10.x to you
+19:15:08 <Luke-Jr> are we doing a softfork release in the next month?
+19:15:21 <sipa> Luke-Jr: i say yes
+19:15:32 <Luke-Jr> ok, so then we should let these things wait until after that
+19:15:38 <wumpus> I think we should do a softfork release asap
+19:15:50 <Luke-Jr> or maybe I should go through it and make sure there's nothing important
+19:15:52 <wumpus> let's just get those stupid things reviewed and merged
+19:15:57 <jonasschnelli> As soon as #7648 has been reviewed more and merged
+19:16:10 <wumpus> jonasschnelli: and backports reviewed and merged ofc
+19:16:21 <wumpus> but yes 7648 is the first step
+19:16:31 <jonasschnelli> RIght
+19:16:32 <Luke-Jr> (also, depending on ease of backporting the softforks, I may decide to just give up on 0.10 support; tbd)
+19:16:42 <btcdrak> /Satoshi:0.12.0/	1713
+19:16:43 <btcdrak> /Satoshi:0.11.2/	1387
+19:16:50 <jonasschnelli> 0.10 can be given up IMO
+19:16:55 * jonasschnelli is checking his seeder data
+19:17:01 <gmaxwell> Luke-Jr: I think absent someone requesting otherwise (and perhaps funding your effort) you probably should.
+19:17:08 <Luke-Jr> jonasschnelli: it's currently Gentoo stable, so at the very least I will need to bump that
+19:17:21 <btcdrak> The problem with 0.10 is we all need to put review time into the backports and that's difficult when we have trouble even reviewing backports for 0.11
+19:17:37 <petertodd> btcdrak: +1
+19:17:56 <Luke-Jr> btcdrak: most backports are trivial, but for softforks I agree if they're not a clean backport
+19:18:04 <wumpus> right
+19:18:12 <btcdrak> I think if there is a 0.10.5 release it should be extremely minimal... and frankly, backporting BIP68 wont be fun or easy.
+19:18:14 <sipa> bip68/112/113 are quite a bit of code
+19:18:28 <wumpus> let's spend our energy on moving forward
+19:18:33 <jonasschnelli> 0.10 should be last priority. If someone offers to do that: fine.
+19:18:41 <gmaxwell> plus, a far backport which is done by one person and used by few more likely won't be materially more stable than a more recent release.
+19:18:44 <Luke-Jr> ok, so for 0.10 I'll see the complexity in the softfork backports, and if it's anything more than absolutely trivial, I'll just decide to drop it
+19:18:47 <btcdrak> Luke-Jr: even BIP68 backport to 0.11 was tricky, not a clean cherry-pick.
+19:18:58 <Luke-Jr> btcdrak: well, I'd be backporting to 0.10 *from* 0.11
+19:19:19 <jonasschnelli> at dnsseed.dump | grep "  100.00% 100.00%" | grep "/Satoshi:0.10." | wc -l       ---> 266
+19:19:25 <sipa> we can still do critical security updates for 0.10 without choosing to backport sotfork
+19:19:33 <wumpus> sure
+19:19:45 <jonasschnelli> 6.3% 0.10.x nodes
+19:19:49 <btcdrak> so on this topic, people need to also look at backport #7543
+19:19:58 <Luke-Jr> and for 0.11, sounds like the plan is to do a softfork-only release before any non-essential bugfix backports
+19:20:08 <CodeShark> +1 jonasschnelli
+19:20:09 <petertodd> sipa: and people who need a v0.10.x node for software compatibility reasons can generally run it behind a newer node
+19:20:18 <sipa> petertodd: also true
+19:20:31 <wumpus> #action people need to also look at backport #7543: [0.12] Backport BIP9, BIP68 and BIP112 with softfork
+19:20:36 <sipa> petertodd: specifically, behind a 0.11 or 0.12 pruned one :)
+19:20:46 <petertodd> sipa: yes! that too
+19:20:57 <Luke-Jr> #action 0.10: attempt to backport softforks, and if non-trivial, discontinue support
+19:21:12 <Luke-Jr> #action 0.11: no non-essential fix backports until softfork release
+19:21:26 <Luke-Jr> #action bump Gentoo stable to 0.11 (from 0.10)
+19:21:38 <sipa> Luke-Jr: support is already discontinued according to policy, only critical biffixes
+19:21:42 <sipa> *bugfixes
+19:21:51 <CodeShark> I'd say discontinue support for 0.10 unless someone wishes to provide resources for it
+19:21:59 <wumpus> well if luke-jr wants to try to backport the softfork that's up to him
+19:21:59 <Luke-Jr> sipa: policy only dictates guaranteed support, not guaranteed to end
+19:22:22 <sipa> wumpus: sure, but i don't think that's very relevant here
+19:22:27 <wumpus> no need to even discuss it here :p
+19:22:28 <wumpus> right
+19:22:44 <btcdrak> #action 0.11 review #7716 Backport BIP9 and softfork for BIP's 68,112,113
+19:22:58 <Luke-Jr> any more topics?
+19:23:32 <sipa> as soon as we have 0.12.1, i will rebase segwit on top, so segnet can benefit from its bip9/68/112/113 support
+19:23:37 <cfields> can give a quick update on the net refactor
+19:23:50 <wumpus> I'd say spend the rest of the meeting time reviewing #7648 :p
+19:23:53 <wumpus> sure cfields!
+19:24:00 <wumpus> #topic cfields net refactor
+19:24:34 <sipa> please, stick to the net refactor, not the gross one
+19:24:56 <cfields> i finally have a working full-featured branch. it's a mess code-wise, but i think it should be approachable in the next day or two after some code movement. I expect to be looking for concept review next week
+19:24:58 <gmaxwell> cfields: start taking, I can't take the wait.
+19:25:02 <wumpus> lol
+19:25:23 <wumpus> cfields: I've been testing it on a node btw for last week, seems to be stable and working
+19:25:48 <wumpus> haven't looked at details of performance etc but no crashes or insane log entries
+19:26:02 <btcdrak> sipa: you can cherry-pick from  #7543 in that case
+19:26:10 <cfields> wumpus: that's great to hear. lots has changed since then, but the core is the same
+19:26:35 <cfields> i think i have an idea of how to handle code review, but i'd like to get some concept acks first...
+19:26:50 <wumpus> you got my concept ack at the boston meeting
+19:26:56 <sipa> and mine
+19:27:09 <cfields> there's a huge mix of code movement, a new lib, abstraction, etc. I think i have a plan for getting it slotted in
+19:27:28 <wumpus> great
+19:27:29 <cfields> ok. i can start PRing chunks into core as i go, then
+19:27:44 <Luke-Jr> cfields: practical to add block streaming? ;)
+19:28:02 <cfields> first step is getting the net stuff instanced. that's a lot of movement without much functional difference
+19:28:02 <gmaxwell> do not creep cfield's scope. :P
+19:28:06 <wumpus> please, let's replace the current things first, then add additional features
+19:28:08 <jonasschnelli> hah
+19:28:09 <wumpus> example gmaxwell
+19:28:12 <wumpus> exactly*
+19:28:13 <cfields> i think that can start going in parallel
+19:28:37 <cfields> gmaxwell: heh, i've adjusted scope so many times now that i'm certainly not budging again :p
+19:28:44 <jonasschnelli> The net refactor will be very hard to review already. Lets keep it as simple as possible.
+19:28:51 <wumpus> that's good, stand your ground , people here are awful :)
+19:28:57 <cfields> turns out the absolute minimum scope for net refactor is already enormous
+19:29:07 <jonasschnelli> Indeed.
+19:29:29 <wumpus> yes it'll already be challenging to get this done before 0.13 I think, but we have to try
+19:29:31 <Luke-Jr> gmaxwell: indeed, just hope we don't need to refactor it again after
+19:29:41 <sipa> Luke-Jr: we absolutely will
+19:29:48 <cfields> wumpus: yes, it's much later than I was hoping for. If it slips past 0.13, I'll understand.
+19:29:51 <sipa> but at different layers :)
+19:30:04 <wumpus> right, this is only the bottom layer
+19:30:19 <cfields> sipa: well the hope is that it's been split up into chunks that can be changed in the future much easier
+19:30:37 <sipa> cfields: yes, that's what abstractions are for
+19:31:27 <jonasschnelli> topic: Should we shorty touch how we should proceed with sipas CT AES implementation? Extract to library? Yes/No?
+19:31:40 <cfields> there are a few hacks that i'm not going to mess with for now. For ex, even though it's all instanced, there's still a g_connman that's used liberally as opposed to the clean way of passing the instance around
+19:31:42 <wumpus> meh
+19:31:55 <cfields> i'll start working on a list of todos so that some of the decisions are more clear
+19:32:24 <petertodd> jonasschnelli: extract is a great idea I think - don't have to be fancy, just enough to continue to set a better standard than "roll our own"
+19:32:36 <sipa> cfields: just PR it! i want to see the code :)
+19:32:49 <jonasschnelli> sipa: code: https://github.com/theuni/bitcoin/tree/net-refactor8
+19:32:52 <cfields> sipa: i'm still frantically coding it :)
+19:32:58 <sipa> ah.
+19:33:07 <cfields> jonasschnelli: nooooooo. everyone shield your eyes from that :)
+19:33:07 <wumpus> the code is actually buildable and works
+19:33:14 <sipa> now i have a moral obligation to actually go look, right?
+19:33:28 <wumpus> well test at least :)
+19:33:33 <btcdrak> cfields: love that last commit message :)
+19:33:35 <cfields> sipa: with the understanding that it's basically my /tmp :)
+19:33:35 <jonasschnelli> cfields: We all know how code during implementation can look. No shame for it!
+19:34:09 <wumpus> yes :)
+19:34:31 <jonasschnelli> petertodd: I'm also for extracting.
+19:34:54 <jonasschnelli> Simple autotools setup, add as subtree place on bitcoin/libctaes (or similar)
+19:34:57 <wumpus> #topic CT AES library
+19:35:12 <Luke-Jr> what is "CT" for here?
+19:35:14 <wumpus> I don't think extracting it into a library has to affect our use of it
+19:35:14 <petertodd> jonasschnelli yup, subtree is fine
+19:35:17 <wumpus> Constant Time
+19:35:18 <jonasschnelli> constant time
+19:35:24 <Luke-Jr> ah
+19:35:45 <sipa> i feel like it's more a code snippet than a library
+19:35:46 <gmaxwell> constant time.
+19:35:53 <wumpus> yes, it's more like a snippet
+19:35:56 <gmaxwell> "Petertodd raised verification concerns for the internal AES implementation. I could suggest some strategies on that." is what I wrote earlier. :P
+19:35:59 <wumpus> crypto has a rich tradition of copy/paste
+19:36:11 <cfields> fwiw, I plan on doing the same with libbtcnet
+19:36:13 <jonasschnelli> wumpus: I think placing stuff in libraries follows a modular approach  which is desirable for Bitcoin IMO
+19:36:24 <Luke-Jr> +1 for libctaes
+19:36:34 <cfields> i have a tiny/crappy makefile that i use to build it externally, but I plan to just copy/paste it into Core and keep it in sync
+19:36:35 <petertodd> sipa: well, to be clear, you did write that code snippet from scratch yourself right?
+19:36:35 <wumpus> you could stil include it in a library, but please don't compilicate the build
+19:36:40 <Luke-Jr> cfields: libbcnet I hope; what does the BTC unit size have to do with networking? :P
+19:36:49 <gmaxwell> in any case, I'm not convinced that the standard test vectors prove the code correct. Beyond soliciting outside review, which btcdrak has done.  I was going to suggest trying some mutation testing to see if some additional better test vectors can be constructed.
+19:36:54 <jonasschnelli> sipa: Its a snipped now, ... but we all know how snippets evolve over time.
+19:37:00 <cfields> Luke-Jr: when i googled "libp2p" some etherium thing came up :)
+19:37:01 <sipa> petertodd: yes, though the logic gates for the sbox come from a paper
+19:37:14 <wumpus> I think we should separate concerns here: getting the code into a library, and getting the damn code reviewed
+19:37:18 <wumpus> the first is easy, just work
+19:37:18 <Luke-Jr> cfields: oh great, let's just integrate that! :P
+19:37:37 <petertodd> sipa: right, so it's independent work, which means it's crypto we wrote, which means no matter how small it is, we should at least make a token effort to try to let independent use and review :)
+19:37:38 <Luke-Jr> wumpus: I don't feel competent to review crypto code :<
+19:37:49 <wumpus> Luke-Jr: me neither.
+19:38:01 <wumpus> Luke-Jr: so we'll have to find someone that can, btcdrak had some ideas.
+19:38:04 <gmaxwell> You're all competent to review if the code is constant time or not.
+19:38:16 <sipa> or that it has test coverage
+19:38:16 <jonasschnelli> What about apoelstra?
+19:38:32 <gmaxwell> And probably no one is competent to review if it's correct, fortunately AES is a permutation, which does make confidence building via testing easier.
+19:38:40 <wumpus> but not if it's correct AES, or has some weird edge cases, mathatical inconsistencies, or other wacky side channels
+19:38:55 <wumpus> right
+19:39:02 <sipa> and notice it has no tables or branches, so it would be exceedingly hard to make it broken in a very small number of cases
+19:39:04 <jonasschnelli> IMO that all speak for splitting it off into a own library.
+19:39:04 <petertodd> gmaxwell: the problem here, is I don't know enough about the problem to know if I'm actually competent to review that
+19:39:07 <gmaxwell> (by no one, I mean no human. :) )
+19:39:35 <btcdrak> petertodd: I asked isis to take a look on a paid basis.
+19:39:41 <petertodd> btcdrak: good!
+19:39:48 <gmaxwell> petertodd: the requirement is that there should be no leakage of the secret state (key or data) in the timing of the program on any hardware we support.
+19:39:53 <btcdrak> that's @isislovecruft from Tor for anyone that doesnt know.
+19:40:01 * Luke-Jr volunteers to do the splitting-off-into-library work if sipa doesn't want to
+19:40:18 <sipa> anyway, i'll turn it into a .c/.h; if someone else wants to actually do the work for autotools etc, go ahead.
+19:40:19 <jonasschnelli> Luke-Jr: I already have started that. :)
+19:40:28 <wumpus> Luke-Jr: this will again trigger the subtree-or-external discussion, I can't take that another time
+19:40:45 <wumpus> Luke-Jr: and linux distributions messing it up etc
+19:40:51 <gmaxwell> it will not be external.
+19:40:53 <Luke-Jr> wumpus: seems that discussion should be project-global, not per-lib
+19:40:56 <jonasschnelli> sipa: I have checked to code and it looks pretty Cish.
+19:41:05 <Luke-Jr> subtree-with-configure-option seems to work
+19:41:12 <sipa> imho, it can be a separate repository without being a library
+19:41:22 <sipa> just copy it into your project if you neeed it
+19:41:27 <wumpus> right.
+19:41:38 <sipa> it's a single file and has no intention to grow beyond that
+19:41:56 <gmaxwell> nor any utility to grow beyond that.
+19:41:59 <jonasschnelli> meh. Adding a build setup should be trivial and would hurt nobody?
+19:42:02 <cfields> sipa: is there enough non-standard stuff to necessitate a buildsystem? or would a simple makefile do?
+19:42:11 <wumpus> the API will never change, the implementation will hopefully also never change (excluding critical problems)
+19:42:22 <sipa> cfields: it will be a single C89 file with no dependencies beyond stdint
+19:42:36 <Luke-Jr> stdint isn't C89, though?
+19:42:36 <gmaxwell> wumpus: the only 'change' I could imagine for it is wrapping it with something that uses AESNI when available instead.
+19:42:48 <sipa> Luke-Jr: it indeed isn't, which is why i mention it :)
+19:42:50 <cfields> sipa: ah great
+19:42:56 <gmaxwell> well C89+stdint, or C99...
+19:43:19 <gmaxwell> stdint is almost universal even in terrible embedded complilers.
+19:43:28 <jonasschnelli> Are there no plans to extend the "lib" with more stuff? Like for a possible p2p encryption?
+19:43:36 <wumpus> and if not it's easy enough to define the types yourself
+19:43:53 <Luke-Jr> jonasschnelli: well, then the name libctaes would be wrong
+19:43:57 <sipa> jonasschnelli: i'd do that on another layer
+19:43:58 <jonasschnelli> Right.
+19:44:03 <wumpus> no, jonasschnelli, that should be something else yet again
+19:44:05 <sipa> jonasschnelli: it would still rely on aes primitives
+19:44:27 <gmaxwell> This pressure to constantly create "libraries" to dump things in is streesful for me. A well constructed library is a serious amount of work in and of itself.
+19:44:29 <wumpus> ctaes would be constant time aes :-) I don't think you want/need that for the p2p
+19:44:31 <petertodd> gmaxwell: I may have to use a climbing analogy to get my point accross here :) sure, I can easily read a book on knots and belay systems and feel like I _should_ know everything I need to know to do that stuff safely, but the consequences of failure are high enough - and the field unusual enough - that I'm going to insist I check things out with others generally accepted as experts first - who cares how irrational ...
+19:44:32 <jonasschnelli> Okay. Then we might agree in a subtree with just a .c/.h instead of a autotools setup.
+19:44:37 <petertodd> ... that feels. I think general standards for low-level crypto implementations tend in that direction.
+19:45:05 <wumpus> jonasschnelli: yes
+19:45:06 <petertodd> jonasschnelli: yes, just a .c/.h is fine! like I said, bare minimum to set a precedent that we're trying to invite outside review
+19:45:08 <Luke-Jr> subtree with just .c/.h until some future time when someone decides to lib-ify it seems ok
+19:45:11 <wumpus> jonasschnelli: that's very common for crypto
+19:45:18 <sipa> and maybe for performance reasons, it makes sense to use a more complicated faster implementation, and maybe also warrants more maintainance afterwards if it's going to be adopted by other prijects for the purpose of p2p encryption
+19:45:31 <jonasschnelli> okay.
+19:45:43 <gmaxwell> petertodd: considering that basically all AES-CBC software (not AESNI) out there is gratitiously timing vulnerable, and we were going to take such a patch ourselves before; I feel you're compent enough to review and increase confidence, if not alone to achieve perfection.
+19:45:47 <Luke-Jr> sipa: seems likely other wallets may use it
+19:45:47 <jonasschnelli> agree on bitcoin/libctaes?
+19:45:48 <wumpus> and just copy/subtree the thing into your project and include it into your build system, all the dependency micro management isnt' worth it for everything
+19:46:05 <sipa> Luke-Jr: they absolutely may!
+19:46:16 <jonasschnelli> Luke-Jr: right.  I have two projects where i will use it immediately.
+19:46:21 <wumpus> jonasschnelli: bitcoin-core/libctaes it would be then
+19:46:27 <gmaxwell> as I noted before, this implementation is not super fast. We have no need to make it super fast. It may be of idependant interest to others because it is quite small.
+19:46:29 <sipa> Luke-Jr: but for wallets, it has no performance requirements
+19:46:36 <jonasschnelli> wumpus: ah. Right. The moving.
+19:46:56 <sipa> Luke-Jr: which is why it's easy, and needs no dependencies on assemblers or instruction sets, or simd extensions, or ...
+19:47:13 * Luke-Jr not sure libctaes makes sense as bitcoin-core as opposed to just bitcoin, but meh
+19:47:38 <petertodd> gmaxwell: yeah, I probably am - I also learned how to do climbing/caving ropework by buying a book on it, some equipment, and going out to find some trees to practice on. Doesn't mean it was a good idea. :) just having a separate repo with a bare .c/.h goes a long way to making our intentions clear and having good precedents, even if pragmatically we need a solution right now.
+19:47:38 <wumpus> jonasschnelli: which reminds me, I think I still need to add you to that project
+19:47:49 <jonasschnelli> bitcoin/ should be consensus critical stuff
+19:47:52 <wumpus> jonasschnelli: we're not actually doing anything with it at the moment
+19:47:59 <wumpus> jonasschnelli: right
+19:48:09 <jonasschnelli> +1 ;-)
+19:48:20 <cfields> topic has strayed a bit :)
+19:48:35 <wumpus> yes
+19:48:55 <sipa> petertodd: ok, agreed
+19:49:09 <petertodd> sipa: thanks!
+19:49:28 <wumpus> #topic convert python RPC tests to python 3
+19:49:29 <gmaxwell> I am disappointed that all of this time is being wasted over faffing about libraries, for code that has very narrow independant interest and likely against the wishes of its author. .. and no one commented on further verification strategy.
+19:49:49 * gmaxwell sees topic is over.
+19:50:00 <MarcoFalke> I think it's cleaner to just switch to py3
+19:50:04 <petertodd> wumpus: concept ack!
+19:50:26 <MarcoFalke> but I'd like to hear any drawbacks first.
+19:50:30 <wumpus> gmaxwell: I agree, I think this will do just as well as a code snippet, but I don't think discussing this further is constructive. The people that want a library so bad can work on it I guess :)
+19:50:41 <Luke-Jr> py3 vs py2, I can think of no drawbacks to exclusively py3
+19:50:44 <wumpus> as you may have read in https://github.com/bitcoin/bitcoin/issues/7717, the next release of ubuntu, 16.04, xenial something will no longer ship python 2
+19:50:47 <btcdrak> MarcoFalke: agreed
+19:51:01 <jonasschnelli> Is  the reason for the py3 switch the deprecating of py2 or the missing of it in some of the distributions?
+19:51:09 <wumpus> I think this makes a nice moment to decide on a switch
+19:51:16 <MarcoFalke> ok, so I will close the "refactor py2 code" pull and just go py3 only
+19:51:22 <wumpus> we're modernizing the build environment anyway by starting to rely on c++11
+19:51:31 <wumpus> MarcoFalke: it's the first step right
+19:51:43 <jonasschnelli> ACK on py3... the RPC tests are not something we need "full portability".
+19:51:56 <wumpus> for the build system I have py2+py3 compatibility ready
+19:51:56 <Luke-Jr> actually, we should retain support py2 at least initially
+19:52:00 <Luke-Jr> since we may need to backport
+19:52:08 <wumpus> for the RPC tests I don't think that is necessary
+19:52:09 <petertodd> I'm not sure there exist any build environments that we need to support that are py2 only
+19:52:23 <wumpus> agree petertodd
+19:52:28 <jonasschnelli> agree with petertodd
+19:52:30 <cfields> agreed
+19:52:32 <sipa> agree, the backport trees could also just switch to py3
+19:52:42 <Luke-Jr> if it's not much effort, moving to py2+py3, and then to py3 before 0.13 would be best
+19:52:52 <wumpus> Luke-Jr: that's a lot more work
+19:52:58 <Luke-Jr> if it's a lot more work, forget it
+19:53:05 <wumpus> I did that for scripts used by the build system itself
+19:53:10 <wumpus> but the test framework is huge
+19:53:21 <wumpus> and it's a lot of work for people to make sure it works for both python versions
+19:53:25 <MarcoFalke> considering that the current rpc test are full of bugs due to missing maintanance and review, doing a py2+3 coverage is impossible
+19:53:25 <wumpus> for every change
+19:53:37 <sipa> i think we should just outright switch to py3
+19:53:39 <jonasschnelli> Yes. No backward comp. for test script please.
+19:53:42 <petertodd> fwiw, I'm somewhat in favor of making my own python-bitcoinlib py3-only, simply because I personally never use it on py2, which makes me worried I'm missing bugs
+19:53:42 <wumpus> exactly, practical concerns kind of rule this out
+19:54:16 <btcdrak> I think we should switch to py3 outright also
+19:54:27 <wumpus> that's clear, then
+19:54:31 <jonasschnelli> And kudos to MarcoFalke for working on this!
+19:54:36 <wumpus> yes!
+19:54:55 <btcdrak> +1
+19:55:32 <MarcoFalke> You can pipe the files through 2to3 and then "only" check the diff.
+19:55:32 <wumpus> ok, that concludes the topic I guess, I'm happy we can finally agree on something :)
+19:55:39 <cfields> yes, it's much easier for us than most because it's all internal and we really have no downstreams to cater to
+19:55:41 <wumpus> more topics?
+19:55:58 <wumpus> 5 minutes to go
+19:56:26 <gmaxwell> Lets end early.
+19:56:29 <MarcoFalke> #action Close https://github.com/bitcoin/bitcoin/pull/7722 and switch to py3
+19:56:33 <wumpus> great
+19:56:39 <wumpus> #endmeeting
