@@ -1,0 +1,333 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:45</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Mar 31 18:59:45 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:45</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:16</span><span class="nk"> &lt;wumpus&gt;</span> action points from last meeting: ACTION: review more at https://github.com/bitcoin/bitcoin/pull/7648 (wumpus, 19:05:42)    done and merged
+<a name="l-5"></a><span class="tm">19:00:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> topic proposal (short): p2p layer encryption
+<a name="l-6"></a><span class="tm">19:00:35 </span><span class="nka">* wumpus</span> <span class="ac">hunt down miners that mine MTP violations &lt;- don't know about this one</span>
+<a name="l-7"></a><span class="tm">19:00:50</span><span class="nk"> &lt;wumpus&gt;</span> main topic is the softfork backports I think
+<a name="l-8"></a><span class="tm">19:01:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">topic:</span> short update on segwit and segnet4
+<a name="l-9"></a><span class="tm">19:01:29</span><span class="nk"> &lt;wumpus&gt;</span> cool
+<a name="l-10"></a><span class="tm">19:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">short update on segwit and segnet4</span>
+<a name="l-11"></a><span class="tm">19:02:00</span><span class="nk"> &lt;cfields&gt;</span> topic suggestion: net-refactor update
+<a name="l-12"></a><span class="tm">19:02:33</span><span class="nk"> &lt;sipa&gt;</span> segwit code progressed a lot the past few days; it now passes all preexisting rpc tests and unit tests, and many bugs were fixed in the process
+<a name="l-13"></a><span class="tm">19:02:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> Nice!
+<a name="l-14"></a><span class="tm">19:02:51</span><span class="nk"> &lt;wumpus&gt;</span> good to hear!
+<a name="l-15"></a><span class="tm">19:02:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-16"></a><span class="tm">19:03:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> also had no crash on my segnet4 node.. :)
+<a name="l-17"></a><span class="tm">19:03:27</span><span class="nk"> &lt;sipa&gt;</span> it's also rebased on top of the bip68/112/113 backport, and a new segnet (segnet4) is up and running with bip9 activation logic
+<a name="l-18"></a><span class="tm">19:03:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> my uncertanty comes from looking at some incidents and it not being obvious what the cause was in them.
+<a name="l-19"></a><span class="tm">19:04:01</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not well founded uncertanty.
+<a name="l-20"></a><span class="tm">19:04:12</span><span class="nk"> &lt;gmaxwell&gt;</span> oops. [sorry for OT]
+<a name="l-21"></a><span class="tm">19:04:24</span><span class="nk"> &lt;sipa&gt;</span> lastly, i have significantly reorganized the commits in the branch to 1) define segnet 2) add consensus/node logic 3) add wallet logic 4) add tests
+<a name="l-22"></a><span class="tm">19:04:48</span><span class="nk"> &lt;sipa&gt;</span> so that upgrade tests from pre-segwit code post fork can be tested
+<a name="l-23"></a><span class="tm">19:04:58</span><span class="nk"> &lt;sipa&gt;</span> and so that the consensus critical part can be reviewed separately
+<a name="l-24"></a><span class="tm">19:05:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> i think it would be hugely beneficial if you could come up with a list of things you'd like other people to work on to move this forward
+<a name="l-25"></a><span class="tm">19:05:26</span><span class="nk"> &lt;sipa&gt;</span> ack, will do
+<a name="l-26"></a><span class="tm">19:05:49</span><span class="nk"> &lt;cfields&gt;</span> yes, that would be great
+<a name="l-27"></a><span class="tm">19:06:07</span><span class="nk"> &lt;petertodd&gt;</span> I should add segwit to python-bitcoinlib...
+<a name="l-28"></a><span class="tm">19:06:07</span><span class="nk"> &lt;sipa&gt;</span> the next thing i will do myself is write script unit tests, as we are not testing all possible witness validation failures
+<a name="l-29"></a><span class="tm">19:06:50</span><span class="nk"> &lt;gmaxwell&gt;</span> As far as the MTP huntdown, sdaftuar checked to see if there were violations already, and there weren't. I need to start generating mtp violating transactions, but haven't done this yet.
+<a name="l-30"></a><span class="tm">19:07:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> ah cool - are you going to do that with the existing script_(in)valid.json framework?
+<a name="l-31"></a><span class="tm">19:07:42</span><span class="nk"> &lt;sipa&gt;</span> there are some unusual things to test that are not typivally needed for softforks, such as the preferential peering (oh, that's implemented too; on top of the service bits enforcement logic), rewind testing, ...
+<a name="l-32"></a><span class="tm">19:07:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> yes
+<a name="l-33"></a><span class="tm">19:08:18</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/compare/0.12...sipa:segwit</span>
+<a name="l-34"></a><span class="tm">19:08:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">start generating mtp violating transactions (gmaxwell)</span>
+<a name="l-35"></a><span class="tm">19:08:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> how are you going to add segwit support to it? (I was just updating python-bitcoinlib's script unit tests yesterday along those lines)
+<a name="l-36"></a><span class="tm">19:08:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> tbd, i'm sure i'll find a way
+<a name="l-37"></a><span class="tm">19:09:00</span><span class="nk"> &lt;sipa&gt;</span> but i haven't looked into it deeply
+<a name="l-38"></a><span class="tm">19:09:56</span><span class="nk"> &lt;sipa&gt;</span> EOT? (end of topic)
+<a name="l-39"></a><span class="tm">19:10:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> no, use segwit-base...segwit
+<a name="l-40"></a><span class="tm">19:10:34</span><span class="nk"> &lt;sipa&gt;</span> (so you don't see the backports before segwit)
+<a name="l-41"></a><span class="tm">19:10:57</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-42"></a><span class="tm">19:11:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">net-refactor update</span>
+<a name="l-43"></a><span class="tm">19:11:52</span><span class="nk"> &lt;wumpus&gt;</span> @cfields
+<a name="l-44"></a><span class="tm">19:11:56</span><span class="nk"> &lt;cfields&gt;</span> ok. I've pushed an up-to-date version to my net-refactor10 branch...
+<a name="l-45"></a><span class="tm">19:12:13</span><span class="nk"> &lt;cfields&gt;</span> at this point, it's ready for testing and review, but i'm not entirely sure how to proceed
+<a name="l-46"></a><span class="tm">19:12:30</span><span class="nk"> &lt;wumpus&gt;</span> ohh I'm two branches behind
+<a name="l-47"></a><span class="tm">19:13:01</span><span class="nk"> &lt;wumpus&gt;</span> what is unclear?
+<a name="l-48"></a><span class="tm">19:13:04</span><span class="nk"> &lt;cfields&gt;</span> atm it's just 2 huge commits. I'm not sure how much it's worth going in and splitting into logical chunks, because it's really one big change...
+<a name="l-49"></a><span class="tm">19:13:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> this then? https://github.com/sipa/bitcoin/compare/segwit-base...sipa:segwit
+<a name="l-50"></a><span class="tm">19:13:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> ack
+<a name="l-51"></a><span class="tm">19:13:33</span><span class="nk"> &lt;wumpus&gt;</span> well if it is one big change it should be one commit
+<a name="l-52"></a><span class="tm">19:13:49</span><span class="nk"> &lt;wumpus&gt;</span> splitting makes sense if there are atomic changes
+<a name="l-53"></a><span class="tm">19:14:13</span><span class="nk"> &lt;wumpus&gt;</span> especially if they're somewhat independent
+<a name="l-54"></a><span class="tm">19:14:24</span><span class="nk"> &lt;cfields&gt;</span> also, it needs a bunch of unit tests, which I'm still working on a framework for. For catching stupid things like max connections, etc
+<a name="l-55"></a><span class="tm">19:15:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> sure. what I'm not clear on is if I should try to refactor current master to make it easier to slide in the other changes, or just plan to do it all in one go
+<a name="l-56"></a><span class="tm">19:15:37</span><span class="nk"> &lt;cfields&gt;</span> s/refactor/PR small refactoring chunks/
+<a name="l-57"></a><span class="tm">19:15:50</span><span class="nk"> &lt;wumpus&gt;</span> I don't know. I'd try it first in one go, if people complain about it being to much you can always decide to do it in multiple phases.
+<a name="l-58"></a><span class="tm">19:16:33</span><span class="nk"> &lt;cfields&gt;</span> ok. Well, next steps are adding tons of docs and tests. But at this point, I'm happy to have people test and point out any brokenness
+<a name="l-59"></a><span class="tm">19:17:30</span><span class="nk"> &lt;wumpus&gt;</span> congrats :)
+<a name="l-60"></a><span class="tm">19:17:40</span><span class="nk"> &lt;cfields&gt;</span> I suppose that's it for now
+<a name="l-61"></a><span class="tm">19:18:12</span><span class="nk"> &lt;wumpus&gt;</span> unfortunately this comes at a time that people are really busy, so I hope they can spare enough review cycles, to get this in for 0.13
+<a name="l-62"></a><span class="tm">19:18:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> understood. I'm starting to doubt whether it makes sense for .13.
+<a name="l-63"></a><span class="tm">19:18:59</span><span class="nk"> &lt;sipa&gt;</span> when is the feature freeze for 0.13?
+<a name="l-64"></a><span class="tm">19:18:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">softfork backports</span>
+<a name="l-65"></a><span class="tm">19:19:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have already started reviewing it but need to read myself more into libevent first.
+<a name="l-66"></a><span class="tm">19:19:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">cfields:</span> well, keep in mind that what's keeping everyone busy is stuff that'll be backported
+<a name="l-67"></a><span class="tm">19:19:18</span><span class="nk"> &lt;jtimon&gt;</span> NicolasDorier:
+<a name="l-68"></a><span class="tm">19:19:20</span><span class="nk"> &lt;btcdrak&gt;</span> backports are #7543 and #7716
+<a name="l-69"></a><span class="tm">19:19:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> for the sake of review, I'd say you can do it in 2 main chunks
+<a name="l-70"></a><span class="tm">19:19:41</span><span class="nk"> &lt;cfields&gt;</span> first, libbtcnet can be considered to be a black box that works as intended
+<a name="l-71"></a><span class="tm">19:19:53</span><span class="nk"> &lt;jtimon&gt;</span> what? it was a suggestion for extension, I think you got simplifications I missed'
+<a name="l-72"></a><span class="tm">19:19:57</span><span class="nk"> &lt;cfields&gt;</span> then, reviewing libbtcnet itself
+<a name="l-73"></a><span class="tm">19:20:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> 2016-05-15 https://github.com/bitcoin/bitcoin/issues/7679
+<a name="l-74"></a><span class="tm">19:20:11</span><span class="nk"> &lt;btcdrak&gt;</span> so #7543 is a straight up cherry-pick from master, easy peasy.
+<a name="l-75"></a><span class="tm">19:20:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#7716 </span><span class="cmdline">needs a bit more review, but the tests, as per the comments make it quite easy to verify.</span>
+<a name="l-76"></a><span class="tm">19:20:40</span><span class="nk"> &lt;sipa&gt;</span> i gave a command line for easy mechanical review of 7543 :)
+<a name="l-77"></a><span class="tm">19:20:51</span><span class="nk"> &lt;morcos&gt;</span> "easy"
+<a name="l-78"></a><span class="tm">19:21:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#7543 </span><span class="cmdline">has 5 tested ACKs so far. It should be ready for merge.</span>
+<a name="l-79"></a><span class="tm">19:21:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">NicolasDorier:</span> seriously if someone else could do it I think we could be much more objective combined (I'm probably too biased with my consensus branch)
+<a name="l-80"></a><span class="tm">19:22:04</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">cfields:</span> link to current net refactor work?
+<a name="l-81"></a><span class="tm">19:22:37</span><span class="nk"> &lt;wumpus&gt;</span> agree on the 0.12 backport btcdrak
+<a name="l-82"></a><span class="tm">19:22:47</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">phantomcircuit:</span> https://github.com/theuni/bitcoin/tree/net-refactor10
+<a name="l-83"></a><span class="tm">19:22:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">#7543 has 5 tested ACKs so far. It should be ready for merge</span>
+<a name="l-84"></a><span class="tm">19:23:28</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I'll go round bugging more people for review of #7716 this week.
+<a name="l-85"></a><span class="tm">19:24:15</span><span class="nk"> &lt;morcos&gt;</span> I know this may be controversial, but I'd argue that it is worse to provide backports for 0.11 than not
+<a name="l-86"></a><span class="tm">19:24:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link  </span><span class="cmdline">https://github.com/theuni/bitcoin/tree/net-refactor10</span>
+<a name="l-87"></a><span class="tm">19:24:40</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">btcdrak:</span> you bugged me last week but i didn't get to them. Will review both right after the meeting.
+<a name="l-88"></a><span class="tm">19:25:06</span><span class="nk"> &lt;wumpus&gt;</span> what would be the effect of not backporting to 0.11?
+<a name="l-89"></a><span class="tm">19:25:11</span><span class="nk"> &lt;morcos&gt;</span> It's very difficult to provide sufficient enough review.  You could have backported those soft forks to 0.11 in a way that passed both the existing unit tests and was broken if you didn't know you needed to change both
+<a name="l-90"></a><span class="tm">19:25:39</span><span class="nk"> &lt;morcos&gt;</span> I think we are doing our "customers" a better service by not putting our stamp of approval on something we can't give as high a degree of safety to
+<a name="l-91"></a><span class="tm">19:25:57</span><span class="nk"> &lt;morcos&gt;</span> Just a though, given that segwit will also likely be difficult to get properly tested in 0.11
+<a name="l-92"></a><span class="tm">19:26:25</span><span class="nk"> &lt;gmaxwell&gt;</span> I've had this thought too. Unfortunately none of the users of these things will give us any feedback.
+<a name="l-93"></a><span class="tm">19:26:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> ack - and also, esp. from miners, do we have a clear request to do a backport?
+<a name="l-94"></a><span class="tm">19:26:33</span><span class="nk"> &lt;wumpus&gt;</span> do miners use 0.11?
+<a name="l-95"></a><span class="tm">19:26:58</span><span class="nk"> &lt;wumpus&gt;</span> if not, backporting softfork to 0.11 is not *that* important
+<a name="l-96"></a><span class="tm">19:27:06</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">wumpus:</span> miners use git master...
+<a name="l-97"></a><span class="tm">19:27:09</span><span class="nk"> &lt;morcos&gt;</span> This is an opensource project anyway, nothing stopping other people from backporting to 0.11 themselves
+<a name="l-98"></a><span class="tm">19:27:21</span><span class="nk"> &lt;wumpus&gt;</span> sure, but we have a PR open for 0.11
+<a name="l-99"></a><span class="tm">19:27:23</span><span class="nk"> &lt;morcos&gt;</span> We should concentrate our efforts where they will be most effective
+<a name="l-100"></a><span class="tm">19:27:24</span><span class="nk"> &lt;sdaftuar&gt;</span> hah - low probability of getting that right
+<a name="l-101"></a><span class="tm">19:27:29</span><span class="nk"> &lt;wumpus&gt;</span> people that want it can review it
+<a name="l-102"></a><span class="tm">19:27:31</span><span class="nk"> &lt;sdaftuar&gt;</span> but agree that it's difficult to review
+<a name="l-103"></a><span class="tm">19:27:55</span><span class="nk"> &lt;wumpus&gt;</span> if no one wants it, no one should review it
+<a name="l-104"></a><span class="tm">19:28:04</span><span class="nk"> &lt;wumpus&gt;</span> so the decision would be more 'backport to 0.11 should block 0.12 deployment'
+<a name="l-105"></a><span class="tm">19:28:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> I know of some miners who are still on 0.11.2 but plan to upgrade, but instead are waiting for 0.12.1 now.
+<a name="l-106"></a><span class="tm">19:28:18</span><span class="nk"> &lt;petertodd&gt;</span> how about we mention that we haven't done a backport in the release notes for 0.12.x, and make it clear that if people do what that they should let us know?
+<a name="l-107"></a><span class="tm">19:28:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> But what I'm saying is we seem to have set a requirement for ourselves that we will backport 2 major versions, and so we waste a lot of development resources doing that for a questionable quality product
+<a name="l-108"></a><span class="tm">19:28:29</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> yes, miners still use 0.11
+<a name="l-109"></a><span class="tm">19:28:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> well the plan was to release 0.11.3 and 0.12.1 at the same time
+<a name="l-110"></a><span class="tm">19:28:48</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> and that is likely to remain the case for some time
+<a name="l-111"></a><span class="tm">19:28:52</span><span class="nk"> &lt;wumpus&gt;</span> that means that 0.11.3 will block 0.12.1
+<a name="l-112"></a><span class="tm">19:29:10</span><span class="nk"> &lt;morcos&gt;</span> Yes thats what i'm objecting to!
+<a name="l-113"></a><span class="tm">19:29:22</span><span class="nk"> &lt;btcdrak&gt;</span> I disagree with morcos that 0.11 is so difficult. We do have a pretty decent set of functional tests, and the 0.11 backport passes those.
+<a name="l-114"></a><span class="tm">19:29:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> cat dnsseed.dump | grep "  100.00% 100.00%" | grep "/Satoshi:0.11." | wc -l    ---&gt; 1581
+<a name="l-115"></a><span class="tm">19:29:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> cat dnsseed.dump | grep "  100.00% 100.00%" | grep "/Satoshi:0.12." | wc -l --&gt; 1276
+<a name="l-116"></a><span class="tm">19:29:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think a BP for 0.11 would be good.
+<a name="l-117"></a><span class="tm">19:30:14</span><span class="nk"> &lt;wumpus&gt;</span> mind that 0.12 isn't very old yet, and it's still at .0, lots of people wait for .1 releases to deploy it
+<a name="l-118"></a><span class="tm">19:30:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> i think the 0.11 backport is correct.  but it would have been easy to get wrong and still could be
+<a name="l-119"></a><span class="tm">19:30:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> so far 3 people have tested #7716.
+<a name="l-120"></a><span class="tm">19:30:32</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> it also has no well-tested CPFP yet ;)
+<a name="l-121"></a><span class="tm">19:30:34</span><span class="nk"> &lt;morcos&gt;</span> yes and 2 of them think it was a waste of time
+<a name="l-122"></a><span class="tm">19:31:01</span><span class="nk"> &lt;wumpus&gt;</span> so can we get people that use 0.11.x involved in testing it?
+<a name="l-123"></a><span class="tm">19:31:01</span><span class="nk"> &lt;btcdrak&gt;</span> For the record, I am fine not to backport to 0.11
+<a name="l-124"></a><span class="tm">19:31:12</span><span class="nk"> &lt;morcos&gt;</span> anyway, this is potentially off topic, but i think its more important that this project spend its resources getting segwit deployed
+<a name="l-125"></a><span class="tm">19:31:16</span><span class="nk"> &lt;wumpus&gt;</span> this is an open source project, so at some point it's scratch your own itch
+<a name="l-126"></a><span class="tm">19:31:18</span><span class="nk"> &lt;morcos&gt;</span> than deploying CSV to 0.11
+<a name="l-127"></a><span class="tm">19:31:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> morcos : +1
+<a name="l-128"></a><span class="tm">19:31:29</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> sure, so lets not delay 0.12.1
+<a name="l-129"></a><span class="tm">19:31:30</span><span class="nk"> &lt;paveljanik&gt;</span> +1
+<a name="l-130"></a><span class="tm">19:31:31</span><span class="nk"> &lt;jl2012&gt;</span> Anyway, I think it's unlikely to backport segwit to 0.11, so I don't think we really need to backport CSV to 0.11
+<a name="l-131"></a><span class="tm">19:31:38</span><span class="nk"> &lt;btcdrak&gt;</span> +1
+<a name="l-132"></a><span class="tm">19:31:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jl2012:</span> thanks
+<a name="l-133"></a><span class="tm">19:31:41</span><span class="nk"> &lt;wumpus&gt;</span> but what if bbackporting to 0.11.x helps segwit deployment, by making sure miners use it?
+<a name="l-134"></a><span class="tm">19:31:46</span><span class="nk"> &lt;gmaxwell&gt;</span> 0.11 is also so low in performance relative to 0.12 that there are many reasons not to run it.
+<a name="l-135"></a><span class="tm">19:31:50</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-136"></a><span class="tm">19:31:52</span><span class="nk"> &lt;btcdrak&gt;</span> please can we merge 7543 and start the RC phase.
+<a name="l-137"></a><span class="tm">19:31:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree with wumpus: 0.12 is relatively new. The time will also works towers 0.12 adaptation.
+<a name="l-138"></a><span class="tm">19:32:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> towards
+<a name="l-139"></a><span class="tm">19:32:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> well that brings us to next topic, bad-chain alerts
+<a name="l-140"></a><span class="tm">19:32:07</span><span class="nk"> &lt;Luke-Jr&gt;</span> it may be easier to get morcos's new CPFP stuff tested well
+<a name="l-141"></a><span class="tm">19:32:10</span><span class="nk"> &lt;gmaxwell&gt;</span> it is premature to RC on 0.12 at this second. (maybe in a couple days)
+<a name="l-142"></a><span class="tm">19:32:19</span><span class="nk"> &lt;wumpus&gt;</span> it'd be better if we would have first done a bugfix release for 0.12
+<a name="l-143"></a><span class="tm">19:32:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">Luke-Jr:</span> heh, thanks but sdaftuar's
+<a name="l-144"></a><span class="tm">19:32:24</span><span class="nk"> &lt;Luke-Jr&gt;</span> oh, oops
+<a name="l-145"></a><span class="tm">19:32:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> this is my answer to back chain alerts for 0.12.1 https://github.com/bitcoin/bitcoin/compare/0.12...btcdrak:spurious
+<a name="l-146"></a><span class="tm">19:32:48</span><span class="nk"> &lt;wumpus&gt;</span> then again I know of no *serious* bugs in 0.12
+<a name="l-147"></a><span class="tm">19:32:51</span><span class="nk"> &lt;btcdrak&gt;</span> disable them for 0.12.1 and if we get them fixed, we can add back to 0.12.2
+<a name="l-148"></a><span class="tm">19:33:05</span><span class="nk"> &lt;wumpus&gt;</span> new topic bad chain alerts?
+<a name="l-149"></a><span class="tm">19:33:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> i think i mostly agree with that
+<a name="l-150"></a><span class="tm">19:33:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bad chain alerts</span>
+<a name="l-151"></a><span class="tm">19:33:59</span><span class="nk"> &lt;gmaxwell&gt;</span> is that bad "chain alerts" or "bad chain" alerts? :)
+<a name="l-152"></a><span class="tm">19:34:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> second.
+<a name="l-153"></a><span class="tm">19:34:23</span><span class="nk"> &lt;wumpus&gt;</span> hehe both
+<a name="l-154"></a><span class="tm">19:34:27</span><span class="nk"> &lt;sipa&gt;</span> (bad ((bad chain) alerts))
+<a name="l-155"></a><span class="tm">19:34:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's actually more the first.
+<a name="l-156"></a><span class="tm">19:34:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> groan
+<a name="l-157"></a><span class="tm">19:34:43</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i think the proper thing to do here is properly research what was causing the false positives.
+<a name="l-158"></a><span class="tm">19:34:53</span><span class="nk"> &lt;wumpus&gt;</span> so, disable for now, then try to fix in master, if that succeeds backport to 0.12.2?
+<a name="l-159"></a><span class="tm">19:35:01</span><span class="nk"> &lt;morcos&gt;</span> that would be my vote
+<a name="l-160"></a><span class="tm">19:35:01</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-161"></a><span class="tm">19:35:04</span><span class="nk"> &lt;gmaxwell&gt;</span> +1
+<a name="l-162"></a><span class="tm">19:35:06</span><span class="nk"> &lt;sdaftuar&gt;</span> ack
+<a name="l-163"></a><span class="tm">19:35:20</span><span class="nk"> &lt;gmaxwell&gt;</span> We urgently must stop the false positives or the facility becomes completely useless.
+<a name="l-164"></a><span class="tm">19:35:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I agree, hurriedly backporting an improvement that isn't even merged in master yet is probably a bad idea
+<a name="l-165"></a><span class="tm">19:35:32</span><span class="nk"> &lt;morcos&gt;</span> wasn't MeniRosenfelds calculation that the existing code should be generating an alert once every 3 years, well i think something is off
+<a name="l-166"></a><span class="tm">19:35:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> right
+<a name="l-167"></a><span class="tm">19:35:44</span><span class="nk"> &lt;gmaxwell&gt;</span> I think the work that Tom has done improving it is valuable and welcome, but clearly not enough yet.
+<a name="l-168"></a><span class="tm">19:36:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> or it might be enough, but we're not sure yet
+<a name="l-169"></a><span class="tm">19:36:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it makes sense to merge that for master
+<a name="l-170"></a><span class="tm">19:36:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> under assumptions of constant hash rate,nodes that are up 100% of the time, and correct block timestamps
+<a name="l-171"></a><span class="tm">19:36:33</span><span class="nk"> &lt;petertodd&gt;</span> I recently spoke to a very confused user who thought the alerts meant bitcoin was fending off attack :/
+<a name="l-172"></a><span class="tm">19:36:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> if any of those assumptions are wrong, it will fail more
+<a name="l-173"></a><span class="tm">19:36:46</span><span class="nk"> &lt;wumpus&gt;</span> ah a bad-weather check that only works under good-weather conditions :)
+<a name="l-174"></a><span class="tm">19:36:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> yes so we don't have a sense of what false positive rate we'll have with 7568 b/c those assumptions are still equally poorly met
+<a name="l-175"></a><span class="tm">19:37:03</span><span class="nk"> &lt;dgenr8&gt;</span> <span class="hi">sipa:</span> why do you think it will fail more?
+<a name="l-176"></a><span class="tm">19:37:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> yes, it confuses users
+<a name="l-177"></a><span class="tm">19:37:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">dgenr8:</span> fail more than meni's calculation.
+<a name="l-178"></a><span class="tm">19:37:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> especially because the alert just won't go away
+<a name="l-179"></a><span class="tm">19:37:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">dgenr8:</span> i think its very likely that 7568 will fail less often than master, but maybe not rarely enough compared to just disabling
+<a name="l-180"></a><span class="tm">19:37:50</span><span class="nk"> &lt;morcos&gt;</span> and it obscures other alerts
+<a name="l-181"></a><span class="tm">19:37:51</span><span class="nk"> &lt;dgenr8&gt;</span> <span class="hi">morcos:</span> hard to argue with that ;)
+<a name="l-182"></a><span class="tm">19:38:01</span><span class="nk"> &lt;morcos&gt;</span> "maybe" :)
+<a name="l-183"></a><span class="tm">19:38:12</span><span class="nk"> &lt;gmaxwell&gt;</span> it will still falsely alert after a temporary disconnection, that alone shows its insufficent to avoid many of the reported FPs.
+<a name="l-184"></a><span class="tm">19:38:13</span><span class="nk"> &lt;dgenr8&gt;</span> bad weather check that never detects bad weather
+<a name="l-185"></a><span class="tm">19:38:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> when we fix them, probably worthwhile to hide the alerts in the gui for the first release
+<a name="l-186"></a><span class="tm">19:38:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">disable bad-chain alert for 0.12.1</span>
+<a name="l-187"></a><span class="tm">19:38:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">dgenr8:</span> anyway, i want to be clear here: i really think you changes should go in, but perhaps only once we're sure no further imorovements are needed to make them reliable
+<a name="l-188"></a><span class="tm">19:38:59</span><span class="nk"> &lt;wumpus&gt;</span> who's going to make a PR?
+<a name="l-189"></a><span class="tm">19:39:19</span><span class="nk"> &lt;morcos&gt;</span> yes i agree with sipa
+<a name="l-190"></a><span class="tm">19:39:27</span><span class="nk"> &lt;dgenr8&gt;</span> <span class="hi">sipa:</span> re your comment.  coordinated check times would not actually solve anything.  they would just ensure everyone agreed on the sample error.
+<a name="l-191"></a><span class="tm">19:39:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I'll do it
+<a name="l-192"></a><span class="tm">19:39:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">dgenr8:</span> I think the mental model you should use is that any important looking warning that turns out to be false and not require use action seen by a user has a 90% chance of making that use forever ignore any similar looking warning. So it's critical that FPs be basically 0.
+<a name="l-193"></a><span class="tm">19:39:33</span><span class="nk"> &lt;morcos&gt;</span> this is just about backporting to 0.12
+<a name="l-194"></a><span class="tm">19:39:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">dgenr8:</span> your changes should go into master. If it turns out to be enough, they'll make 0.13, it's too late for 0.12.1
+<a name="l-195"></a><span class="tm">19:40:02</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-196"></a><span class="tm">19:40:05</span><span class="nk"> &lt;dgenr8&gt;</span> <span class="hi">wumpus:</span> that's great
+<a name="l-197"></a><span class="tm">19:40:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> what branch would be best to do it against?
+<a name="l-198"></a><span class="tm">19:40:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> 0.12
+<a name="l-199"></a><span class="tm">19:40:30</span><span class="nk"> &lt;wumpus&gt;</span> only 0.12
+<a name="l-200"></a><span class="tm">19:40:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-201"></a><span class="tm">19:40:42</span><span class="nk"> &lt;btcdrak&gt;</span> oh
+<a name="l-202"></a><span class="tm">19:40:47</span><span class="nk"> &lt;GitHub123&gt;</span> [13bitcoin] 15btcdrak opened pull request #7780: [0.12] Disable bad-chain alert (060.12...06spurious) 02https://github.com/bitcoin/bitcoin/pull/7780
+<a name="l-203"></a><span class="tm">19:40:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">dgenr8:</span> I don't agree with your view on coordinated check times.  When we want there to be no FP _anywhere_ except very rarely, the lack of sync means that this will happen much more often.  It's the multiple comparisons problem.
+<a name="l-204"></a><span class="tm">19:40:49</span><span class="nk"> &lt;btcdrak&gt;</span> I just submitted
+<a name="l-205"></a><span class="tm">19:40:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> ^^ :-)
+<a name="l-206"></a><span class="tm">19:41:01</span><span class="nk"> &lt;sipa&gt;</span> i think disabling should go in master
+<a name="l-207"></a><span class="tm">19:41:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">dgenr8:</span> FPs are also less harmful when everyone gets one, since at least then "I got a warning and no one else did" is a good warning sign.
+<a name="l-208"></a><span class="tm">19:41:28</span><span class="nk"> &lt;dgenr8&gt;</span> <span class="hi">gmaxwell:</span> ah I forgot the "exclude false positives" code
+<a name="l-209"></a><span class="tm">19:41:30</span><span class="nk"> &lt;sipa&gt;</span> so that if no appropriate imorovement is found for 0.13, we don't need a separate "fix" there
+<a name="l-210"></a><span class="tm">19:41:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> we're likely to fix it before then surely?
+<a name="l-211"></a><span class="tm">19:41:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I don't agree, we should aim for improvement in master
+<a name="l-212"></a><span class="tm">19:41:44</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> I agree with sipa, otherwise we forget and have the broken one back for 0.13
+<a name="l-213"></a><span class="tm">19:41:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes AIM
+<a name="l-214"></a><span class="tm">19:41:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> if it itsn't fixed by 0.13 then we can easily disable it
+<a name="l-215"></a><span class="tm">19:42:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> disabling is considered an improvement, it should in master and be backported
+<a name="l-216"></a><span class="tm">19:42:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> we wont forget. If it's not ready by 0.13 we can just disbale it
+<a name="l-217"></a><span class="tm">19:42:10</span><span class="nk"> &lt;wumpus&gt;</span> sigh
+<a name="l-218"></a><span class="tm">19:42:13</span><span class="nk"> &lt;sipa&gt;</span> but i don't care strongly
+<a name="l-219"></a><span class="tm">19:42:15</span><span class="nk"> &lt;sipa&gt;</span> :)
+<a name="l-220"></a><span class="tm">19:42:17</span><span class="nk"> &lt;morcos&gt;</span> we always forget!
+<a name="l-221"></a><span class="tm">19:42:19</span><span class="nk"> &lt;wumpus&gt;</span> I don't care
+<a name="l-222"></a><span class="tm">19:42:42</span><span class="nk"> &lt;wumpus&gt;</span> I just thought we had a plan and it's completely different now, but just do whatever you think makes sense
+<a name="l-223"></a><span class="tm">19:42:43</span><span class="nk"> &lt;btcdrak&gt;</span> well how about we merge 7780 the cherry-pick it into master. same diff
+<a name="l-224"></a><span class="tm">19:42:48</span><span class="nk"> &lt;morcos&gt;</span> if it makes it on a task list somewhere, thats good enough
+<a name="l-225"></a><span class="tm">19:42:56</span><span class="nk"> &lt;morcos&gt;</span> but just saying it here is a mistake
+<a name="l-226"></a><span class="tm">19:43:11</span><span class="nk"> &lt;gmaxwell&gt;</span> we've already wasted too much time on this really minor feature. If this loops too much more my view is going to change to abandon it completely.
+<a name="l-227"></a><span class="tm">19:43:25</span><span class="nk"> &lt;wumpus&gt;</span> if you disable it that means there is effectgively no testing for the improved code
+<a name="l-228"></a><span class="tm">19:43:29</span><span class="nk"> &lt;sipa&gt;</span> ok, let's fix in master
+<a name="l-229"></a><span class="tm">19:43:34</span><span class="nk"> &lt;sipa&gt;</span> i retract my comment
+<a name="l-230"></a><span class="tm">19:43:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> already people have stopped reporting false postives. :(
+<a name="l-231"></a><span class="tm">19:43:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sure, if no one is going to improve the code further, that's fine too, wel'll disable it, just be honest about it :)
+<a name="l-232"></a><span class="tm">19:44:00</span><span class="nk"> &lt;morcos&gt;</span> i withdraw comment due to fear of the wrath of maxwell  (kidding trolls, kidding)
+<a name="l-233"></a><span class="tm">19:44:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> you should fear maxwell's demon indeed
+<a name="l-234"></a><span class="tm">19:44:42</span><span class="nk"> &lt;wumpus&gt;</span> hah
+<a name="l-235"></a><span class="tm">19:45:02 </span><span class="nka">* petertodd</span> <span class="ac">shakes head</span>
+<a name="l-236"></a><span class="tm">19:45:15</span><span class="nk"> &lt;petertodd&gt;</span> (thereby increasing entropy slightly)
+<a name="l-237"></a><span class="tm">19:45:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> you should do what you think is best, just don't let us forget if you leave it in... make an issue and milestone it or milestone dgenr8's PR
+<a name="l-238"></a><span class="tm">19:45:31</span><span class="nk"> &lt;morcos&gt;</span> next topic
+<a name="l-239"></a><span class="tm">19:45:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> right
+<a name="l-240"></a><span class="tm">19:46:05</span><span class="nk"> &lt;wumpus&gt;</span> I don't think 'we always forget', if we really want to remember something for the release there are ways to do so, but if no one feels it's worth the trouble well then it's not :)
+<a name="l-241"></a><span class="tm">19:46:23</span><span class="nk"> &lt;morcos&gt;</span> i am prone to hyperbole on the rare occasion
+<a name="l-242"></a><span class="tm">19:46:24</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-243"></a><span class="tm">19:46:26</span><span class="nk"> &lt;sdaftuar&gt;</span> topic suggestion: CPFP mining
+<a name="l-244"></a><span class="tm">19:46:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">CPFP mining</span>
+<a name="l-245"></a><span class="tm">19:46:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> answer is yes
+<a name="l-246"></a><span class="tm">19:46:53</span><span class="nk"> &lt;sdaftuar&gt;</span> mostly i just want to bug people for review
+<a name="l-247"></a><span class="tm">19:47:04</span><span class="nk"> &lt;sipa&gt;</span> sorry, i wanted to review again now that the base tracking is merged, but haven't gotten around to it
+<a name="l-248"></a><span class="tm">19:47:06</span><span class="nk"> &lt;morcos&gt;</span> first step is for people to give concept feedback for 7598, refactor of CreateNewBlock
+<a name="l-249"></a><span class="tm">19:47:19</span><span class="nk"> &lt;sdaftuar&gt;</span> ^ yes that's what i was going to say
+<a name="l-250"></a><span class="tm">19:47:20</span><span class="nk"> &lt;morcos&gt;</span> its a kind of large change, and lets get it to a design we all like better
+<a name="l-251"></a><span class="tm">19:47:38</span><span class="nk"> &lt;morcos&gt;</span> sdaftuar and i can rebuild the CPFP on whatever the design is people like best
+<a name="l-252"></a><span class="tm">19:48:31</span><span class="nk"> &lt;morcos&gt;</span> the original goal of the design was to separate priority filling from feerate filling, but i think the overall goal should be to make it more modular to figure out how to assemble a block
+<a name="l-253"></a><span class="tm">19:48:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">disable bad-alert detection in master if it doesn't improve enough by 0.13 (and don't forget!)</span>
+<a name="l-254"></a><span class="tm">19:49:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> ok
+<a name="l-255"></a><span class="tm">19:50:22</span><span class="nk"> &lt;morcos&gt;</span> hmm
+<a name="l-256"></a><span class="tm">19:51:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> 5mins for p2p enc/auth?
+<a name="l-257"></a><span class="tm">19:51:22</span><span class="nk"> &lt;morcos&gt;</span> i'm just trying to think about itming of all these things
+<a name="l-258"></a><span class="tm">19:51:28</span><span class="nk"> &lt;morcos&gt;</span> 5/15 isn't that far away
+<a name="l-259"></a><span class="tm">19:51:41</span><span class="nk"> &lt;morcos&gt;</span> and some changes on top of segwit will be necessary
+<a name="l-260"></a><span class="tm">19:51:53</span><span class="nk"> &lt;morcos&gt;</span> do we punt on these other things for now and try to get segwit merged
+<a name="l-261"></a><span class="tm">19:51:57</span><span class="nk"> &lt;morcos&gt;</span> or continue in parallel or what
+<a name="l-262"></a><span class="tm">19:52:25</span><span class="nk"> &lt;morcos&gt;</span> i'm not sure i know the answer...
+<a name="l-263"></a><span class="tm">19:52:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> sure
+<a name="l-264"></a><span class="tm">19:52:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> I just wanted to get a feeling if it's worth to continue work on the p2p encryption and authentication BIP.
+<a name="l-265"></a><span class="tm">19:52:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO there are clear benefits. Question is more if we need our own solution (including all the risks) of if we should adapt stuff like stunnel, DJB's curveCP, etc. are already available.
+<a name="l-266"></a><span class="tm">19:52:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Continuing makes probably only sense if most of us prefere a own/custom solution.
+<a name="l-267"></a><span class="tm">19:52:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">p2p encryption/authentication</span>
+<a name="l-268"></a><span class="tm">19:53:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> fwiw, note that .onion addresses do work pretty well for p2p encryption and authentication
+<a name="l-269"></a><span class="tm">19:53:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> you can literally copy the crypto code from openssh; it's 300 lines for chacha20-poly1305
+<a name="l-270"></a><span class="tm">19:53:25</span><span class="nk"> &lt;wumpus&gt;</span> I'm all for adapting something that already exists as long as it's not openssl
+<a name="l-271"></a><span class="tm">19:53:32</span><span class="nk"> &lt;sipa&gt;</span> and ecdh and signing we already have
+<a name="l-272"></a><span class="tm">19:54:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it would allow extremely simple setups for wallet nodes (spv) to increase privacy.
+<a name="l-273"></a><span class="tm">19:54:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> copying ssh sounds pretty reasonable to me
+<a name="l-274"></a><span class="tm">19:54:34</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">jonasschnelli:</span> ready for BIP #s yet?
+<a name="l-275"></a><span class="tm">19:54:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> continuing to work on those BIPs is a clear win
+<a name="l-276"></a><span class="tm">19:54:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> tor is an alternative, but not preferred by everyone and probably consequences on performance.
+<a name="l-277"></a><span class="tm">19:55:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i don't think we should rush this (implementation should not start until cfields's refaactor is in, i think)
+<a name="l-278"></a><span class="tm">19:55:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Luke-Jr:</span> BIP is _not_ ready yet.
+<a name="l-279"></a><span class="tm">19:55:18</span><span class="nk"> &lt;sipa&gt;</span> but thinking about it can continur
+<a name="l-280"></a><span class="tm">19:55:26 </span><span class="nka">* wumpus</span> <span class="ac">also likes chacha20-poly1305</span>
+<a name="l-281"></a><span class="tm">19:55:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> Right. No rush. Can take 1-2 years. I just want to keep it moving.
+<a name="l-282"></a><span class="tm">19:55:51</span><span class="nk"> &lt;sipa&gt;</span> chacha20-poly1305 is faster than sha256 ;)
+<a name="l-283"></a><span class="tm">19:56:08</span><span class="nk"> &lt;warren&gt;</span> Are folks thinking this would be optional, not default?
+<a name="l-284"></a><span class="tm">19:56:11</span><span class="nk"> &lt;cfields&gt;</span> sipa / jonasschnelli: note that you can easily test with libbtcnet, so it'll be familiar after the net refactor
+<a name="l-285"></a><span class="tm">19:56:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> fwiw, this will improve privacy for non-spv as well if widely deployed; one of the interesting things that the network monitoring services like chainalysis are doing is MITMing nodes by simply faking the address info for both sides of the connection
+<a name="l-286"></a><span class="tm">19:56:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Will continue finish the BIP and seek out for funding for cryptanalysis, etc.
+<a name="l-287"></a><span class="tm">19:56:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> obviously encryption isn't a total solution, but the authentication is a good first step to anti-sybil techniques
+<a name="l-288"></a><span class="tm">19:56:36</span><span class="nk"> &lt;cfields&gt;</span> sipa / jonasschnelli: i added support for chunked reads as suggested, in case i forgot to mention
+<a name="l-289"></a><span class="tm">19:56:54</span><span class="nk"> &lt;wumpus&gt;</span> and indeed, .onion does fairly well as a p2p encryption and authentication for now, but that doesn't mean it's not worth looking for something that can be integrated
+<a name="l-290"></a><span class="tm">19:57:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> please don't ask for external cryptanalysis until it passes pieter's review. Otherwise it just risks embarassing our team and wasting money. :)
+<a name="l-291"></a><span class="tm">19:57:07</span><span class="nk"> &lt;sipa&gt;</span> related topic: shameless plug for https://github.com/sipa/ctaes (since it was a topic last week)
+<a name="l-292"></a><span class="tm">19:57:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> thanks!
+<a name="l-293"></a><span class="tm">19:57:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Agree!
+<a name="l-294"></a><span class="tm">19:57:26</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> i suspect there would be some MIT folks interested in analyzing/researching. I could ask around if you'd like.
+<a name="l-295"></a><span class="tm">19:57:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/sipa/ctaes</span>
+<a name="l-296"></a><span class="tm">19:57:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> good idea.
+<a name="l-297"></a><span class="tm">19:57:50</span><span class="nk"> &lt;gmaxwell&gt;</span> please not yet.
+<a name="l-298"></a><span class="tm">19:57:52</span><span class="nk"> &lt;cfields&gt;</span> heh, offer retracted after gmaxwell's plea :)
+<a name="l-299"></a><span class="tm">19:58:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Not now. First we need an implementation and clear review from maxwell and sipa.
+<a name="l-300"></a><span class="tm">19:58:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm happy to help refining it, though.
+<a name="l-301"></a><span class="tm">19:58:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> (after the BIP is "stable").
+<a name="l-302"></a><span class="tm">19:58:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> yes. Will bother you soon with tons of q.
+<a name="l-303"></a><span class="tm">19:58:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> Thank you!
+<a name="l-304"></a><span class="tm">19:59:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> &lt;/p2pencauth&gt;
+<a name="l-305"></a><span class="tm">19:59:47 </span><span class="nka">* sipa</span> <span class="ac">afk</span>
+<a name="l-306"></a><span class="tm">19:59:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

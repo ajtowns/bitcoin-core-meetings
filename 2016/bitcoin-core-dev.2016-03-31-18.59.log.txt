@@ -1,0 +1,306 @@
+18:59:45 <wumpus> #startmeeting
+18:59:45 <lightningbot> Meeting started Thu Mar 31 18:59:45 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:45 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:16 <wumpus> action points from last meeting: ACTION: review more at https://github.com/bitcoin/bitcoin/pull/7648 (wumpus, 19:05:42)    done and merged
+19:00:27 <jonasschnelli> topic proposal (short): p2p layer encryption
+19:00:35 * wumpus hunt down miners that mine MTP violations <- don't know about this one
+19:00:50 <wumpus> main topic is the softfork backports I think
+19:01:16 <sipa> topic: short update on segwit and segnet4
+19:01:29 <wumpus> cool
+19:01:43 <wumpus> #topic short update on segwit and segnet4
+19:02:00 <cfields> topic suggestion: net-refactor update
+19:02:33 <sipa> segwit code progressed a lot the past few days; it now passes all preexisting rpc tests and unit tests, and many bugs were fixed in the process
+19:02:49 <jonasschnelli> Nice!
+19:02:51 <wumpus> good to hear!
+19:02:52 <petertodd> sipa: +1
+19:03:00 <jonasschnelli> also had no crash on my segnet4 node.. :)
+19:03:27 <sipa> it's also rebased on top of the bip68/112/113 backport, and a new segnet (segnet4) is up and running with bip9 activation logic
+19:03:53 <gmaxwell> morcos: my uncertanty comes from looking at some incidents and it not being obvious what the cause was in them.
+19:04:01 <gmaxwell> it's not well founded uncertanty.
+19:04:12 <gmaxwell> oops. [sorry for OT]
+19:04:24 <sipa> lastly, i have significantly reorganized the commits in the branch to 1) define segnet 2) add consensus/node logic 3) add wallet logic 4) add tests
+19:04:48 <sipa> so that upgrade tests from pre-segwit code post fork can be tested
+19:04:58 <sipa> and so that the consensus critical part can be reviewed separately
+19:05:16 <morcos> sipa: i think it would be hugely beneficial if you could come up with a list of things you'd like other people to work on to move this forward
+19:05:26 <sipa> ack, will do
+19:05:49 <cfields> yes, that would be great
+19:06:07 <petertodd> I should add segwit to python-bitcoinlib...
+19:06:07 <sipa> the next thing i will do myself is write script unit tests, as we are not testing all possible witness validation failures
+19:06:50 <gmaxwell> As far as the MTP huntdown, sdaftuar checked to see if there were violations already, and there weren't. I need to start generating mtp violating transactions, but haven't done this yet.
+19:07:07 <petertodd> sipa: ah cool - are you going to do that with the existing script_(in)valid.json framework?
+19:07:42 <sipa> there are some unusual things to test that are not typivally needed for softforks, such as the preferential peering (oh, that's implemented too; on top of the service bits enforcement logic), rewind testing, ...
+19:07:46 <sipa> petertodd: yes
+19:08:18 <btcdrak> #link https://github.com/bitcoin/bitcoin/compare/0.12...sipa:segwit
+19:08:21 <wumpus> #action start generating mtp violating transactions (gmaxwell)
+19:08:29 <petertodd> sipa: how are you going to add segwit support to it? (I was just updating python-bitcoinlib's script unit tests yesterday along those lines)
+19:08:51 <sipa> petertodd: tbd, i'm sure i'll find a way
+19:09:00 <sipa> but i haven't looked into it deeply
+19:09:56 <sipa> EOT? (end of topic)
+19:10:20 <sipa> btcdrak: no, use segwit-base...segwit
+19:10:34 <sipa> (so you don't see the backports before segwit)
+19:10:57 <wumpus> ok
+19:11:21 <wumpus> #topic net-refactor update
+19:11:52 <wumpus> @cfields
+19:11:56 <cfields> ok. I've pushed an up-to-date version to my net-refactor10 branch...
+19:12:13 <cfields> at this point, it's ready for testing and review, but i'm not entirely sure how to proceed
+19:12:30 <wumpus> ohh I'm two branches behind
+19:13:01 <wumpus> what is unclear?
+19:13:04 <cfields> atm it's just 2 huge commits. I'm not sure how much it's worth going in and splitting into logical chunks, because it's really one big change...
+19:13:14 <btcdrak> sipa: this then? https://github.com/sipa/bitcoin/compare/segwit-base...sipa:segwit
+19:13:20 <sipa> btcdrak: ack
+19:13:33 <wumpus> well if it is one big change it should be one commit
+19:13:49 <wumpus> splitting makes sense if there are atomic changes
+19:14:13 <wumpus> especially if they're somewhat independent
+19:14:24 <cfields> also, it needs a bunch of unit tests, which I'm still working on a framework for. For catching stupid things like max connections, etc
+19:15:06 <cfields> wumpus: sure. what I'm not clear on is if I should try to refactor current master to make it easier to slide in the other changes, or just plan to do it all in one go
+19:15:37 <cfields> s/refactor/PR small refactoring chunks/
+19:15:50 <wumpus> I don't know. I'd try it first in one go, if people complain about it being to much you can always decide to do it in multiple phases.
+19:16:33 <cfields> ok. Well, next steps are adding tons of docs and tests. But at this point, I'm happy to have people test and point out any brokenness
+19:17:30 <wumpus> congrats :)
+19:17:40 <cfields> I suppose that's it for now
+19:18:12 <wumpus> unfortunately this comes at a time that people are really busy, so I hope they can spare enough review cycles, to get this in for 0.13
+19:18:42 <cfields> wumpus: understood. I'm starting to doubt whether it makes sense for .13.
+19:18:59 <sipa> when is the feature freeze for 0.13?
+19:18:59 <wumpus> #topic softfork backports
+19:19:00 <jonasschnelli> I have already started reviewing it but need to read myself more into libevent first.
+19:19:14 <petertodd> cfields: well, keep in mind that what's keeping everyone busy is stuff that'll be backported
+19:19:18 <jtimon> NicolasDorier:
+19:19:20 <btcdrak> backports are #7543 and #7716
+19:19:24 <cfields> jonasschnelli: for the sake of review, I'd say you can do it in 2 main chunks
+19:19:41 <cfields> first, libbtcnet can be considered to be a black box that works as intended
+19:19:53 <jtimon> what? it was a suggestion for extension, I think you got simplifications I missed'
+19:19:57 <cfields> then, reviewing libbtcnet itself
+19:20:04 <wumpus> sipa: 2016-05-15 https://github.com/bitcoin/bitcoin/issues/7679
+19:20:11 <btcdrak> so #7543 is a straight up cherry-pick from master, easy peasy.
+19:20:30 <btcdrak> #7716 needs a bit more review, but the tests, as per the comments make it quite easy to verify.
+19:20:40 <sipa> i gave a command line for easy mechanical review of 7543 :)
+19:20:51 <morcos> "easy"
+19:21:13 <btcdrak> #7543 has 5 tested ACKs so far. It should be ready for merge.
+19:21:38 <jtimon> NicolasDorier: seriously if someone else could do it I think we could be much more objective combined (I'm probably too biased with my consensus branch)
+19:22:04 <phantomcircuit> cfields: link to current net refactor work?
+19:22:37 <wumpus> agree on the 0.12 backport btcdrak
+19:22:47 <cfields> phantomcircuit: https://github.com/theuni/bitcoin/tree/net-refactor10
+19:22:52 <wumpus> #action #7543 has 5 tested ACKs so far. It should be ready for merge
+19:23:28 <btcdrak> wumpus: I'll go round bugging more people for review of #7716 this week.
+19:24:15 <morcos> I know this may be controversial, but I'd argue that it is worse to provide backports for 0.11 than not
+19:24:19 <wumpus> #link  https://github.com/theuni/bitcoin/tree/net-refactor10
+19:24:40 <cfields> btcdrak: you bugged me last week but i didn't get to them. Will review both right after the meeting.
+19:25:06 <wumpus> what would be the effect of not backporting to 0.11?
+19:25:11 <morcos> It's very difficult to provide sufficient enough review.  You could have backported those soft forks to 0.11 in a way that passed both the existing unit tests and was broken if you didn't know you needed to change both
+19:25:39 <morcos> I think we are doing our "customers" a better service by not putting our stamp of approval on something we can't give as high a degree of safety to
+19:25:57 <morcos> Just a though, given that segwit will also likely be difficult to get properly tested in 0.11
+19:26:25 <gmaxwell> I've had this thought too. Unfortunately none of the users of these things will give us any feedback.
+19:26:26 <petertodd> morcos: ack - and also, esp. from miners, do we have a clear request to do a backport?
+19:26:33 <wumpus> do miners use 0.11?
+19:26:58 <wumpus> if not, backporting softfork to 0.11 is not *that* important
+19:27:06 <phantomcircuit> wumpus: miners use git master...
+19:27:09 <morcos> This is an opensource project anyway, nothing stopping other people from backporting to 0.11 themselves
+19:27:21 <wumpus> sure, but we have a PR open for 0.11
+19:27:23 <morcos> We should concentrate our efforts where they will be most effective
+19:27:24 <sdaftuar> hah - low probability of getting that right
+19:27:29 <wumpus> people that want it can review it
+19:27:31 <sdaftuar> but agree that it's difficult to review
+19:27:55 <wumpus> if no one wants it, no one should review it
+19:28:04 <wumpus> so the decision would be more 'backport to 0.11 should block 0.12 deployment'
+19:28:14 <btcdrak> wumpus: I know of some miners who are still on 0.11.2 but plan to upgrade, but instead are waiting for 0.12.1 now.
+19:28:18 <petertodd> how about we mention that we haven't done a backport in the release notes for 0.12.x, and make it clear that if people do what that they should let us know?
+19:28:21 <morcos> wumpus: But what I'm saying is we seem to have set a requirement for ourselves that we will backport 2 major versions, and so we waste a lot of development resources doing that for a questionable quality product
+19:28:29 <Luke-Jr> wumpus: yes, miners still use 0.11
+19:28:38 <wumpus> morcos: well the plan was to release 0.11.3 and 0.12.1 at the same time
+19:28:48 <Luke-Jr> wumpus: and that is likely to remain the case for some time
+19:28:52 <wumpus> that means that 0.11.3 will block 0.12.1
+19:29:10 <morcos> Yes thats what i'm objecting to!
+19:29:22 <btcdrak> I disagree with morcos that 0.11 is so difficult. We do have a pretty decent set of functional tests, and the 0.11 backport passes those.
+19:29:30 <jonasschnelli> cat dnsseed.dump | grep "  100.00% 100.00%" | grep "/Satoshi:0.11." | wc -l    ---> 1581
+19:29:34 <jonasschnelli> cat dnsseed.dump | grep "  100.00% 100.00%" | grep "/Satoshi:0.12." | wc -l --> 1276
+19:29:47 <jonasschnelli> I think a BP for 0.11 would be good.
+19:30:14 <wumpus> mind that 0.12 isn't very old yet, and it's still at .0, lots of people wait for .1 releases to deploy it
+19:30:22 <morcos> btcdrak: i think the 0.11 backport is correct.  but it would have been easy to get wrong and still could be
+19:30:24 <btcdrak> morcos: so far 3 people have tested #7716.
+19:30:32 <Luke-Jr> wumpus: it also has no well-tested CPFP yet ;)
+19:30:34 <morcos> yes and 2 of them think it was a waste of time
+19:31:01 <wumpus> so can we get people that use 0.11.x involved in testing it?
+19:31:01 <btcdrak> For the record, I am fine not to backport to 0.11
+19:31:12 <morcos> anyway, this is potentially off topic, but i think its more important that this project spend its resources getting segwit deployed
+19:31:16 <wumpus> this is an open source project, so at some point it's scratch your own itch
+19:31:18 <morcos> than deploying CSV to 0.11
+19:31:22 <jonasschnelli> morcos : +1
+19:31:29 <morcos> wumpus: sure, so lets not delay 0.12.1
+19:31:30 <paveljanik> +1
+19:31:31 <jl2012> Anyway, I think it's unlikely to backport segwit to 0.11, so I don't think we really need to backport CSV to 0.11
+19:31:38 <btcdrak> +1
+19:31:39 <morcos> jl2012: thanks
+19:31:41 <wumpus> but what if bbackporting to 0.11.x helps segwit deployment, by making sure miners use it?
+19:31:46 <gmaxwell> 0.11 is also so low in performance relative to 0.12 that there are many reasons not to run it.
+19:31:50 <wumpus> ok
+19:31:52 <btcdrak> please can we merge 7543 and start the RC phase.
+19:31:58 <jonasschnelli> Agree with wumpus: 0.12 is relatively new. The time will also works towers 0.12 adaptation.
+19:32:04 <jonasschnelli> towards
+19:32:06 <morcos> btcdrak: well that brings us to next topic, bad-chain alerts
+19:32:07 <Luke-Jr> it may be easier to get morcos's new CPFP stuff tested well
+19:32:10 <gmaxwell> it is premature to RC on 0.12 at this second. (maybe in a couple days)
+19:32:19 <wumpus> it'd be better if we would have first done a bugfix release for 0.12
+19:32:20 <morcos> Luke-Jr: heh, thanks but sdaftuar's
+19:32:24 <Luke-Jr> oh, oops
+19:32:37 <btcdrak> morcos: this is my answer to back chain alerts for 0.12.1 https://github.com/bitcoin/bitcoin/compare/0.12...btcdrak:spurious
+19:32:48 <wumpus> then again I know of no *serious* bugs in 0.12
+19:32:51 <btcdrak> disable them for 0.12.1 and if we get them fixed, we can add back to 0.12.2
+19:33:05 <wumpus> new topic bad chain alerts?
+19:33:06 <morcos> btcdrak: i think i mostly agree with that
+19:33:11 <wumpus> #topic bad chain alerts
+19:33:59 <gmaxwell> is that bad "chain alerts" or "bad chain" alerts? :)
+19:34:14 <jonasschnelli> second.
+19:34:23 <wumpus> hehe both
+19:34:27 <sipa> (bad ((bad chain) alerts))
+19:34:29 <gmaxwell> I think it's actually more the first.
+19:34:36 <btcdrak> sipa: groan
+19:34:43 <morcos> wumpus: i think the proper thing to do here is properly research what was causing the false positives.
+19:34:53 <wumpus> so, disable for now, then try to fix in master, if that succeeds backport to 0.12.2?
+19:35:01 <morcos> that would be my vote
+19:35:01 <btcdrak> wumpus: +1
+19:35:04 <gmaxwell> +1
+19:35:06 <sdaftuar> ack
+19:35:20 <gmaxwell> We urgently must stop the false positives or the facility becomes completely useless.
+19:35:29 <wumpus> morcos: I agree, hurriedly backporting an improvement that isn't even merged in master yet is probably a bad idea
+19:35:32 <morcos> wasn't MeniRosenfelds calculation that the existing code should be generating an alert once every 3 years, well i think something is off
+19:35:40 <wumpus> gmaxwell: right
+19:35:44 <gmaxwell> I think the work that Tom has done improving it is valuable and welcome, but clearly not enough yet.
+19:36:05 <morcos> gmaxwell: or it might be enough, but we're not sure yet
+19:36:07 <wumpus> gmaxwell: it makes sense to merge that for master
+19:36:12 <sipa> morcos: under assumptions of constant hash rate,nodes that are up 100% of the time, and correct block timestamps
+19:36:33 <petertodd> I recently spoke to a very confused user who thought the alerts meant bitcoin was fending off attack :/
+19:36:33 <sipa> morcos: if any of those assumptions are wrong, it will fail more
+19:36:46 <wumpus> ah a bad-weather check that only works under good-weather conditions :)
+19:36:49 <morcos> sipa: yes so we don't have a sense of what false positive rate we'll have with 7568 b/c those assumptions are still equally poorly met
+19:37:03 <dgenr8> sipa: why do you think it will fail more?
+19:37:16 <wumpus> petertodd: yes, it confuses users
+19:37:21 <gmaxwell> dgenr8: fail more than meni's calculation.
+19:37:25 <wumpus> petertodd: especially because the alert just won't go away
+19:37:33 <morcos> dgenr8: i think its very likely that 7568 will fail less often than master, but maybe not rarely enough compared to just disabling
+19:37:50 <morcos> and it obscures other alerts
+19:37:51 <dgenr8> morcos: hard to argue with that ;)
+19:38:01 <morcos> "maybe" :)
+19:38:12 <gmaxwell> it will still falsely alert after a temporary disconnection, that alone shows its insufficent to avoid many of the reported FPs.
+19:38:13 <dgenr8> bad weather check that never detects bad weather
+19:38:15 <petertodd> wumpus: when we fix them, probably worthwhile to hide the alerts in the gui for the first release
+19:38:39 <wumpus> #action disable bad-chain alert for 0.12.1
+19:38:57 <sipa> dgenr8: anyway, i want to be clear here: i really think you changes should go in, but perhaps only once we're sure no further imorovements are needed to make them reliable
+19:38:59 <wumpus> who's going to make a PR?
+19:39:19 <morcos> yes i agree with sipa
+19:39:27 <dgenr8> sipa: re your comment.  coordinated check times would not actually solve anything.  they would just ensure everyone agreed on the sample error.
+19:39:32 <petertodd> wumpus: I'll do it
+19:39:32 <gmaxwell> dgenr8: I think the mental model you should use is that any important looking warning that turns out to be false and not require use action seen by a user has a 90% chance of making that use forever ignore any similar looking warning. So it's critical that FPs be basically 0.
+19:39:33 <morcos> this is just about backporting to 0.12
+19:39:37 <wumpus> dgenr8: your changes should go into master. If it turns out to be enough, they'll make 0.13, it's too late for 0.12.1
+19:40:02 <wumpus> right.
+19:40:05 <dgenr8> wumpus: that's great
+19:40:14 <petertodd> wumpus: what branch would be best to do it against?
+19:40:20 <wumpus> petertodd: 0.12
+19:40:30 <wumpus> only 0.12
+19:40:33 <petertodd> wumpus: ack
+19:40:42 <btcdrak> oh
+19:40:47 <GitHub123> [13bitcoin] 15btcdrak opened pull request #7780: [0.12] Disable bad-chain alert (060.12...06spurious) 02https://github.com/bitcoin/bitcoin/pull/7780
+19:40:47 <gmaxwell> dgenr8: I don't agree with your view on coordinated check times.  When we want there to be no FP _anywhere_ except very rarely, the lack of sync means that this will happen much more often.  It's the multiple comparisons problem.
+19:40:49 <btcdrak> I just submitted
+19:40:59 <jonasschnelli> ^^ :-)
+19:41:01 <sipa> i think disabling should go in master
+19:41:09 <gmaxwell> dgenr8: FPs are also less harmful when everyone gets one, since at least then "I got a warning and no one else did" is a good warning sign.
+19:41:28 <dgenr8> gmaxwell: ah I forgot the "exclude false positives" code
+19:41:30 <sipa> so that if no appropriate imorovement is found for 0.13, we don't need a separate "fix" there
+19:41:36 <btcdrak> sipa: we're likely to fix it before then surely?
+19:41:40 <wumpus> sipa: I don't agree, we should aim for improvement in master
+19:41:44 <morcos> wumpus: I agree with sipa, otherwise we forget and have the broken one back for 0.13
+19:41:49 <morcos> wumpus: yes AIM
+19:41:53 <wumpus> sipa: if it itsn't fixed by 0.13 then we can easily disable it
+19:42:05 <sipa> wumpus: disabling is considered an improvement, it should in master and be backported
+19:42:09 <btcdrak> morcos: we wont forget. If it's not ready by 0.13 we can just disbale it
+19:42:10 <wumpus> sigh
+19:42:13 <sipa> but i don't care strongly
+19:42:15 <sipa> :)
+19:42:17 <morcos> we always forget!
+19:42:19 <wumpus> I don't care
+19:42:42 <wumpus> I just thought we had a plan and it's completely different now, but just do whatever you think makes sense
+19:42:43 <btcdrak> well how about we merge 7780 the cherry-pick it into master. same diff
+19:42:48 <morcos> if it makes it on a task list somewhere, thats good enough
+19:42:56 <morcos> but just saying it here is a mistake
+19:43:11 <gmaxwell> we've already wasted too much time on this really minor feature. If this loops too much more my view is going to change to abandon it completely.
+19:43:25 <wumpus> if you disable it that means there is effectgively no testing for the improved code
+19:43:29 <sipa> ok, let's fix in master
+19:43:34 <sipa> i retract my comment
+19:43:57 <gmaxwell> wumpus: already people have stopped reporting false postives. :(
+19:43:58 <wumpus> gmaxwell: sure, if no one is going to improve the code further, that's fine too, wel'll disable it, just be honest about it :)
+19:44:00 <morcos> i withdraw comment due to fear of the wrath of maxwell  (kidding trolls, kidding)
+19:44:32 <sipa> morcos: you should fear maxwell's demon indeed
+19:44:42 <wumpus> hah
+19:45:02 * petertodd shakes head
+19:45:15 <petertodd> (thereby increasing entropy slightly)
+19:45:20 <morcos> wumpus: you should do what you think is best, just don't let us forget if you leave it in... make an issue and milestone it or milestone dgenr8's PR
+19:45:31 <morcos> next topic
+19:45:35 <wumpus> morcos: right
+19:46:05 <wumpus> I don't think 'we always forget', if we really want to remember something for the release there are ways to do so, but if no one feels it's worth the trouble well then it's not :)
+19:46:23 <morcos> i am prone to hyperbole on the rare occasion
+19:46:24 <wumpus> any other topics?
+19:46:26 <sdaftuar> topic suggestion: CPFP mining
+19:46:32 <wumpus> #topic CPFP mining
+19:46:33 <sipa> sdaftuar: answer is yes
+19:46:53 <sdaftuar> mostly i just want to bug people for review
+19:47:04 <sipa> sorry, i wanted to review again now that the base tracking is merged, but haven't gotten around to it
+19:47:06 <morcos> first step is for people to give concept feedback for 7598, refactor of CreateNewBlock
+19:47:19 <sdaftuar> ^ yes that's what i was going to say
+19:47:20 <morcos> its a kind of large change, and lets get it to a design we all like better
+19:47:38 <morcos> sdaftuar and i can rebuild the CPFP on whatever the design is people like best
+19:48:31 <morcos> the original goal of the design was to separate priority filling from feerate filling, but i think the overall goal should be to make it more modular to figure out how to assemble a block
+19:48:33 <wumpus> #action disable bad-alert detection in master if it doesn't improve enough by 0.13 (and don't forget!)
+19:49:09 <sipa> morcos: ok
+19:50:22 <morcos> hmm
+19:51:20 <jonasschnelli> 5mins for p2p enc/auth?
+19:51:22 <morcos> i'm just trying to think about itming of all these things
+19:51:28 <morcos> 5/15 isn't that far away
+19:51:41 <morcos> and some changes on top of segwit will be necessary
+19:51:53 <morcos> do we punt on these other things for now and try to get segwit merged
+19:51:57 <morcos> or continue in parallel or what
+19:52:25 <morcos> i'm not sure i know the answer...
+19:52:28 <wumpus> jonasschnelli: sure
+19:52:36 <jonasschnelli> I just wanted to get a feeling if it's worth to continue work on the p2p encryption and authentication BIP.
+19:52:36 <jonasschnelli> IMO there are clear benefits. Question is more if we need our own solution (including all the risks) of if we should adapt stuff like stunnel, DJB's curveCP, etc. are already available.
+19:52:36 <jonasschnelli> Continuing makes probably only sense if most of us prefere a own/custom solution.
+19:52:53 <wumpus> #topic p2p encryption/authentication
+19:53:16 <petertodd> jonasschnelli: fwiw, note that .onion addresses do work pretty well for p2p encryption and authentication
+19:53:19 <sipa> jonasschnelli: you can literally copy the crypto code from openssh; it's 300 lines for chacha20-poly1305
+19:53:25 <wumpus> I'm all for adapting something that already exists as long as it's not openssl
+19:53:32 <sipa> and ecdh and signing we already have
+19:54:29 <jonasschnelli> I think it would allow extremely simple setups for wallet nodes (spv) to increase privacy.
+19:54:33 <petertodd> sipa: copying ssh sounds pretty reasonable to me
+19:54:34 <Luke-Jr> jonasschnelli: ready for BIP #s yet?
+19:54:36 <btcdrak> jonasschnelli: continuing to work on those BIPs is a clear win
+19:54:55 <jonasschnelli> tor is an alternative, but not preferred by everyone and probably consequences on performance.
+19:55:06 <sipa> jonasschnelli: i don't think we should rush this (implementation should not start until cfields's refaactor is in, i think)
+19:55:09 <jonasschnelli> Luke-Jr: BIP is _not_ ready yet.
+19:55:18 <sipa> but thinking about it can continur
+19:55:26 * wumpus also likes chacha20-poly1305
+19:55:30 <jonasschnelli> Right. No rush. Can take 1-2 years. I just want to keep it moving.
+19:55:51 <sipa> chacha20-poly1305 is faster than sha256 ;)
+19:56:08 <warren> Are folks thinking this would be optional, not default?
+19:56:11 <cfields> sipa / jonasschnelli: note that you can easily test with libbtcnet, so it'll be familiar after the net refactor
+19:56:11 <petertodd> jonasschnelli: fwiw, this will improve privacy for non-spv as well if widely deployed; one of the interesting things that the network monitoring services like chainalysis are doing is MITMing nodes by simply faking the address info for both sides of the connection
+19:56:16 <jonasschnelli> Okay. Will continue finish the BIP and seek out for funding for cryptanalysis, etc.
+19:56:36 <petertodd> jonasschnelli: obviously encryption isn't a total solution, but the authentication is a good first step to anti-sybil techniques
+19:56:36 <cfields> sipa / jonasschnelli: i added support for chunked reads as suggested, in case i forgot to mention
+19:56:54 <wumpus> and indeed, .onion does fairly well as a p2p encryption and authentication for now, but that doesn't mean it's not worth looking for something that can be integrated
+19:57:02 <gmaxwell> jonasschnelli: please don't ask for external cryptanalysis until it passes pieter's review. Otherwise it just risks embarassing our team and wasting money. :)
+19:57:07 <sipa> related topic: shameless plug for https://github.com/sipa/ctaes (since it was a topic last week)
+19:57:13 <petertodd> sipa: thanks!
+19:57:21 <jonasschnelli> gmaxwell: Agree!
+19:57:26 <cfields> jonasschnelli: i suspect there would be some MIT folks interested in analyzing/researching. I could ask around if you'd like.
+19:57:31 <wumpus> #link https://github.com/sipa/ctaes
+19:57:41 <jonasschnelli> cfields: good idea.
+19:57:50 <gmaxwell> please not yet.
+19:57:52 <cfields> heh, offer retracted after gmaxwell's plea :)
+19:58:14 <jonasschnelli> Yes. Not now. First we need an implementation and clear review from maxwell and sipa.
+19:58:26 <gmaxwell> I'm happy to help refining it, though.
+19:58:33 <jonasschnelli> (after the BIP is "stable").
+19:58:47 <jonasschnelli> gmaxwell: yes. Will bother you soon with tons of q.
+19:58:53 <gmaxwell> jonasschnelli: Thank you!
+19:59:43 <jonasschnelli> </p2pencauth>
+19:59:47 * sipa afk
+19:59:56 <wumpus> #endmeeting
