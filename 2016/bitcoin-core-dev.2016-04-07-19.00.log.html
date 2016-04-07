@@ -1,0 +1,352 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:58</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Apr  7 19:00:58 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:58</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">PSA:</span> 0.12.1rc1 has been tagged, please start your gitian builders
+<a name="l-5"></a><span class="tm">19:01:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have three topic proposals
+<a name="l-6"></a><span class="tm">19:01:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> (1) How to proceed with cores wallet (I have a proposal)
+<a name="l-7"></a><span class="tm">19:01:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> (2) CoreDev Hacking convention in Zurich (short announcement)
+<a name="l-8"></a><span class="tm">19:01:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> (3) Dealing with RBF RPC/UI
+<a name="l-9"></a><span class="tm">19:02:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> ack, and I need an excuse to visit Zurich :)
+<a name="l-10"></a><span class="tm">19:02:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> http://coredev.tech
+<a name="l-11"></a><span class="tm">19:02:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> (sketch)
+<a name="l-12"></a><span class="tm">19:02:57</span><span class="nk"> &lt;wumpus&gt;</span> for the last meeting we have ACTION: start generating mtp violating transactions (gmaxwell) (wumpus, 19:08:21)
+<a name="l-13"></a><span class="tm">19:03:05 </span><span class="nka">* wumpus</span> <span class="ac">#7543 has 5 tested ACKs so far. It should be ready for merge (wumpus, 19:22:52)</span>
+<a name="l-14"></a><span class="tm">19:03:28</span><span class="nk"> &lt;wumpus&gt;</span> that was done
+<a name="l-15"></a><span class="tm">19:03:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">RE:</span> mtp violations, I did. I generated a number... none were mined. I am still working on this-- I suspect I need to relay harder.
+<a name="l-16"></a><span class="tm">19:03:41 </span><span class="nka">* wumpus</span> <span class="ac">disable bad-chain alert for 0.12.1 (wumpus, 19:38:39)</span>
+<a name="l-17"></a><span class="tm">19:03:44</span><span class="nk"> &lt;wumpus&gt;</span> that was also done
+<a name="l-18"></a><span class="tm">19:04:37 </span><span class="nka">* wumpus</span> <span class="ac">disable bad-alert detection in master if it doesn't improve enough by 0.13 (and don't forget!) - well I tagged dgenr8's issue for 0.13, not sure what the progress there was</span>
+<a name="l-19"></a><span class="tm">19:05:02</span><span class="nk"> &lt;wumpus&gt;</span> ok let's start with jonasschnelli's topics
+<a name="l-20"></a><span class="tm">19:05:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">How to proceed with cores wallet</span>
+<a name="l-21"></a><span class="tm">19:05:16</span><span class="nk"> &lt;btcdrak&gt;</span> wumpus ack
+<a name="l-22"></a><span class="tm">19:05:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> My proposal for a concept: extend #7830: copy the wallet, remove backward compatibility (not required), remove accounts, replace BDB with LogDB, add BIP32, add SPV (= process separation)
+<a name="l-23"></a><span class="tm">19:05:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> It would help to merge it as soon as it is usefull (remove accounts and add label RPC calls, reset wallet-version)
+<a name="l-24"></a><span class="tm">19:05:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> If we agree on the concept. I'm happy to write tests, etc.
+<a name="l-25"></a><span class="tm">19:06:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> So we can ensure that the second wallet runs smoothly along with the main wallet
+<a name="l-26"></a><span class="tm">19:06:19</span><span class="nk"> &lt;gmaxwell&gt;</span> This sounds conceptually okay to me, though how will we deal with improvements that flow to the current wallet? apply them twice (as applicable)?
+<a name="l-27"></a><span class="tm">19:06:20</span><span class="nk"> &lt;wumpus&gt;</span> sounds good to me, we're kind of held up on updates on the current wallet, if you want to work on a  new one that makes sense
+<a name="l-28"></a><span class="tm">19:06:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. Important improvments could be applied on both wallets.
+<a name="l-29"></a><span class="tm">19:06:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> sounds great
+<a name="l-30"></a><span class="tm">19:06:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's much better than a boil the ocean rewrite.
+<a name="l-31"></a><span class="tm">19:06:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> The second wallet should not have a stable API for now.
+<a name="l-32"></a><span class="tm">19:07:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> And we could merge more aggressively there.
+<a name="l-33"></a><span class="tm">19:07:20</span><span class="nk"> &lt;sipa&gt;</span> well if you intentionally break things in it, it may not get sufficient testing
+<a name="l-34"></a><span class="tm">19:07:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would also be happy to be the maintainer of that second / currently experimental wallet.
+<a name="l-35"></a><span class="tm">19:07:25</span><span class="nk"> &lt;sipa&gt;</span> but concept ack
+<a name="l-36"></a><span class="tm">19:07:31</span><span class="nk"> &lt;wumpus&gt;</span> or maybe it will get sufficient testing
+<a name="l-37"></a><span class="tm">19:07:42</span><span class="nk"> &lt;wumpus&gt;</span> some people are waiting for things to be broken, especially the account system
+<a name="l-38"></a><span class="tm">19:08:14</span><span class="nk"> &lt;wumpus&gt;</span> but any update to the current wallet goes so slow, partially because every time backwards compatiblity has to be considered
+<a name="l-39"></a><span class="tm">19:08:20</span><span class="nk"> &lt;gmaxwell&gt;</span> it probably won't get 'sufficient' testing for now. But thats okay. It'll get some toying around with, which will be good feed back-- but most importantly we can make incremental progress.
+<a name="l-40"></a><span class="tm">19:08:26</span><span class="nk"> &lt;wumpus&gt;</span> so it's kind of circular
+<a name="l-41"></a><span class="tm">19:08:52</span><span class="nk"> &lt;gmaxwell&gt;</span> we really will need to up the quality and rigor of wallet tests for new functionality there; right now our testing for the wallet (what exists) has many checks that check exact behavior, which makes development hard. That kind of test can be tolerable for consensus code... it's a huge burden for wallet code.
+<a name="l-42"></a><span class="tm">19:08:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. We could mark it as experimental, don't use it with large amounts.
+<a name="l-43"></a><span class="tm">19:09:03</span><span class="nk"> &lt;wumpus&gt;</span> also updates to the current wallet don't get sufficient testing/review either, there's just no energy behind it
+<a name="l-44"></a><span class="tm">19:09:04</span><span class="nk"> &lt;morcos&gt;</span> is the idea that every important change to the existing wallet will need to be replicated though?  if so we maybe shouldn't stay in this state too long.  or someone has to volunteer to do those copies.
+<a name="l-45"></a><span class="tm">19:09:22</span><span class="nk"> &lt;sipa&gt;</span> was just about the bring that up
+<a name="l-46"></a><span class="tm">19:09:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> well I expect them to diverge soon enough that that won't say a problem for long
+<a name="l-47"></a><span class="tm">19:09:32</span><span class="nk"> &lt;GitHub118&gt;</span> [13bitcoin] 15sdaftuar opened pull request #7835: Version 2 transactions remain non-standard until CSV activates (06master...06CSV-relay-after-softfork) 02https://github.com/bitcoin/bitcoin/pull/7835
+<a name="l-48"></a><span class="tm">19:09:40</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">gmaxwell:</span> i can help you with relaying harder
+<a name="l-49"></a><span class="tm">19:09:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> I think as we proceed, most features will only make sense on one or the other side.
+<a name="l-50"></a><span class="tm">19:09:43</span><span class="nk"> &lt;sipa&gt;</span> we can't put the burden on external contributors to duplicate
+<a name="l-51"></a><span class="tm">19:09:59</span><span class="nk"> &lt;wumpus&gt;</span> features will mostly end up in the new wallet
+<a name="l-52"></a><span class="tm">19:10:08</span><span class="nk"> &lt;wumpus&gt;</span> the old wallet should still receive bugfixes etc
+<a name="l-53"></a><span class="tm">19:10:18</span><span class="nk"> &lt;wumpus&gt;</span> it's a bit like stable versions/master
+<a name="l-54"></a><span class="tm">19:10:20</span><span class="nk"> &lt;morcos&gt;</span> hmm..  lots of things would apply to both,  conflicts, abandoned transactions, fee estimates
+<a name="l-55"></a><span class="tm">19:10:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-56"></a><span class="tm">19:10:50</span><span class="nk"> &lt;wumpus&gt;</span> in any case I'd say this is up to the people doing the work
+<a name="l-57"></a><span class="tm">19:10:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> oh ok.  that makes sense, but when would the target be for the new wallet to be production ready
+<a name="l-58"></a><span class="tm">19:10:55</span><span class="nk"> &lt;morcos&gt;</span> 0.14
+<a name="l-59"></a><span class="tm">19:10:56</span><span class="nk"> &lt;morcos&gt;</span> ?
+<a name="l-60"></a><span class="tm">19:11:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> when it's ready
+<a name="l-61"></a><span class="tm">19:11:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> sure. But the second wallet should once be independent from the core. So we should work towards a clear interface.
+<a name="l-62"></a><span class="tm">19:11:22</span><span class="nk"> &lt;morcos&gt;</span> i guess i dont' wnat us to be in a state where the old wallet has deteriorated due to lack of attention and the new wallet is not yet stable
+<a name="l-63"></a><span class="tm">19:11:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> things like the recent performance improvements would apply to both; (sufficiently) poor performance is a bug.  ... I think doing this will have a _serious_ cost, but the alternative of continuing to not advance in that area of the software is worse.
+<a name="l-64"></a><span class="tm">19:11:30</span><span class="nk"> &lt;morcos&gt;</span> we need something that is good to use
+<a name="l-65"></a><span class="tm">19:11:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> New wallet without account and without BDB could be in 0.13, stable API in 0.15, ... non-beta in 0.16
+<a name="l-66"></a><span class="tm">19:11:47</span><span class="nk"> &lt;morcos&gt;</span> right, i'm not opposed to doing this, i think we need to do something
+<a name="l-67"></a><span class="tm">19:11:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> it's a risk, but you can't stop people from working on a new wallet if that's what they prefer
+<a name="l-68"></a><span class="tm">19:12:05</span><span class="nk"> &lt;sipa&gt;</span> yes, i think we should aim to have the new wallet production ready soon, but just no stable onterface
+<a name="l-69"></a><span class="tm">19:12:10</span><span class="nk"> &lt;wumpus&gt;</span> (or maybe jonasschnelli and me should start a fork of bitcoin core *ducks*)
+<a name="l-70"></a><span class="tm">19:12:10</span><span class="nk"> &lt;sipa&gt;</span> *interface
+<a name="l-71"></a><span class="tm">19:12:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> I did that already... but the amount of reviewers was... lets say ... extremely tiny.
+<a name="l-72"></a><span class="tm">19:12:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> We can't say SPV is doomed and not improvig the wallet at the same time.
+<a name="l-73"></a><span class="tm">19:12:47</span><span class="nk"> &lt;sipa&gt;</span> also, a lot of the unit tests for non-wallet features rely on having a wallet
+<a name="l-74"></a><span class="tm">19:13:06</span><span class="nk"> &lt;wumpus&gt;</span> yes, the unit tests should be less dependent on the wallet
+<a name="l-75"></a><span class="tm">19:13:11</span><span class="nk"> &lt;wumpus&gt;</span> but that's a different issue
+<a name="l-76"></a><span class="tm">19:13:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Hard to send around coins then. But agree.
+<a name="l-77"></a><span class="tm">19:13:41</span><span class="nk"> &lt;sipa&gt;</span> iwe can replicate a wallet in the python framework *ducjs*
+<a name="l-78"></a><span class="tm">19:13:43</span><span class="nk"> &lt;wumpus&gt;</span> (well, the non-wallet unit tests). In any case the unit tests can use the old wallet for now.
+<a name="l-79"></a><span class="tm">19:13:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> please do; python-bitcoinlib needs a wallet :)
+<a name="l-80"></a><span class="tm">19:13:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes :)
+<a name="l-81"></a><span class="tm">19:13:59</span><span class="nk"> &lt;wumpus&gt;</span> a python wallet please
+<a name="l-82"></a><span class="tm">19:14:09</span><span class="nk"> &lt;wumpus&gt;</span> :D
+<a name="l-83"></a><span class="tm">19:14:09</span><span class="nk"> &lt;sipa&gt;</span> the why do we need a wallet in core? ;)
+<a name="l-84"></a><span class="tm">19:14:15</span><span class="nk"> &lt;btcdrak&gt;</span> !
+<a name="l-85"></a><span class="tm">19:14:25</span><span class="nk"> &lt;paveljanik&gt;</span> for testing...
+<a name="l-86"></a><span class="tm">19:14:28</span><span class="nk"> &lt;wumpus&gt;</span> well one idea was to begin a new wallet outside of core
+<a name="l-87"></a><span class="tm">19:14:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> I agree long term we could remove the wallet... but in tiny steps.
+<a name="l-88"></a><span class="tm">19:14:37 </span><span class="nka">* gmaxwell</span> <span class="ac">bangs gavel</span>
+<a name="l-89"></a><span class="tm">19:14:37</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-90"></a><span class="tm">19:14:43</span><span class="nk"> &lt;sipa&gt;</span> who is gavel?
+<a name="l-91"></a><span class="tm">19:14:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Outside of core does not work for now.
+<a name="l-92"></a><span class="tm">19:15:00</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-93"></a><span class="tm">19:15:05</span><span class="nk"> &lt;wumpus&gt;</span> but anyhow the work is currently in the direction of adding a new-wallet in core, so I'd just like to support that
+<a name="l-94"></a><span class="tm">19:15:20</span><span class="nk"> &lt;wumpus&gt;</span> if you want to create a wallet outside of core no one needs any permission at all from anyone here :p
+<a name="l-95"></a><span class="tm">19:15:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> As soon as the wallet can run SPV, we can think about moving it.
+<a name="l-96"></a><span class="tm">19:15:28</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> do I need to call an ambulance?
+<a name="l-97"></a><span class="tm">19:15:41</span><span class="nk"> &lt;paveljanik&gt;</span> can't just work on the interaface/API for wallet and the new wallet to be outside of Core?
+<a name="l-98"></a><span class="tm">19:15:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i think it will still share a large part of the codebase, even if it's not runnijg in the same process
+<a name="l-99"></a><span class="tm">19:15:58</span><span class="nk"> &lt;wumpus&gt;</span> sure, feel free to do what you want to do outside of core paveljanik
+<a name="l-100"></a><span class="tm">19:16:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> why worry about SPV? write one that scans full blocks, grabbing them from a local bitcoind
+<a name="l-101"></a><span class="tm">19:16:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Yes. Once it can run SPV, it shares some base code, also the net stuff.
+<a name="l-102"></a><span class="tm">19:16:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> please, modularization first, separate process next, and then we can start talking about other repository
+<a name="l-103"></a><span class="tm">19:16:41</span><span class="nk"> &lt;paveljanik&gt;</span> wumpus, that nees Core to provide API/something Jonas is already working on...
+<a name="l-104"></a><span class="tm">19:16:41</span><span class="nk"> &lt;wumpus&gt;</span> it makes sense, e.g. joinmarket has a wallet outside of core, although it's somewhat suboptimal
+<a name="l-105"></a><span class="tm">19:16:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> that's the idea
+<a name="l-106"></a><span class="tm">19:16:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> spv does not imply bip37
+<a name="l-107"></a><span class="tm">19:17:05</span><span class="nk"> &lt;wumpus&gt;</span> (still relies on the wallet inside core but using watch-only)
+<a name="l-108"></a><span class="tm">19:17:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it's to early to remove the wallet from core. We can think about it in 2-3 years.
+<a name="l-109"></a><span class="tm">19:17:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-110"></a><span class="tm">19:17:51</span><span class="nk"> &lt;wumpus&gt;</span> no one is actually proposing doing that now, but it's always how this discussion goes
+<a name="l-111"></a><span class="tm">19:17:53</span><span class="nk"> &lt;wumpus&gt;</span> and has gone for years
+<a name="l-112"></a><span class="tm">19:17:58</span><span class="nk"> &lt;morcos&gt;</span> would it be helpful to try to document the plan a bit more clearly  (not the whole future long term plan, but exactly what jonas is going to be workign on and how we can best support him)
+<a name="l-113"></a><span class="tm">19:18:03</span><span class="nk"> &lt;morcos&gt;</span> in an issue or something
+<a name="l-114"></a><span class="tm">19:18:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> Right. Running Core in full-block SPV is easy. Adapting the wallet so its not depending on a mempool, etc. is a bit harder.
+<a name="l-115"></a><span class="tm">19:18:06</span><span class="nk"> &lt;wumpus&gt;</span> any progress you make is helpful jonasschnelli
+<a name="l-116"></a><span class="tm">19:18:24</span><span class="nk"> &lt;btcdrak&gt;</span> next topic?
+<a name="l-117"></a><span class="tm">19:18:29</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-118"></a><span class="tm">19:18:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> I'll write a proposal.
+<a name="l-119"></a><span class="tm">19:18:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree next t.
+<a name="l-120"></a><span class="tm">19:18:41</span><span class="nk"> &lt;sipa&gt;</span> (my battery is at 11%)
+<a name="l-121"></a><span class="tm">19:18:49</span><span class="nk"> &lt;morcos&gt;</span> i'm just worried about falling into a position where the new wallet is not ready fast enough and needed improvements / bug fixes / etc are sometimes applied to one and sometimes the other and sometimes both
+<a name="l-122"></a><span class="tm">19:18:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">CoreDev Hacking convention in Zurich (short announcement)</span>
+<a name="l-123"></a><span class="tm">19:19:02</span><span class="nk"> &lt;morcos&gt;</span> the plan doesn't have to be perfect, but it helps if its clear
+<a name="l-124"></a><span class="tm">19:19:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> it's a risk, but it's how it goes in open source
+<a name="l-125"></a><span class="tm">19:19:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we could all meet together and hack at some important stuff.
+<a name="l-126"></a><span class="tm">19:19:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> http://coredev.tech
+<a name="l-127"></a><span class="tm">19:19:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> please just propose things for the short/mid term for now.
+<a name="l-128"></a><span class="tm">19:19:35</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">petertodd:</span> spv in this context really just means that the spv proofs are being saved such that the wallet could operate in a true spv mode, not that it will
+<a name="l-129"></a><span class="tm">19:19:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> Best would be to get SW nailed at the meeting in ZH.
+<a name="l-130"></a><span class="tm">19:20:10</span><span class="nk"> &lt;wumpus&gt;</span> awesome jonasschnelli
+<a name="l-131"></a><span class="tm">19:20:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm also convinced if we do that, we find sponsors pretty easy.
+<a name="l-132"></a><span class="tm">19:20:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> Room, food, etc. is organized.
+<a name="l-133"></a><span class="tm">19:20:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> If someone needs travel subsidy, please tell me.
+<a name="l-134"></a><span class="tm">19:20:53</span><span class="nk"> &lt;morcos&gt;</span> i like the idea, but unfortunately can't attend that weekend
+<a name="l-135"></a><span class="tm">19:20:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Important:</span> Because of the short timelime, please tell me if you are interested to attend during the next 7 days.
+<a name="l-136"></a><span class="tm">19:21:22</span><span class="nk"> &lt;sipa&gt;</span> is the date fixed?
+<a name="l-137"></a><span class="tm">19:21:25</span><span class="nk"> &lt;wumpus&gt;</span> sure I will
+<a name="l-138"></a><span class="tm">19:21:34</span><span class="nk"> &lt;jtimon&gt;</span> I probably will as well
+<a name="l-139"></a><span class="tm">19:21:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> Date is semi-fixed. :)
+<a name="l-140"></a><span class="tm">19:21:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> I can attend
+<a name="l-141"></a><span class="tm">19:21:50</span><span class="nk"> &lt;sipa&gt;</span> i can attend
+<a name="l-142"></a><span class="tm">19:22:01</span><span class="nk"> &lt;sipa&gt;</span> (13 minute tram ride)
+<a name="l-143"></a><span class="tm">19:22:05</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> i'm interested, though not sure yet if i can make it
+<a name="l-144"></a><span class="tm">19:22:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> Hah.
+<a name="l-145"></a><span class="tm">19:22:08</span><span class="nk"> &lt;wumpus&gt;</span> i can attend too, nothing else on that date at laest
+<a name="l-146"></a><span class="tm">19:22:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Its soon. Please try to give me a yes/no during the next 7 days.
+<a name="l-147"></a><span class="tm">19:22:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I'll flag wumpus, petertodd and sipa as "confirmed".
+<a name="l-148"></a><span class="tm">19:22:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> and jtimon (he lives in spain and needs to come!)
+<a name="l-149"></a><span class="tm">19:23:12</span><span class="nk"> &lt;gmaxwell&gt;</span> If you want people to come, more advanced planning would help, in the future! :)
+<a name="l-150"></a><span class="tm">19:23:22</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> yeah, unless something unexpected prevents me from going, sounds great to me
+<a name="l-151"></a><span class="tm">19:23:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Agree. I just can't in June/Juli/Aug!
+<a name="l-152"></a><span class="tm">19:23:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> If it wont work, I'll organize another one in fall.
+<a name="l-153"></a><span class="tm">19:24:01</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> heh, I feel lucky when I have a whole two months of notice to travel halfway around the world - a week is more common :)
+<a name="l-154"></a><span class="tm">19:24:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> seems like you have a lot of takers already
+<a name="l-155"></a><span class="tm">19:24:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> agree
+<a name="l-156"></a><span class="tm">19:24:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> And Zurich is great! :-)
+<a name="l-157"></a><span class="tm">19:24:40</span><span class="nk"> &lt;jtimon&gt;</span> never been there, happy to visit it
+<a name="l-158"></a><span class="tm">19:24:40</span><span class="nk"> &lt;petertodd&gt;</span> I was in Zug for a week, and it was so beautiful that a cup of coffee cost $10
+<a name="l-159"></a><span class="tm">19:24:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> &lt;/topic&gt;
+<a name="l-160"></a><span class="tm">19:24:58</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-161"></a><span class="tm">19:25:13</span><span class="nk"> &lt;sipa&gt;</span> next topic?
+<a name="l-162"></a><span class="tm">19:25:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Dealing with RBF RPC/UI</span>
+<a name="l-163"></a><span class="tm">19:25:14</span><span class="nk"> &lt;jtimon&gt;</span> maybe I've been in the airport...sorry, yeah, next topic
+<a name="l-164"></a><span class="tm">19:25:42</span><span class="nk"> &lt;michagogo&gt;</span> (null) &lt;jonasschnelli&gt; New wallet without account and without BDB could be in 0.13, stable API in 0.15, ... non-beta in 0.16
+<a name="l-165"></a><span class="tm">19:25:56</span><span class="nk"> &lt;michagogo&gt;</span> Sorry I'm late, but: Bitcoin Core is still in beta, no?
+<a name="l-166"></a><span class="tm">19:26:05</span><span class="nk"> &lt;sipa&gt;</span> haha
+<a name="l-167"></a><span class="tm">19:26:13</span><span class="nk"> &lt;petertodd&gt;</span> speaking of, opt-in RBF is getting used by someone at least: http://p2sh.info/dashboard/db/replace-by-fee
+<a name="l-168"></a><span class="tm">19:26:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">RBF:</span> I dont have a clear vision how the RPC should deal with RBF
+<a name="l-169"></a><span class="tm">19:26:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">michagogo:</span> the "beta" was dropped from the description years ago.
+<a name="l-170"></a><span class="tm">19:26:29</span><span class="nk"> &lt;michagogo&gt;</span> Huh, that timestamp broke weirdly
+<a name="l-171"></a><span class="tm">19:26:41</span><span class="nk"> &lt;michagogo&gt;</span> <span class="hi">gmaxwell:</span> really? I must have missed that
+<a name="l-172"></a><span class="tm">19:26:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">michagogo:</span> and some stupid lable wouldn't excuse shoddy support.
+<a name="l-173"></a><span class="tm">19:27:06</span><span class="nk"> &lt;michagogo&gt;</span> <span class="hi">gmaxwell:</span> obviously, I was just commenting on the "non-beta" milestone
+<a name="l-174"></a><span class="tm">19:27:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Opt-in is one issue to deal with, the second one is: how does the process looks like if someone adds an output/input?
+<a name="l-175"></a><span class="tm">19:27:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ensure that the RBF rules are respected (&gt;fee, pay for the bandwith, etc.)
+<a name="l-176"></a><span class="tm">19:27:56</span><span class="nk"> &lt;petertodd&gt;</span> so, I think what you actually need to do here from an RPC point of view is think in terms of what addresses the user wanted to pay, and whether or not known (confirmed) txs succesfully did that - which isn't really how the wallet works right now
+<a name="l-177"></a><span class="tm">19:28:10</span><span class="nk"> &lt;MarcoFalke_&gt;</span> Shouldn't we only support fee bump as a fist step?
+<a name="l-178"></a><span class="tm">19:28:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">MarcoFalke_:</span> ack
+<a name="l-179"></a><span class="tm">19:28:27</span><span class="nk"> &lt;paveljanik&gt;</span> <span class="hi">MarcoFalke:</span> +1
+<a name="l-180"></a><span class="tm">19:28:30</span><span class="nk"> &lt;sipa&gt;</span> ack
+<a name="l-181"></a><span class="tm">19:28:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> *exhales*
+<a name="l-182"></a><span class="tm">19:28:49</span><span class="nk"> &lt;gmaxwell&gt;</span> In many ways, adding outputs is more useful... but "fee bump only" was also my initial impression at jonasschnelli's efforts.
+<a name="l-183"></a><span class="tm">19:28:55</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">petertodd:</span> the wallet does track which outputs are change, so nominally it's also trakcing which outputs where intended as payments
+<a name="l-184"></a><span class="tm">19:28:58</span><span class="nk"> &lt;jtimon&gt;</span> one step at a time sounds good to me
+<a name="l-185"></a><span class="tm">19:29:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should have a fee-bump RBF in 0.13 (RBF was in 0.11.x and 0.12).
+<a name="l-186"></a><span class="tm">19:29:05</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">MarcoFalke_:</span> and with fee bump, first implementation should probably *not* add inputs, which complicates things
+<a name="l-187"></a><span class="tm">19:29:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> | How would a feebump over RPC looks like?
+<a name="l-188"></a><span class="tm">19:29:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> hmm? I released RBF for v0.11, but Core didn't
+<a name="l-189"></a><span class="tm">19:29:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> sry, mixed up with CLTV... right. 0.12
+<a name="l-190"></a><span class="tm">19:30:47</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> https://github.com/petertodd/replace-by-fee-tools/blob/master/bump-fee.py &lt;- there's my implementation, with is basically bumpfee &lt;txid&gt; &lt;ratio/delta-fees&gt; =&gt; &lt;new txid&gt;
+<a name="l-191"></a><span class="tm">19:31:19</span><span class="nk"> &lt;gmaxwell&gt;</span> for adding outputs, I think the best way involves some larger workflow changes. E.g. the ability to queue sends, and auto-sendmany from the queue.. then that could be extended to auto-add-outputs for queued sends where the original is sent.
+<a name="l-192"></a><span class="tm">19:31:25</span><span class="nk"> &lt;gmaxwell&gt;</span> or something like that.
+<a name="l-193"></a><span class="tm">19:31:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> bumpfee ... yes. maybe we find a call-name that is more flexible for the future?
+<a name="l-194"></a><span class="tm">19:31:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> I didn't handle the case where you'd respent the change, but just having fee bumping error out in that case isn't all that bad; a slightly smarter version could combine the dependent txs (assuming they're all yours)
+<a name="l-195"></a><span class="tm">19:31:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">related:</span> cpfp?
+<a name="l-196"></a><span class="tm">19:31:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">RE:</span> feebump, I think a different approach should be used.
+<a name="l-197"></a><span class="tm">19:32:07</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">petertodd:</span> there's significant privacy implications to combining payments
+<a name="l-198"></a><span class="tm">19:32:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> AbstractRespendWithSomeThingChangedFactoryBean?
+<a name="l-199"></a><span class="tm">19:32:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> ^^
+<a name="l-200"></a><span class="tm">19:32:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> sure, which is why getting estimates right in the first place helps a lot
+<a name="l-201"></a><span class="tm">19:32:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> it shall be called BeeFump
+<a name="l-202"></a><span class="tm">19:32:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">phantomcircuit:</span> but if fee bumping is a once-in-a-while thing, I'm not that concerned re: privacy
+<a name="l-203"></a><span class="tm">19:32:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> altertransaction was something we once have talked about
+<a name="l-204"></a><span class="tm">19:32:56</span><span class="nk"> &lt;Lightsword&gt;</span> petertodd, your factory needs a factory :P
+<a name="l-205"></a><span class="tm">19:32:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-206"></a><span class="tm">19:33:10</span><span class="nk"> &lt;gmaxwell&gt;</span> Instead of having a command to 'bump' we should implement "adaptive fee" where it just precreates the bumps with nlocktimes and queues them.  Expecting the user to always need to manually bump will not make for a good expirence.
+<a name="l-207"></a><span class="tm">19:33:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> elaborate?
+<a name="l-208"></a><span class="tm">19:33:22</span><span class="nk"> &lt;sipa&gt;</span> ah
+<a name="l-209"></a><span class="tm">19:33:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">Lightsword:</span> I'm not going to grey-goo the world just to bump fees... :)
+<a name="l-210"></a><span class="tm">19:33:53</span><span class="nk"> &lt;wumpus&gt;</span> sure, that'd be even better, but even a simple 'bump fee' command would be better than nothing
+<a name="l-211"></a><span class="tm">19:33:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> yeah, ack on that being better, although the code to do feebumping will get reused by the nlocktime version
+<a name="l-212"></a><span class="tm">19:34:11</span><span class="nk"> &lt;gmaxwell&gt;</span> Also, for a direct manual bumprpc. it sould probably have an api that encourages a multiplicative increase. Since otherwise you can end up needing to bump stupid numbers of time.
+<a name="l-213"></a><span class="tm">19:34:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Will work on "bumpfee".
+<a name="l-214"></a><span class="tm">19:34:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> How do we estimate fees for replacements?
+<a name="l-215"></a><span class="tm">19:34:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> my python script does it based on a ratio
+<a name="l-216"></a><span class="tm">19:34:42</span><span class="nk"> &lt;kanzure&gt;</span> <span class="cmd">#action </span><span class="cmdline">bumpfee work</span>
+<a name="l-217"></a><span class="tm">19:34:46</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> double every time by default? it's a good start
+<a name="l-218"></a><span class="tm">19:34:52</span><span class="nk"> &lt;gmaxwell&gt;</span> where as 1.5x each time (subject to the protocol constraint) can span all possible values is a fairly small number of bumps with a maximum overpayment of 50%.
+<a name="l-219"></a><span class="tm">19:35:02</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> having to bump a fee implies that your fee estimation isn't working anyway :)
+<a name="l-220"></a><span class="tm">19:35:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">petertodd:</span> indeed!
+<a name="l-221"></a><span class="tm">19:35:17</span><span class="nk"> &lt;wumpus&gt;</span> exponential fee backoff
+<a name="l-222"></a><span class="tm">19:35:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> well it could be working now, just not precognative. :)
+<a name="l-223"></a><span class="tm">19:35:51</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">gmaxwell:</span> we'd need to be very careful with automatic fee bumping to ensure that people are aware of it and expect that behavior
+<a name="l-224"></a><span class="tm">19:35:57</span><span class="nk"> &lt;gmaxwell&gt;</span> unrelated, it would be kinda cool to run the fee estimator on all unconfirmed txn in the mempool and display the current estimate on them.
+<a name="l-225"></a><span class="tm">19:35:58</span><span class="nk"> &lt;paveljanik&gt;</span> BTW - when we bump fee, will we just lower the change? Or different way to do so to not help Sybil-network-attackers to identify the change?
+<a name="l-226"></a><span class="tm">19:36:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">phantomcircuit:</span> agreed
+<a name="l-227"></a><span class="tm">19:36:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">phantomcircuit:</span> jonasschnelli had a checkbox in the UI for the things he was doing so far.
+<a name="l-228"></a><span class="tm">19:36:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">paveljanik:</span> just lowering the change is by far the easiest; doing better re: privacy is always going to be more expensive, and tricky to be succesful at
+<a name="l-229"></a><span class="tm">19:36:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. We don't opt-in automatically for now I guess.
+<a name="l-230"></a><span class="tm">19:37:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">paveljanik:</span> the main thing to do is to get the estimate right in the first place, though right now change is so throughly identifyable you're closing the barn door after the horse has left. :)
+<a name="l-231"></a><span class="tm">19:37:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">phantomcircuit:</span> automatic behavior in the wallet can be somewhat scary, at least now you have to click confirm to pay a certain fee
+<a name="l-232"></a><span class="tm">19:37:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">phantomcircuit:</span> (although you could have the same, just agree on a certain *max* fee)
+<a name="l-233"></a><span class="tm">19:37:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> what I suggested on the PR for that was just to list the possible fees (by the checkbox)
+<a name="l-234"></a><span class="tm">19:37:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Agree. No automatic behavior that spends inputs automatically.
+<a name="l-235"></a><span class="tm">19:37:55</span><span class="nk"> &lt;btcdrak&gt;</span> I would just have "increase fee" and give an amount.
+<a name="l-236"></a><span class="tm">19:38:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Fee of x/y/z/q after 0/2/3/4 blocks.
+<a name="l-237"></a><span class="tm">19:38:26</span><span class="nk"> &lt;morcos&gt;</span> Ok so not to beat a dead horse here, but just b/c i want to understand.  This kind of change to wallet behavior is something would be only added to new wallet or to both?
+<a name="l-238"></a><span class="tm">19:38:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> I though we could re-use the fee slider (but with ~x2 values).
+<a name="l-239"></a><span class="tm">19:38:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> fee bumping itself I think we should add to the existing wallet; more complex strategies may be infeasible with the current wallet
+<a name="l-240"></a><span class="tm">19:39:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> depends on the order in which things actually get implemented, I'd say
+<a name="l-241"></a><span class="tm">19:39:08</span><span class="nk"> &lt;wumpus&gt;</span> yes agree with petertodd there
+<a name="l-242"></a><span class="tm">19:39:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> for example the queuing behavior I described above may be unrealistic to do in the current wallet because all our apis expect to return txid.
+<a name="l-243"></a><span class="tm">19:39:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> the old wallet could just have a fee bump, ..the new wallet a feature to add outputs.
+<a name="l-244"></a><span class="tm">19:39:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I think new wallet API should break that and instead return a handle, that can be used to get the txid if it's available yet.
+<a name="l-245"></a><span class="tm">19:39:57</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> will the new and the old wallet share a common interface (even if one of them just throws a non-implemented error on some methods or something)?
+<a name="l-246"></a><span class="tm">19:40:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> imho, no
+<a name="l-247"></a><span class="tm">19:40:13</span><span class="nk"> &lt;sipa&gt;</span> or not initially
+<a name="l-248"></a><span class="tm">19:40:16</span><span class="nk"> &lt;wumpus&gt;</span> the idea is tthat the new wallet can have a completely new interface
+<a name="l-249"></a><span class="tm">19:40:27</span><span class="nk"> &lt;wumpus&gt;</span> throwing out all the old cruft
+<a name="l-250"></a><span class="tm">19:40:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> if we want to depracate the old wallet and remove it once, it should probably be independent.
+<a name="l-251"></a><span class="tm">19:40:51</span><span class="nk"> &lt;wumpus&gt;</span> of course if there are things that make sense they can be kept
+<a name="l-252"></a><span class="tm">19:40:56</span><span class="nk"> &lt;morcos&gt;</span> it seems to me that there ought to be an rpc call to jus tincrease the fee by an amount (as btcdrak says) and then there ought to be an rpc call/gui option that says expedite which replaces the fee on an existing transaction wiht the new estimates (assumign the new estimate is higher), you may have changed the target.
+<a name="l-253"></a><span class="tm">19:41:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also while writing on the new wallet, we can care more about core interaction. No mempool access everywhere.
+<a name="l-254"></a><span class="tm">19:41:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> that may be... hard
+<a name="l-255"></a><span class="tm">19:41:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> at least make it event driven
+<a name="l-256"></a><span class="tm">19:41:31</span><span class="nk"> &lt;jtimon&gt;</span> mhmm, I'm just worried about calling code for both wallets from the same place
+<a name="l-257"></a><span class="tm">19:41:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> no assumption on *immediate* mempool access
+<a name="l-258"></a><span class="tm">19:41:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> many good features benefit from mempool access.
+<a name="l-259"></a><span class="tm">19:41:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> is that a problem?
+<a name="l-260"></a><span class="tm">19:42:09</span><span class="nk"> &lt;wumpus&gt;</span> the mistake we made in the GUI is to do a lot of calls directly, which makes it very hard to move things to another process or make them network transparent
+<a name="l-261"></a><span class="tm">19:42:22</span><span class="nk"> &lt;jtimon&gt;</span> with my suggestion the new wallet could have a different interface in practice (as said the old wallet can just throw errors)
+<a name="l-262"></a><span class="tm">19:42:24</span><span class="nk"> &lt;wumpus&gt;</span> and it also holds up the GUI thread for things that shouldn't
+<a name="l-263"></a><span class="tm">19:42:31</span><span class="nk"> &lt;sipa&gt;</span> hey, main.cpp used to call the gui directly
+<a name="l-264"></a><span class="tm">19:42:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> :-)
+<a name="l-265"></a><span class="tm">19:42:44</span><span class="nk"> &lt;wumpus&gt;</span> it's fine to have a query mempool, but it should be regarded as asynchronous
+<a name="l-266"></a><span class="tm">19:42:57</span><span class="nk"> &lt;wumpus&gt;</span> heh true sipa, we made a step forward with  bitcoin-qt :-)
+<a name="l-267"></a><span class="tm">19:43:24</span><span class="nk"> &lt;sipa&gt;</span> other topic?
+<a name="l-268"></a><span class="tm">19:43:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> once you're talking about async access, probably easier just to keep a copy of the mempool on your local app
+<a name="l-269"></a><span class="tm">19:43:36</span><span class="nk"> &lt;sipa&gt;</span> as we seem to have backtracked to a previous o e
+<a name="l-270"></a><span class="tm">19:43:38</span><span class="nk"> &lt;wumpus&gt;</span> better to have something then make a wild plan which grows so huge it can never be executed
+<a name="l-271"></a><span class="tm">19:44:01</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> mhmm, seems that code of the form if(fSomething) { // call old wallet } else { // call new wallet} doesn't really make removing the old wallet easier in the future
+<a name="l-272"></a><span class="tm">19:44:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> I don't know, depends on the application
+<a name="l-273"></a><span class="tm">19:44:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> oh hell no, that isn't allowed
+<a name="l-274"></a><span class="tm">19:44:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> everything through validationinterface
+<a name="l-275"></a><span class="tm">19:44:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> well, unless you're memory constrained, keeping a copy locally and keeping that in sync can't be that hard
+<a name="l-276"></a><span class="tm">19:44:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> oh, that was my question then, thanks
+<a name="l-277"></a><span class="tm">19:45:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes, wallets (as well as other modules) register their own RPC calls, there's no need for if(fSomething) logic
+<a name="l-278"></a><span class="tm">19:46:06</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-279"></a><span class="tm">19:46:11</span><span class="nk"> &lt;jtimon&gt;</span> great, that was my only concern about jonasschnelli's plan, I knew I was probably misunderstanding something
+<a name="l-280"></a><span class="tm">19:46:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll write a clean concept.
+<a name="l-281"></a><span class="tm">19:47:07</span><span class="nk"> &lt;sipa&gt;</span> oh, small question: are we ok with backporting master's script/tx unit tests to 0.12?
+<a name="l-282"></a><span class="tm">19:47:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-283"></a><span class="tm">19:47:49</span><span class="nk"> &lt;paveljanik&gt;</span> why not?
+<a name="l-284"></a><span class="tm">19:47:51</span><span class="nk"> &lt;wumpus&gt;</span> well if the tests are better it always makes sense to backport them
+<a name="l-285"></a><span class="tm">19:48:04</span><span class="nk"> &lt;sipa&gt;</span> testd are not typically something we backport
+<a name="l-286"></a><span class="tm">19:48:09</span><span class="nk"> &lt;wumpus&gt;</span> I'm fine with copying all the tests from master to 0.12 given that the funcitnality is supported
+<a name="l-287"></a><span class="tm">19:48:17</span><span class="nk"> &lt;sipa&gt;</span> but i think it makes total sense as we want softforks backported too
+<a name="l-288"></a><span class="tm">19:48:22</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> i wanted to flag #7835 which i just opened for 0.12.1
+<a name="l-289"></a><span class="tm">19:48:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> agreed
+<a name="l-290"></a><span class="tm">19:48:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> too late, 0.12.1 was just tagged
+<a name="l-291"></a><span class="tm">19:48:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> just rc1?
+<a name="l-292"></a><span class="tm">19:48:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ^
+<a name="l-293"></a><span class="tm">19:49:00</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-294"></a><span class="tm">19:49:03</span><span class="nk"> &lt;sipa&gt;</span> or no rc cycle?
+<a name="l-295"></a><span class="tm">19:49:17</span><span class="nk"> &lt;btcdrak&gt;</span> Freudian slip
+<a name="l-296"></a><span class="tm">19:49:23</span><span class="nk"> &lt;jtimon&gt;</span> well, as a not important topic, I would appreciate some feedback on a little experiment in #7829 . I still need to improve the PR description, but the basic idea is helping new people to get their first PR merged and get familiar with git, the review process or whatever, by telling them to do stuff I want done
+<a name="l-297"></a><span class="tm">19:49:30</span><span class="nk"> &lt;MarcoFalke_&gt;</span> lets hope rc1 one is the final release ;)
+<a name="l-298"></a><span class="tm">19:49:38</span><span class="nk"> &lt;wumpus&gt;</span> [21:01:15] &lt;wumpus&gt; PSA: 0.12.1rc1 has been tagged, please start your gitian builders
+<a name="l-299"></a><span class="tm">19:49:50</span><span class="nk"> &lt;morcos&gt;</span> right, so its not too late for 0.12.1 right?
+<a name="l-300"></a><span class="tm">19:49:58</span><span class="nk"> &lt;btcdrak&gt;</span> 20:01:47 &lt;wumpus&gt; PSA: 0.12.1rc1 has been tagged, please start your gitian builders
+<a name="l-301"></a><span class="tm">19:50:11</span><span class="nk"> &lt;wumpus&gt;</span> well there will only be a rc2 if necessary, does this need to block the release?
+<a name="l-302"></a><span class="tm">19:50:55</span><span class="nk"> &lt;sdaftuar&gt;</span> i think so.  i think there's a problem with the mempool being able to be filled with things that may not be mined
+<a name="l-303"></a><span class="tm">19:50:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> we should consider it i thonk
+<a name="l-304"></a><span class="tm">19:51:08</span><span class="nk"> &lt;sdaftuar&gt;</span> without the change, which is simple
+<a name="l-305"></a><span class="tm">19:51:19</span><span class="nk"> &lt;wumpus&gt;</span> ok...
+<a name="l-306"></a><span class="tm">19:51:24</span><span class="nk"> &lt;sipa&gt;</span> sowwy
+<a name="l-307"></a><span class="tm">19:51:32</span><span class="nk"> &lt;wumpus&gt;</span> rc1 is dead folks
+<a name="l-308"></a><span class="tm">19:51:37</span><span class="nk"> &lt;wumpus&gt;</span> don't bother building it
+<a name="l-309"></a><span class="tm">19:51:43 </span><span class="nka">* btcdrak</span> <span class="ac">stops his gitian builder</span>
+<a name="l-310"></a><span class="tm">19:51:50</span><span class="nk"> &lt;wumpus&gt;</span> long live rc2
+<a name="l-311"></a><span class="tm">19:51:58</span><span class="nk"> &lt;btcdrak&gt;</span> I thought we had discussed this exact thing before regarding V2
+<a name="l-312"></a><span class="tm">19:52:09</span><span class="nk"> &lt;morcos&gt;</span> wumpus you know i save these things until after your release candidates just for the entertainment value right?
+<a name="l-313"></a><span class="tm">19:52:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I know, no offense taken :) better now than later, almost no one wasted cycles on rc1 yet
+<a name="l-314"></a><span class="tm">19:52:55</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> yeah i dont' think we properly thought through what happens when things end up in your mempool that won't be reliably mined
+<a name="l-315"></a><span class="tm">19:52:59</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> that's quite an elegant solution.
+<a name="l-316"></a><span class="tm">19:53:16</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">btcdrak:</span> that's because i stole it from sipa's segwit
+<a name="l-317"></a><span class="tm">19:53:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review and ACK https://github.com/bitcoin/bitcoin/pull/7835/files asap</span>
+<a name="l-318"></a><span class="tm">19:53:37</span><span class="nk"> &lt;btcdrak&gt;</span> long live sipa
+<a name="l-319"></a><span class="tm">19:53:49</span><span class="nk"> &lt;morcos&gt;</span> we should add this to our list of standard ways to implement things whenever we relax standardness rules
+<a name="l-320"></a><span class="tm">19:53:58</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> agreed
+<a name="l-321"></a><span class="tm">19:55:11</span><span class="nk"> &lt;sipa&gt;</span> 2% battery left for me; anything else?
+<a name="l-322"></a><span class="tm">19:55:20</span><span class="nk"> &lt;morcos&gt;</span> travel charger?
+<a name="l-323"></a><span class="tm">19:55:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> lol
+<a name="l-324"></a><span class="tm">19:55:34</span><span class="nk"> &lt;wumpus&gt;</span> I don't think so
+<a name="l-325"></a><span class="tm">19:55:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

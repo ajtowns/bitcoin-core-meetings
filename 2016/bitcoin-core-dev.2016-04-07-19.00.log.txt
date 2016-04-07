@@ -1,0 +1,325 @@
+19:00:58 <wumpus> #startmeeting
+19:00:58 <lightningbot> Meeting started Thu Apr  7 19:00:58 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:47 <wumpus> PSA: 0.12.1rc1 has been tagged, please start your gitian builders
+19:01:54 <jonasschnelli> I have three topic proposals
+19:01:55 <jonasschnelli> (1) How to proceed with cores wallet (I have a proposal)
+19:01:55 <jonasschnelli> (2) CoreDev Hacking convention in Zurich (short announcement)
+19:01:55 <jonasschnelli> (3) Dealing with RBF RPC/UI
+19:02:16 <petertodd> jonasschnelli: ack, and I need an excuse to visit Zurich :)
+19:02:42 <jonasschnelli> http://coredev.tech
+19:02:53 <jonasschnelli> (sketch)
+19:02:57 <wumpus> for the last meeting we have ACTION: start generating mtp violating transactions (gmaxwell) (wumpus, 19:08:21)
+19:03:05 * wumpus #7543 has 5 tested ACKs so far. It should be ready for merge (wumpus, 19:22:52)
+19:03:28 <wumpus> that was done
+19:03:33 <gmaxwell> RE: mtp violations, I did. I generated a number... none were mined. I am still working on this-- I suspect I need to relay harder.
+19:03:41 * wumpus disable bad-chain alert for 0.12.1 (wumpus, 19:38:39)
+19:03:44 <wumpus> that was also done
+19:04:37 * wumpus disable bad-alert detection in master if it doesn't improve enough by 0.13 (and don't forget!) - well I tagged dgenr8's issue for 0.13, not sure what the progress there was
+19:05:02 <wumpus> ok let's start with jonasschnelli's topics
+19:05:15 <wumpus> #topic How to proceed with cores wallet
+19:05:16 <btcdrak> wumpus ack
+19:05:26 <jonasschnelli> My proposal for a concept: extend #7830: copy the wallet, remove backward compatibility (not required), remove accounts, replace BDB with LogDB, add BIP32, add SPV (= process separation)
+19:05:35 <jonasschnelli> It would help to merge it as soon as it is usefull (remove accounts and add label RPC calls, reset wallet-version)
+19:05:52 <jonasschnelli> If we agree on the concept. I'm happy to write tests, etc.
+19:06:13 <jonasschnelli> So we can ensure that the second wallet runs smoothly along with the main wallet
+19:06:19 <gmaxwell> This sounds conceptually okay to me, though how will we deal with improvements that flow to the current wallet? apply them twice (as applicable)?
+19:06:20 <wumpus> sounds good to me, we're kind of held up on updates on the current wallet, if you want to work on a  new one that makes sense
+19:06:41 <jonasschnelli> gmaxwell: Yes. Important improvments could be applied on both wallets.
+19:06:41 <btcdrak> jonasschnelli: sounds great
+19:06:43 <gmaxwell> I think it's much better than a boil the ocean rewrite.
+19:06:49 <jonasschnelli> The second wallet should not have a stable API for now.
+19:07:01 <jonasschnelli> And we could merge more aggressively there.
+19:07:20 <sipa> well if you intentionally break things in it, it may not get sufficient testing
+19:07:25 <jonasschnelli> I would also be happy to be the maintainer of that second / currently experimental wallet.
+19:07:25 <sipa> but concept ack
+19:07:31 <wumpus> or maybe it will get sufficient testing
+19:07:42 <wumpus> some people are waiting for things to be broken, especially the account system
+19:08:14 <wumpus> but any update to the current wallet goes so slow, partially because every time backwards compatiblity has to be considered
+19:08:20 <gmaxwell> it probably won't get 'sufficient' testing for now. But thats okay. It'll get some toying around with, which will be good feed back-- but most importantly we can make incremental progress.
+19:08:26 <wumpus> so it's kind of circular
+19:08:52 <gmaxwell> we really will need to up the quality and rigor of wallet tests for new functionality there; right now our testing for the wallet (what exists) has many checks that check exact behavior, which makes development hard. That kind of test can be tolerable for consensus code... it's a huge burden for wallet code.
+19:08:54 <jonasschnelli> Yes. We could mark it as experimental, don't use it with large amounts.
+19:09:03 <wumpus> also updates to the current wallet don't get sufficient testing/review either, there's just no energy behind it
+19:09:04 <morcos> is the idea that every important change to the existing wallet will need to be replicated though?  if so we maybe shouldn't stay in this state too long.  or someone has to volunteer to do those copies.
+19:09:22 <sipa> was just about the bring that up
+19:09:28 <wumpus> morcos: well I expect them to diverge soon enough that that won't say a problem for long
+19:09:32 <GitHub118> [13bitcoin] 15sdaftuar opened pull request #7835: Version 2 transactions remain non-standard until CSV activates (06master...06CSV-relay-after-softfork) 02https://github.com/bitcoin/bitcoin/pull/7835
+19:09:40 <phantomcircuit> gmaxwell: i can help you with relaying harder
+19:09:41 <jonasschnelli> morcos: I think as we proceed, most features will only make sense on one or the other side.
+19:09:43 <sipa> we can't put the burden on external contributors to duplicate
+19:09:59 <wumpus> features will mostly end up in the new wallet
+19:10:08 <wumpus> the old wallet should still receive bugfixes etc
+19:10:18 <wumpus> it's a bit like stable versions/master
+19:10:20 <morcos> hmm..  lots of things would apply to both,  conflicts, abandoned transactions, fee estimates
+19:10:20 <jonasschnelli> wumpus: +1
+19:10:50 <wumpus> in any case I'd say this is up to the people doing the work
+19:10:52 <morcos> wumpus: oh ok.  that makes sense, but when would the target be for the new wallet to be production ready
+19:10:55 <morcos> 0.14
+19:10:56 <morcos> ?
+19:11:02 <wumpus> morcos: when it's ready
+19:11:10 <jonasschnelli> morcos: sure. But the second wallet should once be independent from the core. So we should work towards a clear interface.
+19:11:22 <morcos> i guess i dont' wnat us to be in a state where the old wallet has deteriorated due to lack of attention and the new wallet is not yet stable
+19:11:29 <gmaxwell> wumpus: things like the recent performance improvements would apply to both; (sufficiently) poor performance is a bug.  ... I think doing this will have a _serious_ cost, but the alternative of continuing to not advance in that area of the software is worse.
+19:11:30 <morcos> we need something that is good to use
+19:11:44 <jonasschnelli> New wallet without account and without BDB could be in 0.13, stable API in 0.15, ... non-beta in 0.16
+19:11:47 <morcos> right, i'm not opposed to doing this, i think we need to do something
+19:11:48 <wumpus> morcos: it's a risk, but you can't stop people from working on a new wallet if that's what they prefer
+19:12:05 <sipa> yes, i think we should aim to have the new wallet production ready soon, but just no stable onterface
+19:12:10 <wumpus> (or maybe jonasschnelli and me should start a fork of bitcoin core *ducks*)
+19:12:10 <sipa> *interface
+19:12:40 <jonasschnelli> wumpus: I did that already... but the amount of reviewers was... lets say ... extremely tiny.
+19:12:46 <jonasschnelli> We can't say SPV is doomed and not improvig the wallet at the same time.
+19:12:47 <sipa> also, a lot of the unit tests for non-wallet features rely on having a wallet
+19:13:06 <wumpus> yes, the unit tests should be less dependent on the wallet
+19:13:11 <wumpus> but that's a different issue
+19:13:23 <jonasschnelli> Yes. Hard to send around coins then. But agree.
+19:13:41 <sipa> iwe can replicate a wallet in the python framework *ducjs*
+19:13:43 <wumpus> (well, the non-wallet unit tests). In any case the unit tests can use the old wallet for now.
+19:13:52 <petertodd> sipa: please do; python-bitcoinlib needs a wallet :)
+19:13:56 <wumpus> sipa: yes :)
+19:13:59 <wumpus> a python wallet please
+19:14:09 <wumpus> :D
+19:14:09 <sipa> the why do we need a wallet in core? ;)
+19:14:15 <btcdrak> !
+19:14:25 <paveljanik> for testing...
+19:14:28 <wumpus> well one idea was to begin a new wallet outside of core
+19:14:32 <jonasschnelli> I agree long term we could remove the wallet... but in tiny steps.
+19:14:37 * gmaxwell bangs gavel
+19:14:37 <sipa> ok
+19:14:43 <sipa> who is gavel?
+19:14:55 <jonasschnelli> Outside of core does not work for now.
+19:15:00 <sipa> indeed
+19:15:05 <wumpus> but anyhow the work is currently in the direction of adding a new-wallet in core, so I'd just like to support that
+19:15:20 <wumpus> if you want to create a wallet outside of core no one needs any permission at all from anyone here :p
+19:15:24 <jonasschnelli> As soon as the wallet can run SPV, we can think about moving it.
+19:15:28 <btcdrak> sipa: do I need to call an ambulance?
+19:15:41 <paveljanik> can't just work on the interaface/API for wallet and the new wallet to be outside of Core?
+19:15:55 <sipa> jonasschnelli: i think it will still share a large part of the codebase, even if it's not runnijg in the same process
+19:15:58 <wumpus> sure, feel free to do what you want to do outside of core paveljanik
+19:16:28 <petertodd> jonasschnelli: why worry about SPV? write one that scans full blocks, grabbing them from a local bitcoind
+19:16:30 <jonasschnelli> sipa: Yes. Once it can run SPV, it shares some base code, also the net stuff.
+19:16:34 <sipa> jonasschnelli: please, modularization first, separate process next, and then we can start talking about other repository
+19:16:41 <paveljanik> wumpus, that nees Core to provide API/something Jonas is already working on...
+19:16:41 <wumpus> it makes sense, e.g. joinmarket has a wallet outside of core, although it's somewhat suboptimal
+19:16:48 <sipa> petertodd: that's the idea
+19:16:56 <sipa> petertodd: spv does not imply bip37
+19:17:05 <wumpus> (still relies on the wallet inside core but using watch-only)
+19:17:11 <jonasschnelli> I think it's to early to remove the wallet from core. We can think about it in 2-3 years.
+19:17:34 <wumpus> jonasschnelli: yes
+19:17:51 <wumpus> no one is actually proposing doing that now, but it's always how this discussion goes
+19:17:53 <wumpus> and has gone for years
+19:17:58 <morcos> would it be helpful to try to document the plan a bit more clearly  (not the whole future long term plan, but exactly what jonas is going to be workign on and how we can best support him)
+19:18:03 <morcos> in an issue or something
+19:18:03 <jonasschnelli> petertodd: Right. Running Core in full-block SPV is easy. Adapting the wallet so its not depending on a mempool, etc. is a bit harder.
+19:18:06 <wumpus> any progress you make is helpful jonasschnelli
+19:18:24 <btcdrak> next topic?
+19:18:29 <sipa> agree
+19:18:32 <jonasschnelli> morcos: I'll write a proposal.
+19:18:34 <jonasschnelli> agree next t.
+19:18:41 <sipa> (my battery is at 11%)
+19:18:49 <morcos> i'm just worried about falling into a position where the new wallet is not ready fast enough and needed improvements / bug fixes / etc are sometimes applied to one and sometimes the other and sometimes both
+19:18:58 <wumpus> #topic CoreDev Hacking convention in Zurich (short announcement)
+19:19:02 <morcos> the plan doesn't have to be perfect, but it helps if its clear
+19:19:13 <wumpus> morcos: it's a risk, but it's how it goes in open source
+19:19:25 <jonasschnelli> I think we could all meet together and hack at some important stuff.
+19:19:26 <jonasschnelli> http://coredev.tech
+19:19:29 <gmaxwell> jonasschnelli: please just propose things for the short/mid term for now.
+19:19:35 <phantomcircuit> petertodd: spv in this context really just means that the spv proofs are being saved such that the wallet could operate in a true spv mode, not that it will
+19:19:57 <jonasschnelli> Best would be to get SW nailed at the meeting in ZH.
+19:20:10 <wumpus> awesome jonasschnelli
+19:20:11 <jonasschnelli> I'm also convinced if we do that, we find sponsors pretty easy.
+19:20:26 <jonasschnelli> Room, food, etc. is organized.
+19:20:44 <jonasschnelli> If someone needs travel subsidy, please tell me.
+19:20:53 <morcos> i like the idea, but unfortunately can't attend that weekend
+19:20:58 <jonasschnelli> Important: Because of the short timelime, please tell me if you are interested to attend during the next 7 days.
+19:21:22 <sipa> is the date fixed?
+19:21:25 <wumpus> sure I will
+19:21:34 <jtimon> I probably will as well
+19:21:38 <jonasschnelli> Date is semi-fixed. :)
+19:21:39 <petertodd> jonasschnelli: I can attend
+19:21:50 <sipa> i can attend
+19:22:01 <sipa> (13 minute tram ride)
+19:22:05 <sdaftuar> jonasschnelli: i'm interested, though not sure yet if i can make it
+19:22:05 <jonasschnelli> Hah.
+19:22:08 <wumpus> i can attend too, nothing else on that date at laest
+19:22:23 <jonasschnelli> Its soon. Please try to give me a yes/no during the next 7 days.
+19:22:38 <jonasschnelli> Okay. I'll flag wumpus, petertodd and sipa as "confirmed".
+19:22:51 <jonasschnelli> and jtimon (he lives in spain and needs to come!)
+19:23:12 <gmaxwell> If you want people to come, more advanced planning would help, in the future! :)
+19:23:22 <jtimon> jonasschnelli: yeah, unless something unexpected prevents me from going, sounds great to me
+19:23:34 <jonasschnelli> gmaxwell: Agree. I just can't in June/Juli/Aug!
+19:23:50 <jonasschnelli> If it wont work, I'll organize another one in fall.
+19:24:01 <petertodd> gmaxwell: heh, I feel lucky when I have a whole two months of notice to travel halfway around the world - a week is more common :)
+19:24:03 <btcdrak> jonasschnelli: seems like you have a lot of takers already
+19:24:15 <sipa> petertodd: agree
+19:24:21 <jonasschnelli> And Zurich is great! :-)
+19:24:40 <jtimon> never been there, happy to visit it
+19:24:40 <petertodd> I was in Zug for a week, and it was so beautiful that a cup of coffee cost $10
+19:24:53 <jonasschnelli> </topic>
+19:24:58 <wumpus> hehe
+19:25:13 <sipa> next topic?
+19:25:14 <wumpus> #topic Dealing with RBF RPC/UI
+19:25:14 <jtimon> maybe I've been in the airport...sorry, yeah, next topic
+19:25:42 <michagogo> (null) <jonasschnelli> New wallet without account and without BDB could be in 0.13, stable API in 0.15, ... non-beta in 0.16
+19:25:56 <michagogo> Sorry I'm late, but: Bitcoin Core is still in beta, no?
+19:26:05 <sipa> haha
+19:26:13 <petertodd> speaking of, opt-in RBF is getting used by someone at least: http://p2sh.info/dashboard/db/replace-by-fee
+19:26:19 <jonasschnelli> RBF: I dont have a clear vision how the RPC should deal with RBF
+19:26:27 <gmaxwell> michagogo: the "beta" was dropped from the description years ago.
+19:26:29 <michagogo> Huh, that timestamp broke weirdly
+19:26:41 <michagogo> gmaxwell: really? I must have missed that
+19:26:44 <gmaxwell> michagogo: and some stupid lable wouldn't excuse shoddy support.
+19:27:06 <michagogo> gmaxwell: obviously, I was just commenting on the "non-beta" milestone
+19:27:12 <jonasschnelli> Opt-in is one issue to deal with, the second one is: how does the process looks like if someone adds an output/input?
+19:27:41 <jonasschnelli> Ensure that the RBF rules are respected (>fee, pay for the bandwith, etc.)
+19:27:56 <petertodd> so, I think what you actually need to do here from an RPC point of view is think in terms of what addresses the user wanted to pay, and whether or not known (confirmed) txs succesfully did that - which isn't really how the wallet works right now
+19:28:10 <MarcoFalke_> Shouldn't we only support fee bump as a fist step?
+19:28:16 <petertodd> MarcoFalke_: ack
+19:28:27 <paveljanik> MarcoFalke: +1
+19:28:30 <sipa> ack
+19:28:38 <jonasschnelli> *exhales*
+19:28:49 <gmaxwell> In many ways, adding outputs is more useful... but "fee bump only" was also my initial impression at jonasschnelli's efforts.
+19:28:55 <phantomcircuit> petertodd: the wallet does track which outputs are change, so nominally it's also trakcing which outputs where intended as payments
+19:28:58 <jtimon> one step at a time sounds good to me
+19:29:01 <jonasschnelli> I think we should have a fee-bump RBF in 0.13 (RBF was in 0.11.x and 0.12).
+19:29:05 <petertodd> MarcoFalke_: and with fee bump, first implementation should probably *not* add inputs, which complicates things
+19:29:23 <jonasschnelli> | How would a feebump over RPC looks like?
+19:29:33 <petertodd> jonasschnelli: hmm? I released RBF for v0.11, but Core didn't
+19:29:56 <jonasschnelli> sry, mixed up with CLTV... right. 0.12
+19:30:47 <petertodd> jonasschnelli: https://github.com/petertodd/replace-by-fee-tools/blob/master/bump-fee.py <- there's my implementation, with is basically bumpfee <txid> <ratio/delta-fees> => <new txid>
+19:31:19 <gmaxwell> for adding outputs, I think the best way involves some larger workflow changes. E.g. the ability to queue sends, and auto-sendmany from the queue.. then that could be extended to auto-add-outputs for queued sends where the original is sent.
+19:31:25 <gmaxwell> or something like that.
+19:31:26 <jonasschnelli> petertodd: bumpfee ... yes. maybe we find a call-name that is more flexible for the future?
+19:31:35 <petertodd> jonasschnelli: I didn't handle the case where you'd respent the change, but just having fee bumping error out in that case isn't all that bad; a slightly smarter version could combine the dependent txs (assuming they're all yours)
+19:31:57 <sipa> related: cpfp?
+19:31:58 <gmaxwell> RE: feebump, I think a different approach should be used.
+19:32:07 <phantomcircuit> petertodd: there's significant privacy implications to combining payments
+19:32:10 <petertodd> jonasschnelli: AbstractRespendWithSomeThingChangedFactoryBean?
+19:32:19 <jonasschnelli> ^^
+19:32:32 <petertodd> phantomcircuit: sure, which is why getting estimates right in the first place helps a lot
+19:32:51 <sipa> jonasschnelli: it shall be called BeeFump
+19:32:51 <petertodd> phantomcircuit: but if fee bumping is a once-in-a-while thing, I'm not that concerned re: privacy
+19:32:55 <jonasschnelli> altertransaction was something we once have talked about
+19:32:56 <Lightsword> petertodd, your factory needs a factory :P
+19:32:56 <petertodd> sipa: +1
+19:33:10 <gmaxwell> Instead of having a command to 'bump' we should implement "adaptive fee" where it just precreates the bumps with nlocktimes and queues them.  Expecting the user to always need to manually bump will not make for a good expirence.
+19:33:11 <sipa> gmaxwell: elaborate?
+19:33:22 <sipa> ah
+19:33:24 <petertodd> Lightsword: I'm not going to grey-goo the world just to bump fees... :)
+19:33:53 <wumpus> sure, that'd be even better, but even a simple 'bump fee' command would be better than nothing
+19:33:57 <petertodd> gmaxwell: yeah, ack on that being better, although the code to do feebumping will get reused by the nlocktime version
+19:34:11 <gmaxwell> Also, for a direct manual bumprpc. it sould probably have an api that encourages a multiplicative increase. Since otherwise you can end up needing to bump stupid numbers of time.
+19:34:13 <jonasschnelli> Okay. Will work on "bumpfee".
+19:34:29 <jonasschnelli> How do we estimate fees for replacements?
+19:34:31 <petertodd> gmaxwell: my python script does it based on a ratio
+19:34:42 <kanzure> #action bumpfee work
+19:34:46 <petertodd> jonasschnelli: double every time by default? it's a good start
+19:34:52 <gmaxwell> where as 1.5x each time (subject to the protocol constraint) can span all possible values is a fairly small number of bumps with a maximum overpayment of 50%.
+19:35:02 <petertodd> jonasschnelli: having to bump a fee implies that your fee estimation isn't working anyway :)
+19:35:12 <jonasschnelli> petertodd: indeed!
+19:35:17 <wumpus> exponential fee backoff
+19:35:20 <gmaxwell> petertodd: well it could be working now, just not precognative. :)
+19:35:51 <phantomcircuit> gmaxwell: we'd need to be very careful with automatic fee bumping to ensure that people are aware of it and expect that behavior
+19:35:57 <gmaxwell> unrelated, it would be kinda cool to run the fee estimator on all unconfirmed txn in the mempool and display the current estimate on them.
+19:35:58 <paveljanik> BTW - when we bump fee, will we just lower the change? Or different way to do so to not help Sybil-network-attackers to identify the change?
+19:36:05 <wumpus> phantomcircuit: agreed
+19:36:17 <gmaxwell> phantomcircuit: jonasschnelli had a checkbox in the UI for the things he was doing so far.
+19:36:56 <petertodd> paveljanik: just lowering the change is by far the easiest; doing better re: privacy is always going to be more expensive, and tricky to be succesful at
+19:36:56 <jonasschnelli> Yes. We don't opt-in automatically for now I guess.
+19:37:03 <gmaxwell> paveljanik: the main thing to do is to get the estimate right in the first place, though right now change is so throughly identifyable you're closing the barn door after the horse has left. :)
+19:37:08 <wumpus> phantomcircuit: automatic behavior in the wallet can be somewhat scary, at least now you have to click confirm to pay a certain fee
+19:37:24 <wumpus> phantomcircuit: (although you could have the same, just agree on a certain *max* fee)
+19:37:32 <gmaxwell> wumpus: what I suggested on the PR for that was just to list the possible fees (by the checkbox)
+19:37:37 <jonasschnelli> wumpus: Agree. No automatic behavior that spends inputs automatically.
+19:37:55 <btcdrak> I would just have "increase fee" and give an amount.
+19:38:00 <gmaxwell> Fee of x/y/z/q after 0/2/3/4 blocks.
+19:38:26 <morcos> Ok so not to beat a dead horse here, but just b/c i want to understand.  This kind of change to wallet behavior is something would be only added to new wallet or to both?
+19:38:34 <jonasschnelli> I though we could re-use the fee slider (but with ~x2 values).
+19:38:51 <petertodd> morcos: fee bumping itself I think we should add to the existing wallet; more complex strategies may be infeasible with the current wallet
+19:39:04 <wumpus> morcos: depends on the order in which things actually get implemented, I'd say
+19:39:08 <wumpus> yes agree with petertodd there
+19:39:27 <gmaxwell> morcos: for example the queuing behavior I described above may be unrealistic to do in the current wallet because all our apis expect to return txid.
+19:39:34 <jonasschnelli> morcos: the old wallet could just have a fee bump, ..the new wallet a feature to add outputs.
+19:39:47 <gmaxwell> I think new wallet API should break that and instead return a handle, that can be used to get the txid if it's available yet.
+19:39:57 <jtimon> jonasschnelli: will the new and the old wallet share a common interface (even if one of them just throws a non-implemented error on some methods or something)?
+19:40:09 <sipa> jtimon: imho, no
+19:40:13 <sipa> or not initially
+19:40:16 <wumpus> the idea is tthat the new wallet can have a completely new interface
+19:40:27 <wumpus> throwing out all the old cruft
+19:40:28 <jonasschnelli> jtimon: if we want to depracate the old wallet and remove it once, it should probably be independent.
+19:40:51 <wumpus> of course if there are things that make sense they can be kept
+19:40:56 <morcos> it seems to me that there ought to be an rpc call to jus tincrease the fee by an amount (as btcdrak says) and then there ought to be an rpc call/gui option that says expedite which replaces the fee on an existing transaction wiht the new estimates (assumign the new estimate is higher), you may have changed the target.
+19:41:06 <jonasschnelli> Also while writing on the new wallet, we can care more about core interaction. No mempool access everywhere.
+19:41:24 <sipa> jonasschnelli: that may be... hard
+19:41:28 <wumpus> jonasschnelli: at least make it event driven
+19:41:31 <jtimon> mhmm, I'm just worried about calling code for both wallets from the same place
+19:41:35 <wumpus> jonasschnelli: no assumption on *immediate* mempool access
+19:41:47 <gmaxwell> jonasschnelli: many good features benefit from mempool access.
+19:41:58 <sipa> jtimon: is that a problem?
+19:42:09 <wumpus> the mistake we made in the GUI is to do a lot of calls directly, which makes it very hard to move things to another process or make them network transparent
+19:42:22 <jtimon> with my suggestion the new wallet could have a different interface in practice (as said the old wallet can just throw errors)
+19:42:24 <wumpus> and it also holds up the GUI thread for things that shouldn't
+19:42:31 <sipa> hey, main.cpp used to call the gui directly
+19:42:42 <jonasschnelli> :-)
+19:42:44 <wumpus> it's fine to have a query mempool, but it should be regarded as asynchronous
+19:42:57 <wumpus> heh true sipa, we made a step forward with  bitcoin-qt :-)
+19:43:24 <sipa> other topic?
+19:43:35 <petertodd> wumpus: once you're talking about async access, probably easier just to keep a copy of the mempool on your local app
+19:43:36 <sipa> as we seem to have backtracked to a previous o e
+19:43:38 <wumpus> better to have something then make a wild plan which grows so huge it can never be executed
+19:44:01 <jtimon> sipa: mhmm, seems that code of the form if(fSomething) { // call old wallet } else { // call new wallet} doesn't really make removing the old wallet easier in the future
+19:44:04 <wumpus> petertodd: I don't know, depends on the application
+19:44:15 <sipa> jtimon: oh hell no, that isn't allowed
+19:44:23 <sipa> jtimon: everything through validationinterface
+19:44:32 <petertodd> wumpus: well, unless you're memory constrained, keeping a copy locally and keeping that in sync can't be that hard
+19:44:36 <jtimon> sipa: oh, that was my question then, thanks
+19:45:24 <wumpus> jtimon: yes, wallets (as well as other modules) register their own RPC calls, there's no need for if(fSomething) logic
+19:46:06 <wumpus> any other topics?
+19:46:11 <jtimon> great, that was my only concern about jonasschnelli's plan, I knew I was probably misunderstanding something
+19:46:30 <jonasschnelli> I'll write a clean concept.
+19:47:07 <sipa> oh, small question: are we ok with backporting master's script/tx unit tests to 0.12?
+19:47:44 <petertodd> sipa: ack
+19:47:49 <paveljanik> why not?
+19:47:51 <wumpus> well if the tests are better it always makes sense to backport them
+19:48:04 <sipa> testd are not typically something we backport
+19:48:09 <wumpus> I'm fine with copying all the tests from master to 0.12 given that the funcitnality is supported
+19:48:17 <sipa> but i think it makes total sense as we want softforks backported too
+19:48:22 <sdaftuar> wumpus: i wanted to flag #7835 which i just opened for 0.12.1
+19:48:25 <petertodd> sipa: agreed
+19:48:39 <wumpus> sdaftuar: too late, 0.12.1 was just tagged
+19:48:49 <sipa> sdaftuar: just rc1?
+19:48:55 <sipa> wumpus: ^
+19:49:00 <wumpus> yes
+19:49:03 <sipa> or no rc cycle?
+19:49:17 <btcdrak> Freudian slip
+19:49:23 <jtimon> well, as a not important topic, I would appreciate some feedback on a little experiment in #7829 . I still need to improve the PR description, but the basic idea is helping new people to get their first PR merged and get familiar with git, the review process or whatever, by telling them to do stuff I want done
+19:49:30 <MarcoFalke_> lets hope rc1 one is the final release ;)
+19:49:38 <wumpus> [21:01:15] <wumpus> PSA: 0.12.1rc1 has been tagged, please start your gitian builders
+19:49:50 <morcos> right, so its not too late for 0.12.1 right?
+19:49:58 <btcdrak> 20:01:47 <wumpus> PSA: 0.12.1rc1 has been tagged, please start your gitian builders
+19:50:11 <wumpus> well there will only be a rc2 if necessary, does this need to block the release?
+19:50:55 <sdaftuar> i think so.  i think there's a problem with the mempool being able to be filled with things that may not be mined
+19:50:57 <sipa> wumpus: we should consider it i thonk
+19:51:08 <sdaftuar> without the change, which is simple
+19:51:19 <wumpus> ok...
+19:51:24 <sipa> sowwy
+19:51:32 <wumpus> rc1 is dead folks
+19:51:37 <wumpus> don't bother building it
+19:51:43 * btcdrak stops his gitian builder
+19:51:50 <wumpus> long live rc2
+19:51:58 <btcdrak> I thought we had discussed this exact thing before regarding V2
+19:52:09 <morcos> wumpus you know i save these things until after your release candidates just for the entertainment value right?
+19:52:41 <wumpus> morcos: I know, no offense taken :) better now than later, almost no one wasted cycles on rc1 yet
+19:52:55 <morcos> btcdrak: yeah i dont' think we properly thought through what happens when things end up in your mempool that won't be reliably mined
+19:52:59 <btcdrak> sdaftuar: that's quite an elegant solution.
+19:53:16 <sdaftuar> btcdrak: that's because i stole it from sipa's segwit
+19:53:36 <wumpus> #action review and ACK https://github.com/bitcoin/bitcoin/pull/7835/files asap
+19:53:37 <btcdrak> long live sipa
+19:53:49 <morcos> we should add this to our list of standard ways to implement things whenever we relax standardness rules
+19:53:58 <btcdrak> morcos: agreed
+19:55:11 <sipa> 2% battery left for me; anything else?
+19:55:20 <morcos> travel charger?
+19:55:23 <jonasschnelli> lol
+19:55:34 <wumpus> I don't think so
+19:55:45 <wumpus> #endmeeting
