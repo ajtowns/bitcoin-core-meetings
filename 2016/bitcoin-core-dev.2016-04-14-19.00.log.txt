@@ -1,0 +1,328 @@
+19:00:50 <wumpus> #startmeeting
+19:00:50 <lightningbot> Meeting started Thu Apr 14 19:00:50 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:50 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:56 <morcos> confidence inspiring wumpus
+19:01:01 <btcdrak> gavel wont be attending due to last week's beating.
+19:01:04 <cfields> heh
+19:01:06 <gmaxwell> "If I have to."
+19:01:12 <wumpus> topics?
+19:01:32 <gmaxwell> Whats up with the 0.12.1 release? I haven't been paying attention to it.
+19:01:34 <morcos> status of 12.1
+19:01:41 <btcdrak> 0.12.1 status
+19:01:57 <wumpus> 0.12.1 is at rc2
+19:02:29 <wumpus> haven't heard of any issues with it
+19:02:36 <gmaxwell> There was a 0.12.1(rc) block mined in the last week.
+19:02:41 <sipa> i suggest we go ahead with release?
+19:02:50 <jonasschnelli> +1
+19:02:53 <btcdrak> +10
+19:02:56 <sipa> -11
+19:03:02 <btcdrak> doh!
+19:03:03 <gmaxwell> +1i.
+19:03:46 <sipa> gmaxwell: interesting; block version 0x2..?
+19:03:52 <sipa> but not classic
+19:03:53 <Luke-Jr> we should release 0.12.1 when 0.12.1 is observed to be released.
+19:04:18 <sipa> Luke-Jr is the first member of the club containing Luke-Jr as first member
+19:04:33 <gmaxwell> sipa: yes, it seems we kinda flubbed the part of the motivation with the BIP9 starting dates to remove the possibility of warings in advance of a release. :)
+19:04:37 <Luke-Jr> that sounds lonely.
+19:04:38 <wumpus> usually we wait a week after the release of the binaries before labeling the rc as final, the binary release was only 3 days ago
+19:04:44 <sipa> wumpus: ok
+19:04:47 <wumpus> but if you insist
+19:05:01 <sipa> topic suggestion: segwit and backports
+19:05:08 <btcdrak> let's insist
+19:05:08 <jonasschnelli> Yes. We should wait at least one week.
+19:05:10 <gmaxwell> sipa: but at least thats just a one time event.
+19:05:38 <gmaxwell> well 1 week - 3 days is still before the next meeting. So the action should be release 0.12.1 prior to the next meeting. :)
+19:05:43 <Luke-Jr> could start the gitian building now and wait the rest of the week to publish?
+19:06:11 <jonasschnelli> the tag could be seen as "release"
+19:06:11 <btcdrak> 1 business week is 5 days :)
+19:06:27 <wumpus> good to hear a block would mined with 0.12.1 though, hadn't heard that yet
+19:06:32 <wumpus> s/would/was
+19:06:54 <btcdrak> why not tag 0.12.1 we can build over the weekend and release on Monday?
+19:07:14 <jonasschnelli> Why not tag on monday and build on monday?
+19:07:22 <jonasschnelli> You don't need to handhold you bulder?
+19:07:24 <sipa> wumpus decides
+19:07:26 <gmaxwell> the building has latency.
+19:07:28 <wumpus> you're too eager
+19:07:46 <btcdrak> gotta build, cfields needs to sign etc.
+19:07:50 <gmaxwell> in the future we should figure out how to deseralize builds of the final release and publication of the tag.
+19:08:13 <wumpus> huh
+19:08:16 <jonasschnelli> we could agree on a commit and build that and tag later.
+19:08:40 <gmaxwell> the fact that we've been doing "releases" that get announced and circulated ahead of the project's announcement and then having binary days delayed is suboptimal.
+19:08:41 <sipa> we need to have gitian build inside a homomorphically encrypted environment, so that we can verify binary correctness, but only release the key at release time
+19:08:43 <wumpus> is this still serious?
+19:08:44 <cfields> fwiw, dropping the commit hash in the binary would create a few more options
+19:08:55 <sipa> wumpus: no
+19:09:00 <wumpus> ok...
+19:09:02 <wumpus> next topic?
+19:09:13 <jonasschnelli> [21:05:02]  <sipa>	topic suggestion: segwit and backports
+19:09:17 <btcdrak> segwit backports
+19:09:28 <wumpus> #topic segwit and backports
+19:09:42 <sipa> so, segwit branch is currently on top of 0.12.1
+19:10:04 <btcdrak> so you'd be forward porting it to master
+19:10:13 <sipa> with a set of backports from master and some PRs first
+19:10:37 <Luke-Jr> it would be ideal if the same branch can merge into both 0.12 and master, but that seems unlikely for segwit
+19:10:40 <sipa> i don't know what the best way forward is, but i think we're close to PRing it for bitcoin
+19:10:40 <gmaxwell> FWIW on the other implementations front, btcd has what looks like a more or less complete implementation of the consensus changes for segwit and is interoperating with segnet4.
+19:10:53 <Luke-Jr> gmaxwell: nice!
+19:11:13 <cfields> sipa: woohoo!
+19:11:28 <wumpus> gmaxwell:  "and then having binary days delayed is suboptimal." why don't you ever gitian-build? :p
+19:11:35 <sipa> do we rebase on master, have that merged first, and then "magically" come up with a 0.12 backport? :D
+19:11:49 <sipa> which happens to include the necessary backports
+19:11:49 <btcdrak> sipa: I hear you are good at magic
+19:12:01 <Luke-Jr> sipa: what's the current segwit branch?
+19:12:05 <Luke-Jr> without segnet ideally
+19:12:34 <sipa> Luke-Jr: segwit4 and segwit (the first is where i continuously rebase, the second i push to whenever there is something significant)
+19:12:36 <wumpus> the reason for the delay is that a certian minimum threshold of number of people have to build it, submit signatures, etc., the only way to speed it up wouldb e if people build it quicker, although it's already lots faster than it used to be
+19:12:53 <sipa> Luke-Jr: they have segnet, though the commits for segnet are separate and can easily be skipped
+19:13:17 <gmaxwell> wumpus: if you'd like me to do so, I will. (re gitian builds)
+19:13:28 <sipa> that's anohter question: do we merge segnet?
+19:13:36 <btcdrak> gmaxwell: yes please.
+19:13:42 <wumpus> gmaxwell: I dont mind, but please don't complain if you're not involved okay :)
+19:13:55 <btcdrak> sipa: do we really need segnet?
+19:14:00 <sipa> btcdrak: i don't think so
+19:14:07 <morcos> This might sound crazy, but I'd be in favor of merging the segwit PR very quickly.  I think we should make the PR's for master and 0.12 at roughly the same time.  And then we should all bust our ass to review them at roughly the same time.
+19:14:22 <sipa> that sounds fine to me
+19:14:28 <morcos> If they are outstanding for a while, then we'll all be reviewing different code as its rebased or merge conflicts are addressed or whatever
+19:14:33 <btcdrak> morcos: no complaints
+19:14:36 <morcos> We should just rip the bandaid off and get it in
+19:14:39 <gmaxwell> wumpus: my complaint wasn't about any of the people, for sure. if it were, I'd just build. Also, it wasn't really a complaint with anything we're doing. It's a complaint that the community prereleases our releases, but we can't stop that; so the best fix is to reduce latency, I think.
+19:14:59 <morcos> And then every other PR out there can get conflicted once and be done with it
+19:15:02 <btcdrak> in all fairness there has been so much testing and peer review and help from downstream consumers with segwit.
+19:15:16 <sipa> ok, will PR soon
+19:15:29 <jonasschnelli> A quick merge sound good. Also, nobody can complain we haven gave any change for review because there is already an open pr since weeks/month.
+19:15:31 <sipa> both master and 0.12
+19:15:39 <btcdrak> super. jonasschnelli you should close your preview PR so it doesnt get confusing
+19:15:43 <gmaxwell> I've felt bad about working on 0.13 in areas that I know will need to be tweaked for segwit, so I can agree with that. As soon as 0.12 is tagged this could be done. If we end up needing a 0.12.2 without segwit we could branch 0.12 pre-segwit.
+19:16:07 <jonasschnelli> Yes. Will close. Its pointing also to the wrong branch.
+19:16:24 <btcdrak> gmaxwell: maybe we dont need to over complicate if the PR/backport will come soon.
+19:18:19 <morcos> My main point is that it is goign to be a lot of work to adequeately review and test segwit.  It'll be more efficient use of everyones time if we concentrate that effort at the same time.
+19:18:29 <sipa> that makes sense
+19:20:19 <sipa> any other topics?
+19:20:34 <wumpus> what about c++11 status?
+19:20:39 <sipa> ack
+19:20:47 <wumpus> #topic c++11 status
+19:20:55 * sipa summons cfields
+19:21:16 <cfields> wumpus: travis has enabled caching but only for flagged projects. I mailed this morning and asked for the flag.
+19:21:34 <sipa> cfields: is that the final blocker?
+19:21:43 <cfields> sipa: as far as i know, yes
+19:21:47 <sipa> awesome
+19:21:53 <wumpus> that was already the case right? open source projects needed a flag to support caching. But we need a new one now?
+19:22:06 <wumpus> hopefully theyll give it :)
+19:22:07 <cfields> wumpus: no, for trusty
+19:22:08 <cfields> sec..
+19:22:46 <cfields> https://github.com/travis-ci/travis-scheduler/pull/14
+19:23:07 <cfields> merged last week
+19:23:33 <wumpus> great!
+19:23:47 <sipa> how do we plan to proceed after that?
+19:23:50 <wumpus> hopefully we can start supporting it this week then
+19:23:56 <gmaxwell> would we be using C++11 in 0.13 then?
+19:24:05 <cfields> if there's a delay with this step, I'm completely ok with saying "screw it" and disabling whatever we need so that we can limp along until it's not blocking anymore
+19:24:32 <wumpus> gmaxwell: that was the plan
+19:24:33 <Luke-Jr> Travis is not willing to flag just any projects. We should try to avoid relying on it.
+19:24:40 <gmaxwell> wumpus: good. :)
+19:24:43 <cfields> so, I've been hacking on c++11 on a branch of mine for a while. One thing that's clear is that we need a policy on what modernizations we'll allow...
+19:25:00 <cfields> otherwise, I'm afraid it'll be endless PRs
+19:25:10 <cfields> Luke-Jr: it's just a flag while it's in testing
+19:25:10 <sipa> cfields: there are a couple of mechanic translations i think we'll want ayt some point
+19:25:21 <wumpus> I created this in december, a bit optimistic maybe, but five months later :) https://github.com/bitcoin/bitcoin/pull/7165
+19:25:39 <gmaxwell> We should keep modernization PRs slow initially. Then do the mechanical updates (e.g. replace boost with C++11).. and only after go back and make more changes.
+19:25:49 <gmaxwell> at least thats my intuition.
+19:25:50 <sipa> cfields: BOOST_FOREACH and boost::thread are good examples
+19:25:56 <wumpus> replacing boost is far from mechanical
+19:26:00 <wumpus> well ok some parts
+19:26:10 <cfields> sipa: yes, for sure. what I worry about it thousands of PRs that sprinkle in std::move all over the place.
+19:26:16 <morcos> is there any downside to using c++11 in new code while not yet doing any modernization PR's?
+19:26:16 <sipa> but for example: adding move constructors instead of swaps everywhere
+19:26:17 <gmaxwell> in particular I think it's probably unwise to do many moderinization updates when non C++11 versions are still supported.
+19:26:20 <Luke-Jr> someone remind me why are we not doing a release that fails with C++11 at configure, before actually introducing C++11 code?
+19:26:23 <cfields> (and emplace, which would be significant in several places)
+19:26:25 <BlueMatt> Start with only new code is C++11, then only boost-replacement, then revisit
+19:26:26 <BlueMatt> ?
+19:26:29 <gmaxwell> because that would vastly complicate backports.
+19:26:41 <sipa> one option is building with c++11 and c++03 both for a while
+19:26:44 <morcos> I would say we have a lot on our plate in the next couple months, and we should just say no modernaization right now.  (sounds like what BlueMatt said)
+19:26:46 <wumpus> meh
+19:26:47 <cfields> morcos: i think that would be my preference
+19:26:56 <wumpus> we can already build with c++11 for quite a while, that's nothing new
+19:27:12 <sipa> ok
+19:27:25 <sipa> just not too actively replace things initially
+19:27:42 <BlueMatt> I mean for 0.13 Id say dont actively replace anything unless its a big performance win
+19:27:43 <Luke-Jr> at the very least, let's add something to configure that fails if C++11 is not supported?
+19:27:49 <wumpus> we've never let refactors through too quickly
+19:27:54 <wumpus> correctness is most imporant
+19:28:02 <Luke-Jr> that way we get user reports
+19:28:03 <gmaxwell> Matt has an upcoming PR that uses C++11 that it might be nice to not have to port to C++03.
+19:28:07 <wumpus> Luke-Jr: yes, see the pull I quoted
+19:28:20 <wumpus> Luke-Jr: it fails without c++11 support
+19:28:21 <BlueMatt> gmaxwell: for the tcp stuff I think it actually doesnt matter, I was just lazy...udp would be annoying to fix, I think
+19:28:28 <cfields> wumpus: let's use a real example.. adding move ctors to our containers
+19:28:31 <cfields> yea or nay?
+19:28:39 <sipa> cfields: yay, please... but maybe not immediately
+19:28:49 <BlueMatt> cfields: for 0.13, I'd vote only new code, maybe boost replacement, too
+19:28:57 <wumpus> cfields: if it helps performance, absolute yay
+19:28:59 <sipa> (prevector specifically is unsafe to use for more complex types now)
+19:29:07 <BlueMatt> but I'm always the annoyingly conservative one, sooooo
+19:29:11 <wumpus> boost replacement is too late for 0.13
+19:29:15 <sipa> wumpus: agree
+19:29:15 <wumpus> too much work
+19:29:29 <BlueMatt> wumpus: ehh, I meant partial-boost-replacement
+19:29:32 <wumpus> we can do some minor things and use it in new code, but aiming to replace boost enitrely just won't work
+19:29:38 <gmaxwell> New code +1, especially new features, but as I mentioned, I think we should avoid making backports to 0.12 harder while 0.12 is still supported.
+19:29:44 <sipa> just turning on c++11 may already give a performance improvement, because STL magically gets move constructors
+19:30:01 <jonasschnelli> At least we could throw out boost::filesystem soon (there is no c++11 equivalent).
+19:30:05 <wumpus> to me it seems we want to backport so much to 0.12 it is starting to make more sense to do 0.13 sooner
+19:30:09 <wumpus> do a release from master
+19:30:21 <wumpus> may work better with cfields' holiday too
+19:30:32 <morcos> wumpus: but then not release segwit for 0.12?
+19:30:40 <cfields> stupid inconvenient honeymoon...
+19:30:49 <morcos> thats the issue right..  are we only going to support it on 0.13?
+19:30:50 <sipa> cfields: priorities!
+19:30:54 <jonasschnelli> heh!
+19:30:56 <gmaxwell> morcos: I don't think we should do that.
+19:30:59 <sipa> i think we should backport segwit to 0.12
+19:31:03 <wumpus> (we have to change the release schedule a bit anyway)
+19:31:08 <sipa> let's not push users too much
+19:31:24 <btcdrak> if we release 0.13 we still have to backport to 0.12
+19:31:34 <btcdrak> since we support this and prev version
+19:31:36 <gmaxwell> wumpus: what kind of schedule change are you thinking of?
+19:32:42 <gmaxwell> Can we talk about what notable features are still in flight that people are working on with an intent of targeting 0.13?
+19:32:44 <btcdrak> maybe backport to 0.12 and release 0.13 early.
+19:33:14 <morcos> whats the hurry to release 0.13 early in that case?
+19:33:15 <wumpus> yes was a bad idea
+19:33:19 <btcdrak> This is the list of 0.13 milestones https://github.com/bitcoin/bitcoin/milestones/0.13.0
+19:33:19 <wumpus> ntext topic
+19:33:21 <phantomcircuit> jonasschnelli: was that benchmark of leveldb vs lmdb on a system with a hdd or ssd?
+19:33:32 <jonasschnelli> ssd
+19:33:40 <phantomcircuit> interesting
+19:33:52 <jonasschnelli> (can be discussed after the meeting)
+19:34:15 <gmaxwell> btcdrak: there are things people are working on that aren't PRs yet.
+19:34:18 <Luke-Jr> gmaxwell: I'd like to rework the config/arg stuff, but I don't know I'll have time to finish it before 0.13 forks
+19:34:43 <BlueMatt> wumpus: next topic? we didnt really come to a conclusion at all here yet? what is the release schedule for 0.13 looking like, and does that mesh with turning on C++11 and allowing new code to use it?
+19:35:00 <Luke-Jr> (and there's no reason it can't wait for 0.14 etc)
+19:35:07 <wumpus> well the change we have to make in the 0.13 release schedule is to clear june - this works btter for cfields
+19:35:29 <wumpus> but we can just as well postpone it to later, moving it ealier was just a stupid idea
+19:35:36 <cfields> no reason to change just for me?
+19:35:47 <btcdrak> oh just a note regarding ctaes, independent review is in progress from one of Matthew Green's graduates, hopefully available in a couple of weeks.
+19:35:51 <wumpus> well the rc cycle was exactly planned that
+19:35:56 <wumpus> then*
+19:36:03 <gmaxwell> wumpus: I dunno that its stupid. But it should be made with consideration.
+19:36:07 <wumpus> can do that in july instead of june , no problem
+19:36:14 <morcos> gmaxwell: yes, i'm working on 2 things that might be nice to get in.  an improvement to fee estimation and some measurement of policy alignment.  they are goign to be annoying for anyone to review, but they also stand alone.
+19:36:37 <wumpus> BlueMatt: release schedule 0.13: https://github.com/bitcoin/bitcoin/issues/7679
+19:36:37 <gmaxwell> BlueMatt: C++11 is getting turned on, in a week barring emergencies if I understood above. And it sounded like new things could use it, but we'd avoid going and refactoring for more until 0.14.
+19:36:40 <morcos> wumpus: yes i like the idea of pushing back 0.13 a bit
+19:36:48 <sipa> gmaxwell: ack
+19:36:49 <BlueMatt> gmaxwell: ACK
+19:37:13 <jonasschnelli> Features I'd like to see in 0.13: wallet/RBF (+GUI), simple profiles (maybe GUI only), BIP32 (probably not in 0.13 because of lack of review)
+19:37:15 <sdaftuar> regarding 0.13, i thought it might make sense to push the freature freeze back slightly, since there's a meetup happening in zurich a week afterward that many of us would be at
+19:37:17 <BlueMatt> wumpus: ok, so release schedule stays as-is for now?
+19:37:29 <wumpus> BlueMatt: I proposed moving the rc phase to july instead of june
+19:37:33 <jonasschnelli> sdaftuar: good point.
+19:37:34 <Luke-Jr> in talking about using C++11, we won't need GCC 5, right?
+19:37:44 <Luke-Jr> because GCC 5 is not really a reasonable minimum yet
+19:37:44 <BlueMatt> when does cfields gete back?
+19:37:53 <morcos> wumpus: ack
+19:37:59 <cfields> Luke-Jr: 4.8 should be fine, i think
+19:38:02 <wumpus> no, we don't need gcc5, the features we should use of c++11 shoudl work in gcc4.8+
+19:38:02 <Luke-Jr> k
+19:38:05 <sipa> Luke-Jr: i believe (but cfields correct me) that the features from c++11 we'd want are almost entirely support in 4.8
+19:38:11 <wumpus> otherwise we can't use trusty for building
+19:38:18 <cfields> BlueMatt: july4ish
+19:38:20 <wumpus> and that's the whole point
+19:38:35 <sipa> that's clear, thank you
+19:39:05 <cfields> BlueMatt: if it turns out to be too problematic, i can revisit the dates.
+19:39:20 <gmaxwell> Luke-Jr: C++11 is fully supported in 4.9, and 4.8 has basically everything. I think we could reference 4.8 for compatibility.
+19:39:22 <BlueMatt> cfields: lol, dont change honeymoon for us
+19:39:23 <wumpus> cfields: no
+19:39:27 <gmaxwell> Luke-Jr: https://gcc.gnu.org/gcc-4.8/cxx0x_status.html
+19:39:28 <morcos> cfields: you better hope your fiance doesnt read these logs
+19:39:38 <jonasschnelli> haha
+19:40:13 <cfields> heh
+19:40:36 <BlueMatt> wumpus: ACK pushing 0.13 a month...gives a week or two for post-zurich things to make the feature freeze
+19:40:38 <wumpus> sdaftuar: if we move the rc phase a month we can move the feature freeze with the same amount
+19:40:48 <BlueMatt> wumpus: eg things that get reviewed in zurich can be cleaned up and merged before freeze
+19:40:51 <wumpus> BlueMatt: right
+19:40:52 <sdaftuar> wumpus: sounds good to me
+19:41:01 <BlueMatt> ACKs on pushing a month?
+19:41:06 <btcdrak> ACK
+19:41:11 <wumpus> ack
+19:41:12 <jonasschnelli> ack
+19:41:14 <gmaxwell> ok
+19:41:14 <Luke-Jr> I don't see any resolution to C++11's ABI issues in the github tracker - did that get resolved?
+19:41:15 <morcos> ACK
+19:41:29 * Luke-Jr not care on 0.13 schedule
+19:42:05 <wumpus> #action move 0.13 schedule a month forward
+19:42:39 <cfields> Luke-Jr: what issues?
+19:42:41 <sipa> Luke-Jr: https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165499462
+19:42:52 <sipa> all known ABI issues result in link errors
+19:43:05 <cfields> for that matter, gcc6 will build with c++14 by default. So either way (maybe even for 0.12 backport), we need to specify the standard we're using.
+19:43:31 <wumpus> hah, c++14
+19:43:34 <gmaxwell> As far as other in-flight stuff, Matt has implemented efficient block relay; related to a design I've been circulating for a long while.  He has code up, and it works pretty well.. I get about a 96% reduction in block bandwidth. The protocol needs a few tweaks still but once in, it should be able to send the vast majority of blocks in 0.5 round-trip times (plus whatever awful overhead TCP adds),
+19:43:39 <wumpus> not looking forward to going through this again :(
+19:43:40 <gmaxwell> the rest will need 1.5 RTT. I've started on a BIP. Matt has also been working on some other things that go further and eliminate even more latency, though that work is likely only going to be interesting to miners.
+19:44:22 <BlueMatt> I think gmaxwell is more excited about tcp-smaller-block relay since his internet at home sucks
+19:44:27 <gmaxwell> I think with segwit upcoming I'd really like to see that work make its way into 0.13, since we really need propagation time mitigations, and the relay network client only goes so far.
+19:44:27 <cfields> nice
+19:44:33 <cfields> BlueMatt: you have a branch somewhere?
+19:44:39 <BlueMatt> I see it more as foundational work that is useful for compression on the wire, but is primarily for udp-based relay which is nice and fast :)
+19:45:02 <BlueMatt> cfields: simple tcp stuff at https://github.com/TheBlueMatt/bitcoin/commits/udp, udp-based stuff which hasnt been fully rebased on top at https://github.com/TheBlueMatt/bitcoin/commits/udp-wip
+19:45:21 <wumpus> cfields: how does it make sense that they will build with c++14 by default?!
+19:45:44 <BlueMatt> tcp stuff is close to ready with one or two stubs to be replaced, pr next week when I'm off vacation, udp stuff is a bit longer-term
+19:45:48 <cfields> wumpus: i suppose because it should all be forward compat, in theory
+19:45:50 <sipa> wumpus: i think c++14 has less impact on standard libraries
+19:45:50 <cfields> BlueMatt: thanks
+19:46:09 <sipa> and is much more incremental than c++11 was
+19:46:09 <BlueMatt> cfields: if you want to tackle the udp-wip changing to libevent I'd owe you :)
+19:46:12 <cfields> yes, c++14 as i see it is kinda a c++11 fixup
+19:46:23 <wumpus> ok...
+19:46:30 <Luke-Jr> cfields: IIRC, binaries (incl libraries) compiled with C++11 mode are incomptible with libraries compiled with C++98 mode.
+19:46:36 <sipa> c++14 finally has a solution for the exponentially-sized error messages
+19:46:37 <Luke-Jr> sipa: ok
+19:46:57 <cfields> Luke-Jr: that has nothing to do with how we compile though. That'll be the case either way.
+19:47:00 <gmaxwell> BlueMatt: mostly trying to avoid bleeding out over load increases permitted by segwit. :)
+19:47:06 <wumpus> sipa: nice!
+19:47:13 <cfields> BlueMatt: heh yes, we should sync up some
+19:47:34 <Luke-Jr> cfields: ? our dependencies are compiled with C++98 in almost all cases today
+19:47:37 <wumpus> anyhow any other meeting topics?
+19:47:49 <kanzure> MAST bip status?
+19:48:06 <gmaxwell> lol. way too premature for discussion here.
+19:48:13 <btcdrak> kanzure: it got published BIP114
+19:48:18 <cfields> Luke-Jr: yes, and they'll be switched to c++11 for the ones we build. Otherwise it's a cointoss what users have on their systems, sticking with c++03 could be equally incompatible for them.
+19:48:19 <wumpus> Luke-Jr: cfields let's leave the small implementation details about the c++11 switch to after the meeting
+19:48:27 <cfields> ack
+19:48:36 <Luke-Jr> cfields: we do not build our dependencies typically.
+19:48:49 <Luke-Jr> wumpus: k
+19:49:03 <wumpus> I'm sure we'll get it to work somehow
+19:49:31 <wumpus> #topic MAST bip status
+19:49:44 <kanzure> no no, it was sufficiently NACKed
+19:49:59 <sipa> i haven't looked at it yet
+19:50:17 <instagibbs> https://github.com/bitcoin/bips/blob/master/bip-0114.mediawiki < fwiw
+19:50:30 <wumpus> #link https://github.com/bitcoin/bips/blob/master/bip-0114.mediawiki
+19:51:43 <Luke-Jr> possible topic?: using SHA256d for segwit
+19:52:30 <wumpus> sha256d?
+19:52:33 <sipa> Luke-Jr: i'd rather not break all tests and downstream code that was written yet... though we'll want new segwit script versions soon, and they can use sha256d hashing
+19:53:04 <sipa> wumpus: background: p2wsh scriptPubKeys contain a SHA256 (not double SHA256) of the witness program
+19:53:09 <paveljanik> double sha256
+19:53:26 <sipa> which is incompatible with the "P2SH^2" scheme that greg proposed a while ago
+19:53:35 <wumpus> oh right
+19:53:43 <wumpus> it would be consistent
+19:53:47 <gmaxwell> The only advantage of it that I'm aware of is the p2sh^2 trick which would need new address types and such to ever get used. Disadvantage is that its slow.
+19:54:12 <gmaxwell> And consistency, I suppose.
+19:54:15 <sipa> ... which interacts with the discussion of addresses for native segwit
+19:54:17 <Luke-Jr> gmaxwell: there's no address types for bare segwit yet
+19:54:36 <sipa> Luke-Jr: i do plan on proposing one
+19:54:41 <sipa> (though not immediately)
+19:54:59 <Luke-Jr> yes, my point is that we have an opportunity to avoid breaking compatibility
+19:55:11 <gmaxwell> we'd purposefully moved them out to avoid shedpainting and address-type-deployment issues from harming segwit consensus code deployment.
+19:55:44 <phantomcircuit> gmaxwell: sha256d also prevents length extention attacks although i dont see how that's applicable here at all
+19:55:49 <gmaxwell> Luke-Jr: I think that nativesegwit of that initial type is not likely to see long term use, see also that MAST bip.
+19:55:56 <Luke-Jr> sipa: am I incorrect in assuming adjusting downstream code for this would be super trivial?
+19:56:26 <sipa> Luke-Jr: probably, but we also don't have a way to deploy P2SH^2 easily
+19:56:32 <Luke-Jr> gmaxwell: yes, but I think sipa wants an address format that works for all segwit outputs, regardless of version
+19:57:00 <Luke-Jr> sipa: that's not something we need to bundle with making it possible
+19:57:37 <gmaxwell> we should close the meeting and continue the discussion.
+19:57:40 <sipa> ok
+19:57:46 <gmaxwell> no resolution to this will happen this instant.
+19:58:51 <sipa> #shutdown -h now meeting
+19:59:04 <jonasschnelli> sudo!
+19:59:08 <wumpus> #endmeeting

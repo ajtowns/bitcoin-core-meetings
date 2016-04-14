@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:50</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Apr 14 19:00:50 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:50</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:56</span><span class="nk"> &lt;morcos&gt;</span> confidence inspiring wumpus
+<a name="l-5"></a><span class="tm">19:01:01</span><span class="nk"> &lt;btcdrak&gt;</span> gavel wont be attending due to last week's beating.
+<a name="l-6"></a><span class="tm">19:01:04</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-7"></a><span class="tm">19:01:06</span><span class="nk"> &lt;gmaxwell&gt;</span> "If I have to."
+<a name="l-8"></a><span class="tm">19:01:12</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-9"></a><span class="tm">19:01:32</span><span class="nk"> &lt;gmaxwell&gt;</span> Whats up with the 0.12.1 release? I haven't been paying attention to it.
+<a name="l-10"></a><span class="tm">19:01:34</span><span class="nk"> &lt;morcos&gt;</span> status of 12.1
+<a name="l-11"></a><span class="tm">19:01:41</span><span class="nk"> &lt;btcdrak&gt;</span> 0.12.1 status
+<a name="l-12"></a><span class="tm">19:01:57</span><span class="nk"> &lt;wumpus&gt;</span> 0.12.1 is at rc2
+<a name="l-13"></a><span class="tm">19:02:29</span><span class="nk"> &lt;wumpus&gt;</span> haven't heard of any issues with it
+<a name="l-14"></a><span class="tm">19:02:36</span><span class="nk"> &lt;gmaxwell&gt;</span> There was a 0.12.1(rc) block mined in the last week.
+<a name="l-15"></a><span class="tm">19:02:41</span><span class="nk"> &lt;sipa&gt;</span> i suggest we go ahead with release?
+<a name="l-16"></a><span class="tm">19:02:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1
+<a name="l-17"></a><span class="tm">19:02:53</span><span class="nk"> &lt;btcdrak&gt;</span> +10
+<a name="l-18"></a><span class="tm">19:02:56</span><span class="nk"> &lt;sipa&gt;</span> -11
+<a name="l-19"></a><span class="tm">19:03:02</span><span class="nk"> &lt;btcdrak&gt;</span> doh!
+<a name="l-20"></a><span class="tm">19:03:03</span><span class="nk"> &lt;gmaxwell&gt;</span> +1i.
+<a name="l-21"></a><span class="tm">19:03:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> interesting; block version 0x2..?
+<a name="l-22"></a><span class="tm">19:03:52</span><span class="nk"> &lt;sipa&gt;</span> but not classic
+<a name="l-23"></a><span class="tm">19:03:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> we should release 0.12.1 when 0.12.1 is observed to be released.
+<a name="l-24"></a><span class="tm">19:04:18</span><span class="nk"> &lt;sipa&gt;</span> Luke-Jr is the first member of the club containing Luke-Jr as first member
+<a name="l-25"></a><span class="tm">19:04:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> yes, it seems we kinda flubbed the part of the motivation with the BIP9 starting dates to remove the possibility of warings in advance of a release. :)
+<a name="l-26"></a><span class="tm">19:04:37</span><span class="nk"> &lt;Luke-Jr&gt;</span> that sounds lonely.
+<a name="l-27"></a><span class="tm">19:04:38</span><span class="nk"> &lt;wumpus&gt;</span> usually we wait a week after the release of the binaries before labeling the rc as final, the binary release was only 3 days ago
+<a name="l-28"></a><span class="tm">19:04:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok
+<a name="l-29"></a><span class="tm">19:04:47</span><span class="nk"> &lt;wumpus&gt;</span> but if you insist
+<a name="l-30"></a><span class="tm">19:05:01</span><span class="nk"> &lt;sipa&gt;</span> topic suggestion: segwit and backports
+<a name="l-31"></a><span class="tm">19:05:08</span><span class="nk"> &lt;btcdrak&gt;</span> let's insist
+<a name="l-32"></a><span class="tm">19:05:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. We should wait at least one week.
+<a name="l-33"></a><span class="tm">19:05:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> but at least thats just a one time event.
+<a name="l-34"></a><span class="tm">19:05:38</span><span class="nk"> &lt;gmaxwell&gt;</span> well 1 week - 3 days is still before the next meeting. So the action should be release 0.12.1 prior to the next meeting. :)
+<a name="l-35"></a><span class="tm">19:05:43</span><span class="nk"> &lt;Luke-Jr&gt;</span> could start the gitian building now and wait the rest of the week to publish?
+<a name="l-36"></a><span class="tm">19:06:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> the tag could be seen as "release"
+<a name="l-37"></a><span class="tm">19:06:11</span><span class="nk"> &lt;btcdrak&gt;</span> 1 business week is 5 days :)
+<a name="l-38"></a><span class="tm">19:06:27</span><span class="nk"> &lt;wumpus&gt;</span> good to hear a block would mined with 0.12.1 though, hadn't heard that yet
+<a name="l-39"></a><span class="tm">19:06:32</span><span class="nk"> &lt;wumpus&gt;</span> s/would/was
+<a name="l-40"></a><span class="tm">19:06:54</span><span class="nk"> &lt;btcdrak&gt;</span> why not tag 0.12.1 we can build over the weekend and release on Monday?
+<a name="l-41"></a><span class="tm">19:07:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Why not tag on monday and build on monday?
+<a name="l-42"></a><span class="tm">19:07:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> You don't need to handhold you bulder?
+<a name="l-43"></a><span class="tm">19:07:24</span><span class="nk"> &lt;sipa&gt;</span> wumpus decides
+<a name="l-44"></a><span class="tm">19:07:26</span><span class="nk"> &lt;gmaxwell&gt;</span> the building has latency.
+<a name="l-45"></a><span class="tm">19:07:28</span><span class="nk"> &lt;wumpus&gt;</span> you're too eager
+<a name="l-46"></a><span class="tm">19:07:46</span><span class="nk"> &lt;btcdrak&gt;</span> gotta build, cfields needs to sign etc.
+<a name="l-47"></a><span class="tm">19:07:50</span><span class="nk"> &lt;gmaxwell&gt;</span> in the future we should figure out how to deseralize builds of the final release and publication of the tag.
+<a name="l-48"></a><span class="tm">19:08:13</span><span class="nk"> &lt;wumpus&gt;</span> huh
+<a name="l-49"></a><span class="tm">19:08:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> we could agree on a commit and build that and tag later.
+<a name="l-50"></a><span class="tm">19:08:40</span><span class="nk"> &lt;gmaxwell&gt;</span> the fact that we've been doing "releases" that get announced and circulated ahead of the project's announcement and then having binary days delayed is suboptimal.
+<a name="l-51"></a><span class="tm">19:08:41</span><span class="nk"> &lt;sipa&gt;</span> we need to have gitian build inside a homomorphically encrypted environment, so that we can verify binary correctness, but only release the key at release time
+<a name="l-52"></a><span class="tm">19:08:43</span><span class="nk"> &lt;wumpus&gt;</span> is this still serious?
+<a name="l-53"></a><span class="tm">19:08:44</span><span class="nk"> &lt;cfields&gt;</span> fwiw, dropping the commit hash in the binary would create a few more options
+<a name="l-54"></a><span class="tm">19:08:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> no
+<a name="l-55"></a><span class="tm">19:09:00</span><span class="nk"> &lt;wumpus&gt;</span> ok...
+<a name="l-56"></a><span class="tm">19:09:02</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-57"></a><span class="tm">19:09:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> [21:05:02]  &lt;sipa&gt;	topic suggestion: segwit and backports
+<a name="l-58"></a><span class="tm">19:09:17</span><span class="nk"> &lt;btcdrak&gt;</span> segwit backports
+<a name="l-59"></a><span class="tm">19:09:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit and backports</span>
+<a name="l-60"></a><span class="tm">19:09:42</span><span class="nk"> &lt;sipa&gt;</span> so, segwit branch is currently on top of 0.12.1
+<a name="l-61"></a><span class="tm">19:10:04</span><span class="nk"> &lt;btcdrak&gt;</span> so you'd be forward porting it to master
+<a name="l-62"></a><span class="tm">19:10:13</span><span class="nk"> &lt;sipa&gt;</span> with a set of backports from master and some PRs first
+<a name="l-63"></a><span class="tm">19:10:37</span><span class="nk"> &lt;Luke-Jr&gt;</span> it would be ideal if the same branch can merge into both 0.12 and master, but that seems unlikely for segwit
+<a name="l-64"></a><span class="tm">19:10:40</span><span class="nk"> &lt;sipa&gt;</span> i don't know what the best way forward is, but i think we're close to PRing it for bitcoin
+<a name="l-65"></a><span class="tm">19:10:40</span><span class="nk"> &lt;gmaxwell&gt;</span> FWIW on the other implementations front, btcd has what looks like a more or less complete implementation of the consensus changes for segwit and is interoperating with segnet4.
+<a name="l-66"></a><span class="tm">19:10:53</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> nice!
+<a name="l-67"></a><span class="tm">19:11:13</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> woohoo!
+<a name="l-68"></a><span class="tm">19:11:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span>  "and then having binary days delayed is suboptimal." why don't you ever gitian-build? :p
+<a name="l-69"></a><span class="tm">19:11:35</span><span class="nk"> &lt;sipa&gt;</span> do we rebase on master, have that merged first, and then "magically" come up with a 0.12 backport? :D
+<a name="l-70"></a><span class="tm">19:11:49</span><span class="nk"> &lt;sipa&gt;</span> which happens to include the necessary backports
+<a name="l-71"></a><span class="tm">19:11:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I hear you are good at magic
+<a name="l-72"></a><span class="tm">19:12:01</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> what's the current segwit branch?
+<a name="l-73"></a><span class="tm">19:12:05</span><span class="nk"> &lt;Luke-Jr&gt;</span> without segnet ideally
+<a name="l-74"></a><span class="tm">19:12:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> segwit4 and segwit (the first is where i continuously rebase, the second i push to whenever there is something significant)
+<a name="l-75"></a><span class="tm">19:12:36</span><span class="nk"> &lt;wumpus&gt;</span> the reason for the delay is that a certian minimum threshold of number of people have to build it, submit signatures, etc., the only way to speed it up wouldb e if people build it quicker, although it's already lots faster than it used to be
+<a name="l-76"></a><span class="tm">19:12:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> they have segnet, though the commits for segnet are separate and can easily be skipped
+<a name="l-77"></a><span class="tm">19:13:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> if you'd like me to do so, I will. (re gitian builds)
+<a name="l-78"></a><span class="tm">19:13:28</span><span class="nk"> &lt;sipa&gt;</span> that's anohter question: do we merge segnet?
+<a name="l-79"></a><span class="tm">19:13:36</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> yes please.
+<a name="l-80"></a><span class="tm">19:13:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I dont mind, but please don't complain if you're not involved okay :)
+<a name="l-81"></a><span class="tm">19:13:55</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> do we really need segnet?
+<a name="l-82"></a><span class="tm">19:14:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> i don't think so
+<a name="l-83"></a><span class="tm">19:14:07</span><span class="nk"> &lt;morcos&gt;</span> This might sound crazy, but I'd be in favor of merging the segwit PR very quickly.  I think we should make the PR's for master and 0.12 at roughly the same time.  And then we should all bust our ass to review them at roughly the same time.
+<a name="l-84"></a><span class="tm">19:14:22</span><span class="nk"> &lt;sipa&gt;</span> that sounds fine to me
+<a name="l-85"></a><span class="tm">19:14:28</span><span class="nk"> &lt;morcos&gt;</span> If they are outstanding for a while, then we'll all be reviewing different code as its rebased or merge conflicts are addressed or whatever
+<a name="l-86"></a><span class="tm">19:14:33</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> no complaints
+<a name="l-87"></a><span class="tm">19:14:36</span><span class="nk"> &lt;morcos&gt;</span> We should just rip the bandaid off and get it in
+<a name="l-88"></a><span class="tm">19:14:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> my complaint wasn't about any of the people, for sure. if it were, I'd just build. Also, it wasn't really a complaint with anything we're doing. It's a complaint that the community prereleases our releases, but we can't stop that; so the best fix is to reduce latency, I think.
+<a name="l-89"></a><span class="tm">19:14:59</span><span class="nk"> &lt;morcos&gt;</span> And then every other PR out there can get conflicted once and be done with it
+<a name="l-90"></a><span class="tm">19:15:02</span><span class="nk"> &lt;btcdrak&gt;</span> in all fairness there has been so much testing and peer review and help from downstream consumers with segwit.
+<a name="l-91"></a><span class="tm">19:15:16</span><span class="nk"> &lt;sipa&gt;</span> ok, will PR soon
+<a name="l-92"></a><span class="tm">19:15:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> A quick merge sound good. Also, nobody can complain we haven gave any change for review because there is already an open pr since weeks/month.
+<a name="l-93"></a><span class="tm">19:15:31</span><span class="nk"> &lt;sipa&gt;</span> both master and 0.12
+<a name="l-94"></a><span class="tm">19:15:39</span><span class="nk"> &lt;btcdrak&gt;</span> super. jonasschnelli you should close your preview PR so it doesnt get confusing
+<a name="l-95"></a><span class="tm">19:15:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I've felt bad about working on 0.13 in areas that I know will need to be tweaked for segwit, so I can agree with that. As soon as 0.12 is tagged this could be done. If we end up needing a 0.12.2 without segwit we could branch 0.12 pre-segwit.
+<a name="l-96"></a><span class="tm">19:16:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Will close. Its pointing also to the wrong branch.
+<a name="l-97"></a><span class="tm">19:16:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> maybe we dont need to over complicate if the PR/backport will come soon.
+<a name="l-98"></a><span class="tm">19:18:19</span><span class="nk"> &lt;morcos&gt;</span> My main point is that it is goign to be a lot of work to adequeately review and test segwit.  It'll be more efficient use of everyones time if we concentrate that effort at the same time.
+<a name="l-99"></a><span class="tm">19:18:29</span><span class="nk"> &lt;sipa&gt;</span> that makes sense
+<a name="l-100"></a><span class="tm">19:20:19</span><span class="nk"> &lt;sipa&gt;</span> any other topics?
+<a name="l-101"></a><span class="tm">19:20:34</span><span class="nk"> &lt;wumpus&gt;</span> what about c++11 status?
+<a name="l-102"></a><span class="tm">19:20:39</span><span class="nk"> &lt;sipa&gt;</span> ack
+<a name="l-103"></a><span class="tm">19:20:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">c++11 status</span>
+<a name="l-104"></a><span class="tm">19:20:55 </span><span class="nka">* sipa</span> <span class="ac">summons cfields</span>
+<a name="l-105"></a><span class="tm">19:21:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> travis has enabled caching but only for flagged projects. I mailed this morning and asked for the flag.
+<a name="l-106"></a><span class="tm">19:21:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> is that the final blocker?
+<a name="l-107"></a><span class="tm">19:21:43</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> as far as i know, yes
+<a name="l-108"></a><span class="tm">19:21:47</span><span class="nk"> &lt;sipa&gt;</span> awesome
+<a name="l-109"></a><span class="tm">19:21:53</span><span class="nk"> &lt;wumpus&gt;</span> that was already the case right? open source projects needed a flag to support caching. But we need a new one now?
+<a name="l-110"></a><span class="tm">19:22:06</span><span class="nk"> &lt;wumpus&gt;</span> hopefully theyll give it :)
+<a name="l-111"></a><span class="tm">19:22:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> no, for trusty
+<a name="l-112"></a><span class="tm">19:22:08</span><span class="nk"> &lt;cfields&gt;</span> sec..
+<a name="l-113"></a><span class="tm">19:22:46</span><span class="nk"> &lt;cfields&gt;</span> https://github.com/travis-ci/travis-scheduler/pull/14
+<a name="l-114"></a><span class="tm">19:23:07</span><span class="nk"> &lt;cfields&gt;</span> merged last week
+<a name="l-115"></a><span class="tm">19:23:33</span><span class="nk"> &lt;wumpus&gt;</span> great!
+<a name="l-116"></a><span class="tm">19:23:47</span><span class="nk"> &lt;sipa&gt;</span> how do we plan to proceed after that?
+<a name="l-117"></a><span class="tm">19:23:50</span><span class="nk"> &lt;wumpus&gt;</span> hopefully we can start supporting it this week then
+<a name="l-118"></a><span class="tm">19:23:56</span><span class="nk"> &lt;gmaxwell&gt;</span> would we be using C++11 in 0.13 then?
+<a name="l-119"></a><span class="tm">19:24:05</span><span class="nk"> &lt;cfields&gt;</span> if there's a delay with this step, I'm completely ok with saying "screw it" and disabling whatever we need so that we can limp along until it's not blocking anymore
+<a name="l-120"></a><span class="tm">19:24:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that was the plan
+<a name="l-121"></a><span class="tm">19:24:33</span><span class="nk"> &lt;Luke-Jr&gt;</span> Travis is not willing to flag just any projects. We should try to avoid relying on it.
+<a name="l-122"></a><span class="tm">19:24:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> good. :)
+<a name="l-123"></a><span class="tm">19:24:43</span><span class="nk"> &lt;cfields&gt;</span> so, I've been hacking on c++11 on a branch of mine for a while. One thing that's clear is that we need a policy on what modernizations we'll allow...
+<a name="l-124"></a><span class="tm">19:25:00</span><span class="nk"> &lt;cfields&gt;</span> otherwise, I'm afraid it'll be endless PRs
+<a name="l-125"></a><span class="tm">19:25:10</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> it's just a flag while it's in testing
+<a name="l-126"></a><span class="tm">19:25:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> there are a couple of mechanic translations i think we'll want ayt some point
+<a name="l-127"></a><span class="tm">19:25:21</span><span class="nk"> &lt;wumpus&gt;</span> I created this in december, a bit optimistic maybe, but five months later :) https://github.com/bitcoin/bitcoin/pull/7165
+<a name="l-128"></a><span class="tm">19:25:39</span><span class="nk"> &lt;gmaxwell&gt;</span> We should keep modernization PRs slow initially. Then do the mechanical updates (e.g. replace boost with C++11).. and only after go back and make more changes.
+<a name="l-129"></a><span class="tm">19:25:49</span><span class="nk"> &lt;gmaxwell&gt;</span> at least thats my intuition.
+<a name="l-130"></a><span class="tm">19:25:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> BOOST_FOREACH and boost::thread are good examples
+<a name="l-131"></a><span class="tm">19:25:56</span><span class="nk"> &lt;wumpus&gt;</span> replacing boost is far from mechanical
+<a name="l-132"></a><span class="tm">19:26:00</span><span class="nk"> &lt;wumpus&gt;</span> well ok some parts
+<a name="l-133"></a><span class="tm">19:26:10</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> yes, for sure. what I worry about it thousands of PRs that sprinkle in std::move all over the place.
+<a name="l-134"></a><span class="tm">19:26:16</span><span class="nk"> &lt;morcos&gt;</span> is there any downside to using c++11 in new code while not yet doing any modernization PR's?
+<a name="l-135"></a><span class="tm">19:26:16</span><span class="nk"> &lt;sipa&gt;</span> but for example: adding move constructors instead of swaps everywhere
+<a name="l-136"></a><span class="tm">19:26:17</span><span class="nk"> &lt;gmaxwell&gt;</span> in particular I think it's probably unwise to do many moderinization updates when non C++11 versions are still supported.
+<a name="l-137"></a><span class="tm">19:26:20</span><span class="nk"> &lt;Luke-Jr&gt;</span> someone remind me why are we not doing a release that fails with C++11 at configure, before actually introducing C++11 code?
+<a name="l-138"></a><span class="tm">19:26:23</span><span class="nk"> &lt;cfields&gt;</span> (and emplace, which would be significant in several places)
+<a name="l-139"></a><span class="tm">19:26:25</span><span class="nk"> &lt;BlueMatt&gt;</span> Start with only new code is C++11, then only boost-replacement, then revisit
+<a name="l-140"></a><span class="tm">19:26:26</span><span class="nk"> &lt;BlueMatt&gt;</span> ?
+<a name="l-141"></a><span class="tm">19:26:29</span><span class="nk"> &lt;gmaxwell&gt;</span> because that would vastly complicate backports.
+<a name="l-142"></a><span class="tm">19:26:41</span><span class="nk"> &lt;sipa&gt;</span> one option is building with c++11 and c++03 both for a while
+<a name="l-143"></a><span class="tm">19:26:44</span><span class="nk"> &lt;morcos&gt;</span> I would say we have a lot on our plate in the next couple months, and we should just say no modernaization right now.  (sounds like what BlueMatt said)
+<a name="l-144"></a><span class="tm">19:26:46</span><span class="nk"> &lt;wumpus&gt;</span> meh
+<a name="l-145"></a><span class="tm">19:26:47</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> i think that would be my preference
+<a name="l-146"></a><span class="tm">19:26:56</span><span class="nk"> &lt;wumpus&gt;</span> we can already build with c++11 for quite a while, that's nothing new
+<a name="l-147"></a><span class="tm">19:27:12</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-148"></a><span class="tm">19:27:25</span><span class="nk"> &lt;sipa&gt;</span> just not too actively replace things initially
+<a name="l-149"></a><span class="tm">19:27:42</span><span class="nk"> &lt;BlueMatt&gt;</span> I mean for 0.13 Id say dont actively replace anything unless its a big performance win
+<a name="l-150"></a><span class="tm">19:27:43</span><span class="nk"> &lt;Luke-Jr&gt;</span> at the very least, let's add something to configure that fails if C++11 is not supported?
+<a name="l-151"></a><span class="tm">19:27:49</span><span class="nk"> &lt;wumpus&gt;</span> we've never let refactors through too quickly
+<a name="l-152"></a><span class="tm">19:27:54</span><span class="nk"> &lt;wumpus&gt;</span> correctness is most imporant
+<a name="l-153"></a><span class="tm">19:28:02</span><span class="nk"> &lt;Luke-Jr&gt;</span> that way we get user reports
+<a name="l-154"></a><span class="tm">19:28:03</span><span class="nk"> &lt;gmaxwell&gt;</span> Matt has an upcoming PR that uses C++11 that it might be nice to not have to port to C++03.
+<a name="l-155"></a><span class="tm">19:28:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> yes, see the pull I quoted
+<a name="l-156"></a><span class="tm">19:28:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> it fails without c++11 support
+<a name="l-157"></a><span class="tm">19:28:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> for the tcp stuff I think it actually doesnt matter, I was just lazy...udp would be annoying to fix, I think
+<a name="l-158"></a><span class="tm">19:28:28</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> let's use a real example.. adding move ctors to our containers
+<a name="l-159"></a><span class="tm">19:28:31</span><span class="nk"> &lt;cfields&gt;</span> yea or nay?
+<a name="l-160"></a><span class="tm">19:28:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> yay, please... but maybe not immediately
+<a name="l-161"></a><span class="tm">19:28:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> for 0.13, I'd vote only new code, maybe boost replacement, too
+<a name="l-162"></a><span class="tm">19:28:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> if it helps performance, absolute yay
+<a name="l-163"></a><span class="tm">19:28:59</span><span class="nk"> &lt;sipa&gt;</span> (prevector specifically is unsafe to use for more complex types now)
+<a name="l-164"></a><span class="tm">19:29:07</span><span class="nk"> &lt;BlueMatt&gt;</span> but I'm always the annoyingly conservative one, sooooo
+<a name="l-165"></a><span class="tm">19:29:11</span><span class="nk"> &lt;wumpus&gt;</span> boost replacement is too late for 0.13
+<a name="l-166"></a><span class="tm">19:29:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree
+<a name="l-167"></a><span class="tm">19:29:15</span><span class="nk"> &lt;wumpus&gt;</span> too much work
+<a name="l-168"></a><span class="tm">19:29:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ehh, I meant partial-boost-replacement
+<a name="l-169"></a><span class="tm">19:29:32</span><span class="nk"> &lt;wumpus&gt;</span> we can do some minor things and use it in new code, but aiming to replace boost enitrely just won't work
+<a name="l-170"></a><span class="tm">19:29:38</span><span class="nk"> &lt;gmaxwell&gt;</span> New code +1, especially new features, but as I mentioned, I think we should avoid making backports to 0.12 harder while 0.12 is still supported.
+<a name="l-171"></a><span class="tm">19:29:44</span><span class="nk"> &lt;sipa&gt;</span> just turning on c++11 may already give a performance improvement, because STL magically gets move constructors
+<a name="l-172"></a><span class="tm">19:30:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> At least we could throw out boost::filesystem soon (there is no c++11 equivalent).
+<a name="l-173"></a><span class="tm">19:30:05</span><span class="nk"> &lt;wumpus&gt;</span> to me it seems we want to backport so much to 0.12 it is starting to make more sense to do 0.13 sooner
+<a name="l-174"></a><span class="tm">19:30:09</span><span class="nk"> &lt;wumpus&gt;</span> do a release from master
+<a name="l-175"></a><span class="tm">19:30:21</span><span class="nk"> &lt;wumpus&gt;</span> may work better with cfields' holiday too
+<a name="l-176"></a><span class="tm">19:30:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> but then not release segwit for 0.12?
+<a name="l-177"></a><span class="tm">19:30:40</span><span class="nk"> &lt;cfields&gt;</span> stupid inconvenient honeymoon...
+<a name="l-178"></a><span class="tm">19:30:49</span><span class="nk"> &lt;morcos&gt;</span> thats the issue right..  are we only going to support it on 0.13?
+<a name="l-179"></a><span class="tm">19:30:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> priorities!
+<a name="l-180"></a><span class="tm">19:30:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh!
+<a name="l-181"></a><span class="tm">19:30:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I don't think we should do that.
+<a name="l-182"></a><span class="tm">19:30:59</span><span class="nk"> &lt;sipa&gt;</span> i think we should backport segwit to 0.12
+<a name="l-183"></a><span class="tm">19:31:03</span><span class="nk"> &lt;wumpus&gt;</span> (we have to change the release schedule a bit anyway)
+<a name="l-184"></a><span class="tm">19:31:08</span><span class="nk"> &lt;sipa&gt;</span> let's not push users too much
+<a name="l-185"></a><span class="tm">19:31:24</span><span class="nk"> &lt;btcdrak&gt;</span> if we release 0.13 we still have to backport to 0.12
+<a name="l-186"></a><span class="tm">19:31:34</span><span class="nk"> &lt;btcdrak&gt;</span> since we support this and prev version
+<a name="l-187"></a><span class="tm">19:31:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> what kind of schedule change are you thinking of?
+<a name="l-188"></a><span class="tm">19:32:42</span><span class="nk"> &lt;gmaxwell&gt;</span> Can we talk about what notable features are still in flight that people are working on with an intent of targeting 0.13?
+<a name="l-189"></a><span class="tm">19:32:44</span><span class="nk"> &lt;btcdrak&gt;</span> maybe backport to 0.12 and release 0.13 early.
+<a name="l-190"></a><span class="tm">19:33:14</span><span class="nk"> &lt;morcos&gt;</span> whats the hurry to release 0.13 early in that case?
+<a name="l-191"></a><span class="tm">19:33:15</span><span class="nk"> &lt;wumpus&gt;</span> yes was a bad idea
+<a name="l-192"></a><span class="tm">19:33:19</span><span class="nk"> &lt;btcdrak&gt;</span> This is the list of 0.13 milestones https://github.com/bitcoin/bitcoin/milestones/0.13.0
+<a name="l-193"></a><span class="tm">19:33:19</span><span class="nk"> &lt;wumpus&gt;</span> ntext topic
+<a name="l-194"></a><span class="tm">19:33:21</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">jonasschnelli:</span> was that benchmark of leveldb vs lmdb on a system with a hdd or ssd?
+<a name="l-195"></a><span class="tm">19:33:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> ssd
+<a name="l-196"></a><span class="tm">19:33:40</span><span class="nk"> &lt;phantomcircuit&gt;</span> interesting
+<a name="l-197"></a><span class="tm">19:33:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> (can be discussed after the meeting)
+<a name="l-198"></a><span class="tm">19:34:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> there are things people are working on that aren't PRs yet.
+<a name="l-199"></a><span class="tm">19:34:18</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> I'd like to rework the config/arg stuff, but I don't know I'll have time to finish it before 0.13 forks
+<a name="l-200"></a><span class="tm">19:34:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> next topic? we didnt really come to a conclusion at all here yet? what is the release schedule for 0.13 looking like, and does that mesh with turning on C++11 and allowing new code to use it?
+<a name="l-201"></a><span class="tm">19:35:00</span><span class="nk"> &lt;Luke-Jr&gt;</span> (and there's no reason it can't wait for 0.14 etc)
+<a name="l-202"></a><span class="tm">19:35:07</span><span class="nk"> &lt;wumpus&gt;</span> well the change we have to make in the 0.13 release schedule is to clear june - this works btter for cfields
+<a name="l-203"></a><span class="tm">19:35:29</span><span class="nk"> &lt;wumpus&gt;</span> but we can just as well postpone it to later, moving it ealier was just a stupid idea
+<a name="l-204"></a><span class="tm">19:35:36</span><span class="nk"> &lt;cfields&gt;</span> no reason to change just for me?
+<a name="l-205"></a><span class="tm">19:35:47</span><span class="nk"> &lt;btcdrak&gt;</span> oh just a note regarding ctaes, independent review is in progress from one of Matthew Green's graduates, hopefully available in a couple of weeks.
+<a name="l-206"></a><span class="tm">19:35:51</span><span class="nk"> &lt;wumpus&gt;</span> well the rc cycle was exactly planned that
+<a name="l-207"></a><span class="tm">19:35:56</span><span class="nk"> &lt;wumpus&gt;</span> then*
+<a name="l-208"></a><span class="tm">19:36:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I dunno that its stupid. But it should be made with consideration.
+<a name="l-209"></a><span class="tm">19:36:07</span><span class="nk"> &lt;wumpus&gt;</span> can do that in july instead of june , no problem
+<a name="l-210"></a><span class="tm">19:36:14</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes, i'm working on 2 things that might be nice to get in.  an improvement to fee estimation and some measurement of policy alignment.  they are goign to be annoying for anyone to review, but they also stand alone.
+<a name="l-211"></a><span class="tm">19:36:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> release schedule 0.13: https://github.com/bitcoin/bitcoin/issues/7679
+<a name="l-212"></a><span class="tm">19:36:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> C++11 is getting turned on, in a week barring emergencies if I understood above. And it sounded like new things could use it, but we'd avoid going and refactoring for more until 0.14.
+<a name="l-213"></a><span class="tm">19:36:40</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes i like the idea of pushing back 0.13 a bit
+<a name="l-214"></a><span class="tm">19:36:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-215"></a><span class="tm">19:36:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ACK
+<a name="l-216"></a><span class="tm">19:37:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Features I'd like to see in 0.13: wallet/RBF (+GUI), simple profiles (maybe GUI only), BIP32 (probably not in 0.13 because of lack of review)
+<a name="l-217"></a><span class="tm">19:37:15</span><span class="nk"> &lt;sdaftuar&gt;</span> regarding 0.13, i thought it might make sense to push the freature freeze back slightly, since there's a meetup happening in zurich a week afterward that many of us would be at
+<a name="l-218"></a><span class="tm">19:37:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ok, so release schedule stays as-is for now?
+<a name="l-219"></a><span class="tm">19:37:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> I proposed moving the rc phase to july instead of june
+<a name="l-220"></a><span class="tm">19:37:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sdaftuar:</span> good point.
+<a name="l-221"></a><span class="tm">19:37:34</span><span class="nk"> &lt;Luke-Jr&gt;</span> in talking about using C++11, we won't need GCC 5, right?
+<a name="l-222"></a><span class="tm">19:37:44</span><span class="nk"> &lt;Luke-Jr&gt;</span> because GCC 5 is not really a reasonable minimum yet
+<a name="l-223"></a><span class="tm">19:37:44</span><span class="nk"> &lt;BlueMatt&gt;</span> when does cfields gete back?
+<a name="l-224"></a><span class="tm">19:37:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-225"></a><span class="tm">19:37:59</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> 4.8 should be fine, i think
+<a name="l-226"></a><span class="tm">19:38:02</span><span class="nk"> &lt;wumpus&gt;</span> no, we don't need gcc5, the features we should use of c++11 shoudl work in gcc4.8+
+<a name="l-227"></a><span class="tm">19:38:02</span><span class="nk"> &lt;Luke-Jr&gt;</span> k
+<a name="l-228"></a><span class="tm">19:38:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> i believe (but cfields correct me) that the features from c++11 we'd want are almost entirely support in 4.8
+<a name="l-229"></a><span class="tm">19:38:11</span><span class="nk"> &lt;wumpus&gt;</span> otherwise we can't use trusty for building
+<a name="l-230"></a><span class="tm">19:38:18</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> july4ish
+<a name="l-231"></a><span class="tm">19:38:20</span><span class="nk"> &lt;wumpus&gt;</span> and that's the whole point
+<a name="l-232"></a><span class="tm">19:38:35</span><span class="nk"> &lt;sipa&gt;</span> that's clear, thank you
+<a name="l-233"></a><span class="tm">19:39:05</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> if it turns out to be too problematic, i can revisit the dates.
+<a name="l-234"></a><span class="tm">19:39:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> C++11 is fully supported in 4.9, and 4.8 has basically everything. I think we could reference 4.8 for compatibility.
+<a name="l-235"></a><span class="tm">19:39:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> lol, dont change honeymoon for us
+<a name="l-236"></a><span class="tm">19:39:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> no
+<a name="l-237"></a><span class="tm">19:39:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> https://gcc.gnu.org/gcc-4.8/cxx0x_status.html
+<a name="l-238"></a><span class="tm">19:39:28</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> you better hope your fiance doesnt read these logs
+<a name="l-239"></a><span class="tm">19:39:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> haha
+<a name="l-240"></a><span class="tm">19:40:13</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-241"></a><span class="tm">19:40:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ACK pushing 0.13 a month...gives a week or two for post-zurich things to make the feature freeze
+<a name="l-242"></a><span class="tm">19:40:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> if we move the rc phase a month we can move the feature freeze with the same amount
+<a name="l-243"></a><span class="tm">19:40:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> eg things that get reviewed in zurich can be cleaned up and merged before freeze
+<a name="l-244"></a><span class="tm">19:40:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> right
+<a name="l-245"></a><span class="tm">19:40:52</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> sounds good to me
+<a name="l-246"></a><span class="tm">19:41:01</span><span class="nk"> &lt;BlueMatt&gt;</span> ACKs on pushing a month?
+<a name="l-247"></a><span class="tm">19:41:06</span><span class="nk"> &lt;btcdrak&gt;</span> ACK
+<a name="l-248"></a><span class="tm">19:41:11</span><span class="nk"> &lt;wumpus&gt;</span> ack
+<a name="l-249"></a><span class="tm">19:41:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-250"></a><span class="tm">19:41:14</span><span class="nk"> &lt;gmaxwell&gt;</span> ok
+<a name="l-251"></a><span class="tm">19:41:14</span><span class="nk"> &lt;Luke-Jr&gt;</span> I don't see any resolution to C++11's ABI issues in the github tracker - did that get resolved?
+<a name="l-252"></a><span class="tm">19:41:15</span><span class="nk"> &lt;morcos&gt;</span> ACK
+<a name="l-253"></a><span class="tm">19:41:29 </span><span class="nka">* Luke-Jr</span> <span class="ac">not care on 0.13 schedule</span>
+<a name="l-254"></a><span class="tm">19:42:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">move 0.13 schedule a month forward</span>
+<a name="l-255"></a><span class="tm">19:42:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> what issues?
+<a name="l-256"></a><span class="tm">19:42:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> https://github.com/bitcoin/bitcoin/pull/7165#issuecomment-165499462
+<a name="l-257"></a><span class="tm">19:42:52</span><span class="nk"> &lt;sipa&gt;</span> all known ABI issues result in link errors
+<a name="l-258"></a><span class="tm">19:43:05</span><span class="nk"> &lt;cfields&gt;</span> for that matter, gcc6 will build with c++14 by default. So either way (maybe even for 0.12 backport), we need to specify the standard we're using.
+<a name="l-259"></a><span class="tm">19:43:31</span><span class="nk"> &lt;wumpus&gt;</span> hah, c++14
+<a name="l-260"></a><span class="tm">19:43:34</span><span class="nk"> &lt;gmaxwell&gt;</span> As far as other in-flight stuff, Matt has implemented efficient block relay; related to a design I've been circulating for a long while.  He has code up, and it works pretty well.. I get about a 96% reduction in block bandwidth. The protocol needs a few tweaks still but once in, it should be able to send the vast majority of blocks in 0.5 round-trip times (plus whatever awful overhead TCP adds),
+<a name="l-261"></a><span class="tm">19:43:39</span><span class="nk"> &lt;wumpus&gt;</span> not looking forward to going through this again :(
+<a name="l-262"></a><span class="tm">19:43:40</span><span class="nk"> &lt;gmaxwell&gt;</span> the rest will need 1.5 RTT. I've started on a BIP. Matt has also been working on some other things that go further and eliminate even more latency, though that work is likely only going to be interesting to miners.
+<a name="l-263"></a><span class="tm">19:44:22</span><span class="nk"> &lt;BlueMatt&gt;</span> I think gmaxwell is more excited about tcp-smaller-block relay since his internet at home sucks
+<a name="l-264"></a><span class="tm">19:44:27</span><span class="nk"> &lt;gmaxwell&gt;</span> I think with segwit upcoming I'd really like to see that work make its way into 0.13, since we really need propagation time mitigations, and the relay network client only goes so far.
+<a name="l-265"></a><span class="tm">19:44:27</span><span class="nk"> &lt;cfields&gt;</span> nice
+<a name="l-266"></a><span class="tm">19:44:33</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> you have a branch somewhere?
+<a name="l-267"></a><span class="tm">19:44:39</span><span class="nk"> &lt;BlueMatt&gt;</span> I see it more as foundational work that is useful for compression on the wire, but is primarily for udp-based relay which is nice and fast :)
+<a name="l-268"></a><span class="tm">19:45:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> simple tcp stuff at https://github.com/TheBlueMatt/bitcoin/commits/udp, udp-based stuff which hasnt been fully rebased on top at https://github.com/TheBlueMatt/bitcoin/commits/udp-wip
+<a name="l-269"></a><span class="tm">19:45:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> how does it make sense that they will build with c++14 by default?!
+<a name="l-270"></a><span class="tm">19:45:44</span><span class="nk"> &lt;BlueMatt&gt;</span> tcp stuff is close to ready with one or two stubs to be replaced, pr next week when I'm off vacation, udp stuff is a bit longer-term
+<a name="l-271"></a><span class="tm">19:45:48</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> i suppose because it should all be forward compat, in theory
+<a name="l-272"></a><span class="tm">19:45:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i think c++14 has less impact on standard libraries
+<a name="l-273"></a><span class="tm">19:45:50</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> thanks
+<a name="l-274"></a><span class="tm">19:46:09</span><span class="nk"> &lt;sipa&gt;</span> and is much more incremental than c++11 was
+<a name="l-275"></a><span class="tm">19:46:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> if you want to tackle the udp-wip changing to libevent I'd owe you :)
+<a name="l-276"></a><span class="tm">19:46:12</span><span class="nk"> &lt;cfields&gt;</span> yes, c++14 as i see it is kinda a c++11 fixup
+<a name="l-277"></a><span class="tm">19:46:23</span><span class="nk"> &lt;wumpus&gt;</span> ok...
+<a name="l-278"></a><span class="tm">19:46:30</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">cfields:</span> IIRC, binaries (incl libraries) compiled with C++11 mode are incomptible with libraries compiled with C++98 mode.
+<a name="l-279"></a><span class="tm">19:46:36</span><span class="nk"> &lt;sipa&gt;</span> c++14 finally has a solution for the exponentially-sized error messages
+<a name="l-280"></a><span class="tm">19:46:37</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> ok
+<a name="l-281"></a><span class="tm">19:46:57</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> that has nothing to do with how we compile though. That'll be the case either way.
+<a name="l-282"></a><span class="tm">19:47:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> mostly trying to avoid bleeding out over load increases permitted by segwit. :)
+<a name="l-283"></a><span class="tm">19:47:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> nice!
+<a name="l-284"></a><span class="tm">19:47:13</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> heh yes, we should sync up some
+<a name="l-285"></a><span class="tm">19:47:34</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">cfields:</span> ? our dependencies are compiled with C++98 in almost all cases today
+<a name="l-286"></a><span class="tm">19:47:37</span><span class="nk"> &lt;wumpus&gt;</span> anyhow any other meeting topics?
+<a name="l-287"></a><span class="tm">19:47:49</span><span class="nk"> &lt;kanzure&gt;</span> MAST bip status?
+<a name="l-288"></a><span class="tm">19:48:06</span><span class="nk"> &lt;gmaxwell&gt;</span> lol. way too premature for discussion here.
+<a name="l-289"></a><span class="tm">19:48:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> it got published BIP114
+<a name="l-290"></a><span class="tm">19:48:18</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">Luke-Jr:</span> yes, and they'll be switched to c++11 for the ones we build. Otherwise it's a cointoss what users have on their systems, sticking with c++03 could be equally incompatible for them.
+<a name="l-291"></a><span class="tm">19:48:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Luke-Jr:</span> cfields let's leave the small implementation details about the c++11 switch to after the meeting
+<a name="l-292"></a><span class="tm">19:48:27</span><span class="nk"> &lt;cfields&gt;</span> ack
+<a name="l-293"></a><span class="tm">19:48:36</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">cfields:</span> we do not build our dependencies typically.
+<a name="l-294"></a><span class="tm">19:48:49</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">wumpus:</span> k
+<a name="l-295"></a><span class="tm">19:49:03</span><span class="nk"> &lt;wumpus&gt;</span> I'm sure we'll get it to work somehow
+<a name="l-296"></a><span class="tm">19:49:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">MAST bip status</span>
+<a name="l-297"></a><span class="tm">19:49:44</span><span class="nk"> &lt;kanzure&gt;</span> no no, it was sufficiently NACKed
+<a name="l-298"></a><span class="tm">19:49:59</span><span class="nk"> &lt;sipa&gt;</span> i haven't looked at it yet
+<a name="l-299"></a><span class="tm">19:50:17</span><span class="nk"> &lt;instagibbs&gt;</span> https://github.com/bitcoin/bips/blob/master/bip-0114.mediawiki &lt; fwiw
+<a name="l-300"></a><span class="tm">19:50:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0114.mediawiki</span>
+<a name="l-301"></a><span class="tm">19:51:43</span><span class="nk"> &lt;Luke-Jr&gt;</span> possible topic?: using SHA256d for segwit
+<a name="l-302"></a><span class="tm">19:52:30</span><span class="nk"> &lt;wumpus&gt;</span> sha256d?
+<a name="l-303"></a><span class="tm">19:52:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> i'd rather not break all tests and downstream code that was written yet... though we'll want new segwit script versions soon, and they can use sha256d hashing
+<a name="l-304"></a><span class="tm">19:53:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> background: p2wsh scriptPubKeys contain a SHA256 (not double SHA256) of the witness program
+<a name="l-305"></a><span class="tm">19:53:09</span><span class="nk"> &lt;paveljanik&gt;</span> double sha256
+<a name="l-306"></a><span class="tm">19:53:26</span><span class="nk"> &lt;sipa&gt;</span> which is incompatible with the "P2SH^2" scheme that greg proposed a while ago
+<a name="l-307"></a><span class="tm">19:53:35</span><span class="nk"> &lt;wumpus&gt;</span> oh right
+<a name="l-308"></a><span class="tm">19:53:43</span><span class="nk"> &lt;wumpus&gt;</span> it would be consistent
+<a name="l-309"></a><span class="tm">19:53:47</span><span class="nk"> &lt;gmaxwell&gt;</span> The only advantage of it that I'm aware of is the p2sh^2 trick which would need new address types and such to ever get used. Disadvantage is that its slow.
+<a name="l-310"></a><span class="tm">19:54:12</span><span class="nk"> &lt;gmaxwell&gt;</span> And consistency, I suppose.
+<a name="l-311"></a><span class="tm">19:54:15</span><span class="nk"> &lt;sipa&gt;</span> ... which interacts with the discussion of addresses for native segwit
+<a name="l-312"></a><span class="tm">19:54:17</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> there's no address types for bare segwit yet
+<a name="l-313"></a><span class="tm">19:54:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> i do plan on proposing one
+<a name="l-314"></a><span class="tm">19:54:41</span><span class="nk"> &lt;sipa&gt;</span> (though not immediately)
+<a name="l-315"></a><span class="tm">19:54:59</span><span class="nk"> &lt;Luke-Jr&gt;</span> yes, my point is that we have an opportunity to avoid breaking compatibility
+<a name="l-316"></a><span class="tm">19:55:11</span><span class="nk"> &lt;gmaxwell&gt;</span> we'd purposefully moved them out to avoid shedpainting and address-type-deployment issues from harming segwit consensus code deployment.
+<a name="l-317"></a><span class="tm">19:55:44</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">gmaxwell:</span> sha256d also prevents length extention attacks although i dont see how that's applicable here at all
+<a name="l-318"></a><span class="tm">19:55:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Luke-Jr:</span> I think that nativesegwit of that initial type is not likely to see long term use, see also that MAST bip.
+<a name="l-319"></a><span class="tm">19:55:56</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> am I incorrect in assuming adjusting downstream code for this would be super trivial?
+<a name="l-320"></a><span class="tm">19:56:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Luke-Jr:</span> probably, but we also don't have a way to deploy P2SH^2 easily
+<a name="l-321"></a><span class="tm">19:56:32</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">gmaxwell:</span> yes, but I think sipa wants an address format that works for all segwit outputs, regardless of version
+<a name="l-322"></a><span class="tm">19:57:00</span><span class="nk"> &lt;Luke-Jr&gt;</span> <span class="hi">sipa:</span> that's not something we need to bundle with making it possible
+<a name="l-323"></a><span class="tm">19:57:37</span><span class="nk"> &lt;gmaxwell&gt;</span> we should close the meeting and continue the discussion.
+<a name="l-324"></a><span class="tm">19:57:40</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-325"></a><span class="tm">19:57:46</span><span class="nk"> &lt;gmaxwell&gt;</span> no resolution to this will happen this instant.
+<a name="l-326"></a><span class="tm">19:58:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#shutdown </span><span class="cmdline">-h now meeting</span>
+<a name="l-327"></a><span class="tm">19:59:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> sudo!
+<a name="l-328"></a><span class="tm">19:59:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
