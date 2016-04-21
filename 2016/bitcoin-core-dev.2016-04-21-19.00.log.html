@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:34</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Apr 21 19:00:34 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:34</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> now.
+<a name="l-5"></a><span class="tm">19:01:19</span><span class="nk"> &lt;wumpus&gt;</span> topic ideas?
+<a name="l-6"></a><span class="tm">19:01:35</span><span class="nk"> &lt;kanzure&gt;</span> segwit review
+<a name="l-7"></a><span class="tm">19:01:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> morcos: sdaftuar: sipa: petertod1: jonasschnelli: MarcoFalke: phantomcircuit: BlueMatt_:
+<a name="l-8"></a><span class="tm">19:01:58 </span><span class="nka">* sipa</span> <span class="ac">not very present</span>
+<a name="l-9"></a><span class="tm">19:02:04</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> here, thanks :)
+<a name="l-10"></a><span class="tm">19:02:14</span><span class="nk"> &lt;sdaftuar&gt;</span> here
+<a name="l-11"></a><span class="tm">19:02:17</span><span class="nk"> &lt;kanzure&gt;</span> there were some ideas submitted to split the segwit pull request for some not-quite-segwit but still good contributions into separate pull requests, i think it was phantomcircuit who said these things
+<a name="l-12"></a><span class="tm">19:02:20</span><span class="nk"> &lt;wumpus&gt;</span> only one action item from last week, move the 0.13 release schedule a month forward, that has been done
+<a name="l-13"></a><span class="tm">19:02:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> they already are
+<a name="l-14"></a><span class="tm">19:02:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> it's a single PR, enforcing service bits
+<a name="l-15"></a><span class="tm">19:02:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit review</span>
+<a name="l-16"></a><span class="tm">19:02:58</span><span class="nk"> &lt;kanzure&gt;</span> alright
+<a name="l-17"></a><span class="tm">19:03:15</span><span class="nk"> &lt;gmaxwell&gt;</span> There has been a lot of input, which is good.
+<a name="l-18"></a><span class="tm">19:03:20</span><span class="nk"> &lt;morcos&gt;</span> i'm here temporarily
+<a name="l-19"></a><span class="tm">19:03:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> i suppose you'd prefer to review and merge that first and rebase on top?
+<a name="l-20"></a><span class="tm">19:03:33</span><span class="nk"> &lt;sipa&gt;</span> my suggestion is to not rebase on master, and only add fixes as new commits
+<a name="l-21"></a><span class="tm">19:04:11</span><span class="nk"> &lt;kanzure&gt;</span> i have finished a read-through of the pull request although i might ask for assistance with someone to eliminate chunks of my notes (e.g. stuff it wouldn't be helpful for me to double check)...
+<a name="l-22"></a><span class="tm">19:04:23</span><span class="nk"> &lt;kanzure&gt;</span> (actually, i have read only the source code but not per commit, so commit ACKs will be incoming later)
+<a name="l-23"></a><span class="tm">19:04:30</span><span class="nk"> &lt;morcos&gt;</span> i think we should all make an effort to review as much segwit and do as little other merging as we can until we are ready to merge it.
+<a name="l-24"></a><span class="tm">19:05:43</span><span class="nk"> &lt;sdaftuar&gt;</span> +1
+<a name="l-25"></a><span class="tm">19:05:53</span><span class="nk"> &lt;sdaftuar&gt;</span> i think it'd be helpful to focus review effort now
+<a name="l-26"></a><span class="tm">19:06:02</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> ok by me. I'd like to ask for an exception for the Travis migration stuff though, since I've got them actively engaged
+<a name="l-27"></a><span class="tm">19:06:06</span><span class="nk"> &lt;gmaxwell&gt;</span> That is going to create artifical merge pressure to avoid stalling everything else.
+<a name="l-28"></a><span class="tm">19:06:09</span><span class="nk"> &lt;cfields&gt;</span> (that shouldn't affect segwit at all)
+<a name="l-29"></a><span class="tm">19:06:13</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we can stop the world until segwit gets in
+<a name="l-30"></a><span class="tm">19:06:18</span><span class="nk"> &lt;morcos&gt;</span> s/artificial//
+<a name="l-31"></a><span class="tm">19:06:23</span><span class="nk"> &lt;wumpus&gt;</span> there are *lots* of things going on right now
+<a name="l-32"></a><span class="tm">19:06:34</span><span class="nk"> &lt;wumpus&gt;</span> I do agree we should delay things that potentially conflict with segwit
+<a name="l-33"></a><span class="tm">19:06:46</span><span class="nk"> &lt;wumpus&gt;</span> to save sipa on rebasing work
+<a name="l-34"></a><span class="tm">19:07:13</span><span class="nk"> &lt;sdaftuar&gt;</span> save sipa and also help reviewers
+<a name="l-35"></a><span class="tm">19:07:20</span><span class="nk"> &lt;kanzure&gt;</span> pull request 7910 says "But a lot of testing (unit tests, rpc tests, p2p tests, and tests by external software projects) are being done already, so it is probably time to make it visible as a PR for general review."
+<a name="l-36"></a><span class="tm">19:07:21</span><span class="nk"> &lt;morcos&gt;</span> mostly i'm talking about order of operations here.  if there are people who aren't going to review segwit, sure, keep on doing what you're doing.  but whoever is going to review segwit.  why not do that first.
+<a name="l-37"></a><span class="tm">19:07:29</span><span class="nk"> &lt;kanzure&gt;</span> but perhaps a more elaborate test status update could be given by sipa either today or eventually?
+<a name="l-38"></a><span class="tm">19:07:36</span><span class="nk"> &lt;jtimon&gt;</span> I'm fine with delaying after segwit as well, at least for things that are clearly going to conflict
+<a name="l-39"></a><span class="tm">19:08:56</span><span class="nk"> &lt;morcos&gt;</span> if it was up to me, i would say we should stop the world until it gets in.  i'm of course aware that it is not up to me and can live with other approaches, but just trying to push us as much that direction as possible
+<a name="l-40"></a><span class="tm">19:09:19</span><span class="nk"> &lt;wumpus&gt;</span> also mind that lots of pulls are being submitted, multiple every day, there's only a few days that we really can hold up merging until the load becomes unbearable
+<a name="l-41"></a><span class="tm">19:09:47</span><span class="nk"> &lt;wumpus&gt;</span> what areas should we avoid changes to make it easier for segwit?
+<a name="l-42"></a><span class="tm">19:10:39</span><span class="nk"> &lt;kanzure&gt;</span> would we want to do backport implementation and testing and review before merging something like 7910?
+<a name="l-43"></a><span class="tm">19:11:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> there's also the option of a rebase exemption for segwit, allowing a traditional merge for the sake of not invalidating reviews
+<a name="l-44"></a><span class="tm">19:11:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> but that doesn't help the underlying issue, it just moves the work to the merge
+<a name="l-45"></a><span class="tm">19:11:33</span><span class="nk"> &lt;morcos&gt;</span> btw, to clarify my earlier comment, this isn't about getting segwit in as quickly as possible according to the calendar.  this is about being as efficient workers as possible.
+<a name="l-46"></a><span class="tm">19:11:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> an efficient project has multiple people working in parallel on multiple things
+<a name="l-47"></a><span class="tm">19:12:07</span><span class="nk"> &lt;wumpus&gt;</span> especially if these things are orthogonal, e.g. RPC or P2P work
+<a name="l-48"></a><span class="tm">19:12:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think right now we're at a point where if there was nothing in flight that we'd merge today. If we were, then I'd agree that we should stop the world.
+<a name="l-49"></a><span class="tm">19:12:42</span><span class="nk"> &lt;jtimon&gt;</span> maybe it make sense to merge and backport the first "preparations" section of the PR separately (that should be fast)?
+<a name="l-50"></a><span class="tm">19:12:55</span><span class="nk"> &lt;morcos&gt;</span> i guess maybe we're talking at cross purposes.  i just don't understand why people are working on other things instead of reviewing segwit so we are at a point where it can be merged
+<a name="l-51"></a><span class="tm">19:12:58</span><span class="nk"> &lt;kanzure&gt;</span> <span class="cmd">#action </span><span class="cmdline">more code review of segwit</span>
+<a name="l-52"></a><span class="tm">19:13:01</span><span class="nk"> &lt;morcos&gt;</span> it needs review, and its a priority for the project
+<a name="l-53"></a><span class="tm">19:13:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> and if you move the work to the merge then the review is pretty much invalidated too, because the code after the merge looks much different from taht before
+<a name="l-54"></a><span class="tm">19:13:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I think there are probably a couple rebases worth of general hammering on segwit before we'd do that. There are also 'preparations' PRs that are seperate which can go in now. So perhaps those should also be a priority.
+<a name="l-55"></a><span class="tm">19:13:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> rebasing from 0.12 to master took me 2 hours or so; i think we shouldn't overeagerly rebase, but it's not impossible
+<a name="l-56"></a><span class="tm">19:14:12</span><span class="nk"> &lt;kanzure&gt;</span> that gives us only 360 rebases per month not counting sleep
+<a name="l-57"></a><span class="tm">19:14:32</span><span class="nk"> &lt;jtimon&gt;</span> the sooner we merge these safe preparations, the sooner can stop worrying about other things conflicting with them
+<a name="l-58"></a><span class="tm">19:14:33</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> fair enough
+<a name="l-59"></a><span class="tm">19:14:42</span><span class="nk"> &lt;wumpus&gt;</span> so again:
+<a name="l-60"></a><span class="tm">19:14:53</span><span class="nk"> &lt;wumpus&gt;</span> changes to what areas should be avoided to make it easier for segwit?
+<a name="l-61"></a><span class="tm">19:15:16</span><span class="nk"> &lt;wumpus&gt;</span> what are the most annoying things to rebase sipa?
+<a name="l-62"></a><span class="tm">19:15:24</span><span class="nk"> &lt;wumpus&gt;</span> or at least, risky
+<a name="l-63"></a><span class="tm">19:15:33</span><span class="nk"> &lt;jtimon&gt;</span> I would assume consensus and relay policy refactors not directly contributing as preparations to segwit should wait
+<a name="l-64"></a><span class="tm">19:15:48</span><span class="nk"> &lt;wumpus&gt;</span> makes sense
+<a name="l-65"></a><span class="tm">19:16:02</span><span class="nk"> &lt;gmaxwell&gt;</span> do we have coverage analysis for the current tests? relative to segwit?
+<a name="l-66"></a><span class="tm">19:16:03</span><span class="nk"> &lt;jtimon&gt;</span> not sure about other areas
+<a name="l-67"></a><span class="tm">19:17:03</span><span class="nk"> &lt;wumpus&gt;</span> and yes if things can be merged already to pave the way for segwit, all the better
+<a name="l-68"></a><span class="tm">19:17:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> LCOV was included recently. I think there is a make target for the tests that produce coverage files
+<a name="l-69"></a><span class="tm">19:17:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> i can whip up a simple before/after. That's a good incentive to see if the dusty coverage stuff comes anywhere close to working.
+<a name="l-70"></a><span class="tm">19:17:47</span><span class="nk"> &lt;jtimon&gt;</span> I think that will also simplify review, by allowing one to make it in "phases"
+<a name="l-71"></a><span class="tm">19:18:03</span><span class="nk"> &lt;sipa&gt;</span> i'm not very worried about anything in-progres changes now
+<a name="l-72"></a><span class="tm">19:18:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> it might be useful in order to focus some attention on areas where people could contribute tests.
+<a name="l-73"></a><span class="tm">19:18:33</span><span class="nk"> &lt;wumpus&gt;</span> ok, in that case I'm not worried either, just trying to help
+<a name="l-74"></a><span class="tm">19:19:04</span><span class="nk"> &lt;cfields&gt;</span> yep, agreed. it'd be helpful to find what paths aren't covered for serialization too, since those changes are hard to review.
+<a name="l-75"></a><span class="tm">19:19:14</span><span class="nk"> &lt;cfields&gt;</span> (hard for me, anyway)
+<a name="l-76"></a><span class="tm">19:19:31</span><span class="nk"> &lt;kanzure&gt;</span> <span class="cmd">#action </span><span class="cmdline">look at test coverage output</span>
+<a name="l-77"></a><span class="tm">19:19:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> so i'm not sure i understand.  are you only going to rebase rarely and announce in advance?  and how does one review the rebase other than trying to recreate it?
+<a name="l-78"></a><span class="tm">19:19:34</span><span class="nk"> &lt;gmaxwell&gt;</span> can we agree on a subset of the segwit commits as being most in need of review right now, to focus on those?
+<a name="l-79"></a><span class="tm">19:20:28</span><span class="nk"> &lt;gmaxwell&gt;</span> one thing we need to be warry of is loss of synchronization between 0.12 and 0.13, if the patches are not updated primarily by updating 0.12 and then carrying the updates in a rebase.
+<a name="l-80"></a><span class="tm">19:21:01</span><span class="nk"> &lt;jtimon&gt;</span> that's why I suggested merging and backporting the preparations first
+<a name="l-81"></a><span class="tm">19:21:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i'm not sure, i can not rebase at all
+<a name="l-82"></a><span class="tm">19:21:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i think we'll end uo backporting the master patchset back to 0.12
+<a name="l-83"></a><span class="tm">19:22:15</span><span class="nk"> &lt;luke-jr&gt;</span> personally, I think it would be cleaner and perhaps easier to review a merge rather than a rebase. but I suspect others here disagree.
+<a name="l-84"></a><span class="tm">19:22:32</span><span class="nk"> &lt;jtimon&gt;</span> oh, #7910 needs rebase...
+<a name="l-85"></a><span class="tm">19:22:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> you can always recreate the merge, and then diff against the result.of the rebase
+<a name="l-86"></a><span class="tm">19:23:16</span><span class="nk"> &lt;kanzure&gt;</span> er, i think that requires the original commits- which you might not have if you didn't fetch in time
+<a name="l-87"></a><span class="tm">19:23:21</span><span class="nk"> &lt;kanzure&gt;</span> *git fetch in time
+<a name="l-88"></a><span class="tm">19:23:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> if you didn't fetch, how did you review the older commits? ;)
+<a name="l-89"></a><span class="tm">19:23:44</span><span class="nk"> &lt;jtimon&gt;</span> well, mergers can test locally whether a given PR is going to create conflicts to segwit or leave the hypotethical rebase clean before merging (perhaphs that's too much work)
+<a name="l-90"></a><span class="tm">19:23:54</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> there's an answer but it's not a good answer
+<a name="l-91"></a><span class="tm">19:24:00</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> (for the record, i definitely fetched.)
+<a name="l-92"></a><span class="tm">19:24:52</span><span class="nk"> &lt;morcos&gt;</span> ok. well i have to run.  i hope i'm not being difficult, i just think sometimes we could work together a little better as a team if we're more willing to coordinate/cooperate.
+<a name="l-93"></a><span class="tm">19:24:56</span><span class="nk"> &lt;kanzure&gt;</span> also interested in determining which areas or which segwit commits are most needing of review
+<a name="l-94"></a><span class="tm">19:25:13</span><span class="nk"> &lt;morcos&gt;</span> in that vein if there is something else i could do to help, please let me know, in the meantime i'm going to keep going through segwit commits one by one
+<a name="l-95"></a><span class="tm">19:25:27</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> I don't think anybody disagreed on your point about review for segwit being a priority
+<a name="l-96"></a><span class="tm">19:26:08</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> i know, i'm just used to people telling other people what to do.  :)
+<a name="l-97"></a><span class="tm">19:26:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I think I will make an effort to encourage people I see working on other things who haven't reviewed segwit to also review segwit.
+<a name="l-98"></a><span class="tm">19:26:50</span><span class="nk"> &lt;wumpus&gt;</span> at least I don't disagree, just that we can't force people to not work on other stuff, and that that wouldn't be constructive either (it'd just result in less work in other things instead of more work on segwit)
+<a name="l-99"></a><span class="tm">19:26:58</span><span class="nk"> &lt;kanzure&gt;</span> getblocktemplate changes probably need a few eyeballs to confirm things..
+<a name="l-100"></a><span class="tm">19:27:24</span><span class="nk"> &lt;luke-jr&gt;</span> yes, I need to update the GBT change PR
+<a name="l-101"></a><span class="tm">19:27:36</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> I've mostly reviewed the older segwit branches - is there anything specific to look for or test in the rebase?
+<a name="l-102"></a><span class="tm">19:27:46</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="cmd">#action </span><span class="cmdline">(Luke) update GBT segwit stuff</span>
+<a name="l-103"></a><span class="tm">19:28:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> first figure out the bip9 related changes, i guess
+<a name="l-104"></a><span class="tm">19:28:18</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> should others wait on looking at getblocktemplate things there until you submit your update?
+<a name="l-105"></a><span class="tm">19:28:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> it'll just add a few fields
+<a name="l-106"></a><span class="tm">19:28:30</span><span class="nk"> &lt;airmac&gt;</span> anyone intrested in trading bitgold for bitcoin we can use escrow if you like
+<a name="l-107"></a><span class="tm">19:28:31</span><span class="nk"> &lt;airmac&gt;</span> &lt;airmac&gt; you have to have a non us bitgold account to received bitgold
+<a name="l-108"></a><span class="tm">19:28:31</span><span class="nk"> &lt;airmac&gt;</span> &lt;airmac&gt; www.bitgold.com
+<a name="l-109"></a><span class="tm">19:28:37</span><span class="nk"> &lt;jtimon&gt;</span> I have still only reviewed a few commits, and they may have changed
+<a name="l-110"></a><span class="tm">19:28:54</span><span class="nk"> &lt;kanzure&gt;</span> OK new fields sounds trivial-ish, so probably not a review blocker
+<a name="l-111"></a><span class="tm">19:29:56</span><span class="nk"> &lt;luke-jr&gt;</span> I don't know what the code state is for that, but the BIP PR needs updating at least
+<a name="l-112"></a><span class="tm">19:30:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> any changes needed beyond our last conversation on that?
+<a name="l-113"></a><span class="tm">19:30:26</span><span class="nk"> &lt;gmaxwell&gt;</span> we probably need a deployment related affordance, where one can continue to mine without changes to GBT but not mine any new SW transactions; so that the recourse when there are downstream issues isn't back-out segwit.
+<a name="l-114"></a><span class="tm">19:31:00</span><span class="nk"> &lt;jtimon&gt;</span> I think after the next rebase, we should be careful to merge anything that will require another non-trivial rebase
+<a name="l-115"></a><span class="tm">19:31:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> before merging segwit, or as a follow-up PR?
+<a name="l-116"></a><span class="tm">19:31:48</span><span class="nk"> &lt;gmaxwell&gt;</span> doesn't have to be before.
+<a name="l-117"></a><span class="tm">19:34:37</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic? any proposals?
+<a name="l-118"></a><span class="tm">19:34:48</span><span class="nk"> &lt;cfields&gt;</span> topic proposal: travis switchover
+<a name="l-119"></a><span class="tm">19:34:54</span><span class="nk"> &lt;kanzure&gt;</span> if we could get an outline of which areas have been receiving lots of testing, which areas are under-tested, and which areas should be review critical and extra attention, then i think it will help smooth the review process
+<a name="l-120"></a><span class="tm">19:35:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">travis switch to trusty</span>
+<a name="l-121"></a><span class="tm">19:35:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> agree that would be useful
+<a name="l-122"></a><span class="tm">19:35:34</span><span class="nk"> &lt;luke-jr&gt;</span> I dislike breaking external repos' ability to use Travis, but… we're already at that point, so meh
+<a name="l-123"></a><span class="tm">19:35:49</span><span class="nk"> &lt;cfields&gt;</span> I tried to summarize in #7920. Basically we need to hit a few buttons that may cause a few hours of instability. I don't think there's really much downside other than that, I just didn't want to pull the trigger without opening it for discussion
+<a name="l-124"></a><span class="tm">19:35:58</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> this doesn't disable their ability
+<a name="l-125"></a><span class="tm">19:36:08</span><span class="nk"> &lt;wumpus&gt;</span> a few hours travis downtime is no problem
+<a name="l-126"></a><span class="tm">19:36:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> they just won't get caching until the feature is generally available. They can ask for it as well.
+<a name="l-127"></a><span class="tm">19:36:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> how would this change that?
+<a name="l-128"></a><span class="tm">19:36:31</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> well, right now Travis is unwilling to enable it for other repos without a contractual agreement
+<a name="l-129"></a><span class="tm">19:36:37</span><span class="nk"> &lt;wumpus&gt;</span> we already have special support for caching
+<a name="l-130"></a><span class="tm">19:36:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it wouldn't, hence meh
+<a name="l-131"></a><span class="tm">19:36:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">cfields:</span> hours of isntability? meh, people can just change the commit id without changes and force push
+<a name="l-132"></a><span class="tm">19:36:45</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-133"></a><span class="tm">19:36:46</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> eh? It's an email asking for a flag :)
+<a name="l-134"></a><span class="tm">19:36:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> right now we have some special settings that are us only. This moves us closer to a standard configuration.
+<a name="l-135"></a><span class="tm">19:36:49</span><span class="nk"> &lt;kanzure&gt;</span> is the concern that build caching is too much load on travis?
+<a name="l-136"></a><span class="tm">19:36:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> Is there still no way to use the non-sudo travis way?
+<a name="l-137"></a><span class="tm">19:36:52</span><span class="nk"> &lt;kanzure&gt;</span> *their concern
+<a name="l-138"></a><span class="tm">19:36:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> and gets denied unless you have an arrangement
+<a name="l-139"></a><span class="tm">19:37:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> qt has been added to the "allowed packages"
+<a name="l-140"></a><span class="tm">19:37:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> huh? This _removes_ our arrangement.
+<a name="l-141"></a><span class="tm">19:37:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> cfields: oh, I missed that detail
+<a name="l-142"></a><span class="tm">19:37:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> basically this gets rid of the old thing, in favor of a new feature which will be available to everyone.
+<a name="l-143"></a><span class="tm">19:37:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> travis plan to roll it out for everyone.
+<a name="l-144"></a><span class="tm">19:37:52</span><span class="nk"> &lt;luke-jr&gt;</span> even better
+<a name="l-145"></a><span class="tm">19:38:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> there are a few annoying things that won't every work without sudo, I'm afraid
+<a name="l-146"></a><span class="tm">19:38:30</span><span class="nk"> &lt;gmaxwell&gt;</span> it isn't _yet_ available to everyone, but the plan is that it will be, and it sounds like they would be much more willing to enable it for others.
+<a name="l-147"></a><span class="tm">19:38:40</span><span class="nk"> &lt;cfields&gt;</span> unless they can be encouraged to come up with some workarounds
+<a name="l-148"></a><span class="tm">19:38:47 </span><span class="nka">* luke-jr</span> <span class="ac">looked at removing sudo use a while ago, and thought it just needed whitelisted pkgs</span>
+<a name="l-149"></a><span class="tm">19:38:56</span><span class="nk"> &lt;cfields&gt;</span> right, we're beta testers. Pretty strenuous ones too :)
+<a name="l-150"></a><span class="tm">19:38:58</span><span class="nk"> &lt;sipa&gt;</span> i would love to just enable travis on my own bitcoin fork repo
+<a name="l-151"></a><span class="tm">19:39:02</span><span class="nk"> &lt;kanzure&gt;</span> and travis changes are off-limits if they break lots of downstream forked projects?
+<a name="l-152"></a><span class="tm">19:39:10</span><span class="nk"> &lt;kanzure&gt;</span> what level of commitment are we making there anyway..
+<a name="l-153"></a><span class="tm">19:39:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> you can?!
+<a name="l-154"></a><span class="tm">19:39:16</span><span class="nk"> &lt;jtimon&gt;</span> sipa + 5
+<a name="l-155"></a><span class="tm">19:39:24</span><span class="nk"> &lt;jtimon&gt;</span> oh, really?
+<a name="l-156"></a><span class="tm">19:39:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> you can already, it just takes ages
+<a name="l-157"></a><span class="tm">19:39:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> unless you pay.
+<a name="l-158"></a><span class="tm">19:39:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> it fails for me
+<a name="l-159"></a><span class="tm">19:39:39</span><span class="nk"> &lt;sdaftuar&gt;</span> takes ages?  i find that about half the time the jobs fail
+<a name="l-160"></a><span class="tm">19:39:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="cmd">#action </span><span class="cmdline">tutorial to enable travis on your own repo</span>
+<a name="l-161"></a><span class="tm">19:39:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> no, it:s free
+<a name="l-162"></a><span class="tm">19:39:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> you might need to push a recent master
+<a name="l-163"></a><span class="tm">19:39:55</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> recently?
+<a name="l-164"></a><span class="tm">19:39:59</span><span class="nk"> &lt;cfields&gt;</span> everyone can ask for the flag, we can nag them into pulling it out of beta :p
+<a name="l-165"></a><span class="tm">19:40:00</span><span class="nk"> &lt;sdaftuar&gt;</span> yeah, all the time
+<a name="l-166"></a><span class="tm">19:40:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> its free but you get more cycles if you pay.
+<a name="l-167"></a><span class="tm">19:40:07</span><span class="nk"> &lt;sipa&gt;</span> of course
+<a name="l-168"></a><span class="tm">19:40:19</span><span class="nk"> &lt;sipa&gt;</span> bit until recently everything jist failed to build
+<a name="l-169"></a><span class="tm">19:40:20</span><span class="nk"> &lt;kanzure&gt;</span> sounds like the failure might be due to lack of flag enablement
+<a name="l-170"></a><span class="tm">19:40:28</span><span class="nk"> &lt;luke-jr&gt;</span> hrm, I fixed some Travis-outside-of-"bitcoin" issues earleir this year
+<a name="l-171"></a><span class="tm">19:40:46</span><span class="nk"> &lt;cfields&gt;</span> i'm working with them on a few other things (their-side) that should speed up builds as well
+<a name="l-172"></a><span class="tm">19:41:01 </span><span class="nka">* gmaxwell</span> <span class="ac">looks over at the rack in his office with hundreds of processors that can't be used for this because we're depending on external infrastructure.</span>
+<a name="l-173"></a><span class="tm">19:41:04</span><span class="nk"> &lt;cfields&gt;</span> so likely in the near future it will be possible for everyone to have their own repos being built
+<a name="l-174"></a><span class="tm">19:41:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> While where at travis: we could also think about adding another github compatible CI to speedup tests (share platforms over two CI systems)?
+<a name="l-175"></a><span class="tm">19:41:10</span><span class="nk"> &lt;wumpus&gt;</span> in any case very good to hear the trusty conversion is very close now, let's set things in motion
+<a name="l-176"></a><span class="tm">19:41:16</span><span class="nk"> &lt;kanzure&gt;</span> perhaps some companies would be willing to sponsor large piles of testing infrastructure :)
+<a name="l-177"></a><span class="tm">19:41:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> nah, maintaining one is enough work
+<a name="l-178"></a><span class="tm">19:41:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> ok, can be done today
+<a name="l-179"></a><span class="tm">19:41:27</span><span class="nk"> &lt;kanzure&gt;</span> lots of testing infrastructure would mean big development cycle speedups, less time waiting scratching heads
+<a name="l-180"></a><span class="tm">19:41:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> +1
+<a name="l-181"></a><span class="tm">19:41:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> let me know when I need to merge
+<a name="l-182"></a><span class="tm">19:41:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> in any case, push button; please
+<a name="l-183"></a><span class="tm">19:41:53</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> just need someone around to click the merge button on my PR after it goes live
+<a name="l-184"></a><span class="tm">19:42:12</span><span class="nk"> &lt;cfields&gt;</span> roger. Confirming now.
+<a name="l-185"></a><span class="tm">19:42:13 </span><span class="nka">* jtimon</span> <span class="ac">remembers asking for a script to run everything travis runs in his own computer, is there such a thing?</span>
+<a name="l-186"></a><span class="tm">19:42:28</span><span class="nk"> &lt;luke-jr&gt;</span> if there was a non-proprietary CI option, we could use gmaxwell's hundreds of processors, and also reproduce issues locally ;)
+<a name="l-187"></a><span class="tm">19:42:37</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> sure
+<a name="l-188"></a><span class="tm">19:42:39</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">cfields:</span> +1
+<a name="l-189"></a><span class="tm">19:42:42</span><span class="nk"> &lt;luke-jr&gt;</span> there is?
+<a name="l-190"></a><span class="tm">19:42:52</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> travis is completely open, btw
+<a name="l-191"></a><span class="tm">19:43:14</span><span class="nk"> &lt;kanzure&gt;</span> <span class="cmd">#action </span><span class="cmdline">(cfields) travis changes requiring some downtime</span>
+<a name="l-192"></a><span class="tm">19:43:22</span><span class="nk"> &lt;wumpus&gt;</span> thanks kanzure
+<a name="l-193"></a><span class="tm">19:43:38</span><span class="nk"> &lt;jtimon&gt;</span> well, I could use a link to a tutorial or something, but I guess we can take that offline (ie after the meeting), thanks cfields
+<a name="l-194"></a><span class="tm">19:43:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">merge #7920 when cfields says so</span>
+<a name="l-195"></a><span class="tm">19:43:52</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> sure
+<a name="l-196"></a><span class="tm">19:44:01</span><span class="nk"> &lt;jtimon&gt;</span> if I could queue builds that would be even more awesome
+<a name="l-197"></a><span class="tm">19:44:35</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics to be discussed?
+<a name="l-198"></a><span class="tm">19:46:16</span><span class="nk"> &lt;wumpus&gt;</span> seems not :)
+<a name="l-199"></a><span class="tm">19:46:27</span><span class="nk"> &lt;btcdrak&gt;</span> the segwit afterparty!
+<a name="l-200"></a><span class="tm">19:46:28</span><span class="nk"> &lt;jtimon&gt;</span> https://i.ytimg.com/vi/_QR9QP0Rjsc/maxresdefault.jpg
+<a name="l-201"></a><span class="tm">19:46:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

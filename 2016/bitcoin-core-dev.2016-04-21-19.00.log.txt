@@ -1,0 +1,201 @@
+19:00:34 <wumpus> #startmeeting
+19:00:34 <lightningbot> Meeting started Thu Apr 21 19:00:34 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:34 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:46 <gmaxwell> jtimon: now.
+19:01:19 <wumpus> topic ideas?
+19:01:35 <kanzure> segwit review
+19:01:43 <gmaxwell> cfields: morcos: sdaftuar: sipa: petertod1: jonasschnelli: MarcoFalke: phantomcircuit: BlueMatt_:
+19:01:58 * sipa not very present
+19:02:04 <cfields> gmaxwell: here, thanks :)
+19:02:14 <sdaftuar> here
+19:02:17 <kanzure> there were some ideas submitted to split the segwit pull request for some not-quite-segwit but still good contributions into separate pull requests, i think it was phantomcircuit who said these things
+19:02:20 <wumpus> only one action item from last week, move the 0.13 release schedule a month forward, that has been done
+19:02:34 <sipa> kanzure: they already are
+19:02:46 <sipa> kanzure: it's a single PR, enforcing service bits
+19:02:58 <wumpus> #topic segwit review
+19:02:58 <kanzure> alright
+19:03:15 <gmaxwell> There has been a lot of input, which is good.
+19:03:20 <morcos> i'm here temporarily
+19:03:27 <cfields> sipa: i suppose you'd prefer to review and merge that first and rebase on top?
+19:03:33 <sipa> my suggestion is to not rebase on master, and only add fixes as new commits
+19:04:11 <kanzure> i have finished a read-through of the pull request although i might ask for assistance with someone to eliminate chunks of my notes (e.g. stuff it wouldn't be helpful for me to double check)...
+19:04:23 <kanzure> (actually, i have read only the source code but not per commit, so commit ACKs will be incoming later)
+19:04:30 <morcos> i think we should all make an effort to review as much segwit and do as little other merging as we can until we are ready to merge it.
+19:05:43 <sdaftuar> +1
+19:05:53 <sdaftuar> i think it'd be helpful to focus review effort now
+19:06:02 <cfields> morcos: ok by me. I'd like to ask for an exception for the Travis migration stuff though, since I've got them actively engaged
+19:06:06 <gmaxwell> That is going to create artifical merge pressure to avoid stalling everything else.
+19:06:09 <cfields> (that shouldn't affect segwit at all)
+19:06:13 <wumpus> I don't think we can stop the world until segwit gets in
+19:06:18 <morcos> s/artificial//
+19:06:23 <wumpus> there are *lots* of things going on right now
+19:06:34 <wumpus> I do agree we should delay things that potentially conflict with segwit
+19:06:46 <wumpus> to save sipa on rebasing work
+19:07:13 <sdaftuar> save sipa and also help reviewers
+19:07:20 <kanzure> pull request 7910 says "But a lot of testing (unit tests, rpc tests, p2p tests, and tests by external software projects) are being done already, so it is probably time to make it visible as a PR for general review."
+19:07:21 <morcos> mostly i'm talking about order of operations here.  if there are people who aren't going to review segwit, sure, keep on doing what you're doing.  but whoever is going to review segwit.  why not do that first.
+19:07:29 <kanzure> but perhaps a more elaborate test status update could be given by sipa either today or eventually?
+19:07:36 <jtimon> I'm fine with delaying after segwit as well, at least for things that are clearly going to conflict
+19:08:56 <morcos> if it was up to me, i would say we should stop the world until it gets in.  i'm of course aware that it is not up to me and can live with other approaches, but just trying to push us as much that direction as possible
+19:09:19 <wumpus> also mind that lots of pulls are being submitted, multiple every day, there's only a few days that we really can hold up merging until the load becomes unbearable
+19:09:47 <wumpus> what areas should we avoid changes to make it easier for segwit?
+19:10:39 <kanzure> would we want to do backport implementation and testing and review before merging something like 7910?
+19:11:06 <cfields> wumpus: there's also the option of a rebase exemption for segwit, allowing a traditional merge for the sake of not invalidating reviews
+19:11:30 <wumpus> cfields: but that doesn't help the underlying issue, it just moves the work to the merge
+19:11:33 <morcos> btw, to clarify my earlier comment, this isn't about getting segwit in as quickly as possible according to the calendar.  this is about being as efficient workers as possible.
+19:11:54 <wumpus> morcos: an efficient project has multiple people working in parallel on multiple things
+19:12:07 <wumpus> especially if these things are orthogonal, e.g. RPC or P2P work
+19:12:15 <gmaxwell> I don't think right now we're at a point where if there was nothing in flight that we'd merge today. If we were, then I'd agree that we should stop the world.
+19:12:42 <jtimon> maybe it make sense to merge and backport the first "preparations" section of the PR separately (that should be fast)?
+19:12:55 <morcos> i guess maybe we're talking at cross purposes.  i just don't understand why people are working on other things instead of reviewing segwit so we are at a point where it can be merged
+19:12:58 <kanzure> #action more code review of segwit
+19:13:01 <morcos> it needs review, and its a priority for the project
+19:13:01 <wumpus> cfields: and if you move the work to the merge then the review is pretty much invalidated too, because the code after the merge looks much different from taht before
+19:13:22 <gmaxwell> I think there are probably a couple rebases worth of general hammering on segwit before we'd do that. There are also 'preparations' PRs that are seperate which can go in now. So perhaps those should also be a priority.
+19:13:34 <sipa> wumpus: rebasing from 0.12 to master took me 2 hours or so; i think we shouldn't overeagerly rebase, but it's not impossible
+19:14:12 <kanzure> that gives us only 360 rebases per month not counting sleep
+19:14:32 <jtimon> the sooner we merge these safe preparations, the sooner can stop worrying about other things conflicting with them
+19:14:33 <cfields> wumpus: fair enough
+19:14:42 <wumpus> so again:
+19:14:53 <wumpus> changes to what areas should be avoided to make it easier for segwit?
+19:15:16 <wumpus> what are the most annoying things to rebase sipa?
+19:15:24 <wumpus> or at least, risky
+19:15:33 <jtimon> I would assume consensus and relay policy refactors not directly contributing as preparations to segwit should wait
+19:15:48 <wumpus> makes sense
+19:16:02 <gmaxwell> do we have coverage analysis for the current tests? relative to segwit?
+19:16:03 <jtimon> not sure about other areas
+19:17:03 <wumpus> and yes if things can be merged already to pave the way for segwit, all the better
+19:17:37 <jonasschnelli> gmaxwell: LCOV was included recently. I think there is a make target for the tests that produce coverage files
+19:17:39 <cfields> gmaxwell: i can whip up a simple before/after. That's a good incentive to see if the dusty coverage stuff comes anywhere close to working.
+19:17:47 <jtimon> I think that will also simplify review, by allowing one to make it in "phases"
+19:18:03 <sipa> i'm not very worried about anything in-progres changes now
+19:18:04 <gmaxwell> cfields: it might be useful in order to focus some attention on areas where people could contribute tests.
+19:18:33 <wumpus> ok, in that case I'm not worried either, just trying to help
+19:19:04 <cfields> yep, agreed. it'd be helpful to find what paths aren't covered for serialization too, since those changes are hard to review.
+19:19:14 <cfields> (hard for me, anyway)
+19:19:31 <kanzure> #action look at test coverage output
+19:19:32 <morcos> sipa: so i'm not sure i understand.  are you only going to rebase rarely and announce in advance?  and how does one review the rebase other than trying to recreate it?
+19:19:34 <gmaxwell> can we agree on a subset of the segwit commits as being most in need of review right now, to focus on those?
+19:20:28 <gmaxwell> one thing we need to be warry of is loss of synchronization between 0.12 and 0.13, if the patches are not updated primarily by updating 0.12 and then carrying the updates in a rebase.
+19:21:01 <jtimon> that's why I suggested merging and backporting the preparations first
+19:21:06 <sipa> morcos: i'm not sure, i can not rebase at all
+19:21:38 <sipa> gmaxwell: i think we'll end uo backporting the master patchset back to 0.12
+19:22:15 <luke-jr> personally, I think it would be cleaner and perhaps easier to review a merge rather than a rebase. but I suspect others here disagree.
+19:22:32 <jtimon> oh, #7910 needs rebase...
+19:22:53 <sipa> luke-jr: you can always recreate the merge, and then diff against the result.of the rebase
+19:23:16 <kanzure> er, i think that requires the original commits- which you might not have if you didn't fetch in time
+19:23:21 <kanzure> *git fetch in time
+19:23:42 <luke-jr> kanzure: if you didn't fetch, how did you review the older commits? ;)
+19:23:44 <jtimon> well, mergers can test locally whether a given PR is going to create conflicts to segwit or leave the hypotethical rebase clean before merging (perhaphs that's too much work)
+19:23:54 <kanzure> luke-jr: there's an answer but it's not a good answer
+19:24:00 <kanzure> luke-jr: (for the record, i definitely fetched.)
+19:24:52 <morcos> ok. well i have to run.  i hope i'm not being difficult, i just think sometimes we could work together a little better as a team if we're more willing to coordinate/cooperate.
+19:24:56 <kanzure> also interested in determining which areas or which segwit commits are most needing of review
+19:25:13 <morcos> in that vein if there is something else i could do to help, please let me know, in the meantime i'm going to keep going through segwit commits one by one
+19:25:27 <jtimon> morcos: I don't think anybody disagreed on your point about review for segwit being a priority
+19:26:08 <morcos> jtimon: i know, i'm just used to people telling other people what to do.  :)
+19:26:47 <gmaxwell> I think I will make an effort to encourage people I see working on other things who haven't reviewed segwit to also review segwit.
+19:26:50 <wumpus> at least I don't disagree, just that we can't force people to not work on other stuff, and that that wouldn't be constructive either (it'd just result in less work in other things instead of more work on segwit)
+19:26:58 <kanzure> getblocktemplate changes probably need a few eyeballs to confirm things..
+19:27:24 <luke-jr> yes, I need to update the GBT change PR
+19:27:36 <CodeShark> sipa: I've mostly reviewed the older segwit branches - is there anything specific to look for or test in the rebase?
+19:27:46 <luke-jr> #action (Luke) update GBT segwit stuff
+19:28:16 <sipa> luke-jr: first figure out the bip9 related changes, i guess
+19:28:18 <kanzure> luke-jr: should others wait on looking at getblocktemplate things there until you submit your update?
+19:28:30 <sipa> kanzure: it'll just add a few fields
+19:28:30 <airmac> anyone intrested in trading bitgold for bitcoin we can use escrow if you like
+19:28:31 <airmac> <airmac> you have to have a non us bitgold account to received bitgold
+19:28:31 <airmac> <airmac> www.bitgold.com
+19:28:37 <jtimon> I have still only reviewed a few commits, and they may have changed
+19:28:54 <kanzure> OK new fields sounds trivial-ish, so probably not a review blocker
+19:29:56 <luke-jr> I don't know what the code state is for that, but the BIP PR needs updating at least
+19:30:18 <luke-jr> sipa: any changes needed beyond our last conversation on that?
+19:30:26 <gmaxwell> we probably need a deployment related affordance, where one can continue to mine without changes to GBT but not mine any new SW transactions; so that the recourse when there are downstream issues isn't back-out segwit.
+19:31:00 <jtimon> I think after the next rebase, we should be careful to merge anything that will require another non-trivial rebase
+19:31:35 <luke-jr> gmaxwell: before merging segwit, or as a follow-up PR?
+19:31:48 <gmaxwell> doesn't have to be before.
+19:34:37 <wumpus> ok, next topic? any proposals?
+19:34:48 <cfields> topic proposal: travis switchover
+19:34:54 <kanzure> if we could get an outline of which areas have been receiving lots of testing, which areas are under-tested, and which areas should be review critical and extra attention, then i think it will help smooth the review process
+19:35:04 <wumpus> #topic travis switch to trusty
+19:35:24 <wumpus> kanzure: agree that would be useful
+19:35:34 <luke-jr> I dislike breaking external repos' ability to use Travis, but… we're already at that point, so meh
+19:35:49 <cfields> I tried to summarize in #7920. Basically we need to hit a few buttons that may cause a few hours of instability. I don't think there's really much downside other than that, I just didn't want to pull the trigger without opening it for discussion
+19:35:58 <cfields> luke-jr: this doesn't disable their ability
+19:36:08 <wumpus> a few hours travis downtime is no problem
+19:36:17 <cfields> luke-jr: they just won't get caching until the feature is generally available. They can ask for it as well.
+19:36:25 <wumpus> luke-jr: how would this change that?
+19:36:31 <luke-jr> cfields: well, right now Travis is unwilling to enable it for other repos without a contractual agreement
+19:36:37 <wumpus> we already have special support for caching
+19:36:37 <luke-jr> wumpus: it wouldn't, hence meh
+19:36:38 <jtimon> cfields: hours of isntability? meh, people can just change the commit id without changes and force push
+19:36:45 <wumpus> right.
+19:36:46 <cfields> luke-jr: eh? It's an email asking for a flag :)
+19:36:49 <gmaxwell> luke-jr: right now we have some special settings that are us only. This moves us closer to a standard configuration.
+19:36:49 <kanzure> is the concern that build caching is too much load on travis?
+19:36:51 <jonasschnelli> cfields: Is there still no way to use the non-sudo travis way?
+19:36:52 <kanzure> *their concern
+19:36:58 <luke-jr> cfields: and gets denied unless you have an arrangement
+19:37:10 <jonasschnelli> cfields: qt has been added to the "allowed packages"
+19:37:17 <cfields> luke-jr: huh? This _removes_ our arrangement.
+19:37:25 <luke-jr> gmaxwell: cfields: oh, I missed that detail
+19:37:42 <gmaxwell> luke-jr: basically this gets rid of the old thing, in favor of a new feature which will be available to everyone.
+19:37:50 <btcdrak> luke-jr: travis plan to roll it out for everyone.
+19:37:52 <luke-jr> even better
+19:38:16 <cfields> jonasschnelli: there are a few annoying things that won't every work without sudo, I'm afraid
+19:38:30 <gmaxwell> it isn't _yet_ available to everyone, but the plan is that it will be, and it sounds like they would be much more willing to enable it for others.
+19:38:40 <cfields> unless they can be encouraged to come up with some workarounds
+19:38:47 * luke-jr looked at removing sudo use a while ago, and thought it just needed whitelisted pkgs
+19:38:56 <cfields> right, we're beta testers. Pretty strenuous ones too :)
+19:38:58 <sipa> i would love to just enable travis on my own bitcoin fork repo
+19:39:02 <kanzure> and travis changes are off-limits if they break lots of downstream forked projects?
+19:39:10 <kanzure> what level of commitment are we making there anyway..
+19:39:14 <jonasschnelli> sipa: you can?!
+19:39:16 <jtimon> sipa + 5
+19:39:24 <jtimon> oh, really?
+19:39:27 <cfields> sipa: you can already, it just takes ages
+19:39:35 <jonasschnelli> unless you pay.
+19:39:36 <sipa> cfields: it fails for me
+19:39:39 <sdaftuar> takes ages?  i find that about half the time the jobs fail
+19:39:41 <jtimon> #action tutorial to enable travis on your own repo
+19:39:43 <sipa> jonasschnelli: no, it:s free
+19:39:51 <jonasschnelli> sipa: you might need to push a recent master
+19:39:55 <luke-jr> sdaftuar: recently?
+19:39:59 <cfields> everyone can ask for the flag, we can nag them into pulling it out of beta :p
+19:40:00 <sdaftuar> yeah, all the time
+19:40:01 <jonasschnelli> sipa: its free but you get more cycles if you pay.
+19:40:07 <sipa> of course
+19:40:19 <sipa> bit until recently everything jist failed to build
+19:40:20 <kanzure> sounds like the failure might be due to lack of flag enablement
+19:40:28 <luke-jr> hrm, I fixed some Travis-outside-of-"bitcoin" issues earleir this year
+19:40:46 <cfields> i'm working with them on a few other things (their-side) that should speed up builds as well
+19:41:01 * gmaxwell looks over at the rack in his office with hundreds of processors that can't be used for this because we're depending on external infrastructure.
+19:41:04 <cfields> so likely in the near future it will be possible for everyone to have their own repos being built
+19:41:06 <jonasschnelli> While where at travis: we could also think about adding another github compatible CI to speedup tests (share platforms over two CI systems)?
+19:41:10 <wumpus> in any case very good to hear the trusty conversion is very close now, let's set things in motion
+19:41:16 <kanzure> perhaps some companies would be willing to sponsor large piles of testing infrastructure :)
+19:41:24 <wumpus> jonasschnelli: nah, maintaining one is enough work
+19:41:27 <cfields> wumpus: ok, can be done today
+19:41:27 <kanzure> lots of testing infrastructure would mean big development cycle speedups, less time waiting scratching heads
+19:41:31 <wumpus> cfields: +1
+19:41:47 <wumpus> cfields: let me know when I need to merge
+19:41:49 <gmaxwell> cfields: in any case, push button; please
+19:41:53 <cfields> wumpus: just need someone around to click the merge button on my PR after it goes live
+19:42:12 <cfields> roger. Confirming now.
+19:42:13 * jtimon remembers asking for a script to run everything travis runs in his own computer, is there such a thing?
+19:42:28 <luke-jr> if there was a non-proprietary CI option, we could use gmaxwell's hundreds of processors, and also reproduce issues locally ;)
+19:42:37 <cfields> jtimon: sure
+19:42:39 <btcdrak> cfields: +1
+19:42:42 <luke-jr> there is?
+19:42:52 <cfields> luke-jr: travis is completely open, btw
+19:43:14 <kanzure> #action (cfields) travis changes requiring some downtime
+19:43:22 <wumpus> thanks kanzure
+19:43:38 <jtimon> well, I could use a link to a tutorial or something, but I guess we can take that offline (ie after the meeting), thanks cfields
+19:43:45 <wumpus> #action merge #7920 when cfields says so
+19:43:52 <cfields> jtimon: sure
+19:44:01 <jtimon> if I could queue builds that would be even more awesome
+19:44:35 <wumpus> ok, any other topics to be discussed?
+19:46:16 <wumpus> seems not :)
+19:46:27 <btcdrak> the segwit afterparty!
+19:46:28 <jtimon> https://i.ytimg.com/vi/_QR9QP0Rjsc/maxresdefault.jpg
+19:46:41 <wumpus> #endmeeting
