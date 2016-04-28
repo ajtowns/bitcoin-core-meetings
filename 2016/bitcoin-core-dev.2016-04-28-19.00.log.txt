@@ -1,0 +1,217 @@
+19:00:11 <wumpus> #startmeeting
+19:00:11 <lightningbot> Meeting started Thu Apr 28 19:00:11 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:11 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:12 <gmaxwell> sipa: jonasschnelli wumpus morcos sdaftuar kanzure BlueMatt jtimon cfields luke-jr petertodd
+19:00:29 <wumpus> proposed topics?
+19:00:30 <sipa> mildly present
+19:00:48 <kanzure> i propose follow-up from last week re: segwit code review, and new/upcoming tasks on that front
+19:00:50 <morcos> i'm here for 10 mins
+19:01:02 <kanzure> gmaxwell: thanks for the ping
+19:01:03 <jonasschnelli> I have two very small topic proposals: wording for RBF, a request for creating/storing CI material
+19:01:05 <gmaxwell> morcos: anything you want to talk about in 10 minutes.
+19:01:10 <cfields> thanks, here
+19:01:31 <morcos> just to encourage anyone who is going to review segwit to get on it!  :)
+19:01:56 <wumpus> action items of last time were a) more code review of segwit 2) kanzure: look at test coverage output 3) (Luke) update GBT segwit stuff 4) (jtimon) tutorial to enable travis on your own repo 5) (cfields) travis changes requiring some downtime 6) merge #7920 when cfields says so
+19:01:56 <kanzure> i have some segwit review notes but they are not precisely publicly consumable, can i get a volunteer to go through my notes? ideally not sipa :)
+19:01:59 <gmaxwell> What is the status of the segwit BIPs? are they all consistent with the implementation right now?
+19:02:27 <kanzure> wumpus: if i was supposed to look at test coverage output then i totally barfed on that, my bad-- i thought someone else took that.
+19:02:29 <wumpus> last two items are done at least, transition to trusty and c++11 was succesful
+19:02:50 <gmaxwell> \O/
+19:02:52 <wumpus> kanzure: yes the name is who suggested it, Idon't know the context
+19:02:52 <jtimon> wumpus: re 4 I thought cfields was going to write the tutorail, not me...I'm still on https://docs.travis-ci.com/user/getting-started/
+19:02:58 <sdaftuar> kanzure: i'd be happy to review your notes
+19:03:07 <kanzure> sdaftuar: cool, i will spam you with them
+19:03:16 <cfields> jtimon: sorry, i got lost in the transition stuff
+19:03:24 <wumpus> jtimon: oh maybe he's going to, but he had a lot on his hands
+19:03:46 <jtimon> no hurry, just saying that I'm not working on that
+19:04:01 <wumpus> okay :)
+19:04:25 <wumpus> how is the review of segwit going?
+19:04:34 <kanzure> sdaftuar: you have been spammed, thanks.
+19:05:53 <morcos> wumpus: i'm feeling pretty good, but it's hard to tell who all has done deep commit by commit reviews
+19:05:55 <kanzure> topic suggestion-- how to convince sipa to give more context about testing status of segwit
+19:06:15 <sdaftuar> wumpus: i'm slowly making my way through
+19:06:23 <wumpus> morcos: good to hear that you're making your way through
+19:06:24 <kanzure> morcos: perhaps we should all post about our review status?
+19:06:31 <cfields> tangentially: I've finally started working with the mining pools (with Kang's help translating) to ensure that their real-world environments. Aim is to get at least one segnet block mined by each pool. Happy to report that last night, BTCC's patched pool mined a few blocks. I'll be working with the others in the coming days
+19:06:49 <morcos> cfields: oh thats great!
+19:07:00 <cfields> *segnet block with witness txs, ofc
+19:07:07 <kanzure> i have done a preliminary read of all the diffs for segwit but not commit-by-commit.... i have a number of places that i am considering investigating the test situation more closely but it's all probably dead-ends ( sdaftuar to advise ).
+19:07:09 <morcos> time for someone else to get some segnet coins, i have too many
+19:07:45 <sipa> i could list a few areas where i think mildly tricky things are done that warrant review
+19:07:50 <kanzure> yes please.
+19:08:50 <wumpus> #action (sipa) list a few areas where i think mildly tricky things are done that warrant review
+19:08:55 <morcos> sipa: in particular the areas that are new for me (such as the wallet/signing code) are harder to be confident about.  i'd feel better knowing others are reviewing it as well
+19:09:20 <sipa> good to know
+19:09:32 <kanzure> signaturehash changes were specified by bip and one (trivial) review task is "confirm it follows the bip spec"
+19:09:47 <morcos> sipa: harder b/c of me, not b/c the code is tricky looking
+19:10:14 <instagibbs> morcos, maybe have people express review coverage with amount of certainty based on familiarity with the code
+19:10:33 <sipa> the wallet signing code adds a refactor to stop working directly on scriotsigs, but initially work on just the stacks being pushed, and only convert them at the last step
+19:10:52 <instagibbs> for me, review of wallet code was much easier than parsing the tree commitment stuff
+19:11:02 <cfields> kanzure: some input from other projects (NicolasDorier *poke*) may be helpful there.
+19:11:14 <morcos> instagibbs: i like that idea. not sure how easy it is to break up
+19:11:37 <instagibbs> that said, I read *every* commit, and attempted best-effort understanding
+19:11:37 <sipa> cfields: i'd like some comments from you ob luke-jr's proposed bip9 gbt changes
+19:11:54 <morcos> ok got to run.  overall, yay for c++11, yay for segwit!
+19:11:54 <cfields> sipa: ah, right. ack.
+19:12:17 <gmaxwell> I was talking to nickler about doing consensus harness tests for verifying consensus consistence, e.g. between 0.13 and 0.12.x or pre-segwit. Maybe there will be something to report there in a week or so.
+19:12:47 <jtimon> yeah, for example, I'm less familiar with the p2p and wallet parts, unfortunately I don't think I will be able to give a full utACK to #7910, but that of course shouldn't not stop it from being merged
+19:13:21 <instagibbs> jtimon, which brings me to my point, aside from sipa and a few others, I doubt anyone can full utACK #7910
+19:14:09 <kanzure> one of the things i'd like to investigate more closely is the set of tests that were written versus the expected set of tests... but hard to find all the corner cases.
+19:14:59 <jtimon> instagibbs: good point, the PR touches many parts. I think I will focus on the consensus and relay policy parts and only utACK that
+19:15:03 <sipa> also in general: what do people think of the strategy i've been following to not rebase/squash, but only add small patches and a changing merge commit at the end?
+19:15:23 <kanzure> sipa: i think that is a good idea. it gives us time to ACK various older commits.
+19:15:31 <instagibbs> jtimon, seems wise, people have to self-select what they feel competent to review
+19:16:00 <sipa> at some point i'll squash and rebase in such a way that the resulting tree id identical to the old broken down branch
+19:16:07 <jtimon> sipa: no strong opinion but it seems to partly defeat the point of having the commits separated in related sections (btw, I would separate p2p from consensus)
+19:16:42 <kanzure> tree id similarity is a nice approach....
+19:16:49 <kanzure> (git ls-tree and such)
+19:17:18 <sipa> jtimon: i'll keep the section
+19:17:25 <sdaftuar> sipa: some kind of warning before you squash/rebase would be helpful for me at least
+19:17:44 <sdaftuar> sipa: but i like how you've done it so far
+19:17:46 <kanzure> it would also be good if you could keep the original commits around on your git repo
+19:17:52 <sipa> kanzure: of course
+19:17:54 <jtimon> sipa: I see, so your question is more about squashing only once at the end, fine with me
+19:17:59 <sipa> it needs to be verifiable
+19:18:03 <kanzure> good, thanks.
+19:18:25 <cfields> sipa: you can just push to a spare branch before final squash, then we can diff the two
+19:18:42 <jonasschnelli> only add commits, once we have enough ACKS, hash the diff, rebase, check the hash of the diff and merge?
+19:18:55 <sipa> jonasschnelli: indeed
+19:20:06 <wumpus> ok next topic?
+19:20:29 <wumpus> #topic status of the segwit BIPs
+19:21:18 <wumpus> (gmaxwell)
+19:21:29 <achow101> bip 144 needs to include the service bit stuff
+19:22:23 <wumpus> everyone agree?
+19:22:48 <sipa> ugh, that was never uodated
+19:22:51 <sipa> yes, agree
+19:23:15 <wumpus> #action bip 144 needs to include the service bit stuff
+19:23:31 <gmaxwell> I suppose we should try to extract some feedback e.g. from roastbeef to reimplemented, who might be aware of other limitations in the spec.
+19:23:50 <instagibbs> roasbeef*
+19:24:00 <petertodd> just noticed someone has a python-bitcoinlib segwit branch too
+19:24:07 <achow101> armory does as well
+19:24:27 <petertodd> (sorry, just got in)
+19:24:59 <wumpus> petertodd: just in time for the python-bitcoinlib segwit branch!
+19:25:31 <petertodd> wumpus: ha yeah - no credit to me though :)
+19:26:20 <wumpus> #action (gmaxwell) try to extract some feedback e.g. from roasbeef to reimplemented, who might be aware of other limitations in the spec
+19:26:46 <sipa> we have gotten some comments from a few people and making small clarifications frequently
+19:26:55 <sipa> including from tadge
+19:27:29 <sipa> i'm surprised nobody commented about the service bit
+19:27:52 <achow101> sipa: I think I brought it up a couple of weeks ago but didn't follow up on it
+19:28:02 <sipa> achow101: sorry then!
+19:29:22 <instagibbs> I can verify 141 and 143 match up
+19:30:33 <wumpus> great
+19:32:15 <sipa> small update: the reviewer that btcdrak contacted about ctaes wrote a report
+19:32:33 <jonasschnelli> sipa: the tor lead dev?
+19:32:51 <sipa> jonasschnelli: no, someone mathhew green recommemded
+19:33:04 <sipa> he formally proved that some parts were correct, and analyzed the condtant timeness
+19:33:07 <jonasschnelli> Okay. Good. What was the result?
+19:33:09 <sipa> i can share the reoort
+19:33:11 <petertodd> sipa: +1
+19:33:16 <sipa> a+ :)
+19:33:24 <jonasschnelli> sipa: Can you add it on your ctaes repository?
+19:33:27 <wumpus> awesome!
+19:33:49 <cfields> sipa: nice!
+19:35:16 <sipa> any more topics? i'll be off otherwise
+19:35:30 <jonasschnelli> RBF naming: should we flag/attribute RBF transaction as "replaceable" or should we attribute "current" non RBF transaction as "non-replacable"?
+19:35:59 <petertodd> jonasschnelli: I'd lean towards replacable, as non-replacable implies we're promising something...
+19:36:00 <jl2012> bringing segwit testing to testnet?
+19:36:09 <gmaxwell> the former, I think. It's incorrect to say non-RBF is non-replacable; they're just somewhat less replacable.
+19:36:55 <wumpus> agree with gmaxwell
+19:37:13 <jonasschnelli> Okay. I agree as well. Will continue with this term.
+19:37:16 <instagibbs> 'mempool-replaceable' ?
+19:37:26 <petertodd> doublespends happen all the time, and only a small subset of them are opt-in RBF txs
+19:37:42 <wumpus> but RBF transactions the user can easily replace themselves
+19:37:42 <jl2012> sipa: are we ready to define the testnet BIP9 parameter for segwit?
+19:37:47 <wumpus> that should be the focus imo
+19:38:06 <wumpus> what the user can do with it
+19:38:10 <jonasschnelli> instagibbs: I was also thinking about that. But does the normal bitcoin-qt user really knows what the mempool is?
+19:38:13 <jtimon> "standard-policy-0.12-replaceable"?
+19:38:26 <jonasschnelli> :}
+19:38:40 <petertodd> jtimon: all the user's node knowns is they think it's replacable, so the 0.12 is implicit :)
+19:38:40 <jonasschnelli> "standard-policy-0.12-BIP125-replaceable"
+19:39:13 <wumpus> yes the 0.12 is implicit, the BIP125 part makes sense
+19:39:34 <jtimon> yeah, 0.12 was kind of joking, the point is all tx are equally replaceable with a custom policy, the opt-in stuff is just about the standard policy
+19:39:36 <petertodd> don't we already have a bip125-replacable or similar name used in the RPC anyway?
+19:39:54 <jonasschnelli> petertodd: Yes. Listtransaction
+19:40:03 <wumpus> yes entry.push_back(Pair("bip125-replaceable", rbfStatus));
+19:40:21 <jtimon> ack bip125-replaceable
+19:40:26 <jonasschnelli> Also I think someone should refactor the RBF BIP125 rules to the new rbf.cpp
+19:40:31 <petertodd> jtimon: you can also replace txs by flooding mempools and getting them kicked out :)
+19:40:40 <jonasschnelli> The bumpfee or feealter command could than re-check the validity
+19:40:52 <jonasschnelli> s/re-check/pre-check
+19:41:37 <jonasschnelli> In the GUI we should probably just use the term "replaceable".
+19:42:22 <jtimon> then we have the same problem I think
+19:42:24 <petertodd> jonasschnelli: "easily replacable"
+19:42:27 <jtimon> opt-in-repleaceable ?
+19:42:38 <petertodd> jonasschnelli: or heck, "trivially replacable"
+19:42:45 <paveljanik> "updatable"?
+19:43:03 <luke-jr> "replacement-requested"
+19:43:04 <jonasschnelli> of "signs replicability"?
+19:43:21 <petertodd> paveljanik: eh, changing the name to something other than replacable would invite trolling possibly
+19:43:39 <paveljanik> replacability signalled ;-)
+19:43:48 <jonasschnelli> replacability signalled: +1
+19:43:57 <wumpus> yes I think whatever the name is it should contain 'replace', otherwise it's too confusing, introducing completely new terminology
+19:44:02 <petertodd> wumpus: +1
+19:44:06 <jonasschnelli> Indeed
+19:44:12 <wumpus> replaceability signalled sounds good to me
+19:44:22 <petertodd> sure, why not
+19:44:36 <jonasschnelli> ack
+19:44:38 <jtimon> "replace explicitly allowed"?
+19:44:41 <sdaftuar> fee-replaceable ?
+19:44:56 <jonasschnelli> sdaftuar: but it could also add a output
+19:44:57 <jtimon> I mean, "replacability signalled" is good enough for me
+19:45:28 <jonasschnelli> sdaftuar: but right. You mean replaceable by fee
+19:45:37 <sdaftuar> yeah, you can replace it if you up the fee
+19:45:58 <jonasschnelli> "fee-replacability signalled"?
+19:46:06 <petertodd> jonasschnelli: which is tricky, because any low fee tx is in practice replacable by fee regardless of whether bip125 is used or not
+19:46:20 <sdaftuar> but not by your wallet
+19:46:38 <wumpus> I don't think the GUI term needs to be so specific - just make sure that the mouseover or other documentation explains it in more detail
+19:46:45 <sdaftuar> +1
+19:46:46 <jonasschnelli> Sure. But the term would also be for attributing incoming payment.
+19:46:47 <petertodd> oh, key question: are we going to show this for all txs, or just txs sent by the user?
+19:46:54 <paveljanik> sdaftuar, depends on the wallet IMO
+19:46:56 <jtimon> petertodd: exactly, for all we know, miners could replace by hash alphabetic order rather than fees
+19:47:01 <cfields> sdaftuar: i like that, but it describes the mechanics more than the intent.
+19:47:07 <jonasschnelli> petertodd: incoming and outdoing.
+19:47:25 <petertodd> jonasschnelli: see, if it was just outgoing, this conversation would be a lot simpler :)
+19:48:11 <wumpus> replacability signalled is fine, let's move on
+19:48:15 <jonasschnelli> incoming tx: "replacability signalled", create tx: "[ ] signall replacability"
+19:48:18 <jonasschnelli> ack.
+19:48:21 <jtimon> what was wrong about "Opted in to replacement" or something along those lines?
+19:48:23 <wumpus> any other topics?
+19:48:44 <jtimon> yeah, nv, "replacability signalled" does it
+19:48:59 <jtimon> s/nv/never mind
+19:49:01 <jonasschnelli> topic: another boring one, not sure if this is the right place: Someone contacted me that we should have a repository for Bitcoin Core logos and communication material.
+19:49:11 <jonasschnelli> Somehow that made me think that Bitcoin Core has no clear logo/visual identity. Its not define what to use when, the font, the colors. Not sure if anyone from us cares about that though.
+19:49:25 <paveljanik> press kit? ;-)
+19:49:30 <petertodd> paveljanik: +1
+19:49:44 <jonasschnelli> We probably don't care. But out userbase does a lot
+19:49:46 <petertodd> paveljanik: or maybe call it "media kit" to shift focus to all media in general
+19:49:50 <jonasschnelli> *our
+19:49:59 <btcdrak> jonasschnelli: a press kit would be a good idea
+19:50:06 <wumpus> we don't have that, but if anyone wants to make it and collect some things why not
+19:50:54 <jonasschnelli> It would imply that we first need to create a identity, proper logo, font, etc. I'm not interested ATM, but happy if someone know someone who is.
+19:50:56 <btcdrak> jonaschnelli: ideally we could store that in a "media kit" repository.
+19:51:16 <jonasschnelli> I think it should be a subarea of the website
+19:51:37 <petertodd> jonasschnelli: that makes sense
+19:51:46 <wumpus> yes I think the question is more *who* than if, I don't think press kits are very usual for open source projects, but if someone wants to work on that I don't want to discourage
+19:52:21 <jonasschnelli> Agree.
+19:52:26 <sipa> wumpus: they're very common among altcoins though :p
+19:52:27 <cfields> wumpus: for open-source, they almost always accompany a licensing policy
+19:52:41 <cfields> (lived through that hell for a while in a past life)
+19:52:50 <wumpus> cfields: yes, as for firefox
+19:52:54 <cfields> right
+19:53:38 <cfields> so for us, unless we wanted to police it, a press kit would be more of a collection of recommended images/text that we also use.
+19:54:08 <cfields> i suppose that was the idea, though
+19:54:08 <wumpus> right
+19:54:10 <jonasschnelli> Yes. There is even no clear logo that Bitcoin Core uses/represents.
+19:54:15 <warren> "\nExamples:\n"
+19:54:17 <warren> + HelpExampleCli("getnewaddress", "")
+19:54:21 <warren> + HelpExampleRpc("getnewaddress", "")
+19:54:23 <warren> Any idea why this has both, and they're identical?
+19:54:25 <jonasschnelli> warren: dumpprivatekey
+19:54:39 <wumpus> warren: we're in the middle of a meeting
+19:54:45 <warren> oops sorry!
+19:54:45 <wumpus> well, at the end
+19:55:20 <wumpus> I think we're done
+19:55:34 <jonasschnelli> \ö/
+19:55:37 <wumpus> #endmeeting
