@@ -1,0 +1,212 @@
+19:01:24 <wumpus> #startmeeting
+19:01:24 <lightningbot> Meeting started Thu May  5 19:01:24 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:24 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:51 <BlueMatt> hi all
+19:02:02 <btcdrak> topics?
+19:02:17 <wumpus> last week's action items were
+19:02:18 * wumpus (sipa) list a few areas where i think mildly tricky things are done that warrant review (wumpus, 19:08:50)
+19:02:26 <sipa> in a plane, i can only stay online for 15 minutes
+19:02:32 * wumpus bip 144 needs to include the service bit stuff
+19:02:33 <sipa> oops, forgot about that; will do
+19:02:40 <sipa> that's done
+19:02:42 <instagibbs> wumpus, merged
+19:02:45 <gmaxwell> petertodd: morcos: sdaftuar: phantomcircuit: MarcoFalk_: jonasschnelli: luke-jr: jtimon: instagibbs:
+19:02:45 * wumpus (gmaxwell) try to extract some feedback e.g. from roasbeef to reimplemented, who might be aware of other limitations in the spec
+19:03:00 <phantomcircuit> im here
+19:03:04 <sdaftuar> hi
+19:03:18 <cfields> here
+19:03:26 <gmaxwell> wumpus: I've failed to do that so far, sorry.
+19:03:39 <wumpus> no rush I suppose
+19:03:43 <wumpus> any other topics?
+19:03:59 <anchow101> segwit versionbit
+19:04:02 <nickler> I've had a look at the btcd segwit PR, it includes around 5 tests
+19:04:21 <wumpus> #topic segwit versionbit
+19:04:59 <anchow101> The bip still says tbd for bit and date.
+19:05:08 * sipa randomly proposes bit (1 << 4)
+19:05:28 * instagibbs tries rng, gets 4
+19:05:30 <wumpus> if there's no special reason to pick a specific bit I'd suggest previous_bit+1
+19:05:31 <btcdrak> 8 is lucky in China
+19:05:52 <sdaftuar> previous_bit + 1 makes sense to me...
+19:05:55 <btcdrak> wumpus: ack
+19:05:55 <sipa> so (1 << 1), also fine
+19:06:00 <anchow101> +1
+19:06:13 <BlueMatt> I'm with btcdrak
+19:06:22 <wumpus> otherwise it leaves holes, not a big deal, but dealing out consecutively may reduce the chance of accidentally duplicate assignments
+19:06:31 <btcdrak> are we ready to think about dates? even for testnet?
+19:06:50 <jl2012> i think we should set the testnet date now?
+19:06:53 <gmaxwell> sipa: whatever number you're proposing please post it to the mailing list.
+19:07:17 <jl2012> start 1 Apr 2016, end 1 Jan 2018?
+19:07:26 <wumpus> probably we should have some living document that keeps track of current bit assignments, outside the bips
+19:07:32 <NicolasDorier> for testnet do we need a date ? we did not for csv
+19:08:23 <anchow101> NicolasDorier, the dat for csv on testnet was March 1st
+19:08:27 <anchow101> *date
+19:08:35 <NicolasDorier> ok my bad
+19:09:46 <btcdrak> wumpus: maybe we can add a file bip-0009/assignments.md in the bips repository
+19:09:49 <anchow101> If the release can be out before June, what about June 1st for a mainnet start date? And May 1st for testnet?
+19:10:22 <gmaxwell> Dates should not be set until the software is known ready for release, and we are not currently there.
+19:10:29 <gmaxwell> There is no need to be over-eager.
+19:10:36 <sipa> i think we need to have a deployment active on testnet before even beginning to consider a start time on mainnet
+19:10:51 <wumpus> btcdrak: sounds good to me
+19:10:58 <gmaxwell> I think june first would be fine, but it could be set the day before, for all the system cares.
+19:11:29 <wumpus> #action add a file bip-0009/assignments.md in the bips repository to keep track of an overview of current bit assignments separate from their bips
+19:11:32 <btcdrak> jl2012: no need to have such a long expiry date for testnet.
+19:13:26 <wumpus> okay
+19:13:53 <wumpus> so do people agree on june 1?
+19:14:03 <morcos> for testnet?
+19:14:04 <sipa> for testnet?
+19:14:10 <morcos> i don't see why not make it earlier
+19:14:14 <wumpus> that's what the discussion is about right?
+19:14:24 <morcos> it kind of doesn't matter, just make it may 1st and it happens when it happens
+19:14:32 <sipa> indeed
+19:14:36 <wumpus> for mainnet it'd be kind of crazy to decide on an activation date now IMO
+19:14:37 <btcdrak> morcos: ack
+19:14:43 <sipa> we're not testing the deployment logic and teansitions
+19:14:47 <gmaxwell> morcos +1 for testnet.
+19:14:58 <sipa> may 1st for testnet sounds finr
+19:15:04 <wumpus> may 1st? more time travel? I've seen enough deloreans this week
+19:15:10 <jonasschnelli> hah
+19:15:11 <morcos> i might be obnoxious and start now...  :)
+19:15:19 <instagibbs> morcos, hostile softforks incoming
+19:15:26 * sipa is going to disappear
+19:15:27 <gmaxwell> This date is not something that needs to be set _in advance_, and it also shouldn't be set without coordiating with other implementers (at least in principle)
+19:15:38 <morcos> wumpus: its what we did with csv, it just means you can starg signaling immediately
+19:15:44 <wumpus> okay, no decision on a date then
+19:16:02 <wumpus> #action discuss testnet activation date on bitcoin-dev mailing list
+19:16:07 <morcos> gmaxwell: i kind of disagree, i think that the code is mature enough that we should activate on testnet now
+19:16:16 <gmaxwell> morcos: I'm not talking about testnet.
+19:16:25 <morcos> gmaxwell: teh rest of us are  :)
+19:16:26 <wumpus> we AREE talking about testnet
+19:16:31 <gmaxwell> Testnet is fine. do whatever with testnet. If it causes turbulance there, oh well.
+19:16:33 <wumpus> please don't confuse things
+19:16:49 <gmaxwell> wumpus: _YOU_ are talking about testnet jl2012 and anchow101 were not.
+19:17:08 <gmaxwell> I already +1 morcos for testnet.
+19:17:08 <wumpus> huh *confused*
+19:17:08 <jl2012> no, I'm talking about testnet
+19:17:29 <phantomcircuit> haha
+19:17:35 <morcos> ok so to summarize, email to bitcoin ML stating we are setting the testnet activation start date as may 1st because we believe at this point the activation start date is likely the only consensus change remaining with segwit
+19:18:12 <gmaxwell> Because it's testnet and the delayed start logic doesn't apply there, we don't care about creating turbulance there if miners upgrade ahead of nodes.
+19:18:12 <wumpus> makes sense
+19:18:20 <morcos> this will allow anyone to test their various versions of segwit (different implementations and backports) against each other potentially even before merging
+19:18:47 <anchow101> morcos: ack
+19:18:52 <morcos> gmaxwell: yes there is no reason to delay, but there is reason to agree on the start date so that we all activate at the same time
+19:19:21 <gmaxwell> morcos: yes, may first is fine.
+19:19:39 <btcdrak> ok so (1<<1) with activation may 1st for testnet, and (1<<1) and date TDB for mainnet
+19:19:48 <jonasschnelli> ack
+19:19:52 <achow101> yes
+19:20:07 <morcos> btcdrak: ack
+19:20:20 <paveljanik> ack
+19:20:26 <morcos> but what does TDB stand for?  :)
+19:20:43 * btcdrak palms face
+19:20:45 <gmaxwell> Totally delicious burger.
+19:20:48 <jl2012> ack 1 May testnet, how about expiry date?
+19:20:55 <cfields> ack, but we need to get the gbt changes in place quickly so that testnet is a valid representation of what miners will be running
+19:21:03 <btcdrak> j2012: 1 year.
+19:21:09 <morcos> ack 1 year
+19:21:27 <BlueMatt> sgtm
+19:21:31 <btcdrak> (1<<1) with activation may 1st and expiry 1 year for testnet, and (1<<1) and dates TBD for mainnet
+19:21:34 <BlueMatt> phantomcircuit: when will we see testnet fork?
+19:21:47 <morcos> cfields: can you summarize what GBT changes are needed still?
+19:22:57 <morcos> does #7935 have anything at all to do with segwit?
+19:23:27 <cfields> morcos: there's a proposal to bip9 that would require that miners set a flag signaling awareness of segwit
+19:23:46 <cfields> *proposed amendment
+19:24:39 <cfields> morcos: see https://github.com/bitcoin/bips/pull/365
+19:25:14 <morcos> ok i haven't read through all that but i kind of thought it was orthogonal to segwit.  we already have versionbits SF's in the process of being activated.  is segwit somehow materially different.  if not, lets not confuse the issues
+19:25:58 <gmaxwell> morcos: it's just that a non-sw aware miner can't use GBT w/ segwit and keep mining while they can use CSV.
+19:26:40 <sdaftuar> gmaxwell: i don't follow why that is, can you explain?
+19:27:16 <cfields> morcos: assuming that's adopted, some miners won't be creating blocks with commitments, so i'd like to make sure that we're testing on testnet. Otherwise it's not a great representation of mainnet mining.
+19:27:21 <gmaxwell> I could be speaking out of my rear, my understanding at a distance was that non-SW ready gbt clients won't insert the commitment.
+19:27:32 <sdaftuar> but the commitment is created by bitcoind
+19:28:02 <gmaxwell> sdaftuar: classical GBT does not include a coinbase transaction, the client generates it using information from the template.
+19:28:13 <morcos> if can't use GBT means can't change the txs selected by bitcoind then maybe you're right, but that seems a secondary problem
+19:28:15 <cfields> sdaftuar: if a miner is too old to understand how to insert the commitment, bitcoind can provide only non-witness txs, so that the miner continues to produce valid blocks
+19:28:55 <morcos> maybe we should take this up after the meeting.
+19:29:14 <gmaxwell> sounds fine.
+19:29:53 <cfields> ok. i only mentioned because i'd like to start upstreaming the mining/pool patches if we're going to deploy on testnet. And can't do that until the gbt stuff is finalized
+19:30:02 <cfields> but fine to discuss later, i don't think it'll be an issue
+19:30:39 <wumpus> ok, any other topics to be discussed?
+19:30:42 <NicolasDorier> yes
+19:30:55 <NicolasDorier> I just want opinion about
+19:30:59 <NicolasDorier> making sure the wallet does not create uneconomical output based on current fees, and not based on mintxrelayfee (https://github.com/bitcoin/bitcoin/issues/7677)
+19:31:05 <wumpus> nickler mentioned btcd segwit PR tests, but I'm not sure that was a topic suggestion
+19:31:08 <morcos> cfields: i'd just like to distinguish between necessary changes and changes that are only needed if miners are going to be modifying the tx selection created by bitcoind.  the second category in my mind should not stand in the critical path
+19:31:46 <NicolasDorier> I had problems with customers when mintxrelayfee where bump because occasionally wallet would produce bellow mintxrelayfee dust for other nods.
+19:31:57 <wumpus> #topic uneconomical outputs in wallet based on current fees
+19:32:03 <NicolasDorier> So I proposed to work on https://github.com/bitcoin/bitcoin/issues/7677
+19:32:04 <nickler> wumpus: nope I was referring to the action item that mentioned roasbeefs implementation
+19:32:09 <BlueMatt> also compact block bip, if anyone has bothered to read that
+19:32:16 <wumpus> nickler: okay :)
+19:32:28 <cfields> morcos: this has nothing to do with miners modifying tx output. it's that miners need to opt-in to segwit in order for bitcoind to give it witness tx. And that opt-in signal hasn't been implemented yet.
+19:33:35 <gmaxwell> BlueMatt: was that a topic suggestion?
+19:34:10 <wumpus> any opinions on the wallet issue mentioned by NicolasDorier?
+19:34:22 <BlueMatt> gmaxwell: yes
+19:34:22 <gmaxwell> NicolasDorier: I'll take a look at the issue.
+19:34:28 <NicolasDorier> Breadwallet had issue also because of that when the mintxrelayfee was bumped
+19:34:39 <NicolasDorier> so I think we should fix the wallet to not use mintxrelayfee
+19:34:51 <NicolasDorier> but estimatedfee for determining the dust (only wallet part)
+19:35:13 <NicolasDorier> would prevent having reliability issue in case it need to be increase in the future
+19:35:14 <wumpus> it sounds sensible, wallet and relay policy are different things, although the mintxrelayfee should probably be the floor
+19:35:54 <gmaxwell> or the dust threshould should just be made an infrequently changed fixed constant.
+19:36:20 <NicolasDorier> gmaxwell: I am talking only about wallet, not relay policy
+19:36:38 <NicolasDorier> ah
+19:36:58 <NicolasDorier> I get your point. But well the problem would be the same with a constant. If we get a spam attack, we would increase it
+19:37:11 <NicolasDorier> and then some wallet will produce below dust rejected by updated nodes
+19:37:15 <morcos> yes, we should do both things
+19:37:18 <gmaxwell> lets discuss on the issue.
+19:37:24 <NicolasDorier> ok
+19:37:33 <NicolasDorier> there is another quick topic I want to talk about
+19:37:50 <morcos> we should separate wallet functionality to use some smarter higher value for "dust" and the floor for dust shoudl be a separate variable than the muliple of min relay that it is now
+19:38:21 <morcos> (floor for dust = policy relay limit for dust)
+19:38:25 <NicolasDorier> ok, seems good I'll start working on it. It made me some pain nin the past
+19:38:47 <gmaxwell> morcos: I agree.
+19:39:34 <NicolasDorier> My other quick topic is
+19:39:46 <NicolasDorier> long time ago I made a PR to remove unused flag and code
+19:39:54 <NicolasDorier> on https://github.com/bitcoin/bitcoin/pull/7574
+19:40:01 <NicolasDorier> morcos a jtimon had a better idea
+19:40:08 <NicolasDorier> instead of removing the flag
+19:40:26 <NicolasDorier> transforming it into one flag for all consensus stuff
+19:40:36 <NicolasDorier> I'm thinking working on it but
+19:41:00 <NicolasDorier> if I understand it seems to be better to do such kind of work after the merge of segwit ?
+19:42:27 <gmaxwell> NicolasDorier: usually if that question arises the answer is yes.
+19:42:39 <wumpus> yes I think for such non-trivial consensus refactoring it's better to wait until after segwit
+19:42:52 <NicolasDorier> ok so I'll keep it for later
+19:44:07 <wumpus> ok
+19:44:24 <wumpus> #topic compact block bip
+19:44:24 <gmaxwell> Next subject?
+19:44:29 <gmaxwell> I read it!
+19:45:03 <BlueMatt> you're the only one :'(
+19:45:14 <sdaftuar> not true...
+19:46:10 <gmaxwell> BlueMatt: would you like other people to read it?
+19:46:21 <BlueMatt> I would :p
+19:46:24 <BlueMatt> next topic?
+19:47:36 <cfields> heh, ack
+19:47:45 <cfields> (ack to reading)
+19:47:53 <btcdrak> ^
+19:48:08 <wumpus> so there's nothing about the contents to be discussed?
+19:48:17 <BlueMatt> wumpus: not really...just hoping for feedback
+19:48:36 <wumpus> that's what I mean, no feedback
+19:48:37 <btcdrak> it's pretty dense reading, might need another week...
+19:48:37 <BlueMatt> wumpus: I think all the outstanding decisions were concluded between gmaxwell and I
+19:48:44 <BlueMatt> true
+19:48:56 <gmaxwell> I gave a fair amount of feedback to Matt and he updated prior to putting it up.
+19:48:59 <BlueMatt> so action to our army of devoted full-time code-reviwers? :p
+19:49:02 <wumpus> (haven't read it yet)
+19:49:07 <morcos> too much happening.  we need to clone ourselves.  at least wumpus
+19:49:11 <gmaxwell> BlueMatt: when will the PR be up?
+19:49:12 <BlueMatt> morcos: yea, that
+19:49:17 <NicolasDorier> will read it. It takes me more time than most of you to understand it, can't say anything meaningful about it after reading it for 10min :p
+19:49:23 <gmaxwell> BlueMatt: are you just waiting on feedback?
+19:49:28 <BlueMatt> gmaxwell: I could do that this week...
+19:49:29 <wumpus> #action read bluematt's compact block bip
+19:49:32 <BlueMatt> gmaxwell: mostly
+19:49:34 <wumpus> any URL?
+19:49:40 <NicolasDorier> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012624.html ?
+19:49:48 <BlueMatt> wumpus: https://github.com/TheBlueMatt/bips/blob/master/bip-TODO.mediawiki
+19:49:49 <wumpus> #link https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012624.html
+19:50:01 <wumpus> #link https://github.com/TheBlueMatt/bips/blob/master/bip-TODO.mediawiki
+19:50:37 <wumpus> ok, any other topics?
+19:51:52 <gmaxwell> Sounds like no.
+19:52:12 <wumpus> hey not everyone is a fast typer :)
+19:52:16 <wumpus> but indeed seems no
+19:52:23 <NicolasDorier> well it's 4am here ! :p
+19:52:40 <NicolasDorier> 5 sorry
+19:52:46 <wumpus> #endmeeting

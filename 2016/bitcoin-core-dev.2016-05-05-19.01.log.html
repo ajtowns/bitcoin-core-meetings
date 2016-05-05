@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:24</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May  5 19:01:24 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:24</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:51</span><span class="nk"> &lt;BlueMatt&gt;</span> hi all
+<a name="l-5"></a><span class="tm">19:02:02</span><span class="nk"> &lt;btcdrak&gt;</span> topics?
+<a name="l-6"></a><span class="tm">19:02:17</span><span class="nk"> &lt;wumpus&gt;</span> last week's action items were
+<a name="l-7"></a><span class="tm">19:02:18 </span><span class="nka">* wumpus</span> <span class="ac">(sipa) list a few areas where i think mildly tricky things are done that warrant review (wumpus, 19:08:50)</span>
+<a name="l-8"></a><span class="tm">19:02:26</span><span class="nk"> &lt;sipa&gt;</span> in a plane, i can only stay online for 15 minutes
+<a name="l-9"></a><span class="tm">19:02:32 </span><span class="nka">* wumpus</span> <span class="ac">bip 144 needs to include the service bit stuff</span>
+<a name="l-10"></a><span class="tm">19:02:33</span><span class="nk"> &lt;sipa&gt;</span> oops, forgot about that; will do
+<a name="l-11"></a><span class="tm">19:02:40</span><span class="nk"> &lt;sipa&gt;</span> that's done
+<a name="l-12"></a><span class="tm">19:02:42</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, merged
+<a name="l-13"></a><span class="tm">19:02:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> morcos: sdaftuar: phantomcircuit: MarcoFalk_: jonasschnelli: luke-jr: jtimon: instagibbs:
+<a name="l-14"></a><span class="tm">19:02:45 </span><span class="nka">* wumpus</span> <span class="ac">(gmaxwell) try to extract some feedback e.g. from roasbeef to reimplemented, who might be aware of other limitations in the spec</span>
+<a name="l-15"></a><span class="tm">19:03:00</span><span class="nk"> &lt;phantomcircuit&gt;</span> im here
+<a name="l-16"></a><span class="tm">19:03:04</span><span class="nk"> &lt;sdaftuar&gt;</span> hi
+<a name="l-17"></a><span class="tm">19:03:18</span><span class="nk"> &lt;cfields&gt;</span> here
+<a name="l-18"></a><span class="tm">19:03:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I've failed to do that so far, sorry.
+<a name="l-19"></a><span class="tm">19:03:39</span><span class="nk"> &lt;wumpus&gt;</span> no rush I suppose
+<a name="l-20"></a><span class="tm">19:03:43</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-21"></a><span class="tm">19:03:59</span><span class="nk"> &lt;anchow101&gt;</span> segwit versionbit
+<a name="l-22"></a><span class="tm">19:04:02</span><span class="nk"> &lt;nickler&gt;</span> I've had a look at the btcd segwit PR, it includes around 5 tests
+<a name="l-23"></a><span class="tm">19:04:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit versionbit</span>
+<a name="l-24"></a><span class="tm">19:04:59</span><span class="nk"> &lt;anchow101&gt;</span> The bip still says tbd for bit and date.
+<a name="l-25"></a><span class="tm">19:05:08 </span><span class="nka">* sipa</span> <span class="ac">randomly proposes bit (1 &lt;&lt; 4)</span>
+<a name="l-26"></a><span class="tm">19:05:28 </span><span class="nka">* instagibbs</span> <span class="ac">tries rng, gets 4</span>
+<a name="l-27"></a><span class="tm">19:05:30</span><span class="nk"> &lt;wumpus&gt;</span> if there's no special reason to pick a specific bit I'd suggest previous_bit+1
+<a name="l-28"></a><span class="tm">19:05:31</span><span class="nk"> &lt;btcdrak&gt;</span> 8 is lucky in China
+<a name="l-29"></a><span class="tm">19:05:52</span><span class="nk"> &lt;sdaftuar&gt;</span> previous_bit + 1 makes sense to me...
+<a name="l-30"></a><span class="tm">19:05:55</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-31"></a><span class="tm">19:05:55</span><span class="nk"> &lt;sipa&gt;</span> so (1 &lt;&lt; 1), also fine
+<a name="l-32"></a><span class="tm">19:06:00</span><span class="nk"> &lt;anchow101&gt;</span> +1
+<a name="l-33"></a><span class="tm">19:06:13</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm with btcdrak
+<a name="l-34"></a><span class="tm">19:06:22</span><span class="nk"> &lt;wumpus&gt;</span> otherwise it leaves holes, not a big deal, but dealing out consecutively may reduce the chance of accidentally duplicate assignments
+<a name="l-35"></a><span class="tm">19:06:31</span><span class="nk"> &lt;btcdrak&gt;</span> are we ready to think about dates? even for testnet?
+<a name="l-36"></a><span class="tm">19:06:50</span><span class="nk"> &lt;jl2012&gt;</span> i think we should set the testnet date now?
+<a name="l-37"></a><span class="tm">19:06:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> whatever number you're proposing please post it to the mailing list.
+<a name="l-38"></a><span class="tm">19:07:17</span><span class="nk"> &lt;jl2012&gt;</span> start 1 Apr 2016, end 1 Jan 2018?
+<a name="l-39"></a><span class="tm">19:07:26</span><span class="nk"> &lt;wumpus&gt;</span> probably we should have some living document that keeps track of current bit assignments, outside the bips
+<a name="l-40"></a><span class="tm">19:07:32</span><span class="nk"> &lt;NicolasDorier&gt;</span> for testnet do we need a date ? we did not for csv
+<a name="l-41"></a><span class="tm">19:08:23</span><span class="nk"> &lt;anchow101&gt;</span> NicolasDorier, the dat for csv on testnet was March 1st
+<a name="l-42"></a><span class="tm">19:08:27</span><span class="nk"> &lt;anchow101&gt;</span> *date
+<a name="l-43"></a><span class="tm">19:08:35</span><span class="nk"> &lt;NicolasDorier&gt;</span> ok my bad
+<a name="l-44"></a><span class="tm">19:09:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> maybe we can add a file bip-0009/assignments.md in the bips repository
+<a name="l-45"></a><span class="tm">19:09:49</span><span class="nk"> &lt;anchow101&gt;</span> If the release can be out before June, what about June 1st for a mainnet start date? And May 1st for testnet?
+<a name="l-46"></a><span class="tm">19:10:22</span><span class="nk"> &lt;gmaxwell&gt;</span> Dates should not be set until the software is known ready for release, and we are not currently there.
+<a name="l-47"></a><span class="tm">19:10:29</span><span class="nk"> &lt;gmaxwell&gt;</span> There is no need to be over-eager.
+<a name="l-48"></a><span class="tm">19:10:36</span><span class="nk"> &lt;sipa&gt;</span> i think we need to have a deployment active on testnet before even beginning to consider a start time on mainnet
+<a name="l-49"></a><span class="tm">19:10:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> sounds good to me
+<a name="l-50"></a><span class="tm">19:10:58</span><span class="nk"> &lt;gmaxwell&gt;</span> I think june first would be fine, but it could be set the day before, for all the system cares.
+<a name="l-51"></a><span class="tm">19:11:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">add a file bip-0009/assignments.md in the bips repository to keep track of an overview of current bit assignments separate from their bips</span>
+<a name="l-52"></a><span class="tm">19:11:32</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jl2012:</span> no need to have such a long expiry date for testnet.
+<a name="l-53"></a><span class="tm">19:13:26</span><span class="nk"> &lt;wumpus&gt;</span> okay
+<a name="l-54"></a><span class="tm">19:13:53</span><span class="nk"> &lt;wumpus&gt;</span> so do people agree on june 1?
+<a name="l-55"></a><span class="tm">19:14:03</span><span class="nk"> &lt;morcos&gt;</span> for testnet?
+<a name="l-56"></a><span class="tm">19:14:04</span><span class="nk"> &lt;sipa&gt;</span> for testnet?
+<a name="l-57"></a><span class="tm">19:14:10</span><span class="nk"> &lt;morcos&gt;</span> i don't see why not make it earlier
+<a name="l-58"></a><span class="tm">19:14:14</span><span class="nk"> &lt;wumpus&gt;</span> that's what the discussion is about right?
+<a name="l-59"></a><span class="tm">19:14:24</span><span class="nk"> &lt;morcos&gt;</span> it kind of doesn't matter, just make it may 1st and it happens when it happens
+<a name="l-60"></a><span class="tm">19:14:32</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-61"></a><span class="tm">19:14:36</span><span class="nk"> &lt;wumpus&gt;</span> for mainnet it'd be kind of crazy to decide on an activation date now IMO
+<a name="l-62"></a><span class="tm">19:14:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-63"></a><span class="tm">19:14:43</span><span class="nk"> &lt;sipa&gt;</span> we're not testing the deployment logic and teansitions
+<a name="l-64"></a><span class="tm">19:14:47</span><span class="nk"> &lt;gmaxwell&gt;</span> morcos +1 for testnet.
+<a name="l-65"></a><span class="tm">19:14:58</span><span class="nk"> &lt;sipa&gt;</span> may 1st for testnet sounds finr
+<a name="l-66"></a><span class="tm">19:15:04</span><span class="nk"> &lt;wumpus&gt;</span> may 1st? more time travel? I've seen enough deloreans this week
+<a name="l-67"></a><span class="tm">19:15:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> hah
+<a name="l-68"></a><span class="tm">19:15:11</span><span class="nk"> &lt;morcos&gt;</span> i might be obnoxious and start now...  :)
+<a name="l-69"></a><span class="tm">19:15:19</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, hostile softforks incoming
+<a name="l-70"></a><span class="tm">19:15:26 </span><span class="nka">* sipa</span> <span class="ac">is going to disappear</span>
+<a name="l-71"></a><span class="tm">19:15:27</span><span class="nk"> &lt;gmaxwell&gt;</span> This date is not something that needs to be set _in advance_, and it also shouldn't be set without coordiating with other implementers (at least in principle)
+<a name="l-72"></a><span class="tm">19:15:38</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> its what we did with csv, it just means you can starg signaling immediately
+<a name="l-73"></a><span class="tm">19:15:44</span><span class="nk"> &lt;wumpus&gt;</span> okay, no decision on a date then
+<a name="l-74"></a><span class="tm">19:16:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">discuss testnet activation date on bitcoin-dev mailing list</span>
+<a name="l-75"></a><span class="tm">19:16:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i kind of disagree, i think that the code is mature enough that we should activate on testnet now
+<a name="l-76"></a><span class="tm">19:16:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I'm not talking about testnet.
+<a name="l-77"></a><span class="tm">19:16:25</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> teh rest of us are  :)
+<a name="l-78"></a><span class="tm">19:16:26</span><span class="nk"> &lt;wumpus&gt;</span> we AREE talking about testnet
+<a name="l-79"></a><span class="tm">19:16:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Testnet is fine. do whatever with testnet. If it causes turbulance there, oh well.
+<a name="l-80"></a><span class="tm">19:16:33</span><span class="nk"> &lt;wumpus&gt;</span> please don't confuse things
+<a name="l-81"></a><span class="tm">19:16:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> _YOU_ are talking about testnet jl2012 and anchow101 were not.
+<a name="l-82"></a><span class="tm">19:17:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I already +1 morcos for testnet.
+<a name="l-83"></a><span class="tm">19:17:08</span><span class="nk"> &lt;wumpus&gt;</span> huh *confused*
+<a name="l-84"></a><span class="tm">19:17:08</span><span class="nk"> &lt;jl2012&gt;</span> no, I'm talking about testnet
+<a name="l-85"></a><span class="tm">19:17:29</span><span class="nk"> &lt;phantomcircuit&gt;</span> haha
+<a name="l-86"></a><span class="tm">19:17:35</span><span class="nk"> &lt;morcos&gt;</span> ok so to summarize, email to bitcoin ML stating we are setting the testnet activation start date as may 1st because we believe at this point the activation start date is likely the only consensus change remaining with segwit
+<a name="l-87"></a><span class="tm">19:18:12</span><span class="nk"> &lt;gmaxwell&gt;</span> Because it's testnet and the delayed start logic doesn't apply there, we don't care about creating turbulance there if miners upgrade ahead of nodes.
+<a name="l-88"></a><span class="tm">19:18:12</span><span class="nk"> &lt;wumpus&gt;</span> makes sense
+<a name="l-89"></a><span class="tm">19:18:20</span><span class="nk"> &lt;morcos&gt;</span> this will allow anyone to test their various versions of segwit (different implementations and backports) against each other potentially even before merging
+<a name="l-90"></a><span class="tm">19:18:47</span><span class="nk"> &lt;anchow101&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-91"></a><span class="tm">19:18:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes there is no reason to delay, but there is reason to agree on the start date so that we all activate at the same time
+<a name="l-92"></a><span class="tm">19:19:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes, may first is fine.
+<a name="l-93"></a><span class="tm">19:19:39</span><span class="nk"> &lt;btcdrak&gt;</span> ok so (1&lt;&lt;1) with activation may 1st for testnet, and (1&lt;&lt;1) and date TDB for mainnet
+<a name="l-94"></a><span class="tm">19:19:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-95"></a><span class="tm">19:19:52</span><span class="nk"> &lt;achow101&gt;</span> yes
+<a name="l-96"></a><span class="tm">19:20:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">btcdrak:</span> ack
+<a name="l-97"></a><span class="tm">19:20:20</span><span class="nk"> &lt;paveljanik&gt;</span> ack
+<a name="l-98"></a><span class="tm">19:20:26</span><span class="nk"> &lt;morcos&gt;</span> but what does TDB stand for?  :)
+<a name="l-99"></a><span class="tm">19:20:43 </span><span class="nka">* btcdrak</span> <span class="ac">palms face</span>
+<a name="l-100"></a><span class="tm">19:20:45</span><span class="nk"> &lt;gmaxwell&gt;</span> Totally delicious burger.
+<a name="l-101"></a><span class="tm">19:20:48</span><span class="nk"> &lt;jl2012&gt;</span> ack 1 May testnet, how about expiry date?
+<a name="l-102"></a><span class="tm">19:20:55</span><span class="nk"> &lt;cfields&gt;</span> ack, but we need to get the gbt changes in place quickly so that testnet is a valid representation of what miners will be running
+<a name="l-103"></a><span class="tm">19:21:03</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">j2012:</span> 1 year.
+<a name="l-104"></a><span class="tm">19:21:09</span><span class="nk"> &lt;morcos&gt;</span> ack 1 year
+<a name="l-105"></a><span class="tm">19:21:27</span><span class="nk"> &lt;BlueMatt&gt;</span> sgtm
+<a name="l-106"></a><span class="tm">19:21:31</span><span class="nk"> &lt;btcdrak&gt;</span> (1&lt;&lt;1) with activation may 1st and expiry 1 year for testnet, and (1&lt;&lt;1) and dates TBD for mainnet
+<a name="l-107"></a><span class="tm">19:21:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">phantomcircuit:</span> when will we see testnet fork?
+<a name="l-108"></a><span class="tm">19:21:47</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> can you summarize what GBT changes are needed still?
+<a name="l-109"></a><span class="tm">19:22:57</span><span class="nk"> &lt;morcos&gt;</span> does #7935 have anything at all to do with segwit?
+<a name="l-110"></a><span class="tm">19:23:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> there's a proposal to bip9 that would require that miners set a flag signaling awareness of segwit
+<a name="l-111"></a><span class="tm">19:23:46</span><span class="nk"> &lt;cfields&gt;</span> *proposed amendment
+<a name="l-112"></a><span class="tm">19:24:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> see https://github.com/bitcoin/bips/pull/365
+<a name="l-113"></a><span class="tm">19:25:14</span><span class="nk"> &lt;morcos&gt;</span> ok i haven't read through all that but i kind of thought it was orthogonal to segwit.  we already have versionbits SF's in the process of being activated.  is segwit somehow materially different.  if not, lets not confuse the issues
+<a name="l-114"></a><span class="tm">19:25:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> it's just that a non-sw aware miner can't use GBT w/ segwit and keep mining while they can use CSV.
+<a name="l-115"></a><span class="tm">19:26:40</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i don't follow why that is, can you explain?
+<a name="l-116"></a><span class="tm">19:27:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> assuming that's adopted, some miners won't be creating blocks with commitments, so i'd like to make sure that we're testing on testnet. Otherwise it's not a great representation of mainnet mining.
+<a name="l-117"></a><span class="tm">19:27:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I could be speaking out of my rear, my understanding at a distance was that non-SW ready gbt clients won't insert the commitment.
+<a name="l-118"></a><span class="tm">19:27:32</span><span class="nk"> &lt;sdaftuar&gt;</span> but the commitment is created by bitcoind
+<a name="l-119"></a><span class="tm">19:28:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> classical GBT does not include a coinbase transaction, the client generates it using information from the template.
+<a name="l-120"></a><span class="tm">19:28:13</span><span class="nk"> &lt;morcos&gt;</span> if can't use GBT means can't change the txs selected by bitcoind then maybe you're right, but that seems a secondary problem
+<a name="l-121"></a><span class="tm">19:28:15</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sdaftuar:</span> if a miner is too old to understand how to insert the commitment, bitcoind can provide only non-witness txs, so that the miner continues to produce valid blocks
+<a name="l-122"></a><span class="tm">19:28:55</span><span class="nk"> &lt;morcos&gt;</span> maybe we should take this up after the meeting.
+<a name="l-123"></a><span class="tm">19:29:14</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds fine.
+<a name="l-124"></a><span class="tm">19:29:53</span><span class="nk"> &lt;cfields&gt;</span> ok. i only mentioned because i'd like to start upstreaming the mining/pool patches if we're going to deploy on testnet. And can't do that until the gbt stuff is finalized
+<a name="l-125"></a><span class="tm">19:30:02</span><span class="nk"> &lt;cfields&gt;</span> but fine to discuss later, i don't think it'll be an issue
+<a name="l-126"></a><span class="tm">19:30:39</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics to be discussed?
+<a name="l-127"></a><span class="tm">19:30:42</span><span class="nk"> &lt;NicolasDorier&gt;</span> yes
+<a name="l-128"></a><span class="tm">19:30:55</span><span class="nk"> &lt;NicolasDorier&gt;</span> I just want opinion about
+<a name="l-129"></a><span class="tm">19:30:59</span><span class="nk"> &lt;NicolasDorier&gt;</span> making sure the wallet does not create uneconomical output based on current fees, and not based on mintxrelayfee (https://github.com/bitcoin/bitcoin/issues/7677)
+<a name="l-130"></a><span class="tm">19:31:05</span><span class="nk"> &lt;wumpus&gt;</span> nickler mentioned btcd segwit PR tests, but I'm not sure that was a topic suggestion
+<a name="l-131"></a><span class="tm">19:31:08</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> i'd just like to distinguish between necessary changes and changes that are only needed if miners are going to be modifying the tx selection created by bitcoind.  the second category in my mind should not stand in the critical path
+<a name="l-132"></a><span class="tm">19:31:46</span><span class="nk"> &lt;NicolasDorier&gt;</span> I had problems with customers when mintxrelayfee where bump because occasionally wallet would produce bellow mintxrelayfee dust for other nods.
+<a name="l-133"></a><span class="tm">19:31:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">uneconomical outputs in wallet based on current fees</span>
+<a name="l-134"></a><span class="tm">19:32:03</span><span class="nk"> &lt;NicolasDorier&gt;</span> So I proposed to work on https://github.com/bitcoin/bitcoin/issues/7677
+<a name="l-135"></a><span class="tm">19:32:04</span><span class="nk"> &lt;nickler&gt;</span> <span class="hi">wumpus:</span> nope I was referring to the action item that mentioned roasbeefs implementation
+<a name="l-136"></a><span class="tm">19:32:09</span><span class="nk"> &lt;BlueMatt&gt;</span> also compact block bip, if anyone has bothered to read that
+<a name="l-137"></a><span class="tm">19:32:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">nickler:</span> okay :)
+<a name="l-138"></a><span class="tm">19:32:28</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> this has nothing to do with miners modifying tx output. it's that miners need to opt-in to segwit in order for bitcoind to give it witness tx. And that opt-in signal hasn't been implemented yet.
+<a name="l-139"></a><span class="tm">19:33:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> was that a topic suggestion?
+<a name="l-140"></a><span class="tm">19:34:10</span><span class="nk"> &lt;wumpus&gt;</span> any opinions on the wallet issue mentioned by NicolasDorier?
+<a name="l-141"></a><span class="tm">19:34:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-142"></a><span class="tm">19:34:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">NicolasDorier:</span> I'll take a look at the issue.
+<a name="l-143"></a><span class="tm">19:34:28</span><span class="nk"> &lt;NicolasDorier&gt;</span> Breadwallet had issue also because of that when the mintxrelayfee was bumped
+<a name="l-144"></a><span class="tm">19:34:39</span><span class="nk"> &lt;NicolasDorier&gt;</span> so I think we should fix the wallet to not use mintxrelayfee
+<a name="l-145"></a><span class="tm">19:34:51</span><span class="nk"> &lt;NicolasDorier&gt;</span> but estimatedfee for determining the dust (only wallet part)
+<a name="l-146"></a><span class="tm">19:35:13</span><span class="nk"> &lt;NicolasDorier&gt;</span> would prevent having reliability issue in case it need to be increase in the future
+<a name="l-147"></a><span class="tm">19:35:14</span><span class="nk"> &lt;wumpus&gt;</span> it sounds sensible, wallet and relay policy are different things, although the mintxrelayfee should probably be the floor
+<a name="l-148"></a><span class="tm">19:35:54</span><span class="nk"> &lt;gmaxwell&gt;</span> or the dust threshould should just be made an infrequently changed fixed constant.
+<a name="l-149"></a><span class="tm">19:36:20</span><span class="nk"> &lt;NicolasDorier&gt;</span> <span class="hi">gmaxwell:</span> I am talking only about wallet, not relay policy
+<a name="l-150"></a><span class="tm">19:36:38</span><span class="nk"> &lt;NicolasDorier&gt;</span> ah
+<a name="l-151"></a><span class="tm">19:36:58</span><span class="nk"> &lt;NicolasDorier&gt;</span> I get your point. But well the problem would be the same with a constant. If we get a spam attack, we would increase it
+<a name="l-152"></a><span class="tm">19:37:11</span><span class="nk"> &lt;NicolasDorier&gt;</span> and then some wallet will produce below dust rejected by updated nodes
+<a name="l-153"></a><span class="tm">19:37:15</span><span class="nk"> &lt;morcos&gt;</span> yes, we should do both things
+<a name="l-154"></a><span class="tm">19:37:18</span><span class="nk"> &lt;gmaxwell&gt;</span> lets discuss on the issue.
+<a name="l-155"></a><span class="tm">19:37:24</span><span class="nk"> &lt;NicolasDorier&gt;</span> ok
+<a name="l-156"></a><span class="tm">19:37:33</span><span class="nk"> &lt;NicolasDorier&gt;</span> there is another quick topic I want to talk about
+<a name="l-157"></a><span class="tm">19:37:50</span><span class="nk"> &lt;morcos&gt;</span> we should separate wallet functionality to use some smarter higher value for "dust" and the floor for dust shoudl be a separate variable than the muliple of min relay that it is now
+<a name="l-158"></a><span class="tm">19:38:21</span><span class="nk"> &lt;morcos&gt;</span> (floor for dust = policy relay limit for dust)
+<a name="l-159"></a><span class="tm">19:38:25</span><span class="nk"> &lt;NicolasDorier&gt;</span> ok, seems good I'll start working on it. It made me some pain nin the past
+<a name="l-160"></a><span class="tm">19:38:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I agree.
+<a name="l-161"></a><span class="tm">19:39:34</span><span class="nk"> &lt;NicolasDorier&gt;</span> My other quick topic is
+<a name="l-162"></a><span class="tm">19:39:46</span><span class="nk"> &lt;NicolasDorier&gt;</span> long time ago I made a PR to remove unused flag and code
+<a name="l-163"></a><span class="tm">19:39:54</span><span class="nk"> &lt;NicolasDorier&gt;</span> on https://github.com/bitcoin/bitcoin/pull/7574
+<a name="l-164"></a><span class="tm">19:40:01</span><span class="nk"> &lt;NicolasDorier&gt;</span> morcos a jtimon had a better idea
+<a name="l-165"></a><span class="tm">19:40:08</span><span class="nk"> &lt;NicolasDorier&gt;</span> instead of removing the flag
+<a name="l-166"></a><span class="tm">19:40:26</span><span class="nk"> &lt;NicolasDorier&gt;</span> transforming it into one flag for all consensus stuff
+<a name="l-167"></a><span class="tm">19:40:36</span><span class="nk"> &lt;NicolasDorier&gt;</span> I'm thinking working on it but
+<a name="l-168"></a><span class="tm">19:41:00</span><span class="nk"> &lt;NicolasDorier&gt;</span> if I understand it seems to be better to do such kind of work after the merge of segwit ?
+<a name="l-169"></a><span class="tm">19:42:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">NicolasDorier:</span> usually if that question arises the answer is yes.
+<a name="l-170"></a><span class="tm">19:42:39</span><span class="nk"> &lt;wumpus&gt;</span> yes I think for such non-trivial consensus refactoring it's better to wait until after segwit
+<a name="l-171"></a><span class="tm">19:42:52</span><span class="nk"> &lt;NicolasDorier&gt;</span> ok so I'll keep it for later
+<a name="l-172"></a><span class="tm">19:44:07</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-173"></a><span class="tm">19:44:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">compact block bip</span>
+<a name="l-174"></a><span class="tm">19:44:24</span><span class="nk"> &lt;gmaxwell&gt;</span> Next subject?
+<a name="l-175"></a><span class="tm">19:44:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I read it!
+<a name="l-176"></a><span class="tm">19:45:03</span><span class="nk"> &lt;BlueMatt&gt;</span> you're the only one :'(
+<a name="l-177"></a><span class="tm">19:45:14</span><span class="nk"> &lt;sdaftuar&gt;</span> not true...
+<a name="l-178"></a><span class="tm">19:46:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> would you like other people to read it?
+<a name="l-179"></a><span class="tm">19:46:21</span><span class="nk"> &lt;BlueMatt&gt;</span> I would :p
+<a name="l-180"></a><span class="tm">19:46:24</span><span class="nk"> &lt;BlueMatt&gt;</span> next topic?
+<a name="l-181"></a><span class="tm">19:47:36</span><span class="nk"> &lt;cfields&gt;</span> heh, ack
+<a name="l-182"></a><span class="tm">19:47:45</span><span class="nk"> &lt;cfields&gt;</span> (ack to reading)
+<a name="l-183"></a><span class="tm">19:47:53</span><span class="nk"> &lt;btcdrak&gt;</span> ^
+<a name="l-184"></a><span class="tm">19:48:08</span><span class="nk"> &lt;wumpus&gt;</span> so there's nothing about the contents to be discussed?
+<a name="l-185"></a><span class="tm">19:48:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> not really...just hoping for feedback
+<a name="l-186"></a><span class="tm">19:48:36</span><span class="nk"> &lt;wumpus&gt;</span> that's what I mean, no feedback
+<a name="l-187"></a><span class="tm">19:48:37</span><span class="nk"> &lt;btcdrak&gt;</span> it's pretty dense reading, might need another week...
+<a name="l-188"></a><span class="tm">19:48:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I think all the outstanding decisions were concluded between gmaxwell and I
+<a name="l-189"></a><span class="tm">19:48:44</span><span class="nk"> &lt;BlueMatt&gt;</span> true
+<a name="l-190"></a><span class="tm">19:48:56</span><span class="nk"> &lt;gmaxwell&gt;</span> I gave a fair amount of feedback to Matt and he updated prior to putting it up.
+<a name="l-191"></a><span class="tm">19:48:59</span><span class="nk"> &lt;BlueMatt&gt;</span> so action to our army of devoted full-time code-reviwers? :p
+<a name="l-192"></a><span class="tm">19:49:02</span><span class="nk"> &lt;wumpus&gt;</span> (haven't read it yet)
+<a name="l-193"></a><span class="tm">19:49:07</span><span class="nk"> &lt;morcos&gt;</span> too much happening.  we need to clone ourselves.  at least wumpus
+<a name="l-194"></a><span class="tm">19:49:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> when will the PR be up?
+<a name="l-195"></a><span class="tm">19:49:12</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yea, that
+<a name="l-196"></a><span class="tm">19:49:17</span><span class="nk"> &lt;NicolasDorier&gt;</span> will read it. It takes me more time than most of you to understand it, can't say anything meaningful about it after reading it for 10min :p
+<a name="l-197"></a><span class="tm">19:49:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> are you just waiting on feedback?
+<a name="l-198"></a><span class="tm">19:49:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I could do that this week...
+<a name="l-199"></a><span class="tm">19:49:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">read bluematt's compact block bip</span>
+<a name="l-200"></a><span class="tm">19:49:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> mostly
+<a name="l-201"></a><span class="tm">19:49:34</span><span class="nk"> &lt;wumpus&gt;</span> any URL?
+<a name="l-202"></a><span class="tm">19:49:40</span><span class="nk"> &lt;NicolasDorier&gt;</span> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012624.html ?
+<a name="l-203"></a><span class="tm">19:49:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> https://github.com/TheBlueMatt/bips/blob/master/bip-TODO.mediawiki
+<a name="l-204"></a><span class="tm">19:49:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012624.html</span>
+<a name="l-205"></a><span class="tm">19:50:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/TheBlueMatt/bips/blob/master/bip-TODO.mediawiki</span>
+<a name="l-206"></a><span class="tm">19:50:37</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-207"></a><span class="tm">19:51:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Sounds like no.
+<a name="l-208"></a><span class="tm">19:52:12</span><span class="nk"> &lt;wumpus&gt;</span> hey not everyone is a fast typer :)
+<a name="l-209"></a><span class="tm">19:52:16</span><span class="nk"> &lt;wumpus&gt;</span> but indeed seems no
+<a name="l-210"></a><span class="tm">19:52:23</span><span class="nk"> &lt;NicolasDorier&gt;</span> well it's 4am here ! :p
+<a name="l-211"></a><span class="tm">19:52:40</span><span class="nk"> &lt;NicolasDorier&gt;</span> 5 sorry
+<a name="l-212"></a><span class="tm">19:52:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
