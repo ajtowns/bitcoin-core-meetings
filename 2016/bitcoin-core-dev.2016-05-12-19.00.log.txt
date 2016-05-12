@@ -1,0 +1,368 @@
+19:00:44 <wumpus> #startmeeting
+19:00:44 <lightningbot> Meeting started Thu May 12 19:00:44 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:44 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:12 <BlueMatt> topics?
+19:01:37 <wumpus> from last week:
+19:01:48 <wumpus> add a file bip-0009/assignments.md in the bips repository:  btcdrak made a pull for that
+19:02:05 <wumpus> discuss testnet activation date on bitcoin-dev mailing list
+19:02:15 <wumpus> ead bluematt's compact block bip
+19:02:19 <wumpus> +r
+19:02:59 <wumpus> #link https://github.com/bitcoin/bips/pull/386
+19:03:30 <wumpus> any other topic proposals?
+19:03:31 <luke-jr> on that note, it'd be nice if people didn't ACK/NACK bips they are not a listed author of ;)
+19:04:14 <sipa> was segwit testnet discussed on the ml?
+19:04:19 <kanzure> luke-jr: please elaborate.
+19:04:25 <BlueMatt> re: compact block, got good feedback from a few, made some slight tweaks but need to finish tweaks in the coming days, so no need to discuss here, I think?
+19:05:06 <luke-jr> kanzure: when it comes to a BIP draft, the only ACK/NACK that matters is the Author(s); others posting ACK/NACK just makes me spend time looking at the Author header to confirm I need to ignore it
+19:05:12 <wumpus> well in the case of #386 I felt I had the right to give my opinion because I was one of the people to come up with the idea last meeting, even though I'm not listed as author
+19:05:28 <sipa> i guess the question is where BIPs are to be discussed
+19:05:38 <luke-jr> sipa: bitcoin-dev ML
+19:05:40 <sipa> and the idea is that that would be the mailinglist
+19:05:43 <sipa> but...
+19:05:56 <kanzure> luke-jr: wouldn't NACKs from non-authors still be useful? why should the authors be the only trusted source of updates ? i don't understand.
+19:06:17 <instagibbs> oh, the compact blocks got a bip#
+19:06:29 <paveljanik> I don't understand either. If the author dies in accident, we can no longer change the BIP? or what?
+19:06:30 <morcos> luke-jr: i'd suggest that you just come up with a way to distinguish.   for instance ACK/NACK shoudl be interpreted by the author and the author shoudl say Approved or Ready or something for your knowledge on when to merge
+19:06:31 <wumpus> I agree that ack/nack isn't very useful, in comparison to more detailed comments
+19:06:31 <kanzure> luke-jr: i'm willing to believe you're right but you need better reasons yo.
+19:06:40 <petertodd> kanzure: if I were author of a BIP an ACK would give me confidence; a NACK could be useful criticism
+19:06:42 <sipa> paveljanik: an active BIP can't be modified anyway
+19:06:43 <kanzure> wumpus: right, sure.
+19:06:48 <luke-jr> kanzure: the BIP is a document by the Author(s). ideally, they should have exclusive merge access for changes, but GitHub doesn't support that
+19:06:54 <paveljanik> text clarification, etc...
+19:06:59 <kanzure> okay this is just trivial though, luke-jr isn't going to stop me from ACKing on BIPs i didn't author :)
+19:07:04 <morcos> sipa: in some cases it should be, if for instance the BIP wording is incorrect ala 34
+19:07:18 <luke-jr> paveljanik: BIP 1 technically allows me to reassign BIP Author in some cases IIRC
+19:07:18 <sipa> morcos: yeah - makes sense
+19:07:39 <jonasschnelli> We should also define a rule how we deal with links to implementations that have implemented the BIP.
+19:07:48 <sipa> jonasschnelli: yes
+19:07:53 <jonasschnelli> IMO we should not add any implementation links.
+19:07:58 <jonasschnelli> (expect of sample impl.)
+19:08:00 <wumpus> many bips have a list of implementations; what's wrong with that?
+19:08:08 <jonasschnelli> Its just noisy
+19:08:12 <sipa> wumpus: in BIP32 there are continuously pull requests to add links
+19:08:16 <gmaxwell> it gets flooded with spammy updates.
+19:08:17 <wumpus> I think it can be useful to have e.g. implementations in many languages
+19:08:18 <jonasschnelli> And we don't control the implementations I guess
+19:08:20 <sipa> wumpus: which imho function as nothing more than advertizement
+19:08:26 <kanzure> and then we have to moderate the additions
+19:08:27 <jonasschnelli> sipa: Yes!
+19:08:30 <gmaxwell> And if we're not looking at it, we're eventually going to get a malware example BIP32 impl. :)
+19:08:32 <wumpus> ok...
+19:08:34 <luke-jr> BIP 2 comments would be a nice place to list implementations, but that was controverisal
+19:09:07 <jonasschnelli> I could imaging more and more advertising like PR to come up in future.
+19:09:12 <wumpus> I think the requirement should at least be to point to the code
+19:09:15 <wumpus> not just the product
+19:09:15 <paveljanik> so what is the topic now? ;-)
+19:09:22 <wumpus> to prevent advertizement
+19:09:32 <kanzure> i think the topic was "feedback about compact block relay BIP things"
+19:09:50 <jonasschnelli> Which still intersects (a little bit)
+19:10:13 <jcorgan> it is useful, however, when reading a BIP, to at least get pointed to reference code, but it need not be every implementation that anyone wants to list thereafter
+19:10:20 <wumpus> I think the topic is how to handle BIP implementations, which is as good a topic as anything
+19:10:48 <wumpus> but then you get the fight about what is reference code and what is not
+19:10:58 <jonasschnelli> Links are always difficult. You need to check them... then what if a link diverges from the BIP specification?
+19:11:07 <jonasschnelli> Do we check it?
+19:11:08 <wumpus> in some cases it's clear if the BIP author wrote code themselves
+19:11:13 <kanzure> yeah another threat vector is someone selling their github account in the future
+19:11:17 <kanzure> and then a BIP links to someone's github
+19:11:21 <jonasschnelli> Yes. These are the link we should keep there...
+19:11:33 <jcorgan> or the BIP author themselves pick one or more...
+19:11:38 <gmaxwell> If it's upfront then we can trust the bip author and review process to have had some chance to verify it.
+19:11:42 <wumpus> yes, I'd say it's up to the BIP author
+19:11:46 <wumpus> like other changes to the BIP
+19:11:46 <kanzure> other problem is keeping track of upstream updates like security fixes, oops. anyway, this is a lot of work.
+19:11:57 <kanzure> we should include hashes of the reference source code, in the BIP text
+19:11:58 <luke-jr> maybe BIP PRs should be PGP signed
+19:12:03 <wumpus> this is not something that should be globally decided
+19:12:16 <gmaxwell> I could see the criteria being different for different BIPs.
+19:12:19 <jonasschnelli> wumpus: Yes. This makes sense.
+19:12:20 <kanzure> by hashing the source code we can at least have a way for readers to verify that the source code is still the part we meant to hyperlink to :)
+19:12:22 <wumpus> gmaxwell: exactly
+19:12:33 <wumpus> I mean the author of bip32 could say 'enough is enough'
+19:12:43 <jcorgan> er, link to a URL and commit hash?
+19:12:44 <wumpus> some other BIPs have far fewer implementations and the author may be happy to see one
+19:12:48 <gmaxwell> (unfortunately, it's BIP32 that gets 95% of this-- key generation is an especially awkward place for random found on the internet code)
+19:12:52 <petertodd> my BIP65 links to two separate demo repos that just give some sample code, which is probably something we can generally consider as acceptable (ignoring the issue of more complex implementations that aren't pure demos)
+19:13:09 <jonasschnelli> I like jcorgan idea to link to sourcecode-only with a commit hash
+19:13:16 <jonasschnelli> But kinda static.
+19:13:30 <wumpus> Itend to agree with that. Link to the actual code, not the product
+19:14:11 <wumpus> not 'blawallet implements bip32', no, *the code linked here shows how we implemented BIP32 in language Z*
+19:14:29 <sipa> wumpus: agree
+19:14:29 <luke-jr> +1
+19:14:33 <petertodd> wumpus: +1
+19:14:39 <paveljanik> yes
+19:14:43 <jonasschnelli> ack
+19:14:49 <wumpus> ok
+19:14:54 <kanzure> we should review existing bips for source code links that do not include a commit hash. branch names are not OK.
+19:15:01 <kanzure> i mean, branch names without a commit hash are not OK.
+19:15:01 <wumpus> other topics?
+19:15:38 <paveljanik> Revies Jonas' HD - #8035
+19:15:56 <jonasschnelli> I have a tiny topic proposal that is very into the impl. teretorry..
+19:16:02 <jonasschnelli> RPC long poll notifications
+19:16:07 <kanzure> have we received an overview from sipa yet about areas of segwit that he feels should be most thoroughly reviewed
+19:16:12 <sipa> kanzure: no, sorry
+19:16:22 <kanzure> can we get 10 volunteers to heckle sipa about this?
+19:16:23 <sipa> thanks for the reminder
+19:16:34 <wumpus> #action Revies Jonas' HD - #8035
+19:16:52 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8035 ... very simple and easy to review
+19:17:12 <paveljanik> jonasschnelli, can you add some after-merge TODO list there?
+19:17:18 <jonasschnelli> I'm happy to add some RPC tests...
+19:17:36 <jonasschnelli> There is no required after-merge PR... thats the nice thing.
+19:17:49 <jonasschnelli> But most important we should enable flexible bip32 keypath
+19:17:50 <paveljanik> import, dump... at least...
+19:17:52 <instagibbs> jonasschnelli, a bit hard to rpc test without import/dump? (perhaps offline discussion)
+19:18:18 <jonasschnelli> There are concerns with importing single keys into the bip32 wallet...
+19:18:32 <jonasschnelli> They would not be covered by "a old backup"
+19:18:44 <wumpus> but that's kind of obvious :)
+19:18:51 <btcdrak> maybe need a sweep feature.
+19:19:06 <wumpus> yes, a sweep feature would be nice
+19:19:09 <jonasschnelli> There are plenty of possible features...
+19:19:24 <jonasschnelli> But because of the lack of reviewers,.. we need babysteps
+19:19:28 <sipa> let's not discuss all possible features
+19:19:29 <luke-jr> sweep would be nice, but non-trivial (currently no way to iterate over the UTXO set I think)
+19:19:38 <sipa> just what is necessary to work and test
+19:19:38 <jonasschnelli> agree with sipa.
+19:19:46 <jonasschnelli> Just review and ack it! :P
+19:19:48 <luke-jr> so what about RPC longpoll?
+19:19:49 <wumpus> I agree
+19:19:58 <sipa> if import/export is necessary for testing, then maybe some functionality for that is warranted
+19:20:00 <wumpus> scope creep agian
+19:20:23 <instagibbs> well, it only came up due to testing
+19:21:10 <wumpus> luke-jr: https://github.com/bitcoin/bitcoin/pull/7949
+19:21:19 <jonasschnelli> RPC long poll would would allow remote GUI and remote wallet with a very easy setup. IMO it could allow third party developers to write simple remote GUIS, web-frontends, etc.
+19:22:07 <jonasschnelli> I would even say RPC long poll has more potential then ZMQ for core.
+19:22:10 <wumpus> I'm kind of divided on the notification thing to be honest - I'd prefer to stick to only one notification mechanism in bitcoin core (apart from the silly -Xnotify), and somehow zmq got a precedent there
+19:22:41 <luke-jr> calling pollnotifications myself seems like it would disrupt an application relying on it?
+19:22:45 <jonasschnelli> I also don't like multiple notification channels.
+19:22:49 <luke-jr> ie, we need channels
+19:22:56 <jonasschnelli> But how would you connect a remote GUI over the internet...
+19:23:03 <luke-jr> wumpus: zmq is crazy though :<
+19:23:16 <luke-jr> also note we already have longpolling
+19:23:17 <wumpus> yes it should definitely have multiple channels, the current code supports only one client
+19:23:27 <jonasschnelli> wumpus: no
+19:23:28 <wumpus> luke-jr: where were you to NACK zmq when it was added?
+19:23:33 <jcorgan> i'm happy to look at improving zmq
+19:23:34 <luke-jr> jonasschnelli: no RPC over internet ever :<
+19:23:35 <jonasschnelli> I have added support for <n> clients
+19:23:50 <luke-jr> wumpus: just because zmq is crazy doesn't mean optional ZMQ support should be excluded ..
+19:23:50 <jonasschnelli> RPC over internet over a reverse proxy is a wide use pratice.
+19:23:55 <wumpus> (I don't think zmq is necessarily crazy)
+19:24:04 <jtimon> sorry, what are the complaints with zmq? it is optional anyway
+19:24:18 <wumpus> jtimon: I'm not sure either, it seems to be fashionable to complain about it
+19:24:21 <luke-jr> jtimon: it's not optional if it is an excuse to exclude other systems
+19:24:32 <luke-jr> zmq breaks protocol compatibility for minor bumps
+19:24:34 <jonasschnelli> Working towards decoupling of the GUI and the wallet requires well defined channels/APIs
+19:24:39 <luke-jr> ie, 4.1 won't work with 4.0 right
+19:25:00 <jonasschnelli> ZMQ would require a tunnel (VPN, stunnel, etc.).
+19:25:06 <luke-jr> also see all the Elements functionary problems due to ZMQ
+19:25:14 <jcorgan> ZMQ 4.x is implementing CurveCP
+19:25:18 <jtimon> I think it's a wonderful tool I would like to use more (although maybe the fact that its creator rewrote it completely in nanomsg may indeed indicate that some parts of zmq have become too complex)
+19:25:20 <wumpus> zmq is basically only useful for local system, but so is RPC, it's not meant to be used over the internet
+19:25:45 <jcorgan> see comment about curvecp
+19:25:54 <wumpus> if you write tunneling for RPC - why not tunnel the notifications too?
+19:26:00 <jonasschnelli> I just think Core users would love to have a GUI/wallet-frontend that can run on a different machine.
+19:26:11 <jcorgan> http://curvezmq.org/
+19:26:16 <jtimon> wumpus: exactly, it's for your intranet or at most inside a vpn (although I haven't tried that myself)
+19:26:19 <luke-jr> jonasschnelli: yes, for years now that has been desirable
+19:26:25 <wumpus> jonasschnelli: I agree, but does that need RPC notifications?
+19:26:28 <jonasschnelli> wumpus: RPC does work extremly well in reverse-proxy mode.
+19:26:30 <wumpus> jonasschnelli: what would you use it for?
+19:26:46 <luke-jr> wumpus: right now it requires polling
+19:26:51 <wumpus> e.g. to get notification of transactions/blocks the P2P protocol works fine
+19:26:53 <jonasschnelli> Look at rtorrent or any other RPC daemon software.
+19:27:32 <jonasschnelli> Polling is extremely inefficient. Long polling would allow clients to get "realtime" events while not require any other dependencies...
+19:27:37 <jonasschnelli> And the code changes are tiny...
+19:27:37 <wumpus> yes, agreed jonasschnelli
+19:27:47 <wumpus> yes the code changes are tiny
+19:28:09 <jonasschnelli> You could setup a save and secure remote bitcoind with a single apache/nginx config.
+19:28:18 <wumpus> but I'm a bit afraid the same will happen as with REST, people will want to pile up things on top, and now for every notification people will want zmq and rpc longpull support
+19:28:19 <jonasschnelli> Now do the same with ZMQ notifications... :)
+19:28:47 <wumpus> just like people want every possible data item both through RPC and REST
+19:29:00 <sipa> well ZMQ/P2P are suboptimal to write a remote GUI, as you can't filter for just wallet transactions
+19:29:03 <wumpus> I believe thatthere is value to  keeping core limited to one interface
+19:29:07 <luke-jr> wumpus: I don't see why this is a problem
+19:29:10 <jonasschnelli> Yes. If i had a blank paper. I would drop ZMQ and REST in favor or RPC longpoll and the normal RPC.
+19:29:32 <jcorgan> longpoll does indeed solve some of my original motivation for adding ZMQ
+19:29:32 <sipa> jonasschnelli: i think you're biased because you're only thinking about one use case
+19:29:37 <wumpus> well my iniitial idea for notifications was also something like longpoll, or a streaming socket
+19:29:41 <wumpus> then a proxy from that to zmq
+19:29:44 <wumpus> but zmq was first
+19:30:05 <luke-jr> zmq is optional
+19:30:15 <luke-jr> someone shouldn't need to install zmq for notifications
+19:30:17 <jtimon> zmq's req/rep could replace both rpc and rest
+19:30:19 <jonasschnelli> There is one big advantage of RPC long polling...
+19:30:26 <jonasschnelli> you can have private notifications...
+19:30:31 <jonasschnelli> secured behind auth
+19:30:34 <wumpus> do we want private notifications?
+19:30:35 <jonasschnelli> Like a new relevant wallet tx comes in
+19:30:43 <sipa> wumpus: for a remote wallet gui you do
+19:30:52 <jonasschnelli> It would be on the same level then the RPC security...
+19:30:56 <jonasschnelli> just instead of poll you can have push
+19:31:06 <wumpus> connect a remote wallet GUI through RPC?
+19:31:10 <wumpus> wasn't RPC meant to be for local usage?
+19:31:15 <jonasschnelli> I would not add this over ZMQ because of the unknown risks
+19:31:20 <luke-jr> jonasschnelli: btw FYI https://en.bitcoin.it/wiki/Wallet_protocol
+19:31:32 <jonasschnelli> wumpus: that is an argument.
+19:31:33 <wumpus> I think the idea was to attach a *wallet*, not a wallet GUI
+19:31:47 <wumpus> the wallet needs to be split from the core
+19:31:58 <luke-jr> a wallet can be attached over p2p fine
+19:32:01 <jonasschnelli> Another solution would be to provide a tiny daemon that would interact between core <-> remote GUI/wallet.
+19:32:15 <wumpus> I'd prefer for core to handle semi-public data, then have a more restricted wallet
+19:32:17 <jonasschnelli> But that tiny daemon would speak RPC with the outside/internet.
+19:32:20 <luke-jr> ideally we should have node <-> wallet <-> GUI
+19:32:47 <wumpus> luke-jr: yes
+19:32:51 <jonasschnelli> luke-jr: But how would you see the communication channel between wallet <> GUI?
+19:32:57 <jcorgan> another motivation for adding ZMQ was to allow bitcoind to be a trusted "border gateway", that spoke P2P and consensus, and then stuff behind it would be very simple ZMQ-based software that didn't need to know all about those things
+19:33:02 <wumpus> but wallet<->GUI could be a competely different protocol than node<->wallet
+19:33:02 <jonasschnelli> Needs to be bidirect.
+19:33:07 <luke-jr> jonasschnelli: see wiki link; or something like what you're doing
+19:33:15 <jonasschnelli> node <> wallet is probably p2p?
+19:33:19 <sipa> yes
+19:33:21 <luke-jr> yes
+19:33:45 <morcos> node <-> wallet being p2p leaves a lot of missing pieces
+19:33:46 <wumpus> maybe authentiated P2P
+19:33:47 <morcos> fee estimation
+19:33:47 <jonasschnelli> But what direction do we want to go for <wallet> <-> <gui>?
+19:33:48 <wumpus> as you proposed
+19:33:55 <wumpus> with some private extensions
+19:33:59 <sipa> jonasschnelli: up to the wallet
+19:34:06 <morcos> mempool actions (eviction, how close to top of mempool, whether it was accepted)
+19:34:12 <jonasschnelli> morcos: fee estimations can be done with authentication/private extensions.
+19:34:14 <BlueMatt> ehh, lets not layer everything onto p2p extensions
+19:34:23 <luke-jr> jonasschnelli: XMPP! /s
+19:34:38 <jtimon> why people want to remove zmq? I still don't undesrtand
+19:34:41 <jonasschnelli> sipa: That's why I propose RPC long poll (as a "wallet" feature). :)
+19:34:55 <sipa> jonasschnelli: i'm not sure our wallet should provide that
+19:35:01 <sipa> jonasschnelli: at least not at this stage
+19:35:02 <wumpus> BlueMatt: well if we have a autenticated+encryped P2P protocol, adding private extensions is attractive
+19:35:27 <wumpus> jtimon: I don't want to remove zmq. But I do think we should have one notification mechanism.
+19:35:39 <kanzure> notifications over zeromq would be nice
+19:35:42 <jtimon> wumpus: why not it be zmq?
+19:35:43 <luke-jr> jtimon: I just want to keep ZMQ as an optional feature, not necessary for this stuff
+19:35:55 <wumpus> jtimon: I don't want to amintain an endless pile-up of different external notification mechanisms
+19:36:08 <jonasschnelli> Yes. We don't want that.
+19:36:10 <jtimon> wumpus: ok, why not use ONLY zmq?
+19:36:10 <BlueMatt> wumpus: its quite attractive to shove everything into one monolithic protocol, indeed, but I do think there is a lot of value in splitting things out (though I wouldnt be upset if they were logically different code that just happened to have the same on-wire protocol or so)
+19:36:11 <jcorgan> jtimon: i agree that zmq req/rep and pub/sub could provide the entirety of needed interfaces to bitcoind, but that's an argument lost years ago :)
+19:36:23 <luke-jr> jtimon: then it's no longer optional
+19:36:24 <kanzure> unfortunately the simplest private notification stuff that the rest of the community would understand would be.... web hooks. :(
+19:36:39 <luke-jr> jcorgan: except ZMQ has no protocol compatibility
+19:36:44 <wumpus> websocket would work
+19:36:49 <morcos> wumpus: i think we can move towards deprecating some things that we view as redundant.  what we should do now though is decide what would work for a node <-> wallet communication protocol.  b/c that is something we defintiely want.
+19:36:56 <jtimon> luke-jr: ok, either we have 1, we remove zmq or we make it non-optional
+19:36:59 <luke-jr> wumpus: websocket doesn't define a protocol
+19:37:03 <wumpus> but just as well as longpoll
+19:37:08 <jonasschnelli> websockets have bad security
+19:37:24 <sipa> wumpus: i think it may be reasonable to say that zmq is for node notifications (which are unauthenticated) and longpoll for wallet notifications
+19:37:26 <luke-jr> jtimon: if we can only have 1, then IMO zmq can go
+19:37:30 <wumpus> morcos: what would you propose to deprecate?
+19:37:33 <jtimon> luke-jr: what do you mean by "protocol compatibility"?
+19:37:40 <luke-jr> jtimon: but I don't think we should limit to 1
+19:37:50 <wumpus> sipa: but what jonasschnelli wants is not wallet notifications
+19:37:51 <luke-jr> jtimon: ZMQ 4.0 can't talk to ZMQ 4.1
+19:37:53 <jtimon> luke-jr: and IMO, if we only want to have one, zmq should stay
+19:37:55 <sipa> wumpus: yes it is
+19:38:01 <wumpus> sipa: he wants the same stuff as is now offered over zmq
+19:38:08 <jonasschnelli> wumpus sipa: What i want is going toward wallet notifications
+19:38:11 <morcos> wumpus: well my argument is to first define the right way to do node <-> wallet and then do that (even if it means adding something) and then we can revisit and see what we have that is extraneous
+19:38:17 <jonasschnelli> But also notifications that could enable a remote GUI
+19:38:21 <sipa> i don't think so; nothing of what is offered over ZMQ is what you need for a remote wallet GUI
+19:38:21 <jonasschnelli> (mempool / peers, etc9
+19:38:38 <jonasschnelli> A Core node GUI on a smartphone....
+19:38:47 <jonasschnelli> Which can't work over ZMQ
+19:39:05 <sipa> i think we shouldn't discuss that in the current stage
+19:39:07 <jcorgan> of course it *could*
+19:39:15 <jcorgan> but not as it is written today
+19:39:25 <wumpus> jonasschnelli: how would you protect the RPC connection to the smartphone?
+19:39:26 <sipa> i don't want my bitcoin core full node software to be accessible by smartphones on the internet, i think
+19:39:29 <kanzure> jcorgan: how much difference?
+19:39:34 <wumpus> jonasschnelli: the same tunneling tool could route the notifications from zmq
+19:39:39 <jcorgan> zmq is a transport
+19:39:40 <jonasschnelli> wumpus: reverse proxy, SSL auth, mod_security
+19:39:44 <sipa> except the p2p protocol, which is must provide by necessarily
+19:39:49 <morcos> jonasschnelli: don't you think we shoudl concentrate on node <-> wallet now?  b/c then different people could build different wallet <-> gui protocols if we wanted.  our core responsiblity is the node
+19:39:57 <jcorgan> you have to define a protocol/serialization/encapsulation to run over it
+19:39:59 <luke-jr> jcorgan: except then you need to make sure your ZMQ lib versions match, which is just annoying
+19:40:15 <jcorgan> you can say that about dozens of other libs
+19:40:17 <jonasschnelli> morcos: I'm working on node <-> wallet. That's why I'm working on auth/enc. :)
+19:40:23 <jtimon> jonasschnelli: how can something "not work over ZMQ"? can't you proxy the messages through some other protocol outside of bitcoind once you get the zmq messages?
+19:40:35 <luke-jr> jcorgan: most protocols are compatible across lib versions
+19:40:37 <sipa> jtimon: because authentication
+19:40:37 <jonasschnelli> I don't want to talk SPV over unencrypted channels...
+19:40:49 <kanzure> unencrypted...?
+19:40:51 <jcorgan> anyway, if anyone wants to pursue making changes to the current zmq implementation, we can talk in zurich about it
+19:40:52 <wumpus> wellt he same protocol that offers RPC over the internet needs authentication too
+19:40:54 <jonasschnelli> jtimon: Sure can you. But can a normal user do that?
+19:40:57 <wumpus> you have exactly the same problem there
+19:41:25 <jonasschnelli> I just compared the requirements to setup a remote rtorrent GUI with a possible remote Core node GUI.
+19:41:46 <wumpus> in any case, I'm not strongly against longpoll RPC notifications
+19:41:52 <jtimon> jonasschnelli: well, what was your "normal user" using isntead of zmq?
+19:41:54 <jonasschnelli> And i feal that rpc long polls would result in a easy setup...
+19:42:14 <sipa> morcos, wumpus, jonasschnelli: i agree node <-> wallet is what we should be talking about first, and the apparent need to add private extensions is a sign of a deeper problem: an SPV wallet without trusted full node will be lacking in features
+19:42:22 <kanzure> easiest setup for non-core-developers is going to be web hooks :(
+19:42:36 <kanzure> not rpc
+19:42:50 <d4de> 0MQ supports GSSAPI and Curve auth, unencrypted?!
+19:42:54 <wumpus> and indeed, RPC longpoll can be supported without linking against external dependencies
+19:42:56 <morcos> sipa: good point, but maybe thats a separate problem to solve?
+19:42:57 <wumpus> which is an advantage
+19:42:59 <jonasschnelli> </rpc-long-poll-advertizing> I'm happy to keep the PR alive... I'll also try to work on a intermediate script that could -> ZMQ and does -> RPC
+19:43:17 <sipa> morcos: well if that problem is solved (unsure how...), maybe we don't need private extensions :)
+19:43:37 <sipa> jonasschnelli: you can't... ZMQ doesn't offer wallet-filtered events
+19:43:38 <morcos> yes, but it'll always be superior to some degree to have access to a trusted node
+19:43:44 <instagibbs> sipa, do you mean things like access to mempool, etc?
+19:43:49 <wumpus> at the least we should make a clear division about *what* should be offered over RPC longpoll and what over zmq and what over (theoretic) P2P extensions
+19:43:51 <sipa> instagibbs: yes, and fee estimation
+19:43:51 <morcos> so we shouldn't limit ourselves to things that you can't do without that
+19:43:52 <jonasschnelli> sipa: you still can talk RPC...
+19:43:57 <wumpus> so not everything ends up on all three
+19:44:07 <jonasschnelli> sipa: just the notifications need to be ZMQ to avoid polling..
+19:44:09 <instagibbs> even if you have access to full node over p2p, that doesn't get you that (maybe that's what you meant)
+19:44:28 <jonasschnelli> sipa: thats why I think adding long poll would not change the security aspect.
+19:44:42 <sipa> jonasschnelli: but you don't want to send a ZMQ event for every transaction over the wire... that would consume as much bandwidth as just the p2p protocol
+19:44:55 <wumpus> adding longpoll to RPC won't change any security aspect
+19:45:02 <luke-jr> more, since ZMQ is ASCII :P
+19:45:07 <sipa> luke-jr: wut?
+19:45:09 <kanzure> rpc thread count exhaustion might change a security aspect
+19:45:17 <wumpus> (except if it encourages opening up your RPC port to the internet)
+19:45:20 <jonasschnelli> sipa: Right. Long poll could then be extended to relevant wallet txes.
+19:45:25 <wumpus> kanzure: you need user/pass for that, so only the owner can attack it
+19:45:37 <wumpus> kanzure: I would be against unauthenticated longpolls, that's for sure
+19:45:47 <luke-jr> sipa: at least the main protocol design (it transmits binary data as-is, IIRC)
+19:45:52 <wumpus> kanzure: and if you can authenticate you can do *much* worse things than hold up threads
+19:45:59 <jtimon> sipa: of course you can filter stuff with zmq, you can do anything with zmq, is "network complete"
+19:46:17 <jtimon> you may need more processes
+19:46:23 <sipa> jtimon: that's like saying that x86 asm is better than http, because it can do everything
+19:46:35 <jonasschnelli> Another + for RPC long poll: no dependencies...
+19:46:36 <sipa> jtimon: of course you can filter, but the filter would be too late
+19:46:41 <wumpus> so anyhow: I'd say continue your work jonasschnelli
+19:46:46 <jtimon> sipa: I really don't undesrtand what you claim can't be done with zmq
+19:46:46 <kanzure> my zeromq person just left the channel in a huff ("these people are retarded") hah...
+19:46:53 <jonasschnelli> wumpus: Okay.. I keep the PR warm.
+19:47:03 <luke-jr> again, we ALREADY have longpolling, so I don't see why make a big deal of it
+19:47:19 <jtimon> sipa: you want to filter by a set of addresses or something?
+19:47:19 <jonasschnelli> luke-jr: Yes. It's not a big deal...
+19:47:32 <sipa> jtimon: we don't want ZMQ to be authenticated, so it can't provide wallet-specific information, which means the ZMQ client will need to do the filtering
+19:47:40 <wumpus> people seem to have trouble to get zmq to work in practice, maybe if you can provide some easy examples for RPC longpolling then it will be the more popular way to do notifications soon
+19:47:42 <jonasschnelli> sipa: Agree
+19:47:49 <sipa> jtimon: which is duplicating logic, because that's something the wallet should do, not the gui
+19:47:58 <jonasschnelli> wumpus: Okay. I'll add some examples... good point!
+19:48:02 <wumpus> (I had so much trouble convincing joinmarket to use zmq notifications instead of wacky -notifyX scripts that I just gave u)
+19:48:11 <luke-jr> LP is really simple. just make a normal request and wait ☺
+19:48:15 <jonasschnelli> wumpus: hah .. yes. Another +1 for RPC long poll. :)
+19:48:27 <wumpus> maybe it's the extra dependency, maybe it's unfamiliarity, I don't know.
+19:48:31 <jonasschnelli> People will call exes on every transaction...
+19:48:37 <jtimon> sipa: oh, you don't want authenticated connections going through zmq processes...I don't undesrtand why, but ok, that seems to be the piece I was missing
+19:48:39 <sipa> jtimon: so yes, of course, you can do anything, if you reimplement the wallet in the client, but that was exactly what we were trying to avoid :)
+19:48:47 <gmaxwell> luke-jr: lots of things time out.
+19:48:58 <jonasschnelli> gmaxwell: time out doesnt matter
+19:48:58 <gmaxwell> this discussion seems ratholed.
+19:49:07 <jonasschnelli> Because you have a queue/state on the server
+19:49:15 <wumpus> timeout doesn't matter with longpoll, you can just re-request
+19:49:19 <jtimon> sipa: no, I would just use some kind of authentication
+19:49:21 <kanzure> we need more user metric survey data about whehter rpc is really easy for folks. i think all the web app developers only know web hooks and HTTP.
+19:49:51 <wumpus> kanzure: moving away from JSON-RPC as the main RPC API is out of the question at this stage
+19:50:02 <wumpus> just too much software and libraries that assume it
+19:50:07 <sipa> are there other topics?
+19:50:20 <kanzure> er i did not mean to unintentionally advocate for moving away from json-rpc
+19:50:52 <wumpus> doesn't seem to be
+19:51:11 <wumpus> #endmeeting
