@@ -1,0 +1,189 @@
+19:06:07 <sipa> #startmeeting
+19:06:07 <lightningbot> Meeting started Thu May 26 19:06:07 2016 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:06:07 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:06:11 <sipa> yay
+19:06:13 <sipa> topics?
+19:06:16 <kanzure> zurich transcript coming soon
+19:06:17 <btcdrak> sipa was wardialing
+19:06:32 <btcdrak> kanzure: I can push it now if you like
+19:06:35 <kanzure> we can copy-paste topics from zurich for follow-up
+19:06:40 <kanzure> btcdrak: sure let's do that
+19:07:12 <sipa> i have a topic: segwit vs netrefactor
+19:07:27 <kanzure> i believe the conclusion from zurich was that sipa promised everyone tree sigs and poly sigs within 4 days
+19:07:40 <btcdrak> kanzure: zurich meeting notes https://bitcoincore.org/logs/2016-05-zurich-meeting-notes.txt
+19:08:02 <kanzure> ouch no anchor links. well, okay.
+19:08:31 <kanzure> btw i heard from someone that they were surprised that libconsensus refactoring was considered lower priority than segwit
+19:08:37 <kanzure> just some interesting feedback.
+19:08:42 <btcdrak> kanzure: could be arranged.
+19:08:51 <btcdrak> sipa: ack
+19:09:16 <cfields_> sipa: sure. Though i suspect the (my, anyway) answer will be "segwit comes first, hands-down"
+19:09:22 <sipa> cfields_: ok, settled :)
+19:09:44 <sipa> kanzure: good feedback... i think it's mostly that segwit has much more buy-in as a roadmap (but i'm biased here)
+19:09:45 <btcdrak> was that even a question. segwit first.
+19:10:15 <cfields_> sipa: for sure. I'm working on it in parallel, but I have no desire to slow segwit down for it in any way
+19:10:21 <kanzure> right, right. it's more of a long-term note--- but eventually we will have to bite the bullet and absorb the pain of the refactor impacting everyone's branches.
+19:10:21 <CodeShark> libconsensus is strategically at least as important as segwit - but the coordination issues required are considerable
+19:10:32 <wumpus> what do segwit and net refactor compete on?
+19:10:37 <sipa> wumpus: code :)
+19:10:56 <wumpus> which parts? does net refactor give you significantly more trouble rebasing?
+19:10:59 <CodeShark> also, libconsensus isn't as glitsy :)
+19:11:01 <sipa> probably not
+19:11:11 <kanzure> what is the status of net refactor things?
+19:11:28 <btcdrak> where does compact blocks fit in?
+19:11:30 <sipa> libconsensus refactoring worked well in the 0.10 window, because it seemed there was a clear goal (getting script exposed) and a clear way to do it... further refactors seem to be more one-person shows (not that i blame those people, but if we want them to happen, i think we'll need to agree on a plan beforehand)
+19:11:41 <wumpus> well I can understand how libconsensus conflicts with segwit
+19:11:57 <kanzure> wasn't aware of previous concerns about libconsensus plan synchronization, good to know
+19:12:01 <sipa> libconsensus conflicts with everything :)
+19:12:18 <wumpus> there's also some network changes for segwit, but they're at a message level
+19:12:29 <wumpus> whereas cfields' network refactor is at a lower level
+19:12:40 <sipa> yeah, network refactor probably hurts compact blocks more than it hurts segwit
+19:12:40 <cfields_> kanzure: see #8085. I addressed wumpus's notes from Zurich, but that made it rough to read. I'm working on another version of the same thing with a clean history, done by tomorrow for sure
+19:12:47 <CodeShark> as much as it pains me to sacrifice on architecture, I think holding up segwit right now is much more costly in terms of the public's goodwill
+19:13:31 <jcorgan> +1
+19:13:39 <wumpus> I agree progress in the protocol is more important, I think segwit even affects the proposed libconsensus API
+19:13:52 <sipa> worse, it affects the current libconsensus API :)
+19:14:21 <sipa> ok, other topics?
+19:14:37 <sipa> i have a few more
+19:14:55 <sipa> CPFP will also need to go in at some point, and also conflicts with many in-flight things
+19:15:06 <sipa> and a whole range of relay improvement
+19:15:08 <wumpus> libconsensus feels more like some checkbox people want checked than something that will actually have a lot of users but feel free to prove me wrong
+19:15:29 <sdaftuar> if we think segwit will be backported to 0.12, then probably CPFP should wait until afterward?
+19:15:35 <wumpus> it should be done but unless someone has a clear example of an application using it and contributes to it it has not much priority
+19:15:41 <sipa> when i talk about libconsensus i mean "abstracting out consensus logic"... not so much an actual API exposure
+19:15:42 <sdaftuar> to avoid dealing with the CNB refactor in 0.12
+19:16:35 <wumpus> sipa: that's what I mean right, I'm not sure other people talkinga bout it mean the same thing
+19:16:50 <wumpus> at some point it becomes just a buzzword... :)
+19:16:51 <sipa> maybe i should formulate the question this way: segwit, compact blocks, CPFP... all for 0.13?
+19:16:59 <wumpus> that's a bit much
+19:17:18 <wumpus> for just before the feature freeze
+19:17:42 <sdaftuar> sipa: yes!
+19:17:50 <wumpus> (2016-06-16)
+19:18:13 <sipa> i would very much like to have at least compact blocks in before segwit, to alleviate the extra relay latency
+19:18:21 <wumpus> I don't think we should make a habit of merging such big things just before a release
+19:18:48 <sdaftuar> segwit is clearly the heaviest lift here to review...  i think the otherw two things can be knocked out very quickly
+19:18:55 <wumpus> segwit is obvious
+19:19:07 <sdaftuar> but that's the thing where it's not clear to me if it'll be sufficiently reviewed by 6/16
+19:19:17 <wumpus> yes that'st he thing what counts
+19:19:46 <btcdrak> compact blocks would be good in 0.13
+19:19:57 <wumpus> segwit should be merged soon so that we can do 0.12.1 before 0.13
+19:20:03 <CodeShark> on that topic...
+19:20:30 <sipa> we can merge segwit with no softfork defined for it on mainnet
+19:20:51 <wumpus> we've already moved the release for 0.13 with a month so I'd really like to not move it again
+19:20:53 <sdaftuar> sipa: interesting!  i hadn't considered that
+19:20:57 <CodeShark> sipa: indeed!
+19:21:14 <CodeShark> and even once we do add the segwit softfork we can disable mining on it until release
+19:21:15 <sipa> #idea merge segwit without defined softfork
+19:21:35 <cfields_> hmm
+19:22:12 <wumpus> sure
+19:22:22 <sdaftuar> i guess the thing to worry about is if we have testing gaps, things might break without anyone noticing?
+19:22:23 <wumpus> just to have the code in?
+19:22:30 <luke-jr> need vb gbt before segwit tho..? maybe not if left undefined, unsure
+19:22:37 <sipa> luke-jr: yup
+19:22:42 <sipa> luke-jr: will look at that
+19:23:13 <wumpus> sdaftuar: well the tests need to cover it
+19:23:30 <wumpus> if there's a testing gap it should not be merged in any case
+19:23:31 <sipa> all the segwit tests use regtest
+19:23:37 <wumpus> right
+19:23:52 <wumpus> for that it doesn't matter whether a softfork is defined on mainnet
+19:24:01 <sipa> indeed
+19:24:11 <sipa> and for script/tx tests, the softfork is not relevant
+19:24:16 <luke-jr> sipa: should I look into merging vbgbt w segwit?
+19:24:19 <achow101> what benefit would there be to not define the softfork when mergin segwit
+19:24:48 <sipa> achow101: segwit conflicts with a lot of code, having it in would simplify further development on the branch
+19:24:51 <btcdrak> sipa: we should merge without mainnet, because it will allow people to test on testnet now (it's already been activated in testnet).
+19:24:53 <wumpus> achow101: to have the code in, so that development happens on top
+19:25:08 <wumpus> achow101: and so that people acn use it on the regtest/testnet network
+19:25:12 <sipa> btcdrak: another good reason, indeed
+19:25:27 <wumpus> btw: should we keep the segnet?
+19:25:35 <sipa> no, i want to drop it
+19:25:38 <btcdrak> wumpus: no segnet should go
+19:25:42 <sipa> unless there is a good reason to keep it
+19:25:43 <wumpus> ok
+19:25:54 <wumpus> (no opinion either way just wondering whether that's supposed to end up in master)
+19:26:12 <btcdrak> sipa: there's no need to drop it in merge to master right away imo, but certainly before we add parameters to mainnet.
+19:26:14 <wumpus> yes as it has been triggered on testnet
+19:26:39 <sipa> i will prioritize the testnet dns seed filtering, vb/gbt changes, and doing another batch
+19:26:49 <kanzure> merging segwit without activation might lessen the pressure on reviewers
+19:26:54 <kanzure> which might be a negative side effect
+19:26:59 <sdaftuar> kanzure: agree
+19:27:32 <wumpus> anyhow if the segnet network helps testing I don't have problems with temporarily having it in master, as long as it is clearly communicated that people shouldn't rely on it
+19:27:54 <sipa> i wasn't planning on including it in master
+19:28:09 <wumpus> well playing psychological meta-tricks on reviewers doesn't play much of a role imo, we should do whatever is practical
+19:28:42 <wumpus> if merging segwit helps make progress on other fronts so that 0.13 can be a better release
+19:28:44 <wumpus> we should do that
+19:29:10 <wumpus> also having it merged in master usually means it gets more testing and review, not less
+19:29:12 <sipa> i'll do one more batch, and if there are some ACKs then, i'll squash
+19:29:30 <kanzure> so it would be active in testnet segnet and regtest when merged, but not mainnet, and letting others maintain segwit for other 0.13 changes?
+19:29:49 <sipa> kanzure: don't understand the last part
+19:30:04 <sipa> if there are changes necessary to the code post-merge but pre-release, they can just go in master
+19:30:04 <kanzure> the ideal of merging soon is to let others maintain segwit for possibly conflicting 0.13 changes?
+19:30:20 <wumpus> there's not *that* much time left for 0.13, it's good to decide now what we still want to have in and focus on that
+19:30:31 <sipa> kanzure: to let others rebase their own patches on top
+19:30:45 <wumpus> well not 'maintain segwit' but work on top, yes
+19:30:57 <btcdrak> kanzure: the only difference is not having activation params on mainnet. it would really help by not holding up other work.
+19:31:23 <sdaftuar> sipa: would you still plan to backport to 0.12?
+19:31:30 <sipa> sdaftuar: yes, but after merge in master
+19:31:40 <sipa> (but before defining activation)
+19:31:42 <sdaftuar> ok
+19:32:05 <sipa> ok, other topics?
+19:32:10 <gmaxwell> The non-merged status of segwit has kinda been holding up other work, unfortunately.
+19:32:46 <kanzure> maybe bip151 things?
+19:33:11 <sipa> status bip151: waiting for implementation
+19:33:13 <sipa> i'd say :)
+19:33:19 <instagibbs> sdaftuar, is that list of testing gaps public somewhere?
+19:33:22 <kanzure> ok
+19:33:24 <instagibbs> (sorry, backtracking)
+19:33:39 <kanzure> https://gist.github.com/sdaftuar/0469a2583f33989cf8196d2f26d99114
+19:33:48 <sdaftuar> instagibbs: yes, now :)
+19:34:07 <luke-jr> lol
+19:34:15 <instagibbs> not really my meaning, but ok ;P
+19:34:40 <petertodd> re: bip151, I mentioned it today at the conf I was at to some cryptographers, and their response to it not being an off the shelf standard was horror :) might be a pr issue
+19:35:02 <sipa> petertodd: it's openssh's chacha20-poly1305 exactly
+19:35:07 <kanzure> were they horrified about the current implementation at all
+19:35:38 <petertodd> sipa: good, we should make that 110% clear then
+19:35:39 <sipa> petertodd: maybe that needs to be made more clear
+19:35:48 <gmaxwell> it's pretty clear in the BIP now, I thought.
+19:35:57 <gmaxwell> maybe it could be moved up to the top.
+19:36:16 <petertodd> gmaxwell: yeah, move it to the top - I just looked at it and didn't see that
+19:36:45 <sipa> #action jonasschnelli make it more clean that bip151 uses openssh's chacha20-poly1305 standard
+19:36:46 <btcdrak> ok make that an action point for the logs
+19:36:56 <sipa> jinx
+19:37:27 <petertodd> make it clear that the standard *describes* a subset of openssh's standard, and that bitcoin's use of it is identical and can reuse the existing code
+19:37:39 <kanzure> pus or minus licensing issues?
+19:37:43 <kanzure> *plus
+19:38:16 <jonasschnelli> Ack. Will do
+19:38:26 <petertodd> kanzure: https://github.com/openssh/openssh-portable/blob/05855bf2ce7d5cd0a6db18bc0b4214ed5ef7516d/LICENCE <- looks like BSD at least, no GPL code
+19:38:47 <sipa> the actual cipher is public domain code
+19:38:51 <sipa> the glue into openssh is BSD
+19:41:18 <kanzure> petertodd: thanks for checking
+19:42:09 <sipa> anything else?
+19:42:18 <sipa> (mental note: type #topic next time)
+19:42:41 <btcdrak> no just #topic
+19:42:46 <kanzure> child-pays-for-parent?
+19:43:07 <kanzure> and wasn't there something activating soon that we were looking at
+19:43:28 <sdaftuar> happy to talk about CPFP, are there any questions?
+19:43:33 <sipa> #topic child pay for parent
+19:44:05 <sipa> i think the blocker is just the refactor for CNB
+19:44:15 <sipa> which will conflict with segwit
+19:44:40 <sdaftuar> right
+19:45:00 <luke-jr> so maybe target 0.14
+19:45:04 <luke-jr> ?
+19:45:23 <sipa> at the latest, i'd say
+19:45:30 <kanzure> oh i forgot about the testing infrastructure stuff for sdaftuar
+19:45:35 <kanzure> sdaftuar: something i mentioned in person a few days ago, https://www.terraform.io/
+19:45:37 <sipa> but yes, it may miss 0.13
+19:45:37 <sdaftuar> i will be sad if it is necessary to push it back that far
+19:45:45 <sipa> me too
+19:46:25 <sdaftuar> has anyone tried to test or review #7600?
+19:47:13 <sipa> i started looking at it, but not in detail
+19:47:53 <sdaftuar> alright, well no point in talking about blockers until it's been reviewed
+19:48:04 <gmaxwell> I beleive I applied it to a node and started it. (but then switched out of it to test something else) It's on my list.
+19:50:11 <sipa> other topics?
+19:50:34 <CodeShark> sipa: your suggestion seems superior to 8101 :p
+19:50:38 <CodeShark> at least for now
+19:50:50 <CodeShark> I was going to bring that up...but perhaps we can defer that discussion
+19:50:50 <luke-jr> sdaftuar: I'll be sad too: it's been waiting since like 0.4 :p
+19:51:38 <sipa> luke-jr: well, feel free to help review/test 7600 already
+19:51:46 <gmaxwell> I will be sad to not get CPFP in soon if that happens, especially considering all the work that it's taken to get it this far.
+19:52:10 <sipa> so i would encourage people to review
+19:52:53 <sipa> #endmeeting

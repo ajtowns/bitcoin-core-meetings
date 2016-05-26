@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:06:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:06:07</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May 26 19:06:07 2016 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:06:07</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:06:11</span><span class="nk"> &lt;sipa&gt;</span> yay
+<a name="l-5"></a><span class="tm">19:06:13</span><span class="nk"> &lt;sipa&gt;</span> topics?
+<a name="l-6"></a><span class="tm">19:06:16</span><span class="nk"> &lt;kanzure&gt;</span> zurich transcript coming soon
+<a name="l-7"></a><span class="tm">19:06:17</span><span class="nk"> &lt;btcdrak&gt;</span> sipa was wardialing
+<a name="l-8"></a><span class="tm">19:06:32</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> I can push it now if you like
+<a name="l-9"></a><span class="tm">19:06:35</span><span class="nk"> &lt;kanzure&gt;</span> we can copy-paste topics from zurich for follow-up
+<a name="l-10"></a><span class="tm">19:06:40</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">btcdrak:</span> sure let's do that
+<a name="l-11"></a><span class="tm">19:07:12</span><span class="nk"> &lt;sipa&gt;</span> i have a topic: segwit vs netrefactor
+<a name="l-12"></a><span class="tm">19:07:27</span><span class="nk"> &lt;kanzure&gt;</span> i believe the conclusion from zurich was that sipa promised everyone tree sigs and poly sigs within 4 days
+<a name="l-13"></a><span class="tm">19:07:40</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> zurich meeting notes https://bitcoincore.org/logs/2016-05-zurich-meeting-notes.txt
+<a name="l-14"></a><span class="tm">19:08:02</span><span class="nk"> &lt;kanzure&gt;</span> ouch no anchor links. well, okay.
+<a name="l-15"></a><span class="tm">19:08:31</span><span class="nk"> &lt;kanzure&gt;</span> btw i heard from someone that they were surprised that libconsensus refactoring was considered lower priority than segwit
+<a name="l-16"></a><span class="tm">19:08:37</span><span class="nk"> &lt;kanzure&gt;</span> just some interesting feedback.
+<a name="l-17"></a><span class="tm">19:08:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> could be arranged.
+<a name="l-18"></a><span class="tm">19:08:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-19"></a><span class="tm">19:09:16</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">sipa:</span> sure. Though i suspect the (my, anyway) answer will be "segwit comes first, hands-down"
+<a name="l-20"></a><span class="tm">19:09:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields_:</span> ok, settled :)
+<a name="l-21"></a><span class="tm">19:09:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> good feedback... i think it's mostly that segwit has much more buy-in as a roadmap (but i'm biased here)
+<a name="l-22"></a><span class="tm">19:09:45</span><span class="nk"> &lt;btcdrak&gt;</span> was that even a question. segwit first.
+<a name="l-23"></a><span class="tm">19:10:15</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">sipa:</span> for sure. I'm working on it in parallel, but I have no desire to slow segwit down for it in any way
+<a name="l-24"></a><span class="tm">19:10:21</span><span class="nk"> &lt;kanzure&gt;</span> right, right. it's more of a long-term note--- but eventually we will have to bite the bullet and absorb the pain of the refactor impacting everyone's branches.
+<a name="l-25"></a><span class="tm">19:10:21</span><span class="nk"> &lt;CodeShark&gt;</span> libconsensus is strategically at least as important as segwit - but the coordination issues required are considerable
+<a name="l-26"></a><span class="tm">19:10:32</span><span class="nk"> &lt;wumpus&gt;</span> what do segwit and net refactor compete on?
+<a name="l-27"></a><span class="tm">19:10:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> code :)
+<a name="l-28"></a><span class="tm">19:10:56</span><span class="nk"> &lt;wumpus&gt;</span> which parts? does net refactor give you significantly more trouble rebasing?
+<a name="l-29"></a><span class="tm">19:10:59</span><span class="nk"> &lt;CodeShark&gt;</span> also, libconsensus isn't as glitsy :)
+<a name="l-30"></a><span class="tm">19:11:01</span><span class="nk"> &lt;sipa&gt;</span> probably not
+<a name="l-31"></a><span class="tm">19:11:11</span><span class="nk"> &lt;kanzure&gt;</span> what is the status of net refactor things?
+<a name="l-32"></a><span class="tm">19:11:28</span><span class="nk"> &lt;btcdrak&gt;</span> where does compact blocks fit in?
+<a name="l-33"></a><span class="tm">19:11:30</span><span class="nk"> &lt;sipa&gt;</span> libconsensus refactoring worked well in the 0.10 window, because it seemed there was a clear goal (getting script exposed) and a clear way to do it... further refactors seem to be more one-person shows (not that i blame those people, but if we want them to happen, i think we'll need to agree on a plan beforehand)
+<a name="l-34"></a><span class="tm">19:11:41</span><span class="nk"> &lt;wumpus&gt;</span> well I can understand how libconsensus conflicts with segwit
+<a name="l-35"></a><span class="tm">19:11:57</span><span class="nk"> &lt;kanzure&gt;</span> wasn't aware of previous concerns about libconsensus plan synchronization, good to know
+<a name="l-36"></a><span class="tm">19:12:01</span><span class="nk"> &lt;sipa&gt;</span> libconsensus conflicts with everything :)
+<a name="l-37"></a><span class="tm">19:12:18</span><span class="nk"> &lt;wumpus&gt;</span> there's also some network changes for segwit, but they're at a message level
+<a name="l-38"></a><span class="tm">19:12:29</span><span class="nk"> &lt;wumpus&gt;</span> whereas cfields' network refactor is at a lower level
+<a name="l-39"></a><span class="tm">19:12:40</span><span class="nk"> &lt;sipa&gt;</span> yeah, network refactor probably hurts compact blocks more than it hurts segwit
+<a name="l-40"></a><span class="tm">19:12:40</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">kanzure:</span> see #8085. I addressed wumpus's notes from Zurich, but that made it rough to read. I'm working on another version of the same thing with a clean history, done by tomorrow for sure
+<a name="l-41"></a><span class="tm">19:12:47</span><span class="nk"> &lt;CodeShark&gt;</span> as much as it pains me to sacrifice on architecture, I think holding up segwit right now is much more costly in terms of the public's goodwill
+<a name="l-42"></a><span class="tm">19:13:31</span><span class="nk"> &lt;jcorgan&gt;</span> +1
+<a name="l-43"></a><span class="tm">19:13:39</span><span class="nk"> &lt;wumpus&gt;</span> I agree progress in the protocol is more important, I think segwit even affects the proposed libconsensus API
+<a name="l-44"></a><span class="tm">19:13:52</span><span class="nk"> &lt;sipa&gt;</span> worse, it affects the current libconsensus API :)
+<a name="l-45"></a><span class="tm">19:14:21</span><span class="nk"> &lt;sipa&gt;</span> ok, other topics?
+<a name="l-46"></a><span class="tm">19:14:37</span><span class="nk"> &lt;sipa&gt;</span> i have a few more
+<a name="l-47"></a><span class="tm">19:14:55</span><span class="nk"> &lt;sipa&gt;</span> CPFP will also need to go in at some point, and also conflicts with many in-flight things
+<a name="l-48"></a><span class="tm">19:15:06</span><span class="nk"> &lt;sipa&gt;</span> and a whole range of relay improvement
+<a name="l-49"></a><span class="tm">19:15:08</span><span class="nk"> &lt;wumpus&gt;</span> libconsensus feels more like some checkbox people want checked than something that will actually have a lot of users but feel free to prove me wrong
+<a name="l-50"></a><span class="tm">19:15:29</span><span class="nk"> &lt;sdaftuar&gt;</span> if we think segwit will be backported to 0.12, then probably CPFP should wait until afterward?
+<a name="l-51"></a><span class="tm">19:15:35</span><span class="nk"> &lt;wumpus&gt;</span> it should be done but unless someone has a clear example of an application using it and contributes to it it has not much priority
+<a name="l-52"></a><span class="tm">19:15:41</span><span class="nk"> &lt;sipa&gt;</span> when i talk about libconsensus i mean "abstracting out consensus logic"... not so much an actual API exposure
+<a name="l-53"></a><span class="tm">19:15:42</span><span class="nk"> &lt;sdaftuar&gt;</span> to avoid dealing with the CNB refactor in 0.12
+<a name="l-54"></a><span class="tm">19:16:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> that's what I mean right, I'm not sure other people talkinga bout it mean the same thing
+<a name="l-55"></a><span class="tm">19:16:50</span><span class="nk"> &lt;wumpus&gt;</span> at some point it becomes just a buzzword... :)
+<a name="l-56"></a><span class="tm">19:16:51</span><span class="nk"> &lt;sipa&gt;</span> maybe i should formulate the question this way: segwit, compact blocks, CPFP... all for 0.13?
+<a name="l-57"></a><span class="tm">19:16:59</span><span class="nk"> &lt;wumpus&gt;</span> that's a bit much
+<a name="l-58"></a><span class="tm">19:17:18</span><span class="nk"> &lt;wumpus&gt;</span> for just before the feature freeze
+<a name="l-59"></a><span class="tm">19:17:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> yes!
+<a name="l-60"></a><span class="tm">19:17:50</span><span class="nk"> &lt;wumpus&gt;</span> (2016-06-16)
+<a name="l-61"></a><span class="tm">19:18:13</span><span class="nk"> &lt;sipa&gt;</span> i would very much like to have at least compact blocks in before segwit, to alleviate the extra relay latency
+<a name="l-62"></a><span class="tm">19:18:21</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we should make a habit of merging such big things just before a release
+<a name="l-63"></a><span class="tm">19:18:48</span><span class="nk"> &lt;sdaftuar&gt;</span> segwit is clearly the heaviest lift here to review...  i think the otherw two things can be knocked out very quickly
+<a name="l-64"></a><span class="tm">19:18:55</span><span class="nk"> &lt;wumpus&gt;</span> segwit is obvious
+<a name="l-65"></a><span class="tm">19:19:07</span><span class="nk"> &lt;sdaftuar&gt;</span> but that's the thing where it's not clear to me if it'll be sufficiently reviewed by 6/16
+<a name="l-66"></a><span class="tm">19:19:17</span><span class="nk"> &lt;wumpus&gt;</span> yes that'st he thing what counts
+<a name="l-67"></a><span class="tm">19:19:46</span><span class="nk"> &lt;btcdrak&gt;</span> compact blocks would be good in 0.13
+<a name="l-68"></a><span class="tm">19:19:57</span><span class="nk"> &lt;wumpus&gt;</span> segwit should be merged soon so that we can do 0.12.1 before 0.13
+<a name="l-69"></a><span class="tm">19:20:03</span><span class="nk"> &lt;CodeShark&gt;</span> on that topic...
+<a name="l-70"></a><span class="tm">19:20:30</span><span class="nk"> &lt;sipa&gt;</span> we can merge segwit with no softfork defined for it on mainnet
+<a name="l-71"></a><span class="tm">19:20:51</span><span class="nk"> &lt;wumpus&gt;</span> we've already moved the release for 0.13 with a month so I'd really like to not move it again
+<a name="l-72"></a><span class="tm">19:20:53</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> interesting!  i hadn't considered that
+<a name="l-73"></a><span class="tm">19:20:57</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> indeed!
+<a name="l-74"></a><span class="tm">19:21:14</span><span class="nk"> &lt;CodeShark&gt;</span> and even once we do add the segwit softfork we can disable mining on it until release
+<a name="l-75"></a><span class="tm">19:21:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#idea </span><span class="cmdline">merge segwit without defined softfork</span>
+<a name="l-76"></a><span class="tm">19:21:35</span><span class="nk"> &lt;cfields_&gt;</span> hmm
+<a name="l-77"></a><span class="tm">19:22:12</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-78"></a><span class="tm">19:22:22</span><span class="nk"> &lt;sdaftuar&gt;</span> i guess the thing to worry about is if we have testing gaps, things might break without anyone noticing?
+<a name="l-79"></a><span class="tm">19:22:23</span><span class="nk"> &lt;wumpus&gt;</span> just to have the code in?
+<a name="l-80"></a><span class="tm">19:22:30</span><span class="nk"> &lt;luke-jr&gt;</span> need vb gbt before segwit tho..? maybe not if left undefined, unsure
+<a name="l-81"></a><span class="tm">19:22:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> yup
+<a name="l-82"></a><span class="tm">19:22:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> will look at that
+<a name="l-83"></a><span class="tm">19:23:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> well the tests need to cover it
+<a name="l-84"></a><span class="tm">19:23:30</span><span class="nk"> &lt;wumpus&gt;</span> if there's a testing gap it should not be merged in any case
+<a name="l-85"></a><span class="tm">19:23:31</span><span class="nk"> &lt;sipa&gt;</span> all the segwit tests use regtest
+<a name="l-86"></a><span class="tm">19:23:37</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-87"></a><span class="tm">19:23:52</span><span class="nk"> &lt;wumpus&gt;</span> for that it doesn't matter whether a softfork is defined on mainnet
+<a name="l-88"></a><span class="tm">19:24:01</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-89"></a><span class="tm">19:24:11</span><span class="nk"> &lt;sipa&gt;</span> and for script/tx tests, the softfork is not relevant
+<a name="l-90"></a><span class="tm">19:24:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> should I look into merging vbgbt w segwit?
+<a name="l-91"></a><span class="tm">19:24:19</span><span class="nk"> &lt;achow101&gt;</span> what benefit would there be to not define the softfork when mergin segwit
+<a name="l-92"></a><span class="tm">19:24:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> segwit conflicts with a lot of code, having it in would simplify further development on the branch
+<a name="l-93"></a><span class="tm">19:24:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> we should merge without mainnet, because it will allow people to test on testnet now (it's already been activated in testnet).
+<a name="l-94"></a><span class="tm">19:24:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> to have the code in, so that development happens on top
+<a name="l-95"></a><span class="tm">19:25:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> and so that people acn use it on the regtest/testnet network
+<a name="l-96"></a><span class="tm">19:25:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> another good reason, indeed
+<a name="l-97"></a><span class="tm">19:25:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btw:</span> should we keep the segnet?
+<a name="l-98"></a><span class="tm">19:25:35</span><span class="nk"> &lt;sipa&gt;</span> no, i want to drop it
+<a name="l-99"></a><span class="tm">19:25:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> no segnet should go
+<a name="l-100"></a><span class="tm">19:25:42</span><span class="nk"> &lt;sipa&gt;</span> unless there is a good reason to keep it
+<a name="l-101"></a><span class="tm">19:25:43</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-102"></a><span class="tm">19:25:54</span><span class="nk"> &lt;wumpus&gt;</span> (no opinion either way just wondering whether that's supposed to end up in master)
+<a name="l-103"></a><span class="tm">19:26:12</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> there's no need to drop it in merge to master right away imo, but certainly before we add parameters to mainnet.
+<a name="l-104"></a><span class="tm">19:26:14</span><span class="nk"> &lt;wumpus&gt;</span> yes as it has been triggered on testnet
+<a name="l-105"></a><span class="tm">19:26:39</span><span class="nk"> &lt;sipa&gt;</span> i will prioritize the testnet dns seed filtering, vb/gbt changes, and doing another batch
+<a name="l-106"></a><span class="tm">19:26:49</span><span class="nk"> &lt;kanzure&gt;</span> merging segwit without activation might lessen the pressure on reviewers
+<a name="l-107"></a><span class="tm">19:26:54</span><span class="nk"> &lt;kanzure&gt;</span> which might be a negative side effect
+<a name="l-108"></a><span class="tm">19:26:59</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">kanzure:</span> agree
+<a name="l-109"></a><span class="tm">19:27:32</span><span class="nk"> &lt;wumpus&gt;</span> anyhow if the segnet network helps testing I don't have problems with temporarily having it in master, as long as it is clearly communicated that people shouldn't rely on it
+<a name="l-110"></a><span class="tm">19:27:54</span><span class="nk"> &lt;sipa&gt;</span> i wasn't planning on including it in master
+<a name="l-111"></a><span class="tm">19:28:09</span><span class="nk"> &lt;wumpus&gt;</span> well playing psychological meta-tricks on reviewers doesn't play much of a role imo, we should do whatever is practical
+<a name="l-112"></a><span class="tm">19:28:42</span><span class="nk"> &lt;wumpus&gt;</span> if merging segwit helps make progress on other fronts so that 0.13 can be a better release
+<a name="l-113"></a><span class="tm">19:28:44</span><span class="nk"> &lt;wumpus&gt;</span> we should do that
+<a name="l-114"></a><span class="tm">19:29:10</span><span class="nk"> &lt;wumpus&gt;</span> also having it merged in master usually means it gets more testing and review, not less
+<a name="l-115"></a><span class="tm">19:29:12</span><span class="nk"> &lt;sipa&gt;</span> i'll do one more batch, and if there are some ACKs then, i'll squash
+<a name="l-116"></a><span class="tm">19:29:30</span><span class="nk"> &lt;kanzure&gt;</span> so it would be active in testnet segnet and regtest when merged, but not mainnet, and letting others maintain segwit for other 0.13 changes?
+<a name="l-117"></a><span class="tm">19:29:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> don't understand the last part
+<a name="l-118"></a><span class="tm">19:30:04</span><span class="nk"> &lt;sipa&gt;</span> if there are changes necessary to the code post-merge but pre-release, they can just go in master
+<a name="l-119"></a><span class="tm">19:30:04</span><span class="nk"> &lt;kanzure&gt;</span> the ideal of merging soon is to let others maintain segwit for possibly conflicting 0.13 changes?
+<a name="l-120"></a><span class="tm">19:30:20</span><span class="nk"> &lt;wumpus&gt;</span> there's not *that* much time left for 0.13, it's good to decide now what we still want to have in and focus on that
+<a name="l-121"></a><span class="tm">19:30:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> to let others rebase their own patches on top
+<a name="l-122"></a><span class="tm">19:30:45</span><span class="nk"> &lt;wumpus&gt;</span> well not 'maintain segwit' but work on top, yes
+<a name="l-123"></a><span class="tm">19:30:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">kanzure:</span> the only difference is not having activation params on mainnet. it would really help by not holding up other work.
+<a name="l-124"></a><span class="tm">19:31:23</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> would you still plan to backport to 0.12?
+<a name="l-125"></a><span class="tm">19:31:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes, but after merge in master
+<a name="l-126"></a><span class="tm">19:31:40</span><span class="nk"> &lt;sipa&gt;</span> (but before defining activation)
+<a name="l-127"></a><span class="tm">19:31:42</span><span class="nk"> &lt;sdaftuar&gt;</span> ok
+<a name="l-128"></a><span class="tm">19:32:05</span><span class="nk"> &lt;sipa&gt;</span> ok, other topics?
+<a name="l-129"></a><span class="tm">19:32:10</span><span class="nk"> &lt;gmaxwell&gt;</span> The non-merged status of segwit has kinda been holding up other work, unfortunately.
+<a name="l-130"></a><span class="tm">19:32:46</span><span class="nk"> &lt;kanzure&gt;</span> maybe bip151 things?
+<a name="l-131"></a><span class="tm">19:33:11</span><span class="nk"> &lt;sipa&gt;</span> status bip151: waiting for implementation
+<a name="l-132"></a><span class="tm">19:33:13</span><span class="nk"> &lt;sipa&gt;</span> i'd say :)
+<a name="l-133"></a><span class="tm">19:33:19</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, is that list of testing gaps public somewhere?
+<a name="l-134"></a><span class="tm">19:33:22</span><span class="nk"> &lt;kanzure&gt;</span> ok
+<a name="l-135"></a><span class="tm">19:33:24</span><span class="nk"> &lt;instagibbs&gt;</span> (sorry, backtracking)
+<a name="l-136"></a><span class="tm">19:33:39</span><span class="nk"> &lt;kanzure&gt;</span> https://gist.github.com/sdaftuar/0469a2583f33989cf8196d2f26d99114
+<a name="l-137"></a><span class="tm">19:33:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">instagibbs:</span> yes, now :)
+<a name="l-138"></a><span class="tm">19:34:07</span><span class="nk"> &lt;luke-jr&gt;</span> lol
+<a name="l-139"></a><span class="tm">19:34:15</span><span class="nk"> &lt;instagibbs&gt;</span> not really my meaning, but ok ;P
+<a name="l-140"></a><span class="tm">19:34:40</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">re:</span> bip151, I mentioned it today at the conf I was at to some cryptographers, and their response to it not being an off the shelf standard was horror :) might be a pr issue
+<a name="l-141"></a><span class="tm">19:35:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> it's openssh's chacha20-poly1305 exactly
+<a name="l-142"></a><span class="tm">19:35:07</span><span class="nk"> &lt;kanzure&gt;</span> were they horrified about the current implementation at all
+<a name="l-143"></a><span class="tm">19:35:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> good, we should make that 110% clear then
+<a name="l-144"></a><span class="tm">19:35:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> maybe that needs to be made more clear
+<a name="l-145"></a><span class="tm">19:35:48</span><span class="nk"> &lt;gmaxwell&gt;</span> it's pretty clear in the BIP now, I thought.
+<a name="l-146"></a><span class="tm">19:35:57</span><span class="nk"> &lt;gmaxwell&gt;</span> maybe it could be moved up to the top.
+<a name="l-147"></a><span class="tm">19:36:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> yeah, move it to the top - I just looked at it and didn't see that
+<a name="l-148"></a><span class="tm">19:36:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#action </span><span class="cmdline">jonasschnelli make it more clean that bip151 uses openssh's chacha20-poly1305 standard</span>
+<a name="l-149"></a><span class="tm">19:36:46</span><span class="nk"> &lt;btcdrak&gt;</span> ok make that an action point for the logs
+<a name="l-150"></a><span class="tm">19:36:56</span><span class="nk"> &lt;sipa&gt;</span> jinx
+<a name="l-151"></a><span class="tm">19:37:27</span><span class="nk"> &lt;petertodd&gt;</span> make it clear that the standard *describes* a subset of openssh's standard, and that bitcoin's use of it is identical and can reuse the existing code
+<a name="l-152"></a><span class="tm">19:37:39</span><span class="nk"> &lt;kanzure&gt;</span> pus or minus licensing issues?
+<a name="l-153"></a><span class="tm">19:37:43</span><span class="nk"> &lt;kanzure&gt;</span> *plus
+<a name="l-154"></a><span class="tm">19:38:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ack. Will do
+<a name="l-155"></a><span class="tm">19:38:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">kanzure:</span> https://github.com/openssh/openssh-portable/blob/05855bf2ce7d5cd0a6db18bc0b4214ed5ef7516d/LICENCE &lt;- looks like BSD at least, no GPL code
+<a name="l-156"></a><span class="tm">19:38:47</span><span class="nk"> &lt;sipa&gt;</span> the actual cipher is public domain code
+<a name="l-157"></a><span class="tm">19:38:51</span><span class="nk"> &lt;sipa&gt;</span> the glue into openssh is BSD
+<a name="l-158"></a><span class="tm">19:41:18</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">petertodd:</span> thanks for checking
+<a name="l-159"></a><span class="tm">19:42:09</span><span class="nk"> &lt;sipa&gt;</span> anything else?
+<a name="l-160"></a><span class="tm">19:42:18</span><span class="nk"> &lt;sipa&gt;</span> (mental note: type #topic next time)
+<a name="l-161"></a><span class="tm">19:42:41</span><span class="nk"> &lt;btcdrak&gt;</span> no just #topic
+<a name="l-162"></a><span class="tm">19:42:46</span><span class="nk"> &lt;kanzure&gt;</span> child-pays-for-parent?
+<a name="l-163"></a><span class="tm">19:43:07</span><span class="nk"> &lt;kanzure&gt;</span> and wasn't there something activating soon that we were looking at
+<a name="l-164"></a><span class="tm">19:43:28</span><span class="nk"> &lt;sdaftuar&gt;</span> happy to talk about CPFP, are there any questions?
+<a name="l-165"></a><span class="tm">19:43:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">child pay for parent</span>
+<a name="l-166"></a><span class="tm">19:44:05</span><span class="nk"> &lt;sipa&gt;</span> i think the blocker is just the refactor for CNB
+<a name="l-167"></a><span class="tm">19:44:15</span><span class="nk"> &lt;sipa&gt;</span> which will conflict with segwit
+<a name="l-168"></a><span class="tm">19:44:40</span><span class="nk"> &lt;sdaftuar&gt;</span> right
+<a name="l-169"></a><span class="tm">19:45:00</span><span class="nk"> &lt;luke-jr&gt;</span> so maybe target 0.14
+<a name="l-170"></a><span class="tm">19:45:04</span><span class="nk"> &lt;luke-jr&gt;</span> ?
+<a name="l-171"></a><span class="tm">19:45:23</span><span class="nk"> &lt;sipa&gt;</span> at the latest, i'd say
+<a name="l-172"></a><span class="tm">19:45:30</span><span class="nk"> &lt;kanzure&gt;</span> oh i forgot about the testing infrastructure stuff for sdaftuar
+<a name="l-173"></a><span class="tm">19:45:35</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">sdaftuar:</span> something i mentioned in person a few days ago, https://www.terraform.io/
+<a name="l-174"></a><span class="tm">19:45:37</span><span class="nk"> &lt;sipa&gt;</span> but yes, it may miss 0.13
+<a name="l-175"></a><span class="tm">19:45:37</span><span class="nk"> &lt;sdaftuar&gt;</span> i will be sad if it is necessary to push it back that far
+<a name="l-176"></a><span class="tm">19:45:45</span><span class="nk"> &lt;sipa&gt;</span> me too
+<a name="l-177"></a><span class="tm">19:46:25</span><span class="nk"> &lt;sdaftuar&gt;</span> has anyone tried to test or review #7600?
+<a name="l-178"></a><span class="tm">19:47:13</span><span class="nk"> &lt;sipa&gt;</span> i started looking at it, but not in detail
+<a name="l-179"></a><span class="tm">19:47:53</span><span class="nk"> &lt;sdaftuar&gt;</span> alright, well no point in talking about blockers until it's been reviewed
+<a name="l-180"></a><span class="tm">19:48:04</span><span class="nk"> &lt;gmaxwell&gt;</span> I beleive I applied it to a node and started it. (but then switched out of it to test something else) It's on my list.
+<a name="l-181"></a><span class="tm">19:50:11</span><span class="nk"> &lt;sipa&gt;</span> other topics?
+<a name="l-182"></a><span class="tm">19:50:34</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> your suggestion seems superior to 8101 :p
+<a name="l-183"></a><span class="tm">19:50:38</span><span class="nk"> &lt;CodeShark&gt;</span> at least for now
+<a name="l-184"></a><span class="tm">19:50:50</span><span class="nk"> &lt;CodeShark&gt;</span> I was going to bring that up...but perhaps we can defer that discussion
+<a name="l-185"></a><span class="tm">19:50:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> I'll be sad too: it's been waiting since like 0.4 :p
+<a name="l-186"></a><span class="tm">19:51:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> well, feel free to help review/test 7600 already
+<a name="l-187"></a><span class="tm">19:51:46</span><span class="nk"> &lt;gmaxwell&gt;</span> I will be sad to not get CPFP in soon if that happens, especially considering all the work that it's taken to get it this far.
+<a name="l-188"></a><span class="tm">19:52:10</span><span class="nk"> &lt;sipa&gt;</span> so i would encourage people to review
+<a name="l-189"></a><span class="tm">19:52:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
