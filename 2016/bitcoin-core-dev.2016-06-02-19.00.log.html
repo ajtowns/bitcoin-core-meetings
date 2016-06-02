@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:23</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun  2 19:00:23 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:23</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:35</span><span class="nk"> &lt;luke-jr&gt;</span> aww, too fast
+<a name="l-5"></a><span class="tm">19:00:59</span><span class="nk"> &lt;luke-jr&gt;</span> I was going to propose a topic very unseriously explicitly outside the meeting. :P now it's time to be serious
+<a name="l-6"></a><span class="tm">19:01:09</span><span class="nk"> &lt;petertodd&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:34</span><span class="nk"> &lt;wumpus&gt;</span> I guess segwit is the recurring topic, any other topic proposals?
+<a name="l-8"></a><span class="tm">19:01:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> Cory: morcos: sdaftuar: btcdrak: phantomcircuit: jonasschnelli:
+<a name="l-9"></a><span class="tm">19:01:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Here!
+<a name="l-10"></a><span class="tm">19:01:47</span><span class="nk"> &lt;sipa&gt;</span> cfields_!
+<a name="l-11"></a><span class="tm">19:02:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I can give some updates on compactblock testing, since it seems that Matt isn't around (or if he shows up, I expect he can)
+<a name="l-12"></a><span class="tm">19:02:42</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-13"></a><span class="tm">19:03:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit review</span>
+<a name="l-14"></a><span class="tm">19:03:49</span><span class="nk"> &lt;wumpus&gt;</span> let's start with that then
+<a name="l-15"></a><span class="tm">19:04:01</span><span class="nk"> &lt;sipa&gt;</span> My plan right now is making the BIP9/GBT changes, removing segnet, removing the positive witness flag, and then creating a parallel rebase
+<a name="l-16"></a><span class="tm">19:04:12</span><span class="nk"> &lt;sipa&gt;</span> with has a clean history but leads to the same tree
+<a name="l-17"></a><span class="tm">19:04:19</span><span class="nk"> &lt;sipa&gt;</span> if that is something wanted at this point
+<a name="l-18"></a><span class="tm">19:04:20</span><span class="nk"> &lt;wumpus&gt;</span> 111 comments on PR #7910, that must be a record
+<a name="l-19"></a><span class="tm">19:04:32</span><span class="nk"> &lt;luke-jr&gt;</span> "positive witness flag"?
+<a name="l-20"></a><span class="tm">19:05:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> originally, there was a flag to the serialize code to say "serialize witnesses!"; at some point we realized that the opposite was better, as almost always you want to serialize witnesses, and there are just a few exceptions
+<a name="l-21"></a><span class="tm">19:05:48</span><span class="nk"> &lt;sipa&gt;</span> so i introduced both temporarily, and required that exactly one of both was set
+<a name="l-22"></a><span class="tm">19:05:51</span><span class="nk"> &lt;luke-jr&gt;</span> oh, I thought having it explicit was a good idea
+<a name="l-23"></a><span class="tm">19:06:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> one reason for the opposite is that a failure where you miss the positive flag will not be detected usually, but failure to set a negative flag will
+<a name="l-24"></a><span class="tm">19:06:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i thought the same thing initially
+<a name="l-25"></a><span class="tm">19:06:59</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, are you removing new wallet functionality as well?
+<a name="l-26"></a><span class="tm">19:07:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> ?
+<a name="l-27"></a><span class="tm">19:07:09</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> what downsides are there to the current explicit flag?
+<a name="l-28"></a><span class="tm">19:07:25</span><span class="nk"> &lt;sipa&gt;</span> 21:06:22 &lt; sipa&gt; luke-jr: one reason for the opposite is that a failure where you miss the positive flag will not be detected usually, but failure to set a negative flag will
+<a name="l-29"></a><span class="tm">19:07:37</span><span class="nk"> &lt;instagibbs&gt;</span> I assume you don't want users to have segwit addresses pre-rollout
+<a name="l-30"></a><span class="tm">19:07:41</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> indeed, I might have very well written it with a separate CWitnessTx class :)
+<a name="l-31"></a><span class="tm">19:07:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> I don't understand that answer. :&lt;
+<a name="l-32"></a><span class="tm">19:07:55</span><span class="nk"> &lt;instagibbs&gt;</span> (unless that would still be a testing branch)
+<a name="l-33"></a><span class="tm">19:08:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> if we use a positive flag only, and we miss setting that flag somewhere, it won't easily be detected, as wherever that data goes, it will likely also accept tx without witness
+<a name="l-34"></a><span class="tm">19:08:45</span><span class="nk"> &lt;luke-jr&gt;</span> right, I'm talking about where we have both positive and negative flags..
+<a name="l-35"></a><span class="tm">19:08:51</span><span class="nk"> &lt;sipa&gt;</span> ah, that is also an option
+<a name="l-36"></a><span class="tm">19:09:05</span><span class="nk"> &lt;sipa&gt;</span> it's just more code changes shattered all over the place
+<a name="l-37"></a><span class="tm">19:09:43</span><span class="nk"> &lt;luke-jr&gt;</span> less likely to have it accidentally wrong, though
+<a name="l-38"></a><span class="tm">19:09:49</span><span class="nk"> &lt;gmaxwell&gt;</span> With segwit in place there really isn't much further concern about getting the wrong flags, it should only have been an issue with the migration where support had to be added in many places (like RPCs) that might have less test coverage.
+<a name="l-39"></a><span class="tm">19:10:11</span><span class="nk"> &lt;gmaxwell&gt;</span> If you get it wrong in the future, the thing you changed simply won't work right. And hopefully you'll be testing the thing you just changed.
+<a name="l-40"></a><span class="tm">19:10:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't have a strong or strongly held opinion however.
+<a name="l-41"></a><span class="tm">19:10:50</span><span class="nk"> &lt;luke-jr&gt;</span> we have a lot of outstanding PRs that may need to be updated that might not conflict
+<a name="l-42"></a><span class="tm">19:10:50</span><span class="nk"> &lt;jtimon&gt;</span> ack on cleaning history while removing the testnet
+<a name="l-43"></a><span class="tm">19:11:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> well in principle, master is attesting branch
+<a name="l-44"></a><span class="tm">19:11:35</span><span class="nk"> &lt;sipa&gt;</span> there are a few things we need in first, though
+<a name="l-45"></a><span class="tm">19:11:37</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> you mean segnet?
+<a name="l-46"></a><span class="tm">19:11:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> you mean removing the segnet? don't make him remove testnet too :)
+<a name="l-47"></a><span class="tm">19:11:44</span><span class="nk"> &lt;instagibbs&gt;</span> oh a testing, not attesting
+<a name="l-48"></a><span class="tm">19:12:03</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> I believe sipa meant removing segwit's testnet
+<a name="l-49"></a><span class="tm">19:12:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> in any case, what do you think will let you get the code merged sooner?
+<a name="l-50"></a><span class="tm">19:12:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#7749 </span><span class="cmdline">and #8083</span>
+<a name="l-51"></a><span class="tm">19:12:27</span><span class="nk"> &lt;wumpus&gt;</span> but yes ACK on cleaning up the history before merge
+<a name="l-52"></a><span class="tm">19:12:37</span><span class="nk"> &lt;gmaxwell&gt;</span> I like cleaning history for sure.
+<a name="l-53"></a><span class="tm">19:12:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Future me thanks you.
+<a name="l-54"></a><span class="tm">19:13:03</span><span class="nk"> &lt;sipa&gt;</span> well it definitely has to happen before merge
+<a name="l-55"></a><span class="tm">19:13:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> As said, we can ACK the sha256sum of the diff (if someone cares about integrity of an ACK)
+<a name="l-56"></a><span class="tm">19:13:08</span><span class="nk"> &lt;sipa&gt;</span> the question whether the time is now for that
+<a name="l-57"></a><span class="tm">19:13:17</span><span class="nk"> &lt;luke-jr&gt;</span> (GBT VB as well)
+<a name="l-58"></a><span class="tm">19:13:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> git internally has tree hashes
+<a name="l-59"></a><span class="tm">19:13:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Nice. That should work.
+<a name="l-60"></a><span class="tm">19:14:13</span><span class="nk"> &lt;sipa&gt;</span> So please review #7749 and #8083
+<a name="l-61"></a><span class="tm">19:14:26</span><span class="nk"> &lt;luke-jr&gt;</span> did we get anywhere with the fundrawtransaction issue?
+<a name="l-62"></a><span class="tm">19:14:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i can't remember the conclusion there
+<a name="l-63"></a><span class="tm">19:14:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> Re 8083: im finalizing the seeder part (nits and filterbitmap-whitelist)
+<a name="l-64"></a><span class="tm">19:14:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">q:</span> is everything in the segwit PR meant to go in at once, or will it be split up in to, say, a pull with consensus/network changes, following up with wallet, and GUI changes
+<a name="l-65"></a><span class="tm">19:15:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #7749 and #8083</span>
+<a name="l-66"></a><span class="tm">19:15:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> IIRC, 1) it's a problem; 2) we won't change consensus code to fix it
+<a name="l-67"></a><span class="tm">19:15:26</span><span class="nk"> &lt;luke-jr&gt;</span> I don't know of any actual resolution to the problem :/
+<a name="l-68"></a><span class="tm">19:15:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> If sipa does the "rewrite history to result in the same code thing" then if it is is PR split they will need to go in one right after another to preserve the "same code" property.
+<a name="l-69"></a><span class="tm">19:15:56</span><span class="nk"> &lt;gmaxwell&gt;</span> (I think)
+<a name="l-70"></a><span class="tm">19:16:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> that's a good question; the history is broken into sections already
+<a name="l-71"></a><span class="tm">19:16:06</span><span class="nk"> &lt;sipa&gt;</span> so we can decide later
+<a name="l-72"></a><span class="tm">19:16:21</span><span class="nk"> &lt;sipa&gt;</span> though... maybe not
+<a name="l-73"></a><span class="tm">19:16:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I suppose sipa should show "same code" at one point, then split, and the remaining parts could then change.
+<a name="l-74"></a><span class="tm">19:16:38</span><span class="nk"> &lt;sipa&gt;</span> the unit/rpc/p2p tests rely on the wallet code
+<a name="l-75"></a><span class="tm">19:16:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I don't have a strong opinion either way, if this change is sufficiently atomic it makes sense to do it at once, but see e.g. instagibbs's comment about wallet addresses
+<a name="l-76"></a><span class="tm">19:17:12</span><span class="nk"> &lt;wumpus&gt;</span> maybe hide it behind an option in the beginning?
+<a name="l-77"></a><span class="tm">19:17:23</span><span class="nk"> &lt;gmaxwell&gt;</span> My recommendation for the wallet parts was to just hide the changed functionality there behind a hidden configuration option that the tests could use.
+<a name="l-78"></a><span class="tm">19:17:28</span><span class="nk"> &lt;jtimon&gt;</span> well, the wallet code can be maybe be introduced disabled for users with a constant to be removed later or something?
+<a name="l-79"></a><span class="tm">19:17:29</span><span class="nk"> &lt;sipa&gt;</span> maybe we can disable addwitnessaddress before the softfork
+<a name="l-80"></a><span class="tm">19:17:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> right
+<a name="l-81"></a><span class="tm">19:17:37</span><span class="nk"> &lt;sipa&gt;</span> that would make sense
+<a name="l-82"></a><span class="tm">19:17:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> hey we're all saying the same :)
+<a name="l-83"></a><span class="tm">19:17:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> yes
+<a name="l-84"></a><span class="tm">19:17:52</span><span class="nk"> &lt;sipa&gt;</span> yay, agreement
+<a name="l-85"></a><span class="tm">19:17:57</span><span class="nk"> &lt;sipa&gt;</span> i have another question
+<a name="l-86"></a><span class="tm">19:18:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> what is the meaning of life?
+<a name="l-87"></a><span class="tm">19:18:06</span><span class="nk"> &lt;sipa&gt;</span> 42
+<a name="l-88"></a><span class="tm">19:18:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> :)
+<a name="l-89"></a><span class="tm">19:18:14</span><span class="nk"> &lt;gmaxwell&gt;</span> thats an answer, not a question!
+<a name="l-90"></a><span class="tm">19:18:32</span><span class="nk"> &lt;luke-jr&gt;</span> he has both the answer and a question
+<a name="l-91"></a><span class="tm">19:18:34</span><span class="nk"> &lt;gmaxwell&gt;</span> We're going to need to build a bigger computer...
+<a name="l-92"></a><span class="tm">19:18:36</span><span class="nk"> &lt;sipa&gt;</span> jl2012 brought up the issue that our witness program definition is limited to 16 versions, and that is not easy to extend without introducing a new witness storage
+<a name="l-93"></a><span class="tm">19:18:57</span><span class="nk"> &lt;sipa&gt;</span> there is an easy solution, by allowing witness programs to be slightly larger
+<a name="l-94"></a><span class="tm">19:19:01</span><span class="nk"> &lt;sipa&gt;</span> but this is a hard forking change
+<a name="l-95"></a><span class="tm">19:19:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> it is? I thought the version could be any length?
+<a name="l-96"></a><span class="tm">19:19:14</span><span class="nk"> &lt;sipa&gt;</span> which, if done unconditionally, could hardfork testnet
+<a name="l-97"></a><span class="tm">19:19:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> nope, has to be OP_0 through OP_16
+<a name="l-98"></a><span class="tm">19:19:26</span><span class="nk"> &lt;luke-jr&gt;</span> :/
+<a name="l-99"></a><span class="tm">19:19:32</span><span class="nk"> &lt;luke-jr&gt;</span> why limit it?
+<a name="l-100"></a><span class="tm">19:19:42</span><span class="nk"> &lt;jtimon&gt;</span> then would be something to move to the later hardfork, no?
+<a name="l-101"></a><span class="tm">19:20:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> i don't like relying on that
+<a name="l-102"></a><span class="tm">19:20:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Oh ... how'd that happen? in any case, you can simply use 0..16 and then use another byte after that one.
+<a name="l-103"></a><span class="tm">19:20:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> we cannot assume there will ever be a hardfork.
+<a name="l-104"></a><span class="tm">19:20:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> max 32 bytes can follow
+<a name="l-105"></a><span class="tm">19:20:30</span><span class="nk"> &lt;gmaxwell&gt;</span> okay thats broken.
+<a name="l-106"></a><span class="tm">19:20:43 </span><span class="nka">* luke-jr</span> <span class="ac">doesn't see the purpose of restricting the witness-triggering sPK like that</span>
+<a name="l-107"></a><span class="tm">19:20:45</span><span class="nk"> &lt;jtimon&gt;</span> well, the plan was to deploy segwit as a softfork
+<a name="l-108"></a><span class="tm">19:21:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> changing it is a HF with respect to the current SW code
+<a name="l-109"></a><span class="tm">19:21:08</span><span class="nk"> &lt;gmaxwell&gt;</span> My assumption was that it would be arbritary and extended by just adding more bytes when the space ran out.
+<a name="l-110"></a><span class="tm">19:21:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> not with respect to bitcoin
+<a name="l-111"></a><span class="tm">19:21:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> so we can change it before merge while leaving SW a SF
+<a name="l-112"></a><span class="tm">19:21:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> oh, I see, it would still be a SF to bitcoin. ok
+<a name="l-113"></a><span class="tm">19:21:54</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell, luke-jr: the reason was that constant size utxos are nice
+<a name="l-114"></a><span class="tm">19:21:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> testnet segwit rules can be changed so activiation doesn't begin until later.
+<a name="l-115"></a><span class="tm">19:22:06</span><span class="nk"> &lt;gmaxwell&gt;</span> So at worst that would be a reindex for testnet nodes, no?
+<a name="l-116"></a><span class="tm">19:22:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ... segwit is already activated on testnet
+<a name="l-117"></a><span class="tm">19:22:16</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, so?
+<a name="l-118"></a><span class="tm">19:22:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> they're already non-constant size.
+<a name="l-119"></a><span class="tm">19:22:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> ?
+<a name="l-120"></a><span class="tm">19:22:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> move it forward, reindex.
+<a name="l-121"></a><span class="tm">19:22:24</span><span class="nk"> &lt;jtimon&gt;</span> testnet4 ?
+<a name="l-122"></a><span class="tm">19:22:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> he means in the future.
+<a name="l-123"></a><span class="tm">19:22:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> in any case, 16 is unacceptably too few.
+<a name="l-124"></a><span class="tm">19:22:40</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-125"></a><span class="tm">19:23:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> hmm, ok
+<a name="l-126"></a><span class="tm">19:23:31</span><span class="nk"> &lt;instagibbs&gt;</span> The bip doesn't read like it would be a HF, but maybe I'm being obtuse
+<a name="l-127"></a><span class="tm">19:23:37</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think constant size is as interesting as constant bound. so if you wanted to say that the version was limited to N bytes for some small N that would be fine. 4294967296 versions should be enough for anyone.
+<a name="l-128"></a><span class="tm">19:23:38</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> in the future, if we softfork out the current long sPKs, we can softfork a limit on witness sPK length as well
+<a name="l-129"></a><span class="tm">19:23:58</span><span class="nk"> &lt;sipa&gt;</span> fair enough, will do
+<a name="l-130"></a><span class="tm">19:24:09</span><span class="nk"> &lt;sipa&gt;</span> limit to 36 or 40 bytes or so
+<a name="l-131"></a><span class="tm">19:24:10</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">instagibbs:</span> it would be a HF only for testnet3 which has already deployed "old segwit"
+<a name="l-132"></a><span class="tm">19:24:31</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, no I mean, anything where version is 1+ has no consensus meaning yet
+<a name="l-133"></a><span class="tm">19:24:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> cool (also, testnet behavior has never been in a merged much less released version, I don't mind breaking it)
+<a name="l-134"></a><span class="tm">19:24:41</span><span class="nk"> &lt;instagibbs&gt;</span> when it's not simply 0
+<a name="l-135"></a><span class="tm">19:25:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> the problem is that something of the form "1 + 33 bytes" is not treated as a witness program, and is not allowed to have any witness data
+<a name="l-136"></a><span class="tm">19:25:32</span><span class="nk"> &lt;sipa&gt;</span> we can extend the definition of a witness program, but it would require a new witness structure
+<a name="l-137"></a><span class="tm">19:25:48</span><span class="nk"> &lt;sipa&gt;</span> as old nodes won't relay witness data with something they don't treat as a witness output
+<a name="l-138"></a><span class="tm">19:25:59</span><span class="nk"> &lt;sipa&gt;</span> (and that rule is necessary to prevent spam)
+<a name="l-139"></a><span class="tm">19:26:27</span><span class="nk"> &lt;sipa&gt;</span> anyway, ok, will just change the rule
+<a name="l-140"></a><span class="tm">19:26:36</span><span class="nk"> &lt;sipa&gt;</span> other topics?
+<a name="l-141"></a><span class="tm">19:26:42</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-142"></a><span class="tm">19:26:45</span><span class="nk"> &lt;luke-jr&gt;</span> old nodes won't relay anything with witness data they can't verify anyway..
+<a name="l-143"></a><span class="tm">19:26:48</span><span class="nk"> &lt;sipa&gt;</span> (or more segwit review related points)
+<a name="l-144"></a><span class="tm">19:26:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">compactblock testing</span>
+<a name="l-145"></a><span class="tm">19:27:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> old nodes in this case being witness v0 nodes
+<a name="l-146"></a><span class="tm">19:27:05</span><span class="nk"> &lt;instagibbs&gt;</span> luke-jr, I'm not convinced, but I think fixing now is better anyways so whatever
+<a name="l-147"></a><span class="tm">19:27:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> yes, I also mean these
+<a name="l-148"></a><span class="tm">19:27:11</span><span class="nk"> &lt;wumpus&gt;</span> @gmaxwell
+<a name="l-149"></a><span class="tm">19:27:13</span><span class="nk"> &lt;luke-jr&gt;</span> IMO make any length limit a relay policy only.
+<a name="l-150"></a><span class="tm">19:27:21</span><span class="nk"> &lt;sipa&gt;</span> we'll discuss further in #segwit-dev
+<a name="l-151"></a><span class="tm">19:27:24</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-152"></a><span class="tm">19:27:27</span><span class="nk"> &lt;instagibbs&gt;</span> ack
+<a name="l-153"></a><span class="tm">19:28:00</span><span class="nk"> &lt;jtimon&gt;</span> compackblock
+<a name="l-154"></a><span class="tm">19:28:23</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay. So matt has built a parallel relay network that uses compact blocks and the UDP network block coding stuff.
+<a name="l-155"></a><span class="tm">19:28:24</span><span class="nk"> &lt;sipa&gt;</span> i rebased BlueMatt's compactblock patch on top of the shared_ptr mempool change, and gmaxwell and i have been succesfully running it across the internet
+<a name="l-156"></a><span class="tm">19:28:38</span><span class="nk"> &lt;sipa&gt;</span> ^ and that's more interesting
+<a name="l-157"></a><span class="tm">19:28:54</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ a number of people-- including some large miners-- are running both Sipa's rebase,  and Matt's PR without the rebase on public nodes.
+<a name="l-158"></a><span class="tm">19:29:16</span><span class="nk"> &lt;gmaxwell&gt;</span> Which are also connecting to matt's nodes.
+<a name="l-159"></a><span class="tm">19:29:31</span><span class="nk"> &lt;wumpus&gt;</span> good to hear
+<a name="l-160"></a><span class="tm">19:29:33</span><span class="nk"> &lt;gmaxwell&gt;</span> (I got bored with the simulated topology lab testing, this is potentially more interesting)
+<a name="l-161"></a><span class="tm">19:29:39</span><span class="nk"> &lt;sipa&gt;</span> 2016-06-02 18:36:13.412286 Successfully reconstructed block 0000000000000000014a6a924544dd097d538314281bebd95c89e50726e7d2ef with 1 txn prefilled, 2708 txn from mempool and 0 txn requested
+<a name="l-162"></a><span class="tm">19:29:43</span><span class="nk"> &lt;sipa&gt;</span> 2016-06-02 18:37:46.728092 Successfully reconstructed block 000000000000000001943282946e9579fd84def95df577ebb8bcda3b8d9f4d06 with 1 txn prefilled, 1529 txn from mempool and 0 txn requested
+<a name="l-163"></a><span class="tm">19:29:47</span><span class="nk"> &lt;sipa&gt;</span> 2016-06-02 18:43:32.713909 Successfully reconstructed block 000000000000000000499e1485726cd87003e7a6400118f8c061171748665612 with 1 txn prefilled, 1102 txn from mempool and 3 txn requested
+<a name="l-164"></a><span class="tm">19:29:52</span><span class="nk"> &lt;wumpus&gt;</span> yes, always good to test with real world data as well
+<a name="l-165"></a><span class="tm">19:30:03</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't know that there is much to report, it's working as expected.  :)   Sipa's rebase on the sharedptr is pretty nice.
+<a name="l-166"></a><span class="tm">19:30:23</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, the rebase includes the predicted transactions?
+<a name="l-167"></a><span class="tm">19:30:29</span><span class="nk"> &lt;BakSAj&gt;</span> nice
+<a name="l-168"></a><span class="tm">19:30:31</span><span class="nk"> &lt;gmaxwell&gt;</span> As it also eliminates transaction duplication from the relay pool, and eliminates a fair bit of transaction copying.
+<a name="l-169"></a><span class="tm">19:30:31</span><span class="nk"> &lt;wumpus&gt;</span> is this branch available somewhere?
+<a name="l-170"></a><span class="tm">19:30:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> it only sends the coinbase directly
+<a name="l-171"></a><span class="tm">19:30:38</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, ah k
+<a name="l-172"></a><span class="tm">19:30:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> no, right now I don't believe anyone is running something with fancy prediction.  I think we'll leave that out in the initial PR. Easily added later.
+<a name="l-173"></a><span class="tm">19:30:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> https://github.com/sipa/bitcoin/commits/compactblocks
+<a name="l-174"></a><span class="tm">19:31:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">sipa's rebase of compactblocks on top of PR #8126: https://github.com/sipa/bitcoin/commits/compactblocks</span>
+<a name="l-175"></a><span class="tm">19:31:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review PR #8126</span>
+<a name="l-176"></a><span class="tm">19:32:01</span><span class="nk"> &lt;gmaxwell&gt;</span> if other developers here are interested in running nodes connected to these nodes, lemme know and I'll give you addresses to connect to.
+<a name="l-177"></a><span class="tm">19:32:17</span><span class="nk"> &lt;wumpus&gt;</span> I'm interested
+<a name="l-178"></a><span class="tm">19:32:28</span><span class="nk"> &lt;gmaxwell&gt;</span> I should take an action to setup a couple on published addresses too, for people to connect to without asking. :)
+<a name="l-179"></a><span class="tm">19:32:59</span><span class="nk"> &lt;wumpus&gt;</span> yes, that always works best :)
+<a name="l-180"></a><span class="tm">19:33:15</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-181"></a><span class="tm">19:33:19</span><span class="nk"> &lt;luke-jr&gt;</span> is sipa's rebase different enough that we ought to switch to reviewing that instead?
+<a name="l-182"></a><span class="tm">19:33:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, though they may get DDOS attacked, which is harmless but would waste time sorting out the issue. :)
+<a name="l-183"></a><span class="tm">19:33:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> it's less code than the original :)
+<a name="l-184"></a><span class="tm">19:33:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> you mean thoroughly stress-tested :)
+<a name="l-185"></a><span class="tm">19:34:03 </span><span class="nka">* gmaxwell</span> <span class="ac">stabs</span>
+<a name="l-186"></a><span class="tm">19:34:16</span><span class="nk"> &lt;gmaxwell&gt;</span> Does anyone know the current CFPF status?
+<a name="l-187"></a><span class="tm">19:34:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">current CPFP status</span>
+<a name="l-188"></a><span class="tm">19:34:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> review #7598
+<a name="l-189"></a><span class="tm">19:34:51</span><span class="nk"> &lt;luke-jr&gt;</span> afaik no show-stoppers found, but more review needed; there's a dep PR to get in first though
+<a name="l-190"></a><span class="tm">19:34:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action  </span><span class="cmdline">review #7598</span>
+<a name="l-191"></a><span class="tm">19:35:08</span><span class="nk"> &lt;sipa&gt;</span> it's a blocker/dependency for CPFP (#7600)
+<a name="l-192"></a><span class="tm">19:37:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I've been struggling a bit with too many PRs outstanding at once that I want to test.
+<a name="l-193"></a><span class="tm">19:37:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">CPFP is that like 'strong AI should be here in less than 20 years'</span>
+<a name="l-194"></a><span class="tm">19:37:41</span><span class="nk"> &lt;wumpus&gt;</span> EH
+<a name="l-195"></a><span class="tm">19:37:47</span><span class="nk"> &lt;luke-jr&gt;</span> :&lt;
+<a name="l-196"></a><span class="tm">19:37:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/7600</span>
+<a name="l-197"></a><span class="tm">19:38:01</span><span class="nk"> &lt;wumpus&gt;</span> (sorry, copy paste messup)
+<a name="l-198"></a><span class="tm">19:38:04</span><span class="nk"> &lt;gmaxwell&gt;</span> Merging them is a pain.  (thanks to sipa for merging a lot of things recently!)
+<a name="l-199"></a><span class="tm">19:38:48</span><span class="nk"> &lt;sipa&gt;</span> i've been going through all PRs... there are so many decent-but-not-quite-finished ones in the queue...
+<a name="l-200"></a><span class="tm">19:38:50</span><span class="nk"> &lt;wumpus&gt;</span> I've lost overview a bit
+<a name="l-201"></a><span class="tm">19:38:58</span><span class="nk"> &lt;wumpus&gt;</span> any PRs that should be close to be able to be merged?
+<a name="l-202"></a><span class="tm">19:39:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes, I've noticed
+<a name="l-203"></a><span class="tm">19:39:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO https://github.com/bitcoin/bitcoin/pull/7957 can be merged (save, tool only)
+<a name="l-204"></a><span class="tm">19:39:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Mostly my minor difficulty there just comes from many things touching the same parts, and a lot of that was actually my fault. (e.g. opening three PRs at once that all conflicted with each other. :) )
+<a name="l-205"></a><span class="tm">19:39:51</span><span class="nk"> &lt;luke-jr&gt;</span> I'd like to see key generation type merged so there's no risk of other wallet upgrades conflicting it since these wallets are in the wild
+<a name="l-206"></a><span class="tm">19:39:56</span><span class="nk"> &lt;sipa&gt;</span> 17:19:13 &lt; sipa&gt; ping for review: https://github.com/bitcoin/bitcoin/pull/7948 (RPC: augment getblockchaininfo bip9_softforks data)
+<a name="l-207"></a><span class="tm">19:39:59</span><span class="nk"> &lt;sipa&gt;</span> 17:20:03 &lt; sipa&gt; ping for review: https://github.com/bitcoin/bitcoin/pull/7967 ([RPC] add feerate option to fundrawtransaction)
+<a name="l-208"></a><span class="tm">19:40:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> agree, but that one is probably not blocking anything
+<a name="l-209"></a><span class="tm">19:40:37</span><span class="nk"> &lt;sipa&gt;</span> also 7997
+<a name="l-210"></a><span class="tm">19:41:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm requesting permission to merge [docs] and [tools] PRs
+<a name="l-211"></a><span class="tm">19:41:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> sure
+<a name="l-212"></a><span class="tm">19:42:09</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds fine, I know we sometimes don't get enough review on those, esp docs. Please feel empowered to nag people to review things.
+<a name="l-213"></a><span class="tm">19:42:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Will try to focus on trivial docs PRs, so wumpus and sipa can take care about the corish ones.
+<a name="l-214"></a><span class="tm">19:42:24</span><span class="nk"> &lt;luke-jr&gt;</span> https://github.com/bitcoin/bitcoin/pull/7935 is ready IMO
+<a name="l-215"></a><span class="tm">19:42:46</span><span class="nk"> &lt;wumpus&gt;</span> the problem with doc pulls is usually that they get review comments but the author disappears for large spans of time
+<a name="l-216"></a><span class="tm">19:42:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> agree
+<a name="l-217"></a><span class="tm">19:43:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> will do final review and reack
+<a name="l-218"></a><span class="tm">19:43:28</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">luke-jr:</span> that looked good to me last time I checked. I'll re-review as well.
+<a name="l-219"></a><span class="tm">19:44:52</span><span class="nk"> &lt;sipa&gt;</span> also #7825 is good
+<a name="l-220"></a><span class="tm">19:45:26</span><span class="nk"> &lt;sipa&gt;</span> and #7942
+<a name="l-221"></a><span class="tm">19:46:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also have a look at https://github.com/bitcoin/bitcoin/pull/7946 (could speed up things a little bit)
+<a name="l-222"></a><span class="tm">19:46:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#7942 </span><span class="cmdline">has an unaddressed comment by sipa</span>
+<a name="l-223"></a><span class="tm">19:46:56</span><span class="nk"> &lt;sipa&gt;</span> tiny nit :)
+<a name="l-224"></a><span class="tm">19:47:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> nit is nit!
+<a name="l-225"></a><span class="tm">19:47:38</span><span class="nk"> &lt;wumpus&gt;</span> that's not always clear to me whether it should block merging
+<a name="l-226"></a><span class="tm">19:47:46</span><span class="nk"> &lt;wumpus&gt;</span> (I usually at least wait for the author to respond)
+<a name="l-227"></a><span class="tm">19:48:08</span><span class="nk"> &lt;sipa&gt;</span> the author is active, he probably just missed it
+<a name="l-228"></a><span class="tm">19:48:16</span><span class="nk"> &lt;sipa&gt;</span> jonasschnelli just pinged
+<a name="l-229"></a><span class="tm">19:48:21</span><span class="nk"> &lt;wumpus&gt;</span> ok good
+<a name="l-230"></a><span class="tm">19:48:24</span><span class="nk"> &lt;luke-jr&gt;</span> oh, topic: 0.11.next
+<a name="l-231"></a><span class="tm">19:49:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> luke-jr, I guess we already discussed the 0.11 maintenance?
+<a name="l-232"></a><span class="tm">19:49:16</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-233"></a><span class="tm">19:49:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.11.next</span>
+<a name="l-234"></a><span class="tm">19:49:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> ?
+<a name="l-235"></a><span class="tm">19:50:12</span><span class="nk"> &lt;sipa&gt;</span> 0.11 goes to critical fixes only when 0.13 is released, right?
+<a name="l-236"></a><span class="tm">19:50:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> 0.11.next is supposed to include csv but not segwit, right?
+<a name="l-237"></a><span class="tm">19:50:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> I had in mind we we BP to 0.12, 0.13 and only security stuff to 0.11?
+<a name="l-238"></a><span class="tm">19:50:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> unless it gets delayed until segwit is merged, I guess
+<a name="l-239"></a><span class="tm">19:50:52</span><span class="nk"> &lt;wumpus&gt;</span> is there any urgent reason to do a 0.11 release?
+<a name="l-240"></a><span class="tm">19:50:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> unless someone decides to maintain it longer
+<a name="l-241"></a><span class="tm">19:51:00</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> CSV support, at least
+<a name="l-242"></a><span class="tm">19:51:05</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-243"></a><span class="tm">19:51:20</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> is there any reason not to do it while things are backported and tested?
+<a name="l-244"></a><span class="tm">19:51:24</span><span class="nk"> &lt;gmaxwell&gt;</span> looking at the network I'm not seeing any evidence of need to maintain 0.11 extensively, also we called for people running older versions in operations and got crickets in response, AFAIK.
+<a name="l-245"></a><span class="tm">19:51:35 </span><span class="nka">* jonasschnelli</span> <span class="ac">checking the seeder</span>
+<a name="l-246"></a><span class="tm">19:51:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> developer overhead
+<a name="l-247"></a><span class="tm">19:51:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> is it tested?
+<a name="l-248"></a><span class="tm">19:51:50</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well, that's luke-jr's problem, isn't it?
+<a name="l-249"></a><span class="tm">19:52:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> we did? I don't recall seeing the "call for", and I know for a fact that Eligius relies on 0.11 for now
+<a name="l-250"></a><span class="tm">19:52:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> 88  0.11  nodes
+<a name="l-251"></a><span class="tm">19:53:06</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I don't know, I'm not reviewing or testing myself, but if luke-jr gets review and testing...
+<a name="l-252"></a><span class="tm">19:53:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> perhaps the time is better spent in upgrading eligius then :)
+<a name="l-253"></a><span class="tm">19:53:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> which is unlikely, hence the history of git/rc only stable stuff :P
+<a name="l-254"></a><span class="tm">19:53:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> probably.
+<a name="l-255"></a><span class="tm">19:53:49</span><span class="nk"> &lt;gmaxwell&gt;</span> esp since master will hopefully have CPFP soon.
+<a name="l-256"></a><span class="tm">19:53:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> what?
+<a name="l-257"></a><span class="tm">19:53:56</span><span class="nk"> &lt;wumpus&gt;</span> yes, interest in older major versions is extrememly low
+<a name="l-258"></a><span class="tm">19:54:09</span><span class="nk"> &lt;btcdrak&gt;</span> there is a backport PR for 0.11 for CSV etc. but we sort of semi decided back then it was not urgent and much more risky.
+<a name="l-259"></a><span class="tm">19:54:14</span><span class="nk"> &lt;luke-jr&gt;</span> I see 1768 0.11 nodes.
+<a name="l-260"></a><span class="tm">19:54:28</span><span class="nk"> &lt;btcdrak&gt;</span> the BIP68 backport in particular is complex
+<a name="l-261"></a><span class="tm">19:54:40</span><span class="nk"> &lt;jtimon&gt;</span> my only point is that we shouldn't use the "we only promise to maintain the last 2 versions" as an artificial limitation beyond review and testing. If people are interested in working on that...
+<a name="l-262"></a><span class="tm">19:54:41</span><span class="nk"> &lt;gmaxwell&gt;</span> well in particular, interest in _updates_ for old versions is low...
+<a name="l-263"></a><span class="tm">19:54:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes that's what I mean...
+<a name="l-264"></a><span class="tm">19:54:59</span><span class="nk"> &lt;luke-jr&gt;</span> we should remove the promise if we're not going to uphold it.
+<a name="l-265"></a><span class="tm">19:55:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> the problem is that people are not interested
+<a name="l-266"></a><span class="tm">19:55:17</span><span class="nk"> &lt;gmaxwell&gt;</span> what promise?
+<a name="l-267"></a><span class="tm">19:55:26</span><span class="nk"> &lt;jtimon&gt;</span> well "promise"
+<a name="l-268"></a><span class="tm">19:55:35</span><span class="nk"> &lt;gmaxwell&gt;</span> also, not "not going"-- not able.. without people to test you really can't provide good releases.
+<a name="l-269"></a><span class="tm">19:55:48</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> by people you mean users or reviewers/testers?
+<a name="l-270"></a><span class="tm">19:55:50</span><span class="nk"> &lt;gmaxwell&gt;</span> not doing someone a service to put out a barely tested update.
+<a name="l-271"></a><span class="tm">19:55:57</span><span class="nk"> &lt;wumpus&gt;</span> I mean if luke-jr really wants to handle a release by himself I'm not going to protest
+<a name="l-272"></a><span class="tm">19:56:05</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ agreed.
+<a name="l-273"></a><span class="tm">19:56:05</span><span class="nk"> &lt;luke-jr&gt;</span> https://bitcoincore.org/en/lifecycle/ mentions something; whether promise or able or not, it should be updated if we can't do it
+<a name="l-274"></a><span class="tm">19:56:10</span><span class="nk"> &lt;btcdrak&gt;</span> the CSV backport PR was https://github.com/bitcoin/bitcoin/pull/7716
+<a name="l-275"></a><span class="tm">19:56:22</span><span class="nk"> &lt;btcdrak&gt;</span> we did pretty much decide not to merge it.
+<a name="l-276"></a><span class="tm">19:56:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I can't get testing/reviews by myself.
+<a name="l-277"></a><span class="tm">19:56:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> sorry,.. wrong file: we have 743 0.11x nodes and 1786 0.12.x nodes... so yes. CSV for 0.11 makes sense.
+<a name="l-278"></a><span class="tm">19:56:41</span><span class="nk"> &lt;luke-jr&gt;</span> I can maintain stable branches, but releases seem unlikely to work out at this point
+<a name="l-279"></a><span class="tm">19:56:54</span><span class="nk"> &lt;wumpus&gt;</span> but there's so much happening on master right now, and 0.13 release is near, I can't promise I will be able to spend any time on it (except gitian building / uploading executables)
+<a name="l-280"></a><span class="tm">19:57:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. 0.11 is certainly not something for wumpus (would be a waste of his time)
+<a name="l-281"></a><span class="tm">19:57:57</span><span class="nk"> &lt;gmaxwell&gt;</span> Without people interested in using it, we can't get much platform qualification which is a lot of the difference between a branch and a release.
+<a name="l-282"></a><span class="tm">19:57:59</span><span class="nk"> &lt;wumpus&gt;</span> so if you want to do this: please create your own 0.11 branch, tag, do the release notes etc
+<a name="l-283"></a><span class="tm">19:58:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> i have 1093 'good' 0.11 nodes
+<a name="l-284"></a><span class="tm">19:58:09</span><span class="nk"> &lt;sipa&gt;</span> eh, jonasschnelli:
+<a name="l-285"></a><span class="tm">19:58:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> good is not good enough...
+<a name="l-286"></a><span class="tm">19:58:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> cat dnsseed.dump | grep " 100.00% 100.00% 100.00% " | grep "Satoshi:0.11." | wc -l
+<a name="l-287"></a><span class="tm">19:59:05</span><span class="nk"> &lt;sipa&gt;</span> anyway, besided the point
+<a name="l-288"></a><span class="tm">19:59:14</span><span class="nk"> &lt;sipa&gt;</span> we can't do releases without people interested in running and testing
+<a name="l-289"></a><span class="tm">19:59:17</span><span class="nk"> &lt;wumpus&gt;</span> yes, meeting time over
+<a name="l-290"></a><span class="tm">19:59:21</span><span class="nk"> &lt;sipa&gt;</span> oh, that too
+<a name="l-291"></a><span class="tm">19:59:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

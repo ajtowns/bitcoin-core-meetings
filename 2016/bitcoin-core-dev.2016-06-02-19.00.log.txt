@@ -1,0 +1,291 @@
+19:00:23 <wumpus> #startmeeting
+19:00:23 <lightningbot> Meeting started Thu Jun  2 19:00:23 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:23 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:35 <luke-jr> aww, too fast
+19:00:59 <luke-jr> I was going to propose a topic very unseriously explicitly outside the meeting. :P now it's time to be serious
+19:01:09 <petertodd> hi
+19:01:34 <wumpus> I guess segwit is the recurring topic, any other topic proposals?
+19:01:34 <gmaxwell> jtimon: Cory: morcos: sdaftuar: btcdrak: phantomcircuit: jonasschnelli:
+19:01:42 <jonasschnelli> Here!
+19:01:47 <sipa> cfields_!
+19:02:02 <gmaxwell> I can give some updates on compactblock testing, since it seems that Matt isn't around (or if he shows up, I expect he can)
+19:02:42 <wumpus> great
+19:03:17 <wumpus> #topic segwit review
+19:03:49 <wumpus> let's start with that then
+19:04:01 <sipa> My plan right now is making the BIP9/GBT changes, removing segnet, removing the positive witness flag, and then creating a parallel rebase
+19:04:12 <sipa> with has a clean history but leads to the same tree
+19:04:19 <sipa> if that is something wanted at this point
+19:04:20 <wumpus> 111 comments on PR #7910, that must be a record
+19:04:32 <luke-jr> "positive witness flag"?
+19:05:27 <sipa> luke-jr: originally, there was a flag to the serialize code to say "serialize witnesses!"; at some point we realized that the opposite was better, as almost always you want to serialize witnesses, and there are just a few exceptions
+19:05:48 <sipa> so i introduced both temporarily, and required that exactly one of both was set
+19:05:51 <luke-jr> oh, I thought having it explicit was a good idea
+19:06:23 <sipa> luke-jr: one reason for the opposite is that a failure where you miss the positive flag will not be detected usually, but failure to set a negative flag will
+19:06:30 <sipa> luke-jr: i thought the same thing initially
+19:06:59 <instagibbs> sipa, are you removing new wallet functionality as well?
+19:07:07 <sipa> instagibbs: ?
+19:07:09 <luke-jr> sipa: what downsides are there to the current explicit flag?
+19:07:25 <sipa> 21:06:22 < sipa> luke-jr: one reason for the opposite is that a failure where you miss the positive flag will not be detected usually, but failure to set a negative flag will
+19:07:37 <instagibbs> I assume you don't want users to have segwit addresses pre-rollout
+19:07:41 <petertodd> luke-jr: indeed, I might have very well written it with a separate CWitnessTx class :)
+19:07:53 <luke-jr> sipa: I don't understand that answer. :<
+19:07:55 <instagibbs> (unless that would still be a testing branch)
+19:08:31 <sipa> luke-jr: if we use a positive flag only, and we miss setting that flag somewhere, it won't easily be detected, as wherever that data goes, it will likely also accept tx without witness
+19:08:45 <luke-jr> right, I'm talking about where we have both positive and negative flags..
+19:08:51 <sipa> ah, that is also an option
+19:09:05 <sipa> it's just more code changes shattered all over the place
+19:09:43 <luke-jr> less likely to have it accidentally wrong, though
+19:09:49 <gmaxwell> With segwit in place there really isn't much further concern about getting the wrong flags, it should only have been an issue with the migration where support had to be added in many places (like RPCs) that might have less test coverage.
+19:10:11 <gmaxwell> If you get it wrong in the future, the thing you changed simply won't work right. And hopefully you'll be testing the thing you just changed.
+19:10:20 <gmaxwell> I don't have a strong or strongly held opinion however.
+19:10:50 <luke-jr> we have a lot of outstanding PRs that may need to be updated that might not conflict
+19:10:50 <jtimon> ack on cleaning history while removing the testnet
+19:11:02 <wumpus> instagibbs: well in principle, master is attesting branch
+19:11:35 <sipa> there are a few things we need in first, though
+19:11:37 <petertodd> jtimon: you mean segnet?
+19:11:39 <wumpus> jtimon: you mean removing the segnet? don't make him remove testnet too :)
+19:11:44 <instagibbs> oh a testing, not attesting
+19:12:03 <jtimon> petertodd: I believe sipa meant removing segwit's testnet
+19:12:13 <gmaxwell> sipa: in any case, what do you think will let you get the code merged sooner?
+19:12:13 <sipa> #7749 and #8083
+19:12:27 <wumpus> but yes ACK on cleaning up the history before merge
+19:12:37 <gmaxwell> I like cleaning history for sure.
+19:12:43 <gmaxwell> Future me thanks you.
+19:13:03 <sipa> well it definitely has to happen before merge
+19:13:05 <jonasschnelli> As said, we can ACK the sha256sum of the diff (if someone cares about integrity of an ACK)
+19:13:08 <sipa> the question whether the time is now for that
+19:13:17 <luke-jr> (GBT VB as well)
+19:13:21 <sipa> jonasschnelli: git internally has tree hashes
+19:13:35 <jonasschnelli> sipa: Nice. That should work.
+19:14:13 <sipa> So please review #7749 and #8083
+19:14:26 <luke-jr> did we get anywhere with the fundrawtransaction issue?
+19:14:40 <sipa> luke-jr: i can't remember the conclusion there
+19:14:49 <jonasschnelli> Re 8083: im finalizing the seeder part (nits and filterbitmap-whitelist)
+19:14:49 <wumpus> q: is everything in the segwit PR meant to go in at once, or will it be split up in to, say, a pull with consensus/network changes, following up with wallet, and GUI changes
+19:15:03 <wumpus> #action review #7749 and #8083
+19:15:07 <luke-jr> sipa: IIRC, 1) it's a problem; 2) we won't change consensus code to fix it
+19:15:26 <luke-jr> I don't know of any actual resolution to the problem :/
+19:15:41 <gmaxwell> wumpus: If sipa does the "rewrite history to result in the same code thing" then if it is is PR split they will need to go in one right after another to preserve the "same code" property.
+19:15:56 <gmaxwell> (I think)
+19:16:02 <sipa> wumpus: that's a good question; the history is broken into sections already
+19:16:06 <sipa> so we can decide later
+19:16:21 <sipa> though... maybe not
+19:16:26 <gmaxwell> I suppose sipa should show "same code" at one point, then split, and the remaining parts could then change.
+19:16:38 <sipa> the unit/rpc/p2p tests rely on the wallet code
+19:16:39 <wumpus> gmaxwell: I don't have a strong opinion either way, if this change is sufficiently atomic it makes sense to do it at once, but see e.g. instagibbs's comment about wallet addresses
+19:17:12 <wumpus> maybe hide it behind an option in the beginning?
+19:17:23 <gmaxwell> My recommendation for the wallet parts was to just hide the changed functionality there behind a hidden configuration option that the tests could use.
+19:17:28 <jtimon> well, the wallet code can be maybe be introduced disabled for users with a constant to be removed later or something?
+19:17:29 <sipa> maybe we can disable addwitnessaddress before the softfork
+19:17:32 <wumpus> gmaxwell: right
+19:17:37 <sipa> that would make sense
+19:17:47 <wumpus> jtimon: hey we're all saying the same :)
+19:17:51 <jtimon> wumpus: yes
+19:17:52 <sipa> yay, agreement
+19:17:57 <sipa> i have another question
+19:18:03 <gmaxwell> sipa: what is the meaning of life?
+19:18:06 <sipa> 42
+19:18:06 <jonasschnelli> :)
+19:18:14 <gmaxwell> thats an answer, not a question!
+19:18:32 <luke-jr> he has both the answer and a question
+19:18:34 <gmaxwell> We're going to need to build a bigger computer...
+19:18:36 <sipa> jl2012 brought up the issue that our witness program definition is limited to 16 versions, and that is not easy to extend without introducing a new witness storage
+19:18:57 <sipa> there is an easy solution, by allowing witness programs to be slightly larger
+19:19:01 <sipa> but this is a hard forking change
+19:19:11 <luke-jr> sipa: it is? I thought the version could be any length?
+19:19:14 <sipa> which, if done unconditionally, could hardfork testnet
+19:19:22 <sipa> luke-jr: nope, has to be OP_0 through OP_16
+19:19:26 <luke-jr> :/
+19:19:32 <luke-jr> why limit it?
+19:19:42 <jtimon> then would be something to move to the later hardfork, no?
+19:20:01 <sipa> jtimon: i don't like relying on that
+19:20:08 <gmaxwell> Oh ... how'd that happen? in any case, you can simply use 0..16 and then use another byte after that one.
+19:20:16 <luke-jr> jtimon: we cannot assume there will ever be a hardfork.
+19:20:18 <sipa> gmaxwell: max 32 bytes can follow
+19:20:30 <gmaxwell> okay thats broken.
+19:20:43 * luke-jr doesn't see the purpose of restricting the witness-triggering sPK like that
+19:20:45 <jtimon> well, the plan was to deploy segwit as a softfork
+19:21:08 <sipa> jtimon: changing it is a HF with respect to the current SW code
+19:21:08 <gmaxwell> My assumption was that it would be arbritary and extended by just adding more bytes when the space ran out.
+19:21:13 <sipa> jtimon: not with respect to bitcoin
+19:21:34 <sipa> jtimon: so we can change it before merge while leaving SW a SF
+19:21:36 <jtimon> sipa: oh, I see, it would still be a SF to bitcoin. ok
+19:21:54 <sipa> gmaxwell, luke-jr: the reason was that constant size utxos are nice
+19:21:55 <gmaxwell> sipa: testnet segwit rules can be changed so activiation doesn't begin until later.
+19:22:06 <gmaxwell> So at worst that would be a reindex for testnet nodes, no?
+19:22:11 <sipa> gmaxwell: ... segwit is already activated on testnet
+19:22:16 <gmaxwell> yes, so?
+19:22:16 <luke-jr> sipa: they're already non-constant size.
+19:22:22 <sipa> luke-jr: ?
+19:22:23 <gmaxwell> sipa: move it forward, reindex.
+19:22:24 <jtimon> testnet4 ?
+19:22:27 <gmaxwell> luke-jr: he means in the future.
+19:22:36 <gmaxwell> sipa: in any case, 16 is unacceptably too few.
+19:22:40 <sipa> agree
+19:23:26 <sipa> gmaxwell: hmm, ok
+19:23:31 <instagibbs> The bip doesn't read like it would be a HF, but maybe I'm being obtuse
+19:23:37 <gmaxwell> I don't think constant size is as interesting as constant bound. so if you wanted to say that the version was limited to N bytes for some small N that would be fine. 4294967296 versions should be enough for anyone.
+19:23:38 <luke-jr> gmaxwell: in the future, if we softfork out the current long sPKs, we can softfork a limit on witness sPK length as well
+19:23:58 <sipa> fair enough, will do
+19:24:09 <sipa> limit to 36 or 40 bytes or so
+19:24:10 <jtimon> instagibbs: it would be a HF only for testnet3 which has already deployed "old segwit"
+19:24:31 <instagibbs> jtimon, no I mean, anything where version is 1+ has no consensus meaning yet
+19:24:39 <gmaxwell> sipa: cool (also, testnet behavior has never been in a merged much less released version, I don't mind breaking it)
+19:24:41 <instagibbs> when it's not simply 0
+19:25:15 <sipa> instagibbs: the problem is that something of the form "1 + 33 bytes" is not treated as a witness program, and is not allowed to have any witness data
+19:25:32 <sipa> we can extend the definition of a witness program, but it would require a new witness structure
+19:25:48 <sipa> as old nodes won't relay witness data with something they don't treat as a witness output
+19:25:59 <sipa> (and that rule is necessary to prevent spam)
+19:26:27 <sipa> anyway, ok, will just change the rule
+19:26:36 <sipa> other topics?
+19:26:42 <wumpus> yes
+19:26:45 <luke-jr> old nodes won't relay anything with witness data they can't verify anyway..
+19:26:48 <sipa> (or more segwit review related points)
+19:26:56 <wumpus> #topic compactblock testing
+19:27:00 <sipa> luke-jr: old nodes in this case being witness v0 nodes
+19:27:05 <instagibbs> luke-jr, I'm not convinced, but I think fixing now is better anyways so whatever
+19:27:06 <luke-jr> sipa: yes, I also mean these
+19:27:11 <wumpus> @gmaxwell
+19:27:13 <luke-jr> IMO make any length limit a relay policy only.
+19:27:21 <sipa> we'll discuss further in #segwit-dev
+19:27:24 <luke-jr> k
+19:27:27 <instagibbs> ack
+19:28:00 <jtimon> compackblock
+19:28:23 <gmaxwell> Okay. So matt has built a parallel relay network that uses compact blocks and the UDP network block coding stuff.
+19:28:24 <sipa> i rebased BlueMatt's compactblock patch on top of the shared_ptr mempool change, and gmaxwell and i have been succesfully running it across the internet
+19:28:38 <sipa> ^ and that's more interesting
+19:28:54 <gmaxwell> ^ a number of people-- including some large miners-- are running both Sipa's rebase,  and Matt's PR without the rebase on public nodes.
+19:29:16 <gmaxwell> Which are also connecting to matt's nodes.
+19:29:31 <wumpus> good to hear
+19:29:33 <gmaxwell> (I got bored with the simulated topology lab testing, this is potentially more interesting)
+19:29:39 <sipa> 2016-06-02 18:36:13.412286 Successfully reconstructed block 0000000000000000014a6a924544dd097d538314281bebd95c89e50726e7d2ef with 1 txn prefilled, 2708 txn from mempool and 0 txn requested
+19:29:43 <sipa> 2016-06-02 18:37:46.728092 Successfully reconstructed block 000000000000000001943282946e9579fd84def95df577ebb8bcda3b8d9f4d06 with 1 txn prefilled, 1529 txn from mempool and 0 txn requested
+19:29:47 <sipa> 2016-06-02 18:43:32.713909 Successfully reconstructed block 000000000000000000499e1485726cd87003e7a6400118f8c061171748665612 with 1 txn prefilled, 1102 txn from mempool and 3 txn requested
+19:29:52 <wumpus> yes, always good to test with real world data as well
+19:30:03 <gmaxwell> I don't know that there is much to report, it's working as expected.  :)   Sipa's rebase on the sharedptr is pretty nice.
+19:30:23 <instagibbs> gmaxwell, the rebase includes the predicted transactions?
+19:30:29 <BakSAj> nice
+19:30:31 <gmaxwell> As it also eliminates transaction duplication from the relay pool, and eliminates a fair bit of transaction copying.
+19:30:31 <wumpus> is this branch available somewhere?
+19:30:33 <sipa> instagibbs: it only sends the coinbase directly
+19:30:38 <instagibbs> sipa, ah k
+19:30:52 <gmaxwell> instagibbs: no, right now I don't believe anyone is running something with fancy prediction.  I think we'll leave that out in the initial PR. Easily added later.
+19:30:52 <sipa> wumpus: https://github.com/sipa/bitcoin/commits/compactblocks
+19:31:39 <wumpus> #link sipa's rebase of compactblocks on top of PR #8126: https://github.com/sipa/bitcoin/commits/compactblocks
+19:31:54 <wumpus> #action review PR #8126
+19:32:01 <gmaxwell> if other developers here are interested in running nodes connected to these nodes, lemme know and I'll give you addresses to connect to.
+19:32:17 <wumpus> I'm interested
+19:32:28 <gmaxwell> I should take an action to setup a couple on published addresses too, for people to connect to without asking. :)
+19:32:59 <wumpus> yes, that always works best :)
+19:33:15 <wumpus> any other topics?
+19:33:19 <luke-jr> is sipa's rebase different enough that we ought to switch to reviewing that instead?
+19:33:20 <gmaxwell> Yes, though they may get DDOS attacked, which is harmless but would waste time sorting out the issue. :)
+19:33:41 <sipa> luke-jr: it's less code than the original :)
+19:33:55 <wumpus> gmaxwell: you mean thoroughly stress-tested :)
+19:34:03 * gmaxwell stabs
+19:34:16 <gmaxwell> Does anyone know the current CFPF status?
+19:34:34 <wumpus> #topic current CPFP status
+19:34:43 <sipa> gmaxwell: review #7598
+19:34:51 <luke-jr> afaik no show-stoppers found, but more review needed; there's a dep PR to get in first though
+19:34:52 <wumpus> #action  review #7598
+19:35:08 <sipa> it's a blocker/dependency for CPFP (#7600)
+19:37:33 <gmaxwell> I've been struggling a bit with too many PRs outstanding at once that I want to test.
+19:37:35 <wumpus> #link CPFP is that like 'strong AI should be here in less than 20 years'
+19:37:41 <wumpus> EH
+19:37:47 <luke-jr> :<
+19:37:48 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/7600
+19:38:01 <wumpus> (sorry, copy paste messup)
+19:38:04 <gmaxwell> Merging them is a pain.  (thanks to sipa for merging a lot of things recently!)
+19:38:48 <sipa> i've been going through all PRs... there are so many decent-but-not-quite-finished ones in the queue...
+19:38:50 <wumpus> I've lost overview a bit
+19:38:58 <wumpus> any PRs that should be close to be able to be merged?
+19:39:17 <wumpus> sipa: yes, I've noticed
+19:39:21 <jonasschnelli> IMO https://github.com/bitcoin/bitcoin/pull/7957 can be merged (save, tool only)
+19:39:29 <gmaxwell> Mostly my minor difficulty there just comes from many things touching the same parts, and a lot of that was actually my fault. (e.g. opening three PRs at once that all conflicted with each other. :) )
+19:39:51 <luke-jr> I'd like to see key generation type merged so there's no risk of other wallet upgrades conflicting it since these wallets are in the wild
+19:39:56 <sipa> 17:19:13 < sipa> ping for review: https://github.com/bitcoin/bitcoin/pull/7948 (RPC: augment getblockchaininfo bip9_softforks data)
+19:39:59 <sipa> 17:20:03 < sipa> ping for review: https://github.com/bitcoin/bitcoin/pull/7967 ([RPC] add feerate option to fundrawtransaction)
+19:40:23 <wumpus> jonasschnelli: agree, but that one is probably not blocking anything
+19:40:37 <sipa> also 7997
+19:41:07 <jonasschnelli> I'm requesting permission to merge [docs] and [tools] PRs
+19:41:20 <wumpus> jonasschnelli: sure
+19:42:09 <gmaxwell> sounds fine, I know we sometimes don't get enough review on those, esp docs. Please feel empowered to nag people to review things.
+19:42:11 <jonasschnelli> Okay. Will try to focus on trivial docs PRs, so wumpus and sipa can take care about the corish ones.
+19:42:24 <luke-jr> https://github.com/bitcoin/bitcoin/pull/7935 is ready IMO
+19:42:46 <wumpus> the problem with doc pulls is usually that they get review comments but the author disappears for large spans of time
+19:42:47 <sipa> luke-jr: agree
+19:43:10 <sipa> luke-jr: will do final review and reack
+19:43:28 <cfields_> luke-jr: that looked good to me last time I checked. I'll re-review as well.
+19:44:52 <sipa> also #7825 is good
+19:45:26 <sipa> and #7942
+19:46:23 <jonasschnelli> Also have a look at https://github.com/bitcoin/bitcoin/pull/7946 (could speed up things a little bit)
+19:46:26 <wumpus> #7942 has an unaddressed comment by sipa
+19:46:56 <sipa> tiny nit :)
+19:47:21 <jonasschnelli> nit is nit!
+19:47:38 <wumpus> that's not always clear to me whether it should block merging
+19:47:46 <wumpus> (I usually at least wait for the author to respond)
+19:48:08 <sipa> the author is active, he probably just missed it
+19:48:16 <sipa> jonasschnelli just pinged
+19:48:21 <wumpus> ok good
+19:48:24 <luke-jr> oh, topic: 0.11.next
+19:49:16 <jonasschnelli> luke-jr, I guess we already discussed the 0.11 maintenance?
+19:49:16 <wumpus> ok
+19:49:21 <wumpus> #topic 0.11.next
+19:49:53 <luke-jr> jonasschnelli: ?
+19:50:12 <sipa> 0.11 goes to critical fixes only when 0.13 is released, right?
+19:50:13 <jtimon> luke-jr: 0.11.next is supposed to include csv but not segwit, right?
+19:50:33 <jonasschnelli> I had in mind we we BP to 0.12, 0.13 and only security stuff to 0.11?
+19:50:37 <luke-jr> jtimon: unless it gets delayed until segwit is merged, I guess
+19:50:52 <wumpus> is there any urgent reason to do a 0.11 release?
+19:50:53 <luke-jr> sipa: unless someone decides to maintain it longer
+19:51:00 <luke-jr> wumpus: CSV support, at least
+19:51:05 <wumpus> right
+19:51:20 <jtimon> wumpus: is there any reason not to do it while things are backported and tested?
+19:51:24 <gmaxwell> looking at the network I'm not seeing any evidence of need to maintain 0.11 extensively, also we called for people running older versions in operations and got crickets in response, AFAIK.
+19:51:35 * jonasschnelli checking the seeder
+19:51:36 <wumpus> jtimon: developer overhead
+19:51:49 <sipa> jtimon: is it tested?
+19:51:50 <jtimon> wumpus: well, that's luke-jr's problem, isn't it?
+19:52:33 <luke-jr> gmaxwell: we did? I don't recall seeing the "call for", and I know for a fact that Eligius relies on 0.11 for now
+19:52:58 <jonasschnelli> 88  0.11  nodes
+19:53:06 <jtimon> sipa: I don't know, I'm not reviewing or testing myself, but if luke-jr gets review and testing...
+19:53:19 <sipa> luke-jr: perhaps the time is better spent in upgrading eligius then :)
+19:53:28 <luke-jr> jtimon: which is unlikely, hence the history of git/rc only stable stuff :P
+19:53:37 <luke-jr> sipa: probably.
+19:53:49 <gmaxwell> esp since master will hopefully have CPFP soon.
+19:53:51 <luke-jr> jonasschnelli: what?
+19:53:56 <wumpus> yes, interest in older major versions is extrememly low
+19:54:09 <btcdrak> there is a backport PR for 0.11 for CSV etc. but we sort of semi decided back then it was not urgent and much more risky.
+19:54:14 <luke-jr> I see 1768 0.11 nodes.
+19:54:28 <btcdrak> the BIP68 backport in particular is complex
+19:54:40 <jtimon> my only point is that we shouldn't use the "we only promise to maintain the last 2 versions" as an artificial limitation beyond review and testing. If people are interested in working on that...
+19:54:41 <gmaxwell> well in particular, interest in _updates_ for old versions is low...
+19:54:55 <wumpus> gmaxwell: yes that's what I mean...
+19:54:59 <luke-jr> we should remove the promise if we're not going to uphold it.
+19:55:12 <wumpus> jtimon: the problem is that people are not interested
+19:55:17 <gmaxwell> what promise?
+19:55:26 <jtimon> well "promise"
+19:55:35 <gmaxwell> also, not "not going"-- not able.. without people to test you really can't provide good releases.
+19:55:48 <jtimon> wumpus: by people you mean users or reviewers/testers?
+19:55:50 <gmaxwell> not doing someone a service to put out a barely tested update.
+19:55:57 <wumpus> I mean if luke-jr really wants to handle a release by himself I'm not going to protest
+19:56:05 <gmaxwell> ^ agreed.
+19:56:05 <luke-jr> https://bitcoincore.org/en/lifecycle/ mentions something; whether promise or able or not, it should be updated if we can't do it
+19:56:10 <btcdrak> the CSV backport PR was https://github.com/bitcoin/bitcoin/pull/7716
+19:56:22 <btcdrak> we did pretty much decide not to merge it.
+19:56:23 <luke-jr> wumpus: I can't get testing/reviews by myself.
+19:56:28 <jonasschnelli> luke-jr: sorry,.. wrong file: we have 743 0.11x nodes and 1786 0.12.x nodes... so yes. CSV for 0.11 makes sense.
+19:56:41 <luke-jr> I can maintain stable branches, but releases seem unlikely to work out at this point
+19:56:54 <wumpus> but there's so much happening on master right now, and 0.13 release is near, I can't promise I will be able to spend any time on it (except gitian building / uploading executables)
+19:57:23 <jonasschnelli> Yes. 0.11 is certainly not something for wumpus (would be a waste of his time)
+19:57:57 <gmaxwell> Without people interested in using it, we can't get much platform qualification which is a lot of the difference between a branch and a release.
+19:57:59 <wumpus> so if you want to do this: please create your own 0.11 branch, tag, do the release notes etc
+19:58:00 <sipa> jtimon: i have 1093 'good' 0.11 nodes
+19:58:09 <sipa> eh, jonasschnelli:
+19:58:33 <jonasschnelli> good is not good enough...
+19:58:34 <jonasschnelli> cat dnsseed.dump | grep " 100.00% 100.00% 100.00% " | grep "Satoshi:0.11." | wc -l
+19:59:05 <sipa> anyway, besided the point
+19:59:14 <sipa> we can't do releases without people interested in running and testing
+19:59:17 <wumpus> yes, meeting time over
+19:59:21 <sipa> oh, that too
+19:59:24 <wumpus> #endmeeting
