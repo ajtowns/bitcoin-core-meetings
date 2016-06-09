@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:38</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun  9 19:00:38 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:38</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">phantomcircuit:</span> sipa: morcos: sdaftuar: btcdrak: jonasschnelli: luke-jr:
+<a name="l-5"></a><span class="tm">19:01:22</span><span class="nk"> &lt;wumpus&gt;</span> first at PSA: the feature freeze for 0.13 is next week. Make sure that whatever features need to be merged are merged before that time. If there are any pulls that require special attention, or are ready, let me know.
+<a name="l-6"></a><span class="tm">19:01:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> MarcoFalke:
+<a name="l-7"></a><span class="tm">19:01:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">0.13 release schedule: https://github.com/bitcoin/bitcoin/issues/7679</span>
+<a name="l-8"></a><span class="tm">19:01:52</span><span class="nk"> &lt;MarcoFalke&gt;</span> any topic suggestions today?
+<a name="l-9"></a><span class="tm">19:02:23</span><span class="nk"> &lt;gmaxwell&gt;</span> We can talk some about ongoing compact block testings, I have a few things to report.
+<a name="l-10"></a><span class="tm">19:02:42</span><span class="nk"> &lt;wumpus&gt;</span> last meeting there was talk of release lifecycles documentation, btcdrak and David Harding have been working on that page here: https://github.com/bitcoin-core/bitcoincore.org/pull/179 https://github.com/btcdrak/bitcoincore.org/pull/2  this needs review
+<a name="l-11"></a><span class="tm">19:02:53</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> I have 2 p2p refactor PRs that i'd _very_ much like to have in 0.13. I'm not sure how you're considering those in terms of freezing
+<a name="l-12"></a><span class="tm">19:02:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> nickler: NicolasDorier: CodeShark:
+<a name="l-13"></a><span class="tm">19:03:14</span><span class="nk"> &lt;CodeShark&gt;</span> yo
+<a name="l-14"></a><span class="tm">19:03:23</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">cfields_:</span> I think p2p refactor can go in after the feature freeze?
+<a name="l-15"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> We apparently can no longer compile on hosts with only 2GB ram with defaults.
+<a name="l-16"></a><span class="tm">19:03:39</span><span class="nk"> &lt;wumpus&gt;</span> other TODOs from last week: review and merge #8126 (std::shared_ptr based CTransaction storage in mempool) - that was done, #7935 (Versionbits: GBT support) - also done
+<a name="l-17"></a><span class="tm">19:03:46</span><span class="nk"> &lt;MarcoFalke&gt;</span> I mean it is not a new feature ;)
+<a name="l-18"></a><span class="tm">19:04:04</span><span class="nk"> &lt;gmaxwell&gt;</span> well it was more like 1.5GB ram before.
+<a name="l-19"></a><span class="tm">19:04:35</span><span class="nk"> &lt;wumpus&gt;</span> others have not yet finished: #7598 (Refactor CreateNewBlock to be a method of the BlockAssembler class)
+<a name="l-20"></a><span class="tm">19:04:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> I compiled on a 2GG AARCH this week successfully.
+<a name="l-21"></a><span class="tm">19:04:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> *GB
+<a name="l-22"></a><span class="tm">19:04:46</span><span class="nk"> &lt;gmaxwell&gt;</span> We have docs that say 1.5GB, they're gonna be like the blocksize on bitcoin.org :)
+<a name="l-23"></a><span class="tm">19:04:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#7600  </span><span class="cmdline">Mining: Select transactions using feerate-with-ancestors</span>
+<a name="l-24"></a><span class="tm">19:04:55</span><span class="nk"> &lt;wumpus&gt;</span> depends on what else is running on the machine
+<a name="l-25"></a><span class="tm">19:05:34</span><span class="nk"> &lt;gmaxwell&gt;</span> I've been going through #7598/#7600.
+<a name="l-26"></a><span class="tm">19:05:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">compile-time memory usage</span>
+<a name="l-27"></a><span class="tm">19:05:45</span><span class="nk"> &lt;wumpus&gt;</span> what can *concretely* be done here?
+<a name="l-28"></a><span class="tm">19:05:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> would kick out boost help?
+<a name="l-29"></a><span class="tm">19:05:59</span><span class="nk"> &lt;luke-jr&gt;</span> -O0
+<a name="l-30"></a><span class="tm">19:06:01</span><span class="nk"> &lt;wumpus&gt;</span> is it something worrying?
+<a name="l-31"></a><span class="tm">19:06:08</span><span class="nk"> &lt;cfields_&gt;</span> has anyone measured to see if there are particular objects that are especially guilty?
+<a name="l-32"></a><span class="tm">19:06:11</span><span class="nk"> &lt;CodeShark&gt;</span> what's eating up all the RAM?
+<a name="l-33"></a><span class="tm">19:06:14</span><span class="nk"> &lt;wumpus&gt;</span> yes, we have cfields_
+<a name="l-34"></a><span class="tm">19:06:20</span><span class="nk"> &lt;cfields_&gt;</span> ie. main.cpp/net.cpp ?
+<a name="l-35"></a><span class="tm">19:06:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">CodeShark:</span> ld/GCC doesn't free memory
+<a name="l-36"></a><span class="tm">19:06:22</span><span class="nk"> &lt;wumpus&gt;</span> especialy some autogenerated c++ files
+<a name="l-37"></a><span class="tm">19:06:33</span><span class="nk"> &lt;wumpus&gt;</span> I made some tables back in the issue about this
+<a name="l-38"></a><span class="tm">19:06:37</span><span class="nk"> &lt;gmaxwell&gt;</span> main.cpp, matt has a patch that moves all the mempool stuff out of it taht apparently gets it back to 1.5GB.
+<a name="l-39"></a><span class="tm">19:06:50</span><span class="nk"> &lt;luke-jr&gt;</span> CFLAGS="-O0 -g0 --param ggc-min-expand=0 --param ggc-min-heapsize=32768"
+<a name="l-40"></a><span class="tm">19:06:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/issues/7471</span>
+<a name="l-41"></a><span class="tm">19:06:54</span><span class="nk"> &lt;gmaxwell&gt;</span> I dunno why he hasn't PRed it, I asked him to.
+<a name="l-42"></a><span class="tm">19:07:00</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> thanks
+<a name="l-43"></a><span class="tm">19:07:10</span><span class="nk"> &lt;wumpus&gt;</span> eeh that's the wrong one
+<a name="l-44"></a><span class="tm">19:07:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> unthanks
+<a name="l-45"></a><span class="tm">19:07:30</span><span class="nk"> &lt;wumpus&gt;</span> well it is about the same subject
+<a name="l-46"></a><span class="tm">19:07:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/issues/6658</span>
+<a name="l-47"></a><span class="tm">19:07:52</span><span class="nk"> &lt;wumpus&gt;</span> lots of people have posted about it, but there doesn't seem to be a clear solution
+<a name="l-48"></a><span class="tm">19:08:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> main.cpp -&gt; 1248524bytes ... ^^
+<a name="l-49"></a><span class="tm">19:08:37</span><span class="nk"> &lt;wumpus&gt;</span> reducing the number of included headers works, I think
+<a name="l-50"></a><span class="tm">19:08:41</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-51"></a><span class="tm">19:08:46</span><span class="nk"> &lt;cfields_&gt;</span> I have PRs which break up net.h/netbase.h, i'd be curious to see if those make a significant difference
+<a name="l-52"></a><span class="tm">19:09:00</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, something to be aware of and nudge a bit at... some refactorings to move code around would help.
+<a name="l-53"></a><span class="tm">19:09:13</span><span class="nk"> &lt;wumpus&gt;</span> also building with clang helps
+<a name="l-54"></a><span class="tm">19:09:21</span><span class="nk"> &lt;wumpus&gt;</span> it uses a lot less memory at the same compile settings, usually
+<a name="l-55"></a><span class="tm">19:09:25</span><span class="nk"> &lt;gmaxwell&gt;</span> and be independantly good for reasons unrelated to peak memory usage.
+<a name="l-56"></a><span class="tm">19:10:05</span><span class="nk"> &lt;cfields_&gt;</span> i'd assume that mem usage correlates solidly with compile time
+<a name="l-57"></a><span class="tm">19:10:55</span><span class="nk"> &lt;CodeShark&gt;</span> not so sure - lots of small files might mean the bottleneck is disk access
+<a name="l-58"></a><span class="tm">19:11:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> come on
+<a name="l-59"></a><span class="tm">19:11:32</span><span class="nk"> &lt;CodeShark&gt;</span> in any case, it would be good to bring down the peak mem usage
+<a name="l-60"></a><span class="tm">19:11:32</span><span class="nk"> &lt;wumpus&gt;</span> the bottleneck in compilation is hardly ever disk access, at least *reading* disk access
+<a name="l-61"></a><span class="tm">19:11:37</span><span class="nk"> &lt;sipa&gt;</span> reading in 100 files?
+<a name="l-62"></a><span class="tm">19:11:43</span><span class="nk"> &lt;sipa&gt;</span> sequentially
+<a name="l-63"></a><span class="tm">19:12:08</span><span class="nk"> &lt;BakSAj&gt;</span> would be cool, if btc full nodes could continue to be runnable on Rasberry Pi ... with 1GB RAM
+<a name="l-64"></a><span class="tm">19:12:37</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">BakSAj:</span> runnable is not compileable on?
+<a name="l-65"></a><span class="tm">19:12:40</span><span class="nk"> &lt;gmaxwell&gt;</span> not sure there is much else to say here.  I only brought it up for general awareness issues, since I think it's likely a death by 1000 cuts that can be improved in a multitude of ways.
+<a name="l-66"></a><span class="tm">19:12:54</span><span class="nk"> &lt;wumpus&gt;</span> seek/read access for source files is only a problem for really huge projects, and then especially when the source is hosted on some horrible network file system (like clearcase), in any case bitcoin doesn't even come close
+<a name="l-67"></a><span class="tm">19:13:03</span><span class="nk"> &lt;cfields_&gt;</span> heh, disk is negligible. It's easy to see where time is spent with -ftime-report.
+<a name="l-68"></a><span class="tm">19:13:17</span><span class="nk"> &lt;wumpus&gt;</span> but like always: measure before you start talking about bottlenecks
+<a name="l-69"></a><span class="tm">19:13:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think adding cross compile depends options for ARM and AARCH64 would also reduce the "memory problem" (at least the amount of complains): https://github.com/bitcoin/bitcoin/issues/8162
+<a name="l-70"></a><span class="tm">19:13:58</span><span class="nk"> &lt;BakSAj&gt;</span> <span class="hi">jeremyrubin:</span> preferably both compileable and operatable
+<a name="l-71"></a><span class="tm">19:13:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BakSAj:</span> for small embedded systems you should use cross-compilation
+<a name="l-72"></a><span class="tm">19:14:03</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">jonasschnelli:</span> i'm halfway through the changes needed there.
+<a name="l-73"></a><span class="tm">19:14:13</span><span class="nk"> &lt;jeremyrubin&gt;</span> i have had machines take a bit of time on autogen.sh fyi
+<a name="l-74"></a><span class="tm">19:14:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields_:</span> nice. Focus on Qt5.6 first. :)
+<a name="l-75"></a><span class="tm">19:14:34</span><span class="nk"> &lt;wumpus&gt;</span> you can cross compile on ARM using depends, we just don't distribute ARM binaries
+<a name="l-76"></a><span class="tm">19:14:37</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">jonasschnelli:</span> actually, arm/aarch64 already work fine with depends. Just have to use NO_QT=1 manually.
+<a name="l-77"></a><span class="tm">19:14:40</span><span class="nk"> &lt;wumpus&gt;</span> s/on/to
+<a name="l-78"></a><span class="tm">19:14:42</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm skeptical that the intersection of rpi users that complain about compile issues and people who will cross compile is the emptyset. But cross compiling is good.
+<a name="l-79"></a><span class="tm">19:14:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> yes, it works fine
+<a name="l-80"></a><span class="tm">19:14:51</span><span class="nk"> &lt;luke-jr&gt;</span> for comparison, webkit-based stuff typically uses up to 12 GB RAM with debug symbols, and much much less without..
+<a name="l-81"></a><span class="tm">19:14:56</span><span class="nk"> &lt;gmaxwell&gt;</span> er isn't the empty set, you get what I mean.
+<a name="l-82"></a><span class="tm">19:15:07</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">luke-jr:</span> oh, good point...
+<a name="l-83"></a><span class="tm">19:15:13</span><span class="nk"> &lt;wumpus&gt;</span> it's *very easy* tocross compile for ARM
+<a name="l-84"></a><span class="tm">19:15:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think NO_QT=1 for ARM/AARCH64 could be a start (even for "official binaries").
+<a name="l-85"></a><span class="tm">19:15:20</span><span class="nk"> &lt;wumpus&gt;</span> with the depends system
+<a name="l-86"></a><span class="tm">19:15:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-87"></a><span class="tm">19:15:28</span><span class="nk"> &lt;cfields_&gt;</span> the gitian-debug PR turns on debug symbols, so gitian mem requirement is bumped after that.
+<a name="l-88"></a><span class="tm">19:15:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> a lot of people using rpi2 like systems do not have another linux host.
+<a name="l-89"></a><span class="tm">19:15:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> that builds static binaries, which is wasteful on RAM
+<a name="l-90"></a><span class="tm">19:15:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also ARM is used more and more for GUI systems.
+<a name="l-91"></a><span class="tm">19:15:50</span><span class="nk"> &lt;jeremyrubin&gt;</span> can autogen.sh be made faster?
+<a name="l-92"></a><span class="tm">19:16:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> no
+<a name="l-93"></a><span class="tm">19:16:15</span><span class="nk"> &lt;wumpus&gt;</span> not by us, at least
+<a name="l-94"></a><span class="tm">19:16:15</span><span class="nk"> &lt;BakSAj&gt;</span> ok, thanks for explaining.. personally i had no trouble compiling 0.12.1 on rpi 3, was afraid that minimum requirements will raise with future releases
+<a name="l-95"></a><span class="tm">19:16:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> if you want to run bitcoind on a RiP (or similar) static builds are fine. Mostly you don't have tons of other tools that could share libraries installed.
+<a name="l-96"></a><span class="tm">19:16:32</span><span class="nk"> &lt;BakSAj&gt;</span> since suprisingly many nodes run on rpi
+<a name="l-97"></a><span class="tm">19:16:44</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> maybe the one thing that is fixed by a faster disk
+<a name="l-98"></a><span class="tm">19:16:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> I'm thinking more of Bitcoin-Qt
+<a name="l-99"></a><span class="tm">19:16:59</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">jonasschnelli:</span> as qt's gui plugin situation improves, we may be able to move back to the shared-qt builds
+<a name="l-100"></a><span class="tm">19:17:05</span><span class="nk"> &lt;wumpus&gt;</span> I'm sure minimum requirements will raise with future releases, that's just the way things are, we'll try to raise them not too much though
+<a name="l-101"></a><span class="tm">19:17:11</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jonasschnelli:</span> I think we already have notes on how to corss compile to arm?
+<a name="l-102"></a><span class="tm">19:17:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree. Static linking qt is not ideal. But lets don't roll this up again.
+<a name="l-103"></a><span class="tm">19:17:14</span><span class="nk"> &lt;MarcoFalke&gt;</span> https://github.com/bitcoin/bitcoin/blob/master/doc/build-unix.md#arm-cross-compilation
+<a name="l-104"></a><span class="tm">19:17:23</span><span class="nk"> &lt;btcdrak&gt;</span> oh meeting
+<a name="l-105"></a><span class="tm">19:17:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">MarcoFalke:</span> notes, yes. But it should be included in our release builds (gitian)
+<a name="l-106"></a><span class="tm">19:17:42</span><span class="nk"> &lt;MarcoFalke&gt;</span> jup, agree
+<a name="l-107"></a><span class="tm">19:17:46</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">jonasschnelli:</span> sorry, i meant that directly in the context of shipping arm+gui binaries
+<a name="l-108"></a><span class="tm">19:17:56</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> for now, people just compile natively to avoid static, so suggesting cross-compile isn't a real option
+<a name="l-109"></a><span class="tm">19:18:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> I'm not sure. I have no idea what autogen.sh would be spending time on. But it seems more a GNU problem thatn a bitcoin core problem :)
+<a name="l-110"></a><span class="tm">19:18:09 </span><span class="nka">* gmaxwell</span> <span class="ac">looks forward to arm (+gui) binaries in the sometime future.</span>
+<a name="l-111"></a><span class="tm">19:18:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> I'm surprised it's autogen.sh taking a lot of time not configure, which has this huge list of scripts to execute for probing
+<a name="l-112"></a><span class="tm">19:18:48 </span><span class="nka">* luke-jr</span> <span class="ac">fully intends to use an ARM system with Core(Knots) as his hot wallet in some months.</span>
+<a name="l-113"></a><span class="tm">19:18:50</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">jeremyrubin:</span> you can use a quicker shell for autogen. IIRC dash vs. bash shaves a few seconds off
+<a name="l-114"></a><span class="tm">19:19:15</span><span class="nk"> &lt;wumpus&gt;</span> well arm non-GUI binaries would already be a great step forward, one step at a tme
+<a name="l-115"></a><span class="tm">19:19:15</span><span class="nk"> &lt;luke-jr&gt;</span> autogen.sh isn't even part of building; it's a developer tool
+<a name="l-116"></a><span class="tm">19:19:17</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> ah, as a feature-freeze request: ok to plan on arm bins (without gui) for 0.13 ?
+<a name="l-117"></a><span class="tm">19:19:27</span><span class="nk"> &lt;luke-jr&gt;</span> if you're running autogen.sh, that means you're running from git, and you shouldn't do that
+<a name="l-118"></a><span class="tm">19:19:30</span><span class="nk"> &lt;cfields_&gt;</span> i can try to have that done today
+<a name="l-119"></a><span class="tm">19:19:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields_:</span> ack, +1
+<a name="l-120"></a><span class="tm">19:19:33</span><span class="nk"> &lt;wumpus&gt;</span> I think arm gui would be prett much a per-distro afair
+<a name="l-121"></a><span class="tm">19:19:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> sure!
+<a name="l-122"></a><span class="tm">19:19:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields_:</span> +1
+<a name="l-123"></a><span class="tm">19:19:39</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">luke-jr:</span> are we making build faster for developers or for users?
+<a name="l-124"></a><span class="tm">19:19:45</span><span class="nk"> &lt;gmaxwell&gt;</span> +1
+<a name="l-125"></a><span class="tm">19:19:47</span><span class="nk"> &lt;cfields_&gt;</span> ok
+<a name="l-126"></a><span class="tm">19:20:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jeremyrubin:</span> I think the concern is "ability to build" rather than "speed to build"
+<a name="l-127"></a><span class="tm">19:20:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> users shouldn't need to run autogen-- if they get the source tarballs we have, it should already be autogenned.
+<a name="l-128"></a><span class="tm">19:20:26</span><span class="nk"> &lt;cfields_&gt;</span> ^^
+<a name="l-129"></a><span class="tm">19:20:36</span><span class="nk"> &lt;BakSAj&gt;</span> cool, rpi fans will love you :-)
+<a name="l-130"></a><span class="tm">19:20:44</span><span class="nk"> &lt;wumpus&gt;</span> but the people actually doing a lot of builds are developers, only they would care about a few more/less seconds in the build scripting
+<a name="l-131"></a><span class="tm">19:20:57</span><span class="nk"> &lt;BakSAj&gt;</span> next step - run full node on cell phone :-)
+<a name="l-132"></a><span class="tm">19:21:01</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> ++
+<a name="l-133"></a><span class="tm">19:21:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BakSAj:</span> I believe a number of people have done this.
+<a name="l-134"></a><span class="tm">19:21:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BakSAj:</span> people are doing that actually, that's one of the motivations for the ARM binaries
+<a name="l-135"></a><span class="tm">19:21:28</span><span class="nk"> &lt;BakSAj&gt;</span> lol ok
+<a name="l-136"></a><span class="tm">19:21:28</span><span class="nk"> &lt;luke-jr&gt;</span> next step is therefore to support SPV mode when bandwidth is expensive ;)
+<a name="l-137"></a><span class="tm">19:21:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BakSAj:</span> abcore, it works fine.
+<a name="l-138"></a><span class="tm">19:21:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> +1
+<a name="l-139"></a><span class="tm">19:21:41</span><span class="nk"> &lt;luke-jr&gt;</span> but that's post-0.13 IMO
+<a name="l-140"></a><span class="tm">19:21:45</span><span class="nk"> &lt;wumpus&gt;</span> absolutely
+<a name="l-141"></a><span class="tm">19:22:22</span><span class="nk"> &lt;wumpus&gt;</span> in any case it's too late to start on anything new for 0.13, for that we have to consider which of the current pulls can go in
+<a name="l-142"></a><span class="tm">19:22:47</span><span class="nk"> &lt;luke-jr&gt;</span> can we get in [8-bit] key generation type?
+<a name="l-143"></a><span class="tm">19:23:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> 32bit!
+<a name="l-144"></a><span class="tm">19:23:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> You can provide a migration patch for Knots
+<a name="l-145"></a><span class="tm">19:23:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Isn't that trivial?
+<a name="l-146"></a><span class="tm">19:23:53</span><span class="nk"> &lt;BakSAj&gt;</span> will 0.13 contain just segwit code or actual softfork also? tnx
+<a name="l-147"></a><span class="tm">19:24:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> SW SF can be 0.13.1
+<a name="l-148"></a><span class="tm">19:24:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> SW are mostly not coupled with major releases
+<a name="l-149"></a><span class="tm">19:24:21</span><span class="nk"> &lt;jeremyrubin&gt;</span> I think that 0.13.1 will be worse for upgrade times
+<a name="l-150"></a><span class="tm">19:24:24</span><span class="nk"> &lt;wumpus&gt;</span> SW should be released in a minor release
+<a name="l-151"></a><span class="tm">19:24:26</span><span class="nk"> &lt;jeremyrubin&gt;</span> does anyone have data on that
+<a name="l-152"></a><span class="tm">19:24:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BakSAj:</span> major releases do not contain network consensus changes.
+<a name="l-153"></a><span class="tm">19:24:31</span><span class="nk"> &lt;sdaftuar&gt;</span> do we think segwit is going in to 0.13?
+<a name="l-154"></a><span class="tm">19:24:42</span><span class="nk"> &lt;sdaftuar&gt;</span> (without activation scheduled)
+<a name="l-155"></a><span class="tm">19:24:52</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> isn't it a major change?
+<a name="l-156"></a><span class="tm">19:24:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> you mean, 0.13.0, or 0.13.x&gt;0?
+<a name="l-157"></a><span class="tm">19:24:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> migration is not very practical if 32-bit uses the same version number in Core as 8-bit in Knots already is
+<a name="l-158"></a><span class="tm">19:24:57</span><span class="nk"> &lt;sdaftuar&gt;</span> 0.13.0
+<a name="l-159"></a><span class="tm">19:24:59</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> yes, sipa wanted to merge it soon to master
+<a name="l-160"></a><span class="tm">19:25:01</span><span class="nk"> &lt;CodeShark&gt;</span> what happened to doing it in 0.12.x?
+<a name="l-161"></a><span class="tm">19:25:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> maybe this needs more off-meeting discussion then
+<a name="l-162"></a><span class="tm">19:25:08</span><span class="nk"> &lt;btcdrak&gt;</span> (without mainnet defs)
+<a name="l-163"></a><span class="tm">19:25:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> agree
+<a name="l-164"></a><span class="tm">19:25:15</span><span class="nk"> &lt;sdaftuar&gt;</span> seems like there are still open issues, and no ACKs
+<a name="l-165"></a><span class="tm">19:25:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> well from what I've heard minor releases are usually more popular, especialy .1, as some people don't trust .0  :)
+<a name="l-166"></a><span class="tm">19:25:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> nothing, there are confused questions.
+<a name="l-167"></a><span class="tm">19:25:27</span><span class="nk"> &lt;sdaftuar&gt;</span> so i don't see how it's going to be merged in the next week
+<a name="l-168"></a><span class="tm">19:25:48</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> why?
+<a name="l-169"></a><span class="tm">19:25:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jeremyrubin:</span> segwit is a major change to Bitcoin - not Bitcoin Core.
+<a name="l-170"></a><span class="tm">19:25:51 </span><span class="nka">* jonasschnelli</span> <span class="ac">thinks sipa is allowed to merge without ACK</span>
+<a name="l-171"></a><span class="tm">19:25:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> we have a long thought out published spec on this, please don't divert the meeting to debating it. I can direct you to the information after the meeting.
+<a name="l-172"></a><span class="tm">19:26:07</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> interesting... I do tend to not upgrade any of my software major versions for 6 months. diversion over
+<a name="l-173"></a><span class="tm">19:26:27</span><span class="nk"> &lt;sipa&gt;</span> well merging segwit without fork enabled is not in contradiction with "not doing a consensus change in a major release"
+<a name="l-174"></a><span class="tm">19:26:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree
+<a name="l-175"></a><span class="tm">19:26:41</span><span class="nk"> &lt;CodeShark&gt;</span> right
+<a name="l-176"></a><span class="tm">19:26:47</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-177"></a><span class="tm">19:26:49</span><span class="nk"> &lt;luke-jr&gt;</span> no objections to merging segwit code without activation
+<a name="l-178"></a><span class="tm">19:26:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also, getting ACK for SW is extremly hard. Nobody wants to take the risk.
+<a name="l-179"></a><span class="tm">19:26:51</span><span class="nk"> &lt;gmaxwell&gt;</span> sure, there are code motion logistics that favor merging it.
+<a name="l-180"></a><span class="tm">19:26:51</span><span class="nk"> &lt;sdaftuar&gt;</span> to be clear i'm not talking about any kind of release policy, just code-readiness / review
+<a name="l-181"></a><span class="tm">19:26:54</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jeremyrubin:</span> see out lifecycle docs https://github.com/bitcoin-core/bitcoincore.org/pull/179
+<a name="l-182"></a><span class="tm">19:27:07</span><span class="nk"> &lt;btcdrak&gt;</span> s/out/our/
+<a name="l-183"></a><span class="tm">19:27:57</span><span class="nk"> &lt;wumpus&gt;</span> so is SW ready for merge (into master/0.13)?
+<a name="l-184"></a><span class="tm">19:28:06</span><span class="nk"> &lt;sdaftuar&gt;</span> it has no ACKs, and some open issues to be resolved
+<a name="l-185"></a><span class="tm">19:28:31</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-186"></a><span class="tm">19:28:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> major open issue? Or more nitish stuff?
+<a name="l-187"></a><span class="tm">19:28:35</span><span class="nk"> &lt;sdaftuar&gt;</span> minor
+<a name="l-188"></a><span class="tm">19:28:49</span><span class="nk"> &lt;wumpus&gt;</span> if it is not critical it can also be fixed in a later pull
+<a name="l-189"></a><span class="tm">19:28:51</span><span class="nk"> &lt;sdaftuar&gt;</span> but bugs, not style nits
+<a name="l-190"></a><span class="tm">19:29:09</span><span class="nk"> &lt;wumpus&gt;</span> oh known bugs should be addressed in the pull itself
+<a name="l-191"></a><span class="tm">19:29:21</span><span class="nk"> &lt;sipa&gt;</span> i think everything will be addressed in my next batch of patches
+<a name="l-192"></a><span class="tm">19:29:29</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> great!
+<a name="l-193"></a><span class="tm">19:29:42</span><span class="nk"> &lt;gmaxwell&gt;</span> should people be acking the reviwew PR or the rebase/reorg?
+<a name="l-194"></a><span class="tm">19:29:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> does that include expanding 2nd push to 75 bytes max? or is that still an open thing?
+<a name="l-195"></a><span class="tm">19:30:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> this is the place to ask, and i would say no, there is no point
+<a name="l-196"></a><span class="tm">19:30:27</span><span class="nk"> &lt;sipa&gt;</span> but perhaps others have another opinion
+<a name="l-197"></a><span class="tm">19:30:32</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> I didnt understand where 75 came from.
+<a name="l-198"></a><span class="tm">19:30:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> up to 75 is easy
+<a name="l-199"></a><span class="tm">19:30:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">btcdrak:</span> largest size that wouldn't require additional testing
+<a name="l-200"></a><span class="tm">19:31:18</span><span class="nk"> &lt;gmaxwell&gt;</span> has to do with the opcode types changing for different sizes of push.
+<a name="l-201"></a><span class="tm">19:31:47</span><span class="nk"> &lt;sipa&gt;</span> so, opinions?
+<a name="l-202"></a><span class="tm">19:31:51</span><span class="nk"> &lt;btcdrak&gt;</span> 32-&gt;40-&gt;75 seems like a big jump
+<a name="l-203"></a><span class="tm">19:32:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> from the code perspective they're all the same.
+<a name="l-204"></a><span class="tm">19:32:19</span><span class="nk"> &lt;luke-jr&gt;</span> my opinion is there is no point limiting it (beyond the impl/test cost of &gt;75), and such limits could very well prevent future softforks
+<a name="l-205"></a><span class="tm">19:32:49</span><span class="nk"> &lt;luke-jr&gt;</span> more tolerant enables softforks, so should be preferred over useless limits
+<a name="l-206"></a><span class="tm">19:33:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Luke-jr's argument has merit in my opinion-- it can be reduced later, but I don't have a strongly held view. I'm not aware of a DOS attack risk created by not having the stricter limit earlier.
+<a name="l-207"></a><span class="tm">19:33:44</span><span class="nk"> &lt;gmaxwell&gt;</span> (of course, IsStandardness should be strictly limited)
+<a name="l-208"></a><span class="tm">19:33:44</span><span class="nk"> &lt;luke-jr&gt;</span> to expand the limit later requires a hardfork
+<a name="l-209"></a><span class="tm">19:34:00</span><span class="nk"> &lt;luke-jr&gt;</span> yes, node policy should reject any unknown witnesses period
+<a name="l-210"></a><span class="tm">19:34:23</span><span class="nk"> &lt;CodeShark&gt;</span> ok, I think luke-jr has a strong argument
+<a name="l-211"></a><span class="tm">19:34:27</span><span class="nk"> &lt;btcdrak&gt;</span> that makes sense
+<a name="l-212"></a><span class="tm">19:34:47</span><span class="nk"> &lt;sipa&gt;</span> there should be no need for more than 256-bit hash + some versioning metadata
+<a name="l-213"></a><span class="tm">19:35:14</span><span class="nk"> &lt;sipa&gt;</span> and setting it to more gives it the impression that there is
+<a name="l-214"></a><span class="tm">19:35:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> or, to be precise if there is that means Bitcoin is more broken than that
+<a name="l-215"></a><span class="tm">19:35:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> exactly
+<a name="l-216"></a><span class="tm">19:35:33</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">luke-jr:</span> in general I agree with keeping flexible, but do you have an example for sipa of why you'd want it?
+<a name="l-217"></a><span class="tm">19:35:36</span><span class="nk"> &lt;gmaxwell&gt;</span> The biggest harm I see is that allowing a larger size here does limit the ability to make utxo entries limited in size in the future, potentially. But it could be done later.  It also enabled policy bypass to abuse the utxo set for data storage, though it's not much of an issue there.
+<a name="l-218"></a><span class="tm">19:35:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> it doesn't need to give that impression. I don't think we need to predict the future too much here.
+<a name="l-219"></a><span class="tm">19:36:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> for example, if you were to argue that we might someday need 512 bit hashes, I'd agree-- but then I'd point out that in that case there would need to be a hardfork to change all the other things.
+<a name="l-220"></a><span class="tm">19:36:26</span><span class="nk"> &lt;sipa&gt;</span> i'd rather not rely on isstandardness when reasoning about longer term future
+<a name="l-221"></a><span class="tm">19:37:01</span><span class="nk"> &lt;petertodd&gt;</span> in a MR implementation I did, it turned out to be very advantageous if the things in the MMR were fixed side forperformance
+<a name="l-222"></a><span class="tm">19:37:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jeremyrubin:</span> any case where we would need indicators in the UTXO set itself; but I don't have a concrete example at this time
+<a name="l-223"></a><span class="tm">19:37:19</span><span class="nk"> &lt;gmaxwell&gt;</span> Also, not allowing it in SW doesn't preclude it in the future, you'd just need to use a different version type signaling in that case.
+<a name="l-224"></a><span class="tm">19:37:35</span><span class="nk"> &lt;luke-jr&gt;</span> for example, we could have added the maturity stuff in the 2nd push if we didn't have nSequence
+<a name="l-225"></a><span class="tm">19:37:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, I really wish UTXO entries were fixed size.
+<a name="l-226"></a><span class="tm">19:37:53</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> isn't there a strong deterrent against abuse, because your funds are anyone-can-spend to older nodes?
+<a name="l-227"></a><span class="tm">19:37:59</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> you'd need a new commitment entirely
+<a name="l-228"></a><span class="tm">19:38:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> in addition to the current one
+<a name="l-229"></a><span class="tm">19:38:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> there is no rule preventing 0-value outputs
+<a name="l-230"></a><span class="tm">19:38:34</span><span class="nk"> &lt;_anthony_&gt;</span> just use the private key of a payment address to store the 256 bits
+<a name="l-231"></a><span class="tm">19:38:37</span><span class="nk"> &lt;sdaftuar&gt;</span> ah, good point
+<a name="l-232"></a><span class="tm">19:38:41</span><span class="nk"> &lt;sipa&gt;</span> (if you ignore relay polify)
+<a name="l-233"></a><span class="tm">19:39:09</span><span class="nk"> &lt;luke-jr&gt;</span> abuse is already possible. this doesn't make it worse. if in the future we make it better, we can limit this at the same time
+<a name="l-234"></a><span class="tm">19:39:28</span><span class="nk"> &lt;gmaxwell&gt;</span> if one assumes a fixed size utxo entry, luke's suggestion basically doubles the utxo set size.
+<a name="l-235"></a><span class="tm">19:39:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> though, for that specific case I find it ahrd to think of a abuse use-case that'd care about that, given you could screw up the usse-case by spending those outputs
+<a name="l-236"></a><span class="tm">19:39:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> we can't assume that today, and if we softfork an assumption tomorrow, we can limit this then also
+<a name="l-237"></a><span class="tm">19:40:44</span><span class="nk"> &lt;gmaxwell&gt;</span> We've probably spent more time discussing it now than the decision is worth.
+<a name="l-238"></a><span class="tm">19:41:14</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-239"></a><span class="tm">19:41:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">compact block testing</span>
+<a name="l-240"></a><span class="tm">19:41:27</span><span class="nk"> &lt;luke-jr&gt;</span> so we use 75 for now, and discuss reducing it later?
+<a name="l-241"></a><span class="tm">19:41:33</span><span class="nk"> &lt;gmaxwell&gt;</span> (and that time could be better spent reviewing/testing more corner cases... lets continue discussion elsewhere I guess)
+<a name="l-242"></a><span class="tm">19:42:34</span><span class="nk"> &lt;btcdrak&gt;</span> so compact blocks...
+<a name="l-243"></a><span class="tm">19:42:41</span><span class="nk"> &lt;gmaxwell&gt;</span> OK. So there are some number of nodes running compactblocks on the public network.. I have 12 peers at the moment, matt has another half dozen in the new relay network that I'm not connected to.
+<a name="l-244"></a><span class="tm">19:42:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Things seem to be working well there, instagibbs has posted some charts.
+<a name="l-245"></a><span class="tm">19:42:56</span><span class="nk"> &lt;wumpus&gt;</span> I've been running a compact blocks node for a few days, no crashes to report :)
+<a name="l-246"></a><span class="tm">19:43:16</span><span class="nk"> &lt;instagibbs&gt;</span> yes i love charts http://imgur.com/iq2lRGl
+<a name="l-247"></a><span class="tm">19:43:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I've been conducting some new tests with a network of nodes with a modified version of compact blocks that reduces the hash size to 16 bits in order to test corner cases around collisions.
+<a name="l-248"></a><span class="tm">19:43:27</span><span class="nk"> &lt;instagibbs&gt;</span> blue stuff is in kB fwiw
+<a name="l-249"></a><span class="tm">19:43:30</span><span class="nk"> &lt;wumpus&gt;</span> lots of succesfully reconstructed blocks
+<a name="l-250"></a><span class="tm">19:43:31</span><span class="nk"> &lt;luke-jr&gt;</span> (ugh, Travis is apparently "detecting abuse" on the Bitcoin code itself, so every clone will be affected?)
+<a name="l-251"></a><span class="tm">19:43:36</span><span class="nk"> &lt;btcdrak&gt;</span> Two large mining pools have also been running them, connected to their pool nodes for block source, one is behind the GFW
+<a name="l-252"></a><span class="tm">19:43:40</span><span class="nk"> &lt;instagibbs&gt;</span> blue dot == 0 fetched txns
+<a name="l-253"></a><span class="tm">19:44:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I found a few bugs, which matt has fixed but not pushed to the PR yet.  Bugs were things like if the cmptblk message was rubbish, it would wait for the peer to timeout before requesting the block normally.
+<a name="l-254"></a><span class="tm">19:44:48</span><span class="nk"> &lt;instagibbs&gt;</span> I intended to review the PR then got ill. Still planning to review.
+<a name="l-255"></a><span class="tm">19:44:57</span><span class="nk"> &lt;gmaxwell&gt;</span> I think this particular testing technique of modifying the code to make rare cases common is pretty effective and will result in good testing of most of those corner cases.
+<a name="l-256"></a><span class="tm">19:45:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> (offtopic) that started happening with the parallel testing I think
+<a name="l-257"></a><span class="tm">19:45:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> agree
+<a name="l-258"></a><span class="tm">19:45:19</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">luke-jr:</span> Shoot them an email
+<a name="l-259"></a><span class="tm">19:45:39</span><span class="nk"> &lt;gmaxwell&gt;</span> The compact block code is now rebased on top of the sharedptr work, so it's now a fair bit simpler.
+<a name="l-260"></a><span class="tm">19:45:54</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">MarcoFalke:</span> I have. My concern is more than just whitelisting individual repos though. (Let's continue discussion after the meeting)
+<a name="l-261"></a><span class="tm">19:45:54</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, matt's rebase is on that now?
+<a name="l-262"></a><span class="tm">19:45:59</span><span class="nk"> &lt;instagibbs&gt;</span> err pr is rebased*
+<a name="l-263"></a><span class="tm">19:46:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> yes.
+<a name="l-264"></a><span class="tm">19:46:12</span><span class="nk"> &lt;gmaxwell&gt;</span> matt's PR is on master as of last night.
+<a name="l-265"></a><span class="tm">19:46:20</span><span class="nk"> &lt;sipa&gt;</span> yes, forget my branch
+<a name="l-266"></a><span class="tm">19:46:34</span><span class="nk"> &lt;CodeShark&gt;</span> what PR#?
+<a name="l-267"></a><span class="tm">19:46:48</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#8086</span><span class="cmdline"></span>
+<a name="l-268"></a><span class="tm">19:47:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8068</span>
+<a name="l-269"></a><span class="tm">19:47:15</span><span class="nk"> &lt;cfields_&gt;</span> has there been discussion of a servicebit for compact blocks? Now that we have the dns seed prefixes, that would allow for very quick discovery
+<a name="l-270"></a><span class="tm">19:47:23</span><span class="nk"> &lt;gmaxwell&gt;</span> Based on the issues I found, probably the interaction with block fetching logic needs more review.
+<a name="l-271"></a><span class="tm">19:47:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">cfields_:</span> if it deploys in 0.13 it wont be necessary
+<a name="l-272"></a><span class="tm">19:47:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields_:</span> IMO I don't see a need to preferrentially peer. I expect support to become sufficiently ubiquitious fast enough.
+<a name="l-273"></a><span class="tm">19:47:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">forget sipa's compact blocks branch and use thebluematt's PR</span>
+<a name="l-274"></a><span class="tm">19:48:10</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not something that anyone has a reason to not support, except for just not having implemented it.
+<a name="l-275"></a><span class="tm">19:48:13</span><span class="nk"> &lt;btcdrak&gt;</span> hrm, action point is to forget :)
+<a name="l-276"></a><span class="tm">19:48:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields_:</span> the argument brought up before was tgat service bits should be used for critical
+<a name="l-277"></a><span class="tm">19:48:28</span><span class="nk"> &lt;sipa&gt;</span> for critically required services
+<a name="l-278"></a><span class="tm">19:48:41</span><span class="nk"> &lt;gmaxwell&gt;</span> like your node won't work right if you don't have peers with the right services.
+<a name="l-279"></a><span class="tm">19:48:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> yeah for people testing the code to use the other branch
+<a name="l-280"></a><span class="tm">19:48:49</span><span class="nk"> &lt;luke-jr&gt;</span> makes sense
+<a name="l-281"></a><span class="tm">19:48:55</span><span class="nk"> &lt;sipa&gt;</span> and the only time when yoi critically need a compact block peer is as a miner, who should be curating their connections anyway
+<a name="l-282"></a><span class="tm">19:48:59</span><span class="nk"> &lt;jeremyrubin&gt;</span> in #8086 where is the salt generated btw?
+<a name="l-283"></a><span class="tm">19:49:09</span><span class="nk"> &lt;cfields_&gt;</span> hmm, fair enough
+<a name="l-284"></a><span class="tm">19:49:35</span><span class="nk"> &lt;wumpus&gt;</span> and miners can look at the protocol version to see if their peer supports compact blocks?
+<a name="l-285"></a><span class="tm">19:49:48</span><span class="nk"> &lt;gmaxwell&gt;</span> jeremyrubin:
+<a name="l-286"></a><span class="tm">19:49:49</span><span class="nk"> &lt;gmaxwell&gt;</span> +CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock&amp; block) :
+<a name="l-287"></a><span class="tm">19:49:52</span><span class="nk"> &lt;gmaxwell&gt;</span> +        nonce(GetRand(std::numeric_limits&lt;uint64_t&gt;::max())),
+<a name="l-288"></a><span class="tm">19:50:12</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I don't think we can assume a specific protocol version supports it
+<a name="l-289"></a><span class="tm">19:50:27</span><span class="nk"> &lt;luke-jr&gt;</span> if we have a future version with better compact blocks, we may want to drop support for the current one
+<a name="l-290"></a><span class="tm">19:50:28</span><span class="nk"> &lt;jeremyrubin&gt;</span> thanks
+<a name="l-291"></a><span class="tm">19:50:29</span><span class="nk"> &lt;Lightsword&gt;</span> I think using service bits is a good idea, mainually curtailing connections is very time consuming and raisies the barrier to entry for mining
+<a name="l-292"></a><span class="tm">19:50:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> you can do the handshake.
+<a name="l-293"></a><span class="tm">19:50:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> no, miners should connect to a known peer that supports it
+<a name="l-294"></a><span class="tm">19:50:41</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">Lightsword:</span> neither are likely to be necessary
+<a name="l-295"></a><span class="tm">19:51:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> right
+<a name="l-296"></a><span class="tm">19:51:22</span><span class="nk"> &lt;gmaxwell&gt;</span> Please, service bits are basically forever and we only have 32 of them, I expect the window between some and nearly all use of this to only be a few months to a year long.
+<a name="l-297"></a><span class="tm">19:51:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> because just supporting compact blocks is not enough, they also need to have good uptime and reliability  latency, bandwodth, ...
+<a name="l-298"></a><span class="tm">19:51:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> we have 64
+<a name="l-299"></a><span class="tm">19:51:41</span><span class="nk"> &lt;gmaxwell&gt;</span> Same difference. (really? hmph!)
+<a name="l-300"></a><span class="tm">19:51:46</span><span class="nk"> &lt;jeremyrubin&gt;</span> I would suggest either writing the entropy to a file once or having it settable in a config file
+<a name="l-301"></a><span class="tm">19:51:48</span><span class="nk"> &lt;wumpus&gt;</span> we should have a concept of temporary service bits, like for the versionbits
+<a name="l-302"></a><span class="tm">19:52:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jeremyrubin:</span> that's a good idea but orthogonal
+<a name="l-303"></a><span class="tm">19:52:11</span><span class="nk"> &lt;luke-jr&gt;</span> as long as nobody relies on service bits, they can be temporary
+<a name="l-304"></a><span class="tm">19:52:16</span><span class="nk"> &lt;btcdrak&gt;</span> we dont need preferential peering for compact blocks. It wont take long for wide network support.
+<a name="l-305"></a><span class="tm">19:52:17</span><span class="nk"> &lt;luke-jr&gt;</span> ie, use them as hints
+<a name="l-306"></a><span class="tm">19:52:23</span><span class="nk"> &lt;cfields_&gt;</span> don't we have a range designated for playground?
+<a name="l-307"></a><span class="tm">19:52:27</span><span class="nk"> &lt;luke-jr&gt;</span> yes
+<a name="l-308"></a><span class="tm">19:52:31</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">sipa:</span> (yes, sorry, just reviewing it now)
+<a name="l-309"></a><span class="tm">19:52:34</span><span class="nk"> &lt;Lightsword&gt;</span> a service bit to indicate a secondary service bit field needs to be used?
+<a name="l-310"></a><span class="tm">19:52:47</span><span class="nk"> &lt;luke-jr&gt;</span> one of which is currently getting full-RBF temporary usage
+<a name="l-311"></a><span class="tm">19:52:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Lightsword:</span> that would completely make it unuseful for preferential peering
+<a name="l-312"></a><span class="tm">19:52:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> uh. I'm not sure what you're talking about there... the nonces are per block and should not be predictable.
+<a name="l-313"></a><span class="tm">19:53:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Lightsword:</span> (as neither addr messages nor the DNS seeds would be aware of the secondary mechanism)
+<a name="l-314"></a><span class="tm">19:53:14</span><span class="nk"> &lt;gmaxwell&gt;</span> statically configuring it would be broken.
+<a name="l-315"></a><span class="tm">19:53:29</span><span class="nk"> &lt;wumpus&gt;</span> why would you want to fix the entropy statically?
+<a name="l-316"></a><span class="tm">19:53:33</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, perhaps setting cmpctblock as a tie-breaker for keeping connection?
+<a name="l-317"></a><span class="tm">19:53:41</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay, in any case, I think thats all I've got there.
+<a name="l-318"></a><span class="tm">19:53:50</span><span class="nk"> &lt;btcdrak&gt;</span> ding ding, we have 7 mins remaining
+<a name="l-319"></a><span class="tm">19:53:52</span><span class="nk"> &lt;instagibbs&gt;</span> well, I guess "he sent me blocks fast" is/will be one, same thing
+<a name="l-320"></a><span class="tm">19:53:54</span><span class="nk"> &lt;cfields_&gt;</span> static entropy is much easier to test :p
+<a name="l-321"></a><span class="tm">19:53:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> sounds like a fine additional ranker in the connection management stuff.
+<a name="l-322"></a><span class="tm">19:54:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> +1
+<a name="l-323"></a><span class="tm">19:54:06</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-324"></a><span class="tm">19:54:13</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">cfields_:</span> yep
+<a name="l-325"></a><span class="tm">19:54:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> though yea, the 'most recent blocks' probably mostly covers it.
+<a name="l-326"></a><span class="tm">19:54:35</span><span class="nk"> &lt;BakSAj&gt;</span> which version are compact blocks planned for?
+<a name="l-327"></a><span class="tm">19:54:40</span><span class="nk"> &lt;sipa&gt;</span> related to that: please review gmaxwell's patch for adding fast blkck and tx relayers for not evicted
+<a name="l-328"></a><span class="tm">19:54:41</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">gmaxwell:</span> it doesn't harm security so long as it's kept secret from peers
+<a name="l-329"></a><span class="tm">19:54:50</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BakSAj:</span> 0.13.0
+<a name="l-330"></a><span class="tm">19:54:51</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, which number
+<a name="l-331"></a><span class="tm">19:54:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> sec
+<a name="l-332"></a><span class="tm">19:55:04</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">gmaxwell:</span> nvm -- forgot you have to send it?
+<a name="l-333"></a><span class="tm">19:55:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> the nonce used for compact blocks must be sent to peers or they can't recover the block.
+<a name="l-334"></a><span class="tm">19:55:12</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> we do have temporary service bits
+<a name="l-335"></a><span class="tm">19:55:19</span><span class="nk"> &lt;BakSAj&gt;</span> <span class="hi">btcdrak:</span> thanks!
+<a name="l-336"></a><span class="tm">19:55:33</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> thoughts on #7598/#7600? you said above that you'd started review
+<a name="l-337"></a><span class="tm">19:55:40</span><span class="nk"> &lt;Lightsword&gt;</span> isn’t it likely we’re going to overhaul the p2p protocol by the time we run out of service bits?
+<a name="l-338"></a><span class="tm">19:55:45</span><span class="nk"> &lt;sdaftuar&gt;</span> i still think it should be a priority to get those PRs merged for 0.13.0...
+<a name="l-339"></a><span class="tm">19:55:47</span><span class="nk"> &lt;instagibbs&gt;</span> I don't think connecting to cmpctblock peers will be hard unless we get sybil'd by AWS forks
+<a name="l-340"></a><span class="tm">19:55:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I like them and will ACK soon, once I come up with a useful way to test.
+<a name="l-341"></a><span class="tm">19:56:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> me too, i started revieweing but got caught up on other things
+<a name="l-342"></a><span class="tm">19:56:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I agree.
+<a name="l-343"></a><span class="tm">19:56:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Lightsword:</span> maybe
+<a name="l-344"></a><span class="tm">19:56:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Lightsword:</span> it's often hard to predict how long protocols live
+<a name="l-345"></a><span class="tm">19:56:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I think important big PRs I'd really like to have in 0.13 are SW, Compact blocks, CFPF related, and BIP32.
+<a name="l-346"></a><span class="tm">19:56:51</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> ok, let me know if you want help with the sim environment i shared with you, i think that makes it easy
+<a name="l-347"></a><span class="tm">19:56:54</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, https://github.com/bitcoin/bitcoin/pull/8084
+<a name="l-348"></a><span class="tm">19:56:59</span><span class="nk"> &lt;gmaxwell&gt;</span> There are a bunch of small things (including all of mine)
+<a name="l-349"></a><span class="tm">19:57:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> that one, thanks
+<a name="l-350"></a><span class="tm">19:57:45</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">off-topic:</span> quickly, before I forget. I'll be headed out of town on Friday and only reachable for emergencies for ~10 days. If anyone needs anything from me before I go, speak up now :)
+<a name="l-351"></a><span class="tm">19:57:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields_:</span> for how long?
+<a name="l-352"></a><span class="tm">19:58:03</span><span class="nk"> &lt;sipa&gt;</span> a month?
+<a name="l-353"></a><span class="tm">19:58:04</span><span class="nk"> &lt;Lightsword&gt;</span> maybe we should just have a service bit for flagging fast relay nodes/miners in general for preferential peering rather than making it flag compact blocks specifically
+<a name="l-354"></a><span class="tm">19:58:17</span><span class="nk"> &lt;wumpus&gt;</span> only features have to be in before the feature freeze, anything that can be interpreted as bug fixes or anti-DoS measures doesn't have the deadline of next week
+<a name="l-355"></a><span class="tm">19:58:20</span><span class="nk"> &lt;wumpus&gt;</span> also SW is special
+<a name="l-356"></a><span class="tm">19:58:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Lightsword:</span> we should also have an evil bit that abusive nodes should set
+<a name="l-357"></a><span class="tm">19:58:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Lightsword:</span> "the I am a DOS attack master node, please connect to me" flag?
+<a name="l-358"></a><span class="tm">19:58:48</span><span class="nk"> &lt;Chris_St1&gt;</span> brilliant
+<a name="l-359"></a><span class="tm">19:58:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> ^.^
+<a name="l-360"></a><span class="tm">19:58:56</span><span class="nk"> &lt;wumpus&gt;</span> as we discussed above it's a consensus change so it can't be enabled in a major release first
+<a name="l-361"></a><span class="tm">19:59:04</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">sipa:</span> for ~10 days. I'll be gone for a month total, but working for the last few weeks.
+<a name="l-362"></a><span class="tm">19:59:10</span><span class="nk"> &lt;sipa&gt;</span> i see
+<a name="l-363"></a><span class="tm">19:59:23</span><span class="nk"> &lt;wumpus&gt;</span> he announced that well in advance
+<a name="l-364"></a><span class="tm">19:59:30</span><span class="nk"> &lt;gmaxwell&gt;</span> lynch him!
+<a name="l-365"></a><span class="tm">19:59:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields_:</span> review of https://github.com/bitcoin/bitcoin/pull/5872 ? :D
+<a name="l-366"></a><span class="tm">19:59:36</span><span class="nk"> &lt;gmaxwell&gt;</span> oh in advance, okay.
+<a name="l-367"></a><span class="tm">19:59:38</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-368"></a><span class="tm">19:59:47</span><span class="nk"> &lt;BakSAj&gt;</span> :-)
+<a name="l-369"></a><span class="tm">19:59:54</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">luke-jr:</span> added to the list, thanks
+<a name="l-370"></a><span class="tm">20:00:01</span><span class="nk"> &lt;sipa&gt;</span> *ding dong*
+<a name="l-371"></a><span class="tm">20:00:03</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, all-but-SF SW would be nice
+<a name="l-372"></a><span class="tm">20:00:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
