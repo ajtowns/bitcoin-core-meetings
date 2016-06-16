@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:53</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun 16 19:00:53 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:53</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:59</span><span class="nk"> &lt;Frederic94500&gt;</span> Okay
+<a name="l-5"></a><span class="tm">19:01:14</span><span class="nk"> &lt;BakSAj&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:01:16</span><span class="nk"> &lt;wumpus&gt;</span> topic suggestion: merge compactblocks for 0.13
+<a name="l-7"></a><span class="tm">19:01:21</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-8"></a><span class="tm">19:01:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I like topics.
+<a name="l-9"></a><span class="tm">19:02:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> replacements (RBF/bumpfee) in 0.13
+<a name="l-10"></a><span class="tm">19:02:30</span><span class="nk"> &lt;btcdrak&gt;</span> segwit status
+<a name="l-11"></a><span class="tm">19:02:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack for compactblocks topic
+<a name="l-12"></a><span class="tm">19:02:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">topic:</span> i propose pushing the feature freeze one week further for CB and segwit to stabilize
+<a name="l-13"></a><span class="tm">19:02:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> morcos: sdaftuar: jonasschnelli: btcdrak: phantomcircuit: paveljanik:
+<a name="l-14"></a><span class="tm">19:02:48</span><span class="nk"> &lt;wumpus&gt;</span> I really don't like that\
+<a name="l-15"></a><span class="tm">19:02:53</span><span class="nk"> &lt;wumpus&gt;</span> we already pushed it back a month
+<a name="l-16"></a><span class="tm">19:02:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> hm. so feature freeze doesn't mean the software is done.
+<a name="l-17"></a><span class="tm">19:03:04</span><span class="nk"> &lt;wumpus&gt;</span> I really want to feature freeze this week
+<a name="l-18"></a><span class="tm">19:03:06</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not like we're waiting for new features for these things.
+<a name="l-19"></a><span class="tm">19:03:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Is the issue just that we're worred about destablizing master a bit?
+<a name="l-20"></a><span class="tm">19:03:28</span><span class="nk"> &lt;wumpus&gt;</span> note that it's okay to merge something that still needs some work given that it can be done before rc1
+<a name="l-21"></a><span class="tm">19:03:35</span><span class="nk"> &lt;btcdrak&gt;</span> CB is mergeable. any bug fixes woudl be minor and can be merged afterwards.
+<a name="l-22"></a><span class="tm">19:03:36</span><span class="nk"> &lt;wumpus&gt;</span> but we really want to merge things now
+<a name="l-23"></a><span class="tm">19:03:43</span><span class="nk"> &lt;sdaftuar&gt;</span> CB is not mergeable imo
+<a name="l-24"></a><span class="tm">19:03:52</span><span class="nk"> &lt;sipa&gt;</span> well CB and segwit cannot be merged both
+<a name="l-25"></a><span class="tm">19:03:55</span><span class="nk"> &lt;wumpus&gt;</span> of course it shouldn't leave master in broken state
+<a name="l-26"></a><span class="tm">19:03:56</span><span class="nk"> &lt;sdaftuar&gt;</span> also true
+<a name="l-27"></a><span class="tm">19:04:04</span><span class="nk"> &lt;sipa&gt;</span> not right now
+<a name="l-28"></a><span class="tm">19:04:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> do you think it's mergable with the outstanding raised issues resolved?
+<a name="l-29"></a><span class="tm">19:04:36</span><span class="nk"> &lt;luke-jr&gt;</span> we can merge segwit+CB+CPFP and let them stabilise in master?
+<a name="l-30"></a><span class="tm">19:04:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> you realize that means it misses the merge window for 0.13?
+<a name="l-31"></a><span class="tm">19:04:44</span><span class="nk"> &lt;sdaftuar&gt;</span> i haven't finished my review, but i raised some issues last night that i think need to be addressed
+<a name="l-32"></a><span class="tm">19:04:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> CPFP is merged now.
+<a name="l-33"></a><span class="tm">19:04:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> CPFP merged
+<a name="l-34"></a><span class="tm">19:04:51</span><span class="nk"> &lt;luke-jr&gt;</span> oh, missed that, k
+<a name="l-35"></a><span class="tm">19:05:13</span><span class="nk"> &lt;sdaftuar&gt;</span> actually
+<a name="l-36"></a><span class="tm">19:05:25</span><span class="nk"> &lt;sdaftuar&gt;</span> bluematt hasn't updated yet to remove the work limit
+<a name="l-37"></a><span class="tm">19:05:26</span><span class="nk"> &lt;sdaftuar&gt;</span> that has to go
+<a name="l-38"></a><span class="tm">19:05:54</span><span class="nk"> &lt;sdaftuar&gt;</span> i hadn't bothered commenting because i was under the impression he's working on it
+<a name="l-39"></a><span class="tm">19:05:54</span><span class="nk"> &lt;gmaxwell&gt;</span> the criteria for merging isn't bugfree, its free of major architectural flaws or so full of issues we're not confident that it can be believed bugfree by rc1.
+<a name="l-40"></a><span class="tm">19:06:04</span><span class="nk"> &lt;wumpus&gt;</span> what about merging it and putting it behind an experimental option?
+<a name="l-41"></a><span class="tm">19:06:23</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> agreed, but it can be removed post merge in a separate PR.
+<a name="l-42"></a><span class="tm">19:06:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I presume he'll remove it as soon as he's back on.
+<a name="l-43"></a><span class="tm">19:06:36</span><span class="nk"> &lt;luke-jr&gt;</span> which topic are we on now? CB?
+<a name="l-44"></a><span class="tm">19:06:42</span><span class="nk"> &lt;btcdrak&gt;</span> yes CB
+<a name="l-45"></a><span class="tm">19:06:43</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">luke-jr:</span> yes
+<a name="l-46"></a><span class="tm">19:06:45</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="topic">#topic </span><span class="topicline">Compact block relay</span>
+<a name="l-47"></a><span class="tm">19:07:06</span><span class="nk"> &lt;gmaxwell&gt;</span> (thats why I asked if you'd think it would be mergable if the outstanding identified issues were resolved)
+<a name="l-48"></a><span class="tm">19:07:39</span><span class="nk"> &lt;btcdrak&gt;</span> CB is clearly working as it's being live tested in the wild by major pools.
+<a name="l-49"></a><span class="tm">19:07:49</span><span class="nk"> &lt;sdaftuar&gt;</span> there's DoS risk that has not been analyzed at all
+<a name="l-50"></a><span class="tm">19:07:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> that doesn't mean that there aren't outstanding issues.
+<a name="l-51"></a><span class="tm">19:08:05</span><span class="nk"> &lt;wumpus&gt;</span> what about merging it experimentally for 0.13.0
+<a name="l-52"></a><span class="tm">19:08:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">btcdrak:</span> well, so is X-thin.. working in practice doesn't mean reliable
+<a name="l-53"></a><span class="tm">19:08:08</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">gmaxwell:</span> present
+<a name="l-54"></a><span class="tm">19:08:15</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> that sounds fine to me
+<a name="l-55"></a><span class="tm">19:08:25</span><span class="nk"> &lt;wumpus&gt;</span> put itbehind an option, then when the outstanding issues are fixed, remove that in 0.13.1 or so
+<a name="l-56"></a><span class="tm">19:08:27</span><span class="nk"> &lt;sdaftuar&gt;</span> and we can use the time between now and the release candidates to make it more stable/reliable?
+<a name="l-57"></a><span class="tm">19:08:35</span><span class="nk"> &lt;instagibbs&gt;</span> here as well
+<a name="l-58"></a><span class="tm">19:08:37</span><span class="nk"> &lt;jeremyrubin&gt;</span> I'd like to see more limit options to address sdaftuar's concerns
+<a name="l-59"></a><span class="tm">19:08:46</span><span class="nk"> &lt;btcdrak&gt;</span> the point of the feature freeze is that the main bulk of the master branch enters a stabalisation phase.
+<a name="l-60"></a><span class="tm">19:08:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i can live with that
+<a name="l-61"></a><span class="tm">19:09:10</span><span class="nk"> &lt;wumpus&gt;</span> the other option is to move compactblocks to 0.14
+<a name="l-62"></a><span class="tm">19:09:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> 0.13.1 shouldn't remove features IMO, but maybe changing the default would make sense
+<a name="l-63"></a><span class="tm">19:09:20</span><span class="nk"> &lt;luke-jr&gt;</span> I don't think CB can wait for 0.14, unfortunately
+<a name="l-64"></a><span class="tm">19:09:24</span><span class="nk"> &lt;jeremyrubin&gt;</span> I would also like to see more analysis on how CB would affect miner's txn selection
+<a name="l-65"></a><span class="tm">19:09:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> this would be adding features, not removing them, and yes it's cheating of a sort
+<a name="l-66"></a><span class="tm">19:09:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jeremyrubin:</span> I don't think that's a barrier to merging though
+<a name="l-67"></a><span class="tm">19:09:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jeremyrubin:</span> without work limit, there shouldn't be any
+<a name="l-68"></a><span class="tm">19:10:05</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, sorry what's the "work limit" here?
+<a name="l-69"></a><span class="tm">19:10:05</span><span class="nk"> &lt;wumpus&gt;</span> seems there are still a lot of concerns for CB. why so last minute?
+<a name="l-70"></a><span class="tm">19:10:09</span><span class="nk"> &lt;wumpus&gt;</span> why didn't this come up weeks ago?
+<a name="l-71"></a><span class="tm">19:10:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> not checking the entire mempool
+<a name="l-72"></a><span class="tm">19:10:22</span><span class="nk"> &lt;instagibbs&gt;</span> oh ok
+<a name="l-73"></a><span class="tm">19:10:29</span><span class="nk"> &lt;sdaftuar&gt;</span> i've been reviewing segwit :P
+<a name="l-74"></a><span class="tm">19:10:45</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, why aren't you doing both simultaneously?
+<a name="l-75"></a><span class="tm">19:10:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> these are implementation details and people have been reviewing other things, some are driven out of last minute opimizations matt added that he didn't need to add.
+<a name="l-76"></a><span class="tm">19:10:59</span><span class="nk"> &lt;wumpus&gt;</span> wasns't talking about you specifically sdaftuar :)
+<a name="l-77"></a><span class="tm">19:11:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> we could delay 0.13 once again. There are no urgent features and the release due date is artificial. Right?
+<a name="l-78"></a><span class="tm">19:11:08</span><span class="nk"> &lt;wumpus&gt;</span> I know you focused on segwit, that's good
+<a name="l-79"></a><span class="tm">19:11:18</span><span class="nk"> &lt;wumpus&gt;</span> I don't want to delay 0.13 again
+<a name="l-80"></a><span class="tm">19:11:18</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">sipa:</span> without work limit there is also DOS concern (although limited by needing to re-connect)
+<a name="l-81"></a><span class="tm">19:11:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> thats not true.
+<a name="l-82"></a><span class="tm">19:11:37</span><span class="nk"> &lt;wumpus&gt;</span> too much slip and we can just forget 0.14
+<a name="l-83"></a><span class="tm">19:11:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> please, this isn't helpful.
+<a name="l-84"></a><span class="tm">19:12:00</span><span class="nk"> &lt;wumpus&gt;</span> 0.13 is good enough for a release right now
+<a name="l-85"></a><span class="tm">19:12:29</span><span class="nk"> &lt;luke-jr&gt;</span> release 0.13 without segwit+CB then, and merge those immediately for 0.14?
+<a name="l-86"></a><span class="tm">19:12:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> I agree with wumpus: CB 0.13 as experimental (for our own protection) and non-exp in 0.13.1
+<a name="l-87"></a><span class="tm">19:12:35</span><span class="nk"> &lt;wumpus&gt;</span> it would be nice to merge CB, and i think we should, but it's not a requiremnt
+<a name="l-88"></a><span class="tm">19:12:37</span><span class="nk"> &lt;gmaxwell&gt;</span> lets take a step back there are two categories of remaining issue on CB,  one if the work limit stuff matt added recently. This was driven purely out of his unrelated UDP forwarding that is based on CB, which sent him into microsecond shaving mode.
+<a name="l-89"></a><span class="tm">19:12:42</span><span class="nk"> &lt;sipa&gt;</span> i don't want (1) keep rebasing segwit (2) wait until february 2017 for CB
+<a name="l-90"></a><span class="tm">19:12:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> me neither
+<a name="l-91"></a><span class="tm">19:13:12</span><span class="nk"> &lt;jeremyrubin&gt;</span> I think that segwit should take priority in merging.
+<a name="l-92"></a><span class="tm">19:13:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> 1 MB blocks is already killing; segwit without CB is likely to be a disaster
+<a name="l-93"></a><span class="tm">19:13:20</span><span class="nk"> &lt;sipa&gt;</span> i am fine with making CB experimental in 0.13
+<a name="l-94"></a><span class="tm">19:13:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-95"></a><span class="tm">19:13:31</span><span class="nk"> &lt;sipa&gt;</span> if there are a few days to work out the kinks
+<a name="l-96"></a><span class="tm">19:13:31</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">sipa:</span> experimental sounds fine
+<a name="l-97"></a><span class="tm">19:13:39</span><span class="nk"> &lt;gmaxwell&gt;</span> We cannot have SW deployed with no prospect of CB live nad in use.
+<a name="l-98"></a><span class="tm">19:13:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> also ack
+<a name="l-99"></a><span class="tm">19:13:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> there's still until july 7 for the planned rc1
+<a name="l-100"></a><span class="tm">19:13:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> that should be plenty
+<a name="l-101"></a><span class="tm">19:14:14</span><span class="nk"> &lt;wumpus&gt;</span> but the point is we want to merge feaatures *now*, exactly so that the next weeks can be fixing the remaining issues
+<a name="l-102"></a><span class="tm">19:14:18</span><span class="nk"> &lt;BakSAj&gt;</span> guys, please dont delay segwit, whole community is watching you and we need capacity increase soon :-(
+<a name="l-103"></a><span class="tm">19:14:24</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, the concerns there appear small. And indeed, we SW activation not set we don't need to have CB requesting enabled.
+<a name="l-104"></a><span class="tm">19:14:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BakSAj:</span> this has no effect on segwit's activation time
+<a name="l-105"></a><span class="tm">19:14:57</span><span class="nk"> &lt;sdaftuar&gt;</span> must we merge CB now though?  i feel like the bug fixes are more likely to happen in the initial PR, than trying to clean up post merge to meet the feature freeze deadline
+<a name="l-106"></a><span class="tm">19:15:04</span><span class="nk"> &lt;BakSAj&gt;</span> oh ok then
+<a name="l-107"></a><span class="tm">19:15:12</span><span class="nk"> &lt;luke-jr&gt;</span> oh, we're leaving SW undefined on mainnet?
+<a name="l-108"></a><span class="tm">19:15:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> yes
+<a name="l-109"></a><span class="tm">19:15:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> until a backport to 0.12 is ready
+<a name="l-110"></a><span class="tm">19:15:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> if we don't merge CB this week it misses the merge window for 0.13, and will be merged for 0.14
+<a name="l-111"></a><span class="tm">19:15:32</span><span class="nk"> &lt;luke-jr&gt;</span> ok
+<a name="l-112"></a><span class="tm">19:15:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I assumed the outstanding issues raised last night will be fixed before its merged.
+<a name="l-113"></a><span class="tm">19:15:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> bug fixes do not need to be done before the feature freeze
+<a name="l-114"></a><span class="tm">19:16:01</span><span class="nk"> &lt;wumpus&gt;</span> it's a feature freeze, not a bug fix freeze, that would be silly
+<a name="l-115"></a><span class="tm">19:16:23</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sdaftuar:</span> it alows master to stabalise. Then we know there wont be hugely disruptive things getting merged post freeze.
+<a name="l-116"></a><span class="tm">19:16:26</span><span class="nk"> &lt;BakSAj&gt;</span> <span class="hi">sipa:</span> how hard is it to backport segwit to 0.12.2 ?
+<a name="l-117"></a><span class="tm">19:16:30</span><span class="nk"> &lt;wumpus&gt;</span> integration testing
+<a name="l-118"></a><span class="tm">19:16:40</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> can we keep the feature freeze date and alloc an addtl week for bug fix now?
+<a name="l-119"></a><span class="tm">19:16:53</span><span class="nk"> &lt;phantomcircuit&gt;</span> <span class="hi">BakSAj:</span> after the meeting?
+<a name="l-120"></a><span class="tm">19:16:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> we have until july 7th for that.
+<a name="l-121"></a><span class="tm">19:16:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jeremyrubin:</span> bug fix time isn't "allocated"
+<a name="l-122"></a><span class="tm">19:17:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> do you need an additional week for bug fixing? rc1 is planned for july 7, according to sipa that was good
+<a name="l-123"></a><span class="tm">19:17:19</span><span class="nk"> &lt;gmaxwell&gt;</span> the whole reason for feature freeze ahead of rc1 is to allow time for fixing and testing. :)
+<a name="l-124"></a><span class="tm">19:17:23</span><span class="nk"> &lt;sipa&gt;</span> i think 3 weeks to work out the problems in CB is sufficient
+<a name="l-125"></a><span class="tm">19:17:27</span><span class="nk"> &lt;sipa&gt;</span> they are details
+<a name="l-126"></a><span class="tm">19:17:36</span><span class="nk"> &lt;BakSAj&gt;</span> <span class="hi">phantomcircuit:</span> yeah, sure
+<a name="l-127"></a><span class="tm">19:17:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-128"></a><span class="tm">19:17:41</span><span class="nk"> &lt;sipa&gt;</span> my concern with merging is that the code has been in flux the past days
+<a name="l-129"></a><span class="tm">19:17:43</span><span class="nk"> &lt;wumpus&gt;</span> and that's only rc1, I'm sure there will be bugs in rc1, and we'll need rc2 rc3
+<a name="l-130"></a><span class="tm">19:17:50</span><span class="nk"> &lt;sdaftuar&gt;</span> i think so too, but it seems silly that we're merging a PR that we otherwise wouldn't merge to get around a self-imposed deadline
+<a name="l-131"></a><span class="tm">19:18:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I know it seems stupid, but long time expirence with creep shows that deadlines have value.
+<a name="l-132"></a><span class="tm">19:18:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> you don't think the release schedule is important?
+<a name="l-133"></a><span class="tm">19:18:40</span><span class="nk"> &lt;gmaxwell&gt;</span> Or another way to look at it, it's fine that some well known important features get fixes and evolution, but we need a bar against other creep.
+<a name="l-134"></a><span class="tm">19:18:41</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> probably no point in arguing further.  i'll be happy to help work the bugs out...
+<a name="l-135"></a><span class="tm">19:18:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> no, there is really no point in arguing this
+<a name="l-136"></a><span class="tm">19:18:56</span><span class="nk"> &lt;gmaxwell&gt;</span> (you don't want me submitting the n-th fold relay improvement or whatnot in the next couple weeks)
+<a name="l-137"></a><span class="tm">19:19:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> well, I think gmaxwell has a good point that CB is very important to get in to be ready for segwit
+<a name="l-138"></a><span class="tm">19:19:04</span><span class="nk"> &lt;wumpus&gt;</span> and I'm kind of tired having to argue the value of having deadlines for every release
+<a name="l-139"></a><span class="tm">19:20:05</span><span class="nk"> &lt;gmaxwell&gt;</span> With a big team, bright lines are helpful. Even if they're sometimes objectively dumb.
+<a name="l-140"></a><span class="tm">19:20:15</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> well I for one appreciate the scheduling. It's more productive.
+<a name="l-141"></a><span class="tm">19:20:31</span><span class="nk"> &lt;Chris_St1&gt;</span> ^^^
+<a name="l-142"></a><span class="tm">19:20:50</span><span class="nk"> &lt;luke-jr&gt;</span> scheduled releases IMO are great; the only problem I think we're hitting is outside pressure to get specific things in sooner
+<a name="l-143"></a><span class="tm">19:20:57</span><span class="nk"> &lt;wumpus&gt;</span> I do agree CB is still a lot in flux
+<a name="l-144"></a><span class="tm">19:21:21</span><span class="nk"> &lt;wumpus&gt;</span> which is why I brought up this topic in the first place instead of just merging it
+<a name="l-145"></a><span class="tm">19:22:03</span><span class="nk"> &lt;wumpus&gt;</span> so, ok, let's decide that CB still gets a week to be ready
+<a name="l-146"></a><span class="tm">19:22:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Thank you.
+<a name="l-147"></a><span class="tm">19:22:24</span><span class="nk"> &lt;sdaftuar&gt;</span> sounds good to me.
+<a name="l-148"></a><span class="tm">19:22:25</span><span class="nk"> &lt;btcdrak&gt;</span> great.
+<a name="l-149"></a><span class="tm">19:22:37</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> can you clarify "gets a week" meaning
+<a name="l-150"></a><span class="tm">19:22:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-151"></a><span class="tm">19:22:50</span><span class="nk"> &lt;jeremyrubin&gt;</span> i think I am interpreting it as 1 more week till merge
+<a name="l-152"></a><span class="tm">19:22:55</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jeremyrubin:</span> it get's merged next week.
+<a name="l-153"></a><span class="tm">19:22:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> can you clarify what is unclear about it?
+<a name="l-154"></a><span class="tm">19:23:11</span><span class="nk"> &lt;achow101&gt;</span> is segwit ready for merging?
+<a name="l-155"></a><span class="tm">19:23:44</span><span class="nk"> &lt;sipa&gt;</span> segwit is ready for merging, though i'd like to get review on the changes made the past few days
+<a name="l-156"></a><span class="tm">19:23:58</span><span class="nk"> &lt;luke-jr&gt;</span> I think it should increase the pkh length limit to 75 bytes, but not important
+<a name="l-157"></a><span class="tm">19:24:01</span><span class="nk"> &lt;wumpus&gt;</span> segwit is also still very much in flux
+<a name="l-158"></a><span class="tm">19:24:03</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> not too much... just a little unclear what the week is for etc
+<a name="l-159"></a><span class="tm">19:24:08</span><span class="nk"> &lt;gmaxwell&gt;</span> the changes were just related to merging it without an activation date, right?
+<a name="l-160"></a><span class="tm">19:24:14</span><span class="nk"> &lt;Frederic94500&gt;</span> Because the last night, there are 40K+ unconfirmed transaction
+<a name="l-161"></a><span class="tm">19:24:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> to finish up the pull request so that it can be merged
+<a name="l-162"></a><span class="tm">19:24:18</span><span class="nk"> &lt;sipa&gt;</span> they're mostly making segwit p2p deal correctly with having no activation date
+<a name="l-163"></a><span class="tm">19:24:27</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> but all ok now (I think you missed my second msg)
+<a name="l-164"></a><span class="tm">19:24:29</span><span class="nk"> &lt;sipa&gt;</span> and tests/nots
+<a name="l-165"></a><span class="tm">19:24:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">Frederic94500:</span> #bitcoin
+<a name="l-166"></a><span class="tm">19:24:33</span><span class="nk"> &lt;sipa&gt;</span> *nits
+<a name="l-167"></a><span class="tm">19:25:00</span><span class="nk"> &lt;btcdrak&gt;</span> and ticks
+<a name="l-168"></a><span class="tm">19:25:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay can we move to the next topic?
+<a name="l-169"></a><span class="tm">19:25:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit</span>
+<a name="l-170"></a><span class="tm">19:25:09</span><span class="nk"> &lt;instagibbs&gt;</span> luke-jr, noted, but I think that ship has sailed
+<a name="l-171"></a><span class="tm">19:25:30</span><span class="nk"> &lt;sipa&gt;</span> i don't think there will be any further changes to segwit necessary, apart from potentially making it cooperate with CB
+<a name="l-172"></a><span class="tm">19:26:21</span><span class="nk"> &lt;sipa&gt;</span> we may find some edge cases in the transition between activation date unset and set, which i plan to actively help testing he next few days
+<a name="l-173"></a><span class="tm">19:26:38</span><span class="nk"> &lt;sipa&gt;</span> that is, assuming people find the review and testing it has had so far sufficient
+<a name="l-174"></a><span class="tm">19:26:54</span><span class="nk"> &lt;wumpus&gt;</span> so it would be better to merge segwit *before* CB?
+<a name="l-175"></a><span class="tm">19:27:03</span><span class="nk"> &lt;sipa&gt;</span> i don't care
+<a name="l-176"></a><span class="tm">19:27:15</span><span class="nk"> &lt;sipa&gt;</span> i'll help rebase either one on top of the other
+<a name="l-177"></a><span class="tm">19:27:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> opinion?
+<a name="l-178"></a><span class="tm">19:27:34</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, any outstanding concerns re testing?
+<a name="l-179"></a><span class="tm">19:27:40</span><span class="nk"> &lt;wumpus&gt;</span> at the least we need to make sure one of them is merged asap
+<a name="l-180"></a><span class="tm">19:27:44</span><span class="nk"> &lt;wumpus&gt;</span> so the other one can be integrated into it
+<a name="l-181"></a><span class="tm">19:27:46</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, ACK
+<a name="l-182"></a><span class="tm">19:27:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> if you were to do the rebase which do you think would be less work?  I have a pref for merging segwit first due to review things.  (though I believe we can't set an activation for it without CB)
+<a name="l-183"></a><span class="tm">19:28:10</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">instagibbs:</span> i'm doing testing now for the activation date unset -&gt; set scenario
+<a name="l-184"></a><span class="tm">19:28:19</span><span class="nk"> &lt;sdaftuar&gt;</span> i'd like more eyes on that issue, as it only just came up
+<a name="l-185"></a><span class="tm">19:28:20</span><span class="nk"> &lt;Chris_St1&gt;</span> 'activation' is wrt BIP9 right?
+<a name="l-186"></a><span class="tm">19:28:22</span><span class="nk"> &lt;wumpus&gt;</span> otherwise we'll keep this 'we need to rebase it over X' problem, and integration (and fixing bugs in integration) always causes unexpected issues
+<a name="l-187"></a><span class="tm">19:28:28</span><span class="nk"> &lt;gmaxwell&gt;</span> basically CB is less to review, and fewer have reviewed it, disrupting review with a rebase there is less of an issue.
+<a name="l-188"></a><span class="tm">19:28:33</span><span class="nk"> &lt;luke-jr&gt;</span> merging CB first makes it potentially easier to backport if people want to
+<a name="l-189"></a><span class="tm">19:28:43</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">Chris_St1:</span> yes, the parameters for activation on mainnet (starttime, timeout, bit)
+<a name="l-190"></a><span class="tm">19:28:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_St1:</span> BIP9 starting date, yes.
+<a name="l-191"></a><span class="tm">19:28:55</span><span class="nk"> &lt;luke-jr&gt;</span> but if CB needs a week of revisions, merging segwit first might just make more sense
+<a name="l-192"></a><span class="tm">19:28:57</span><span class="nk"> &lt;wumpus&gt;</span> the thing is though: CB is bound by the feature freeze, segwit is not
+<a name="l-193"></a><span class="tm">19:29:03</span><span class="nk"> &lt;luke-jr&gt;</span> especially since segwit needs backports anyway
+<a name="l-194"></a><span class="tm">19:29:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> a backport of CB without segwit wouldn't be very interesting in any case.
+<a name="l-195"></a><span class="tm">19:29:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> good point wumpus
+<a name="l-196"></a><span class="tm">19:29:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it's less important so long as segwit has no mainnet activation params set
+<a name="l-197"></a><span class="tm">19:29:40</span><span class="nk"> &lt;luke-jr&gt;</span> IMO
+<a name="l-198"></a><span class="tm">19:30:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> just need to get the code into master, it's been reviewed and tested so extensively
+<a name="l-199"></a><span class="tm">19:30:45</span><span class="nk"> &lt;gmaxwell&gt;</span> yes the merge there is about code maintance.
+<a name="l-200"></a><span class="tm">19:30:49</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> fyi the issue that came up this week about merging with no mainnet activation was a surprise to all of us
+<a name="l-201"></a><span class="tm">19:30:52</span><span class="nk"> &lt;BakSAj&gt;</span> isnt segwit the most reviewed btc code ever?
+<a name="l-202"></a><span class="tm">19:30:53</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, I can take a look too.
+<a name="l-203"></a><span class="tm">19:30:54</span><span class="nk"> &lt;Frederic94500&gt;</span> Actually, there are 13K+ unconfirmed transaction and we need segwit
+<a name="l-204"></a><span class="tm">19:30:57</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> i think that particular issue should be thought abou tmore
+<a name="l-205"></a><span class="tm">19:31:01</span><span class="nk"> &lt;sdaftuar&gt;</span> to make sure we haven't missed anything
+<a name="l-206"></a><span class="tm">19:31:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Frederic94500:</span> #bitcoin
+<a name="l-207"></a><span class="tm">19:31:15</span><span class="nk"> &lt;Frederic94500&gt;</span> <span class="cmd">#bitcoin</span><span class="cmdline"></span>
+<a name="l-208"></a><span class="tm">19:31:22</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> but to answer your question about my opinion, i think i agree it should be fine to merge
+<a name="l-209"></a><span class="tm">19:31:43</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">Frederic94500:</span> it means move your conversation to that channel as it is off topic here.
+<a name="l-210"></a><span class="tm">19:31:58</span><span class="nk"> &lt;sdaftuar&gt;</span> i will finish my testing/review of the latest changes, and then hopefully ack this week
+<a name="l-211"></a><span class="tm">19:32:02</span><span class="nk"> &lt;sdaftuar&gt;</span> ie today/tomorrow
+<a name="l-212"></a><span class="tm">19:32:26</span><span class="nk"> &lt;Chris_St1&gt;</span> <span class="hi">sdaftuar:</span> So BIP9 parameters need to be set in the pull request before being merged into master correct?
+<a name="l-213"></a><span class="tm">19:32:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_St1:</span> no, it can be merged with no starting date set.
+<a name="l-214"></a><span class="tm">19:32:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> segwit is merged this week or not at all, CB thursday or not at all.
+<a name="l-215"></a><span class="tm">19:32:51</span><span class="nk"> &lt;btcdrak&gt;</span> no. they will bet set later in a seprate pull
+<a name="l-216"></a><span class="tm">19:32:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> is that acceptable?
+<a name="l-217"></a><span class="tm">19:32:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Which is what will happen for master.
+<a name="l-218"></a><span class="tm">19:33:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> next thursday*
+<a name="l-219"></a><span class="tm">19:33:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> CB needs to be merged before (or on) next week thursday
+<a name="l-220"></a><span class="tm">19:33:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> segwit doesn't really have  a constraint
+<a name="l-221"></a><span class="tm">19:33:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok
+<a name="l-222"></a><span class="tm">19:33:45</span><span class="nk"> &lt;wumpus&gt;</span> I just thought merging it first was preferable, so that maintenance and testing of it can happen on master
+<a name="l-223"></a><span class="tm">19:33:55</span><span class="nk"> &lt;sipa&gt;</span> yes, i agree
+<a name="l-224"></a><span class="tm">19:34:04</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm really tired of not being able to work on some things due to avoiding disrupting segwit, it'll be good to have it merged.
+<a name="l-225"></a><span class="tm">19:34:07</span><span class="nk"> &lt;gmaxwell&gt;</span> :)
+<a name="l-226"></a><span class="tm">19:34:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Merging it before 0.13 would make things more testable/tested
+<a name="l-227"></a><span class="tm">19:34:12</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-228"></a><span class="tm">19:34:13</span><span class="nk"> &lt;instagibbs&gt;</span> Only a few ACKs so far, start cracking the whip!
+<a name="l-229"></a><span class="tm">19:34:39</span><span class="nk"> &lt;gmaxwell&gt;</span> all my focus is on things that were freeze gated.
+<a name="l-230"></a><span class="tm">19:34:42</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">instagibbs:</span> this meeting is one huge ACK :-p
+<a name="l-231"></a><span class="tm">19:34:47</span><span class="nk"> &lt;gmaxwell&gt;</span> (in the last week)
+<a name="l-232"></a><span class="tm">19:34:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have reviewed SW for serval hours but I don't feel myself in a position to give a it a utACK (or more)
+<a name="l-233"></a><span class="tm">19:34:58</span><span class="nk"> &lt;sipa&gt;</span> i would also like to point to #8149 for review, where i've reorganized the commits per BIP
+<a name="l-234"></a><span class="tm">19:35:19</span><span class="nk"> &lt;sipa&gt;</span> it may make sense for people to just ack certain sections of it, as it touches many relatively unrelated things
+<a name="l-235"></a><span class="tm">19:35:23</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> is #8149 the version to merge?
+<a name="l-236"></a><span class="tm">19:35:39</span><span class="nk"> &lt;sipa&gt;</span> (testing, wallet, p2p, consensus, script)
+<a name="l-237"></a><span class="tm">19:35:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> yes
+<a name="l-238"></a><span class="tm">19:35:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8149 for review with reorganized commits per BIP</span>
+<a name="l-239"></a><span class="tm">19:35:56</span><span class="nk"> &lt;gmaxwell&gt;</span> I really like the ordering of 8149, FWIW.
+<a name="l-240"></a><span class="tm">19:36:06</span><span class="nk"> &lt;instagibbs&gt;</span> jonasschnelli, just pick a part you can review comfortably
+<a name="l-241"></a><span class="tm">19:36:28</span><span class="nk"> &lt;sipa&gt;</span> and don't look at the commit by github; there is a summary comment with a list of all commits organized per section
+<a name="l-242"></a><span class="tm">19:36:32</span><span class="nk"> &lt;sipa&gt;</span> which i keep up to date
+<a name="l-243"></a><span class="tm">19:36:46</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">sipa:</span> thank you it's much easier to review
+<a name="l-244"></a><span class="tm">19:37:41</span><span class="nk"> &lt;sipa&gt;</span> ok, any other topics?
+<a name="l-245"></a><span class="tm">19:37:52</span><span class="nk"> &lt;jeremyrubin&gt;</span> yes
+<a name="l-246"></a><span class="tm">19:38:02</span><span class="nk"> &lt;wumpus&gt;</span> jonasschnelli had one
+<a name="l-247"></a><span class="tm">19:38:06</span><span class="nk"> &lt;jeremyrubin&gt;</span> I'd like to briefly call for more review on cory's cconman
+<a name="l-248"></a><span class="tm">19:38:08</span><span class="nk"> &lt;jeremyrubin&gt;</span> refctor
+<a name="l-249"></a><span class="tm">19:38:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jeremyrubin:</span> i will, but after 0.13
+<a name="l-250"></a><span class="tm">19:38:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should have a replacement option for the wallet in 0.13
+<a name="l-251"></a><span class="tm">19:38:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">replacements (RBF/bumpfee) in 0.13</span>
+<a name="l-252"></a><span class="tm">19:38:29</span><span class="nk"> &lt;sipa&gt;</span> ack topic
+<a name="l-253"></a><span class="tm">19:38:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> when Cory is back
+<a name="l-254"></a><span class="tm">19:38:54</span><span class="nk"> &lt;instagibbs&gt;</span> cory is answering pr stuff now, but I think he's not supposed to be :)
+<a name="l-255"></a><span class="tm">19:38:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also,... what happens if users start up a node and immediately send a tx?
+<a name="l-256"></a><span class="tm">19:39:01</span><span class="nk"> &lt;gmaxwell&gt;</span> am I missing something in thinking thats post 0.13 work now?
+<a name="l-257"></a><span class="tm">19:39:04</span><span class="nk"> &lt;wumpus&gt;</span> oh, more review, yes that's always good, although peopel are very busy with pre-0.13 issues now
+<a name="l-258"></a><span class="tm">19:39:06</span><span class="nk"> &lt;luke-jr&gt;</span> cfields_:
+<a name="l-259"></a><span class="tm">19:39:08</span><span class="nk"> &lt;gmaxwell&gt;</span> (the conman stuff)
+<a name="l-260"></a><span class="tm">19:39:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-261"></a><span class="tm">19:39:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I mena, no, you're not missing anything
+<a name="l-262"></a><span class="tm">19:39:25</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks. whew.
+<a name="l-263"></a><span class="tm">19:39:34</span><span class="nk"> &lt;sipa&gt;</span> i'd to see conman go in right after 0.13 branch off
+<a name="l-264"></a><span class="tm">19:39:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> are you talking about how fee estimation should work in that case?
+<a name="l-265"></a><span class="tm">19:39:46</span><span class="nk"> &lt;sipa&gt;</span> *conmann
+<a name="l-266"></a><span class="tm">19:39:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> thats why there isn't attention on it right at this second (also because cory is out)
+<a name="l-267"></a><span class="tm">19:39:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> Review of https://github.com/bitcoin/bitcoin/pull/8182 would be nice. Its a bumpfee command for GUI only.
+<a name="l-268"></a><span class="tm">19:39:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-269"></a><span class="tm">19:39:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sdaftuar:</span> yes
+<a name="l-270"></a><span class="tm">19:39:57</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">gmaxwell:</span> he's been responsive
+<a name="l-271"></a><span class="tm">19:40:09</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">gmaxwell:</span> but maybe let him relax a bit
+<a name="l-272"></a><span class="tm">19:40:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> yeah, my apologies for not having already looked at that!
+<a name="l-273"></a><span class="tm">19:40:14</span><span class="nk"> &lt;sipa&gt;</span> doesn't matter, there is no benefit in merging conman before the branch
+<a name="l-274"></a><span class="tm">19:40:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> I want that too. Well, I really want the sequence setting parts and fee even on the bump parts.
+<a name="l-275"></a><span class="tm">19:40:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> I don't think "signals replaceability" is very useful
+<a name="l-276"></a><span class="tm">19:40:46</span><span class="nk"> &lt;luke-jr&gt;</span> "Enable fee bumping" would make more sense
+<a name="l-277"></a><span class="tm">19:40:52</span><span class="nk"> &lt;gmaxwell&gt;</span> er s/fee even/feel 50/50 on the bump parts/
+<a name="l-278"></a><span class="tm">19:40:59</span><span class="nk"> &lt;jeremyrubin&gt;</span> I brought it up not for the 0.13 but because it seemed like we were out of topics so I raised it, no need to address further.
+<a name="l-279"></a><span class="tm">19:41:06</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-280"></a><span class="tm">19:41:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> you mean the text comment in the transaction details? Whats wrong with it. IMO we agreed on that term in a recent meeting.
+<a name="l-281"></a><span class="tm">19:41:17</span><span class="nk"> &lt;luke-jr&gt;</span> right
+<a name="l-282"></a><span class="tm">19:41:31</span><span class="nk"> &lt;gmaxwell&gt;</span> thats nits, can be worked out on the PR or out of meeting.
+<a name="l-283"></a><span class="tm">19:41:42</span><span class="nk"> &lt;gmaxwell&gt;</span> please don't go into field naming details here. :)
+<a name="l-284"></a><span class="tm">19:41:42</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-285"></a><span class="tm">19:41:48</span><span class="nk"> &lt;phantomcircuit&gt;</span> jonasschnelli, maybe this is just me, but i generally much prefer that things be added to the cli before the gui
+<a name="l-286"></a><span class="tm">19:41:50</span><span class="nk"> &lt;wumpus&gt;</span> nits shouldn't be a reason to hold up the feature merge
+<a name="l-287"></a><span class="tm">19:41:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree. The question is do we want a feebump option in 0.13...
+<a name="l-288"></a><span class="tm">19:41:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> if so,.. its extermly late. :)
+<a name="l-289"></a><span class="tm">19:42:01</span><span class="nk"> &lt;phantomcircuit&gt;</span> makes the initial review much easier for the feature itself
+<a name="l-290"></a><span class="tm">19:42:18</span><span class="nk"> &lt;gmaxwell&gt;</span> So I think we really should have the sequence setting stuff, I kept trying to ack the prior PRs but they've been closed for new prs several times.
+<a name="l-291"></a><span class="tm">19:42:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">phantomcircuit:</span> there is also a CLI PR. :)
+<a name="l-292"></a><span class="tm">19:42:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> especially for the GUI isn't [retty much too late
+<a name="l-293"></a><span class="tm">19:42:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> as it adds new translation strings
+<a name="l-294"></a><span class="tm">19:42:45</span><span class="nk"> &lt;wumpus&gt;</span> translation for 0.13 already started a few weeks ago
+<a name="l-295"></a><span class="tm">19:42:57</span><span class="nk"> &lt;sipa&gt;</span> that's sad, but understandable
+<a name="l-296"></a><span class="tm">19:42:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I agree. But I just think option to increase fees for 0.14 is to late..
+<a name="l-297"></a><span class="tm">19:43:01</span><span class="nk"> &lt;achow101&gt;</span> I think the fee bump stuff should definitely be in 0.13
+<a name="l-298"></a><span class="tm">19:43:03</span><span class="nk"> &lt;wumpus&gt;</span> having the CLI option would make sense though
+<a name="l-299"></a><span class="tm">19:43:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> where did we land with bumping interacting with the changs outputs already having been spent?
+<a name="l-300"></a><span class="tm">19:43:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I want a pony.
+<a name="l-301"></a><span class="tm">19:43:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> 'should', but there's preactical issues with timing and planning we're trying to cope with here
+<a name="l-302"></a><span class="tm">19:43:36 </span><span class="nka">* btcdrak</span> <span class="ac">gives gmaxwell a pony</span>
+<a name="l-303"></a><span class="tm">19:43:38</span><span class="nk"> &lt;phantomcircuit&gt;</span> jonasschnelli, 0.13.1 ?
+<a name="l-304"></a><span class="tm">19:43:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> i think we all like that, but we can't bypass safe practices for review and testing because we want it
+<a name="l-305"></a><span class="tm">19:43:42</span><span class="nk"> &lt;phantomcircuit&gt;</span> it's a minor feature
+<a name="l-306"></a><span class="tm">19:43:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not sure if we want BP a bumpfeature...
+<a name="l-307"></a><span class="tm">19:44:14</span><span class="nk"> &lt;sipa&gt;</span> BP?
+<a name="l-308"></a><span class="tm">19:44:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> backport
+<a name="l-309"></a><span class="tm">19:44:22</span><span class="nk"> &lt;wumpus&gt;</span> to be honest I think getting CB and segwit is enough worry for next week
+<a name="l-310"></a><span class="tm">19:44:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes... agree.
+<a name="l-311"></a><span class="tm">19:44:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Although it's a triangle. CB &lt;-&gt; SW &lt;-&gt; RBF
+<a name="l-312"></a><span class="tm">19:45:16</span><span class="nk"> &lt;petertodd&gt;</span> so, I'd strongly suggest we at least get in my global optin setting, so that people who need RBF can easily use external scripts to do so: https://github.com/bitcoin/bitcoin/pull/7132
+<a name="l-313"></a><span class="tm">19:45:18</span><span class="nk"> &lt;wumpus&gt;</span> it's unfortunate that your PRs with feebump got little attention, but it's kind of late now, we can't just cram everything in last minute
+<a name="l-314"></a><span class="tm">19:45:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Agree.
+<a name="l-315"></a><span class="tm">19:45:48</span><span class="nk"> &lt;wumpus&gt;</span> in any case: RPC functionality must be in before the GUI
+<a name="l-316"></a><span class="tm">19:45:50</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> Did we figure the ordering for those merges?
+<a name="l-317"></a><span class="tm">19:45:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> My feeling is that it is too late for 0.13 and I just wanted to make this clear. :)
+<a name="l-318"></a><span class="tm">19:45:55</span><span class="nk"> &lt;instagibbs&gt;</span> petertodd, I agree with this
+<a name="l-319"></a><span class="tm">19:45:56</span><span class="nk"> &lt;sipa&gt;</span> i will focus on reviewing RPC bumpfee
+<a name="l-320"></a><span class="tm">19:45:56</span><span class="nk"> &lt;wumpus&gt;</span> that's always how we work
+<a name="l-321"></a><span class="tm">19:46:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> could we split the sequence setting parts and do those? I think they're simple and not risky and have been reviewed under several PRs.
+<a name="l-322"></a><span class="tm">19:46:08</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> segwit -&gt; CB or CB -&gt; segwit?
+<a name="l-323"></a><span class="tm">19:46:13</span><span class="nk"> &lt;gmaxwell&gt;</span> The issue for them is that those PRs kept getting closed with changing scope.
+<a name="l-324"></a><span class="tm">19:46:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sounds good to me
+<a name="l-325"></a><span class="tm">19:47:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> we'll see how it goes with the actual timing of the changes.
+<a name="l-326"></a><span class="tm">19:47:02</span><span class="nk"> &lt;luke-jr&gt;</span> suggested topic: how should GBT react to pre-segwit miners, once segwit activates?
+<a name="l-327"></a><span class="tm">19:47:04</span><span class="nk"> &lt;wumpus&gt;</span> make sure the API is extensible enough to add the other things so we don't need to deprecate it already next version
+<a name="l-328"></a><span class="tm">19:47:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> we don't need to decide that now.
+<a name="l-329"></a><span class="tm">19:47:15</span><span class="nk"> &lt;wumpus&gt;</span> but that's arguably a minor concern
+<a name="l-330"></a><span class="tm">19:47:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> what does it do in the current implementation?
+<a name="l-331"></a><span class="tm">19:47:44</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> Also, these are BOTH to be included before the feature freeze, correct? Or is that tbd
+<a name="l-332"></a><span class="tm">19:47:50</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> to be determined*
+<a name="l-333"></a><span class="tm">19:48:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> no, CB needs to be in before the feature freeze, softforks can in principle go in any time
+<a name="l-334"></a><span class="tm">19:48:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> SW is freeze unrelated, CB has another week to mature.
+<a name="l-335"></a><span class="tm">19:48:17</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> just errors
+<a name="l-336"></a><span class="tm">19:48:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> what is the alternative?
+<a name="l-337"></a><span class="tm">19:48:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> the RPC call errors, that is. so the miner will failover or stop
+<a name="l-338"></a><span class="tm">19:48:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> mine blocks without any witness transactions
+<a name="l-339"></a><span class="tm">19:49:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> question might suggest a misunderstanding, SW merge for master is not tightly coupled to deployment; it's mostly a discussion of code management.
+<a name="l-340"></a><span class="tm">19:49:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> that means mining on top of a chain they have not fully validated
+<a name="l-341"></a><span class="tm">19:49:23</span><span class="nk"> &lt;sipa&gt;</span> oh, no, they have
+<a name="l-342"></a><span class="tm">19:49:24</span><span class="nk"> &lt;sipa&gt;</span> sorry
+<a name="l-343"></a><span class="tm">19:49:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> no, the bitcoind is updated, just not the miner
+<a name="l-344"></a><span class="tm">19:49:30</span><span class="nk"> &lt;sipa&gt;</span> i'm confusing client and server
+<a name="l-345"></a><span class="tm">19:49:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> might be better to return an empty block, if the implementation would be simple.
+<a name="l-346"></a><span class="tm">19:50:08</span><span class="nk"> &lt;gmaxwell&gt;</span> the failover might just cause it to fail over to something even stupider.
+<a name="l-347"></a><span class="tm">19:50:16</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">Chris_Stewart_5:</span> the lifecycle page got updated to clarify some of this https://bitcoincore.org/en/lifecycle/
+<a name="l-348"></a><span class="tm">19:50:17</span><span class="nk"> &lt;sdaftuar&gt;</span> presumably this is not a feature that there can possibly be a lot of demand for.  is it relaly worth the trouble?
+<a name="l-349"></a><span class="tm">19:50:17</span><span class="nk"> &lt;luke-jr&gt;</span> I guess that's another option, but empty block is :&lt;
+<a name="l-350"></a><span class="tm">19:50:23</span><span class="nk"> &lt;wumpus&gt;</span> consensus changes are not on bitcoin core's major release schedule, the first release introducing segwit would ideally be 0.12.x
+<a name="l-351"></a><span class="tm">19:50:44</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> I guess it seems CB from my understanding isn't tightly coupled to deployment either since I'm assuming old block relay code will still be in core? I'll ask more questions after meeting..
+<a name="l-352"></a><span class="tm">19:50:46</span><span class="nk"> &lt;wumpus&gt;</span> but that doesn't mean segwit code can't be merged (just not activated) in 0.13
+<a name="l-353"></a><span class="tm">19:50:59</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> concern with non-witness template being code complexity, I guess?
+<a name="l-354"></a><span class="tm">19:51:20</span><span class="nk"> &lt;sipa&gt;</span> i prefer empty block
+<a name="l-355"></a><span class="tm">19:51:21</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose empty blocks are also more likely to get noticed and upgraded
+<a name="l-356"></a><span class="tm">19:51:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> just more features to test when hopefully thats just an emergency fallback.
+<a name="l-357"></a><span class="tm">19:51:34</span><span class="nk"> &lt;sdaftuar&gt;</span> throwing an error should get noticed very fast
+<a name="l-358"></a><span class="tm">19:51:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> the old relay code will still be used in most cases, like with peers that don't support CB
+<a name="l-359"></a><span class="tm">19:51:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> error will result in failover to another daemon, perhaps without segwit support, which is somewhat less desirable. :)
+<a name="l-360"></a><span class="tm">19:51:58</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">btcdrak:</span> Thanks
+<a name="l-361"></a><span class="tm">19:52:15</span><span class="nk"> &lt;sdaftuar&gt;</span> little known fact: those blocks will be orphaned,  that should also get noticed!
+<a name="l-362"></a><span class="tm">19:52:17</span><span class="nk"> &lt;petertodd&gt;</span> ack empty blocks - that's a reasonable failsafe in a lot of conditions in general
+<a name="l-363"></a><span class="tm">19:52:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> they won't, though
+<a name="l-364"></a><span class="tm">19:52:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I think error and empty are both acceptable, with a small preference for empty that would be overridden if i find out the implementation is more than about 4 lines of code.
+<a name="l-365"></a><span class="tm">19:52:28</span><span class="nk"> &lt;sdaftuar&gt;</span> they won't relay
+<a name="l-366"></a><span class="tm">19:52:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> they're valid
+<a name="l-367"></a><span class="tm">19:52:34</span><span class="nk"> &lt;sdaftuar&gt;</span> yes
+<a name="l-368"></a><span class="tm">19:52:36</span><span class="nk"> &lt;sdaftuar&gt;</span> but they won't relay
+<a name="l-369"></a><span class="tm">19:52:38</span><span class="nk"> &lt;luke-jr&gt;</span> …
+<a name="l-370"></a><span class="tm">19:52:41</span><span class="nk"> &lt;luke-jr&gt;</span> why not?
+<a name="l-371"></a><span class="tm">19:52:41</span><span class="nk"> &lt;sdaftuar&gt;</span> hence, little known fact
+<a name="l-372"></a><span class="tm">19:52:57</span><span class="nk"> &lt;gmaxwell&gt;</span> ah, well if they won't realy, okay, well no reason to not error then.
+<a name="l-373"></a><span class="tm">19:53:03</span><span class="nk"> &lt;sipa&gt;</span> why would they not relay?
+<a name="l-374"></a><span class="tm">19:53:05</span><span class="nk"> &lt;sdaftuar&gt;</span> segwit nodes will try to download blocks from WITNESS peers
+<a name="l-375"></a><span class="tm">19:53:13</span><span class="nk"> &lt;sdaftuar&gt;</span> after activation
+<a name="l-376"></a><span class="tm">19:53:14</span><span class="nk"> &lt;sipa&gt;</span> so, this is a witness peer
+<a name="l-377"></a><span class="tm">19:53:17</span><span class="nk"> &lt;luke-jr&gt;</span> ^
+<a name="l-378"></a><span class="tm">19:53:19</span><span class="nk"> &lt;sdaftuar&gt;</span> not if it fails over
+<a name="l-379"></a><span class="tm">19:53:19</span><span class="nk"> &lt;sipa&gt;</span> just not a witness miner
+<a name="l-380"></a><span class="tm">19:53:24</span><span class="nk"> &lt;luke-jr&gt;</span> hm
+<a name="l-381"></a><span class="tm">19:53:38</span><span class="nk"> &lt;sipa&gt;</span> oh, i see what you're saying
+<a name="l-382"></a><span class="tm">19:53:39</span><span class="nk"> &lt;sdaftuar&gt;</span> sorry i was responding to gmaxwell's failover to an old daemon
+<a name="l-383"></a><span class="tm">19:53:44</span><span class="nk"> &lt;sipa&gt;</span> so, failover seems sufficient
+<a name="l-384"></a><span class="tm">19:53:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> this is a witness node, but asking what happens when a non-sw hasher connects.
+<a name="l-385"></a><span class="tm">19:53:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> OH!
+<a name="l-386"></a><span class="tm">19:54:00</span><span class="nk"> &lt;gmaxwell&gt;</span> well okay, that would get noticed too.
+<a name="l-387"></a><span class="tm">19:54:08</span><span class="nk"> &lt;luke-jr&gt;</span> yeah, I think this makes error the better behaviour
+<a name="l-388"></a><span class="tm">19:54:18</span><span class="nk"> &lt;gmaxwell&gt;</span> still, the crap blocks produced would be noise to non-upgraded nodes.
+<a name="l-389"></a><span class="tm">19:54:19</span><span class="nk"> &lt;petertodd&gt;</span> wait, did or didn't we remove the code that used to push new blocks to peers?
+<a name="l-390"></a><span class="tm">19:54:42</span><span class="nk"> &lt;sdaftuar&gt;</span> technically, mining a non-witness block on an upgraded peer would relay, as per sipa's suggestion to mine an empty block
+<a name="l-391"></a><span class="tm">19:54:48</span><span class="nk"> &lt;sdaftuar&gt;</span> i just don't think it's worth the trouble to code that up
+<a name="l-392"></a><span class="tm">19:55:03</span><span class="nk"> &lt;luke-jr&gt;</span> oh
+<a name="l-393"></a><span class="tm">19:55:20</span><span class="nk"> &lt;sdaftuar&gt;</span> code up/test/review
+<a name="l-394"></a><span class="tm">19:55:21</span><span class="nk"> &lt;sdaftuar&gt;</span> etc
+<a name="l-395"></a><span class="tm">19:55:31</span><span class="nk"> &lt;luke-jr&gt;</span> BFGMiner at least WILL submit blocks to local bitcoind regardless of what pool mined them, BUT it can only do that with GBT pools, and frankly nobody uses that
+<a name="l-396"></a><span class="tm">19:55:48</span><span class="nk"> &lt;luke-jr&gt;</span> so probably not worth considering IMO
+<a name="l-397"></a><span class="tm">19:55:58</span><span class="nk"> &lt;sipa&gt;</span> i think we're good
+<a name="l-398"></a><span class="tm">19:56:06</span><span class="nk"> &lt;gmaxwell&gt;</span> K
+<a name="l-399"></a><span class="tm">19:56:08</span><span class="nk"> &lt;sipa&gt;</span> unless miners complain about the behaviour
+<a name="l-400"></a><span class="tm">19:56:13</span><span class="nk"> &lt;sipa&gt;</span> then wr can reconsider
+<a name="l-401"></a><span class="tm">19:56:16</span><span class="nk"> &lt;sdaftuar&gt;</span> sounds good
+<a name="l-402"></a><span class="tm">19:56:43</span><span class="nk"> &lt;wumpus&gt;</span> three minutes to go!
+<a name="l-403"></a><span class="tm">19:56:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> if you split that PR I will go ack the non-bump part super fast.
+<a name="l-404"></a><span class="tm">19:56:53</span><span class="nk"> &lt;petertodd&gt;</span> also, if a block is relayed to non-witness peers, we only need one node on the network to bridge that gap...
+<a name="l-405"></a><span class="tm">19:57:07</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-406"></a><span class="tm">19:57:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> which one?
+<a name="l-407"></a><span class="tm">19:57:23</span><span class="nk"> &lt;sipa&gt;</span> which their private infrastructure may do unknowlingly
+<a name="l-408"></a><span class="tm">19:57:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> the bump fee PR.
+<a name="l-409"></a><span class="tm">19:57:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> we don't *want* to bridge that gap, but I guess that's your point
+<a name="l-410"></a><span class="tm">19:57:44</span><span class="nk"> &lt;luke-jr&gt;</span> any malicious actor could do it
+<a name="l-411"></a><span class="tm">19:58:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> having consensus depend on nuances of network behavior is icky...
+<a name="l-412"></a><span class="tm">19:58:15</span><span class="nk"> &lt;luke-jr&gt;</span> but on the other hand, these blocks are only defective in being not fully verified parents, which won't affect full nodes
+<a name="l-413"></a><span class="tm">19:58:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> the actual bumping reqiures review and testing for that I don't think we have time for pre-freeze regretable, but the rest (setting the sequence numbers and what not) is fine, and I've already reviewed it and tested it.
+<a name="l-414"></a><span class="tm">19:58:27</span><span class="nk"> &lt;luke-jr&gt;</span> so this can only be done for valid blocks anyway
+<a name="l-415"></a><span class="tm">19:58:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> okay. I'll try to factor this out in an independent PR
+<a name="l-416"></a><span class="tm">19:59:08</span><span class="nk"> &lt;instagibbs&gt;</span> 1 minute
+<a name="l-417"></a><span class="tm">19:59:30</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">instagibbs:</span> hopefully we land on the drone ship this time
+<a name="l-418"></a><span class="tm">19:59:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> consensus doesn't depend on it, just a slightly higher risk miners don't upgrade their nodes
+<a name="l-419"></a><span class="tm">19:59:36</span><span class="nk"> &lt;phantomcircuit&gt;</span> sdaftuar, it should be only a few lines of code to simply not include any transactions which have witness data
+<a name="l-420"></a><span class="tm">19:59:39</span><span class="nk"> &lt;gmaxwell&gt;</span> (also, in general, layering in seperate PRs RPC and GUI is useful, since we're usually more eager about merging rpc features-- easier to test, more sophicated users)
+<a name="l-421"></a><span class="tm">19:59:59 </span><span class="nka">* wumpus</span> <span class="ac">turns off thel lights</span>
+<a name="l-422"></a><span class="tm">20:00:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

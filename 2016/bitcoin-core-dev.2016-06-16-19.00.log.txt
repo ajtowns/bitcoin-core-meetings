@@ -1,0 +1,422 @@
+19:00:53 <wumpus> #startmeeting
+19:00:53 <lightningbot> Meeting started Thu Jun 16 19:00:53 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:53 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:59 <Frederic94500> Okay
+19:01:14 <BakSAj> hi
+19:01:16 <wumpus> topic suggestion: merge compactblocks for 0.13
+19:01:21 <btcdrak> ack
+19:01:29 <gmaxwell> I like topics.
+19:02:04 <jonasschnelli> replacements (RBF/bumpfee) in 0.13
+19:02:30 <btcdrak> segwit status
+19:02:32 <jonasschnelli> ack for compactblocks topic
+19:02:35 <sipa> topic: i propose pushing the feature freeze one week further for CB and segwit to stabilize
+19:02:42 <gmaxwell> sipa: morcos: sdaftuar: jonasschnelli: btcdrak: phantomcircuit: paveljanik:
+19:02:48 <wumpus> I really don't like that\
+19:02:53 <wumpus> we already pushed it back a month
+19:02:56 <gmaxwell> sipa: hm. so feature freeze doesn't mean the software is done.
+19:03:04 <wumpus> I really want to feature freeze this week
+19:03:06 <gmaxwell> it's not like we're waiting for new features for these things.
+19:03:20 <gmaxwell> Is the issue just that we're worred about destablizing master a bit?
+19:03:28 <wumpus> note that it's okay to merge something that still needs some work given that it can be done before rc1
+19:03:35 <btcdrak> CB is mergeable. any bug fixes woudl be minor and can be merged afterwards.
+19:03:36 <wumpus> but we really want to merge things now
+19:03:43 <sdaftuar> CB is not mergeable imo
+19:03:52 <sipa> well CB and segwit cannot be merged both
+19:03:55 <wumpus> of course it shouldn't leave master in broken state
+19:03:56 <sdaftuar> also true
+19:04:04 <sipa> not right now
+19:04:27 <gmaxwell> sdaftuar: do you think it's mergable with the outstanding raised issues resolved?
+19:04:36 <luke-jr> we can merge segwit+CB+CPFP and let them stabilise in master?
+19:04:43 <wumpus> sdaftuar: you realize that means it misses the merge window for 0.13?
+19:04:44 <sdaftuar> i haven't finished my review, but i raised some issues last night that i think need to be addressed
+19:04:45 <gmaxwell> luke-jr: CPFP is merged now.
+19:04:49 <btcdrak> luke-jr: CPFP merged
+19:04:51 <luke-jr> oh, missed that, k
+19:05:13 <sdaftuar> actually
+19:05:25 <sdaftuar> bluematt hasn't updated yet to remove the work limit
+19:05:26 <sdaftuar> that has to go
+19:05:54 <sdaftuar> i hadn't bothered commenting because i was under the impression he's working on it
+19:05:54 <gmaxwell> the criteria for merging isn't bugfree, its free of major architectural flaws or so full of issues we're not confident that it can be believed bugfree by rc1.
+19:06:04 <wumpus> what about merging it and putting it behind an experimental option?
+19:06:23 <btcdrak> sdaftuar: agreed, but it can be removed post merge in a separate PR.
+19:06:29 <gmaxwell> sdaftuar: I presume he'll remove it as soon as he's back on.
+19:06:36 <luke-jr> which topic are we on now? CB?
+19:06:42 <btcdrak> yes CB
+19:06:43 <jeremyrubin> luke-jr: yes
+19:06:45 <luke-jr> #topic Compact block relay
+19:07:06 <gmaxwell> (thats why I asked if you'd think it would be mergable if the outstanding identified issues were resolved)
+19:07:39 <btcdrak> CB is clearly working as it's being live tested in the wild by major pools.
+19:07:49 <sdaftuar> there's DoS risk that has not been analyzed at all
+19:07:55 <gmaxwell> btcdrak: that doesn't mean that there aren't outstanding issues.
+19:08:05 <wumpus> what about merging it experimentally for 0.13.0
+19:08:06 <luke-jr> btcdrak: well, so is X-thin.. working in practice doesn't mean reliable
+19:08:08 <phantomcircuit> gmaxwell: present
+19:08:15 <sdaftuar> wumpus: that sounds fine to me
+19:08:25 <wumpus> put itbehind an option, then when the outstanding issues are fixed, remove that in 0.13.1 or so
+19:08:27 <sdaftuar> and we can use the time between now and the release candidates to make it more stable/reliable?
+19:08:35 <instagibbs> here as well
+19:08:37 <jeremyrubin> I'd like to see more limit options to address sdaftuar's concerns
+19:08:46 <btcdrak> the point of the feature freeze is that the main bulk of the master branch enters a stabalisation phase.
+19:08:50 <sipa> wumpus: i can live with that
+19:09:10 <wumpus> the other option is to move compactblocks to 0.14
+19:09:11 <luke-jr> wumpus: 0.13.1 shouldn't remove features IMO, but maybe changing the default would make sense
+19:09:20 <luke-jr> I don't think CB can wait for 0.14, unfortunately
+19:09:24 <jeremyrubin> I would also like to see more analysis on how CB would affect miner's txn selection
+19:09:34 <wumpus> luke-jr: this would be adding features, not removing them, and yes it's cheating of a sort
+19:09:38 <petertodd> jeremyrubin: I don't think that's a barrier to merging though
+19:09:53 <sipa> jeremyrubin: without work limit, there shouldn't be any
+19:10:05 <instagibbs> sipa, sorry what's the "work limit" here?
+19:10:05 <wumpus> seems there are still a lot of concerns for CB. why so last minute?
+19:10:09 <wumpus> why didn't this come up weeks ago?
+19:10:19 <sipa> instagibbs: not checking the entire mempool
+19:10:22 <instagibbs> oh ok
+19:10:29 <sdaftuar> i've been reviewing segwit :P
+19:10:45 <instagibbs> sdaftuar, why aren't you doing both simultaneously?
+19:10:49 <gmaxwell> wumpus: these are implementation details and people have been reviewing other things, some are driven out of last minute opimizations matt added that he didn't need to add.
+19:10:59 <wumpus> wasns't talking about you specifically sdaftuar :)
+19:11:06 <jonasschnelli> we could delay 0.13 once again. There are no urgent features and the release due date is artificial. Right?
+19:11:08 <wumpus> I know you focused on segwit, that's good
+19:11:18 <wumpus> I don't want to delay 0.13 again
+19:11:18 <jeremyrubin> sipa: without work limit there is also DOS concern (although limited by needing to re-connect)
+19:11:31 <gmaxwell> jeremyrubin: thats not true.
+19:11:37 <wumpus> too much slip and we can just forget 0.14
+19:11:39 <gmaxwell> jeremyrubin: please, this isn't helpful.
+19:12:00 <wumpus> 0.13 is good enough for a release right now
+19:12:29 <luke-jr> release 0.13 without segwit+CB then, and merge those immediately for 0.14?
+19:12:32 <jonasschnelli> I agree with wumpus: CB 0.13 as experimental (for our own protection) and non-exp in 0.13.1
+19:12:35 <wumpus> it would be nice to merge CB, and i think we should, but it's not a requiremnt
+19:12:37 <gmaxwell> lets take a step back there are two categories of remaining issue on CB,  one if the work limit stuff matt added recently. This was driven purely out of his unrelated UDP forwarding that is based on CB, which sent him into microsecond shaving mode.
+19:12:42 <sipa> i don't want (1) keep rebasing segwit (2) wait until february 2017 for CB
+19:12:59 <wumpus> sipa: me neither
+19:13:12 <jeremyrubin> I think that segwit should take priority in merging.
+19:13:14 <luke-jr> wumpus: 1 MB blocks is already killing; segwit without CB is likely to be a disaster
+19:13:20 <sipa> i am fine with making CB experimental in 0.13
+19:13:28 <petertodd> sipa: ack
+19:13:31 <sipa> if there are a few days to work out the kinks
+19:13:31 <jeremyrubin> sipa: experimental sounds fine
+19:13:39 <gmaxwell> We cannot have SW deployed with no prospect of CB live nad in use.
+19:13:44 <petertodd> gmaxwell: also ack
+19:13:45 <wumpus> sipa: there's still until july 7 for the planned rc1
+19:13:57 <sipa> wumpus: that should be plenty
+19:14:14 <wumpus> but the point is we want to merge feaatures *now*, exactly so that the next weeks can be fixing the remaining issues
+19:14:18 <BakSAj> guys, please dont delay segwit, whole community is watching you and we need capacity increase soon :-(
+19:14:24 <gmaxwell> yes, the concerns there appear small. And indeed, we SW activation not set we don't need to have CB requesting enabled.
+19:14:37 <sipa> BakSAj: this has no effect on segwit's activation time
+19:14:57 <sdaftuar> must we merge CB now though?  i feel like the bug fixes are more likely to happen in the initial PR, than trying to clean up post merge to meet the feature freeze deadline
+19:15:04 <BakSAj> oh ok then
+19:15:12 <luke-jr> oh, we're leaving SW undefined on mainnet?
+19:15:17 <sipa> luke-jr: yes
+19:15:24 <sipa> luke-jr: until a backport to 0.12 is ready
+19:15:30 <wumpus> sdaftuar: if we don't merge CB this week it misses the merge window for 0.13, and will be merged for 0.14
+19:15:32 <luke-jr> ok
+19:15:49 <gmaxwell> sdaftuar: I assumed the outstanding issues raised last night will be fixed before its merged.
+19:15:52 <wumpus> sdaftuar: bug fixes do not need to be done before the feature freeze
+19:16:01 <wumpus> it's a feature freeze, not a bug fix freeze, that would be silly
+19:16:23 <btcdrak> sdaftuar: it alows master to stabalise. Then we know there wont be hugely disruptive things getting merged post freeze.
+19:16:26 <BakSAj> sipa: how hard is it to backport segwit to 0.12.2 ?
+19:16:30 <wumpus> integration testing
+19:16:40 <jeremyrubin> wumpus: can we keep the feature freeze date and alloc an addtl week for bug fix now?
+19:16:53 <phantomcircuit> BakSAj: after the meeting?
+19:16:57 <gmaxwell> jeremyrubin: we have until july 7th for that.
+19:16:58 <petertodd> jeremyrubin: bug fix time isn't "allocated"
+19:17:04 <wumpus> jeremyrubin: do you need an additional week for bug fixing? rc1 is planned for july 7, according to sipa that was good
+19:17:19 <gmaxwell> the whole reason for feature freeze ahead of rc1 is to allow time for fixing and testing. :)
+19:17:23 <sipa> i think 3 weeks to work out the problems in CB is sufficient
+19:17:27 <sipa> they are details
+19:17:36 <BakSAj> phantomcircuit: yeah, sure
+19:17:40 <jonasschnelli> sipa: ack
+19:17:41 <sipa> my concern with merging is that the code has been in flux the past days
+19:17:43 <wumpus> and that's only rc1, I'm sure there will be bugs in rc1, and we'll need rc2 rc3
+19:17:50 <sdaftuar> i think so too, but it seems silly that we're merging a PR that we otherwise wouldn't merge to get around a self-imposed deadline
+19:18:13 <gmaxwell> sdaftuar: I know it seems stupid, but long time expirence with creep shows that deadlines have value.
+19:18:15 <wumpus> sdaftuar: you don't think the release schedule is important?
+19:18:40 <gmaxwell> Or another way to look at it, it's fine that some well known important features get fixes and evolution, but we need a bar against other creep.
+19:18:41 <sdaftuar> wumpus: probably no point in arguing further.  i'll be happy to help work the bugs out...
+19:18:54 <wumpus> sdaftuar: no, there is really no point in arguing this
+19:18:56 <gmaxwell> (you don't want me submitting the n-th fold relay improvement or whatnot in the next couple weeks)
+19:19:04 <petertodd> sdaftuar: well, I think gmaxwell has a good point that CB is very important to get in to be ready for segwit
+19:19:04 <wumpus> and I'm kind of tired having to argue the value of having deadlines for every release
+19:20:05 <gmaxwell> With a big team, bright lines are helpful. Even if they're sometimes objectively dumb.
+19:20:15 <btcdrak> wumpus: well I for one appreciate the scheduling. It's more productive.
+19:20:31 <Chris_St1> ^^^
+19:20:50 <luke-jr> scheduled releases IMO are great; the only problem I think we're hitting is outside pressure to get specific things in sooner
+19:20:57 <wumpus> I do agree CB is still a lot in flux
+19:21:21 <wumpus> which is why I brought up this topic in the first place instead of just merging it
+19:22:03 <wumpus> so, ok, let's decide that CB still gets a week to be ready
+19:22:15 <gmaxwell> Thank you.
+19:22:24 <sdaftuar> sounds good to me.
+19:22:25 <btcdrak> great.
+19:22:37 <jeremyrubin> wumpus: can you clarify "gets a week" meaning
+19:22:42 <sipa> wumpus: ack
+19:22:50 <jeremyrubin> i think I am interpreting it as 1 more week till merge
+19:22:55 <btcdrak> jeremyrubin: it get's merged next week.
+19:22:55 <wumpus> jeremyrubin: can you clarify what is unclear about it?
+19:23:11 <achow101> is segwit ready for merging?
+19:23:44 <sipa> segwit is ready for merging, though i'd like to get review on the changes made the past few days
+19:23:58 <luke-jr> I think it should increase the pkh length limit to 75 bytes, but not important
+19:24:01 <wumpus> segwit is also still very much in flux
+19:24:03 <jeremyrubin> wumpus: not too much... just a little unclear what the week is for etc
+19:24:08 <gmaxwell> the changes were just related to merging it without an activation date, right?
+19:24:14 <Frederic94500> Because the last night, there are 40K+ unconfirmed transaction
+19:24:15 <wumpus> jeremyrubin: to finish up the pull request so that it can be merged
+19:24:18 <sipa> they're mostly making segwit p2p deal correctly with having no activation date
+19:24:27 <jeremyrubin> wumpus: but all ok now (I think you missed my second msg)
+19:24:29 <sipa> and tests/nots
+19:24:32 <luke-jr> Frederic94500: #bitcoin
+19:24:33 <sipa> *nits
+19:25:00 <btcdrak> and ticks
+19:25:02 <gmaxwell> Okay can we move to the next topic?
+19:25:07 <wumpus> #topic segwit
+19:25:09 <instagibbs> luke-jr, noted, but I think that ship has sailed
+19:25:30 <sipa> i don't think there will be any further changes to segwit necessary, apart from potentially making it cooperate with CB
+19:26:21 <sipa> we may find some edge cases in the transition between activation date unset and set, which i plan to actively help testing he next few days
+19:26:38 <sipa> that is, assuming people find the review and testing it has had so far sufficient
+19:26:54 <wumpus> so it would be better to merge segwit *before* CB?
+19:27:03 <sipa> i don't care
+19:27:15 <sipa> i'll help rebase either one on top of the other
+19:27:33 <sipa> sdaftuar: opinion?
+19:27:34 <instagibbs> sdaftuar, any outstanding concerns re testing?
+19:27:40 <wumpus> at the least we need to make sure one of them is merged asap
+19:27:44 <wumpus> so the other one can be integrated into it
+19:27:46 <instagibbs> wumpus, ACK
+19:27:51 <gmaxwell> sipa: if you were to do the rebase which do you think would be less work?  I have a pref for merging segwit first due to review things.  (though I believe we can't set an activation for it without CB)
+19:28:10 <sdaftuar> instagibbs: i'm doing testing now for the activation date unset -> set scenario
+19:28:19 <sdaftuar> i'd like more eyes on that issue, as it only just came up
+19:28:20 <Chris_St1> 'activation' is wrt BIP9 right?
+19:28:22 <wumpus> otherwise we'll keep this 'we need to rebase it over X' problem, and integration (and fixing bugs in integration) always causes unexpected issues
+19:28:28 <gmaxwell> basically CB is less to review, and fewer have reviewed it, disrupting review with a rebase there is less of an issue.
+19:28:33 <luke-jr> merging CB first makes it potentially easier to backport if people want to
+19:28:43 <btcdrak> Chris_St1: yes, the parameters for activation on mainnet (starttime, timeout, bit)
+19:28:44 <gmaxwell> Chris_St1: BIP9 starting date, yes.
+19:28:55 <luke-jr> but if CB needs a week of revisions, merging segwit first might just make more sense
+19:28:57 <wumpus> the thing is though: CB is bound by the feature freeze, segwit is not
+19:29:03 <luke-jr> especially since segwit needs backports anyway
+19:29:03 <gmaxwell> luke-jr: a backport of CB without segwit wouldn't be very interesting in any case.
+19:29:17 <jonasschnelli> good point wumpus
+19:29:35 <luke-jr> wumpus: it's less important so long as segwit has no mainnet activation params set
+19:29:40 <luke-jr> IMO
+19:30:09 <wumpus> luke-jr: just need to get the code into master, it's been reviewed and tested so extensively
+19:30:45 <gmaxwell> yes the merge there is about code maintance.
+19:30:49 <sdaftuar> wumpus: fyi the issue that came up this week about merging with no mainnet activation was a surprise to all of us
+19:30:52 <BakSAj> isnt segwit the most reviewed btc code ever?
+19:30:53 <instagibbs> sdaftuar, I can take a look too.
+19:30:54 <Frederic94500> Actually, there are 13K+ unconfirmed transaction and we need segwit
+19:30:57 <sdaftuar> wumpus: i think that particular issue should be thought abou tmore
+19:31:01 <sdaftuar> to make sure we haven't missed anything
+19:31:02 <sipa> Frederic94500: #bitcoin
+19:31:15 <Frederic94500> #bitcoin
+19:31:22 <sdaftuar> sipa: but to answer your question about my opinion, i think i agree it should be fine to merge
+19:31:43 <jeremyrubin> Frederic94500: it means move your conversation to that channel as it is off topic here.
+19:31:58 <sdaftuar> i will finish my testing/review of the latest changes, and then hopefully ack this week
+19:32:02 <sdaftuar> ie today/tomorrow
+19:32:26 <Chris_St1> sdaftuar: So BIP9 parameters need to be set in the pull request before being merged into master correct?
+19:32:39 <gmaxwell> Chris_St1: no, it can be merged with no starting date set.
+19:32:40 <sipa> wumpus: segwit is merged this week or not at all, CB thursday or not at all.
+19:32:51 <btcdrak> no. they will bet set later in a seprate pull
+19:32:52 <sipa> wumpus: is that acceptable?
+19:32:56 <gmaxwell> Which is what will happen for master.
+19:33:01 <luke-jr> sipa: next thursday*
+19:33:08 <wumpus> sipa: CB needs to be merged before (or on) next week thursday
+19:33:14 <wumpus> sipa: segwit doesn't really have  a constraint
+19:33:23 <sipa> wumpus: ok
+19:33:45 <wumpus> I just thought merging it first was preferable, so that maintenance and testing of it can happen on master
+19:33:55 <sipa> yes, i agree
+19:34:04 <gmaxwell> I'm really tired of not being able to work on some things due to avoiding disrupting segwit, it'll be good to have it merged.
+19:34:07 <gmaxwell> :)
+19:34:11 <jonasschnelli> Yes. Merging it before 0.13 would make things more testable/tested
+19:34:12 <wumpus> right
+19:34:13 <instagibbs> Only a few ACKs so far, start cracking the whip!
+19:34:39 <gmaxwell> all my focus is on things that were freeze gated.
+19:34:42 <btcdrak> instagibbs: this meeting is one huge ACK :-p
+19:34:47 <gmaxwell> (in the last week)
+19:34:49 <jonasschnelli> I have reviewed SW for serval hours but I don't feel myself in a position to give a it a utACK (or more)
+19:34:58 <sipa> i would also like to point to #8149 for review, where i've reorganized the commits per BIP
+19:35:19 <sipa> it may make sense for people to just ack certain sections of it, as it touches many relatively unrelated things
+19:35:23 <btcdrak> sipa: is #8149 the version to merge?
+19:35:39 <sipa> (testing, wallet, p2p, consensus, script)
+19:35:44 <sipa> btcdrak: yes
+19:35:52 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/8149 for review with reorganized commits per BIP
+19:35:56 <gmaxwell> I really like the ordering of 8149, FWIW.
+19:36:06 <instagibbs> jonasschnelli, just pick a part you can review comfortably
+19:36:28 <sipa> and don't look at the commit by github; there is a summary comment with a list of all commits organized per section
+19:36:32 <sipa> which i keep up to date
+19:36:46 <jeremyrubin> sipa: thank you it's much easier to review
+19:37:41 <sipa> ok, any other topics?
+19:37:52 <jeremyrubin> yes
+19:38:02 <wumpus> jonasschnelli had one
+19:38:06 <jeremyrubin> I'd like to briefly call for more review on cory's cconman
+19:38:08 <jeremyrubin> refctor
+19:38:17 <sipa> jeremyrubin: i will, but after 0.13
+19:38:18 <jonasschnelli> I think we should have a replacement option for the wallet in 0.13
+19:38:21 <wumpus> #topic replacements (RBF/bumpfee) in 0.13
+19:38:29 <sipa> ack topic
+19:38:34 <wumpus> jeremyrubin: when Cory is back
+19:38:54 <instagibbs> cory is answering pr stuff now, but I think he's not supposed to be :)
+19:38:56 <jonasschnelli> Also,... what happens if users start up a node and immediately send a tx?
+19:39:01 <gmaxwell> am I missing something in thinking thats post 0.13 work now?
+19:39:04 <wumpus> oh, more review, yes that's always good, although peopel are very busy with pre-0.13 issues now
+19:39:06 <luke-jr> cfields_:
+19:39:08 <gmaxwell> (the conman stuff)
+19:39:10 <wumpus> gmaxwell: yes
+19:39:21 <wumpus> gmaxwell: I mena, no, you're not missing anything
+19:39:25 <gmaxwell> Thanks. whew.
+19:39:34 <sipa> i'd to see conman go in right after 0.13 branch off
+19:39:42 <sdaftuar> jonasschnelli: are you talking about how fee estimation should work in that case?
+19:39:46 <sipa> *conmann
+19:39:47 <gmaxwell> jeremyrubin: thats why there isn't attention on it right at this second (also because cory is out)
+19:39:47 <jonasschnelli> Review of https://github.com/bitcoin/bitcoin/pull/8182 would be nice. Its a bumpfee command for GUI only.
+19:39:51 <wumpus> sipa: +1
+19:39:54 <jonasschnelli> sdaftuar: yes
+19:39:57 <jeremyrubin> gmaxwell: he's been responsive
+19:40:09 <jeremyrubin> gmaxwell: but maybe let him relax a bit
+19:40:11 <petertodd> jonasschnelli: yeah, my apologies for not having already looked at that!
+19:40:14 <sipa> doesn't matter, there is no benefit in merging conman before the branch
+19:40:16 <gmaxwell> jeremyrubin: I want that too. Well, I really want the sequence setting parts and fee even on the bump parts.
+19:40:27 <luke-jr> jonasschnelli: I don't think "signals replaceability" is very useful
+19:40:46 <luke-jr> "Enable fee bumping" would make more sense
+19:40:52 <gmaxwell> er s/fee even/feel 50/50 on the bump parts/
+19:40:59 <jeremyrubin> I brought it up not for the 0.13 but because it seemed like we were out of topics so I raised it, no need to address further.
+19:41:06 <sipa> ok
+19:41:12 <jonasschnelli> luke-jr: you mean the text comment in the transaction details? Whats wrong with it. IMO we agreed on that term in a recent meeting.
+19:41:17 <luke-jr> right
+19:41:31 <gmaxwell> thats nits, can be worked out on the PR or out of meeting.
+19:41:42 <gmaxwell> please don't go into field naming details here. :)
+19:41:42 <luke-jr> k
+19:41:48 <phantomcircuit> jonasschnelli, maybe this is just me, but i generally much prefer that things be added to the cli before the gui
+19:41:50 <wumpus> nits shouldn't be a reason to hold up the feature merge
+19:41:52 <jonasschnelli> Agree. The question is do we want a feebump option in 0.13...
+19:41:58 <jonasschnelli> if so,.. its extermly late. :)
+19:42:01 <phantomcircuit> makes the initial review much easier for the feature itself
+19:42:18 <gmaxwell> So I think we really should have the sequence setting stuff, I kept trying to ack the prior PRs but they've been closed for new prs several times.
+19:42:20 <jonasschnelli> phantomcircuit: there is also a CLI PR. :)
+19:42:26 <wumpus> jonasschnelli: especially for the GUI isn't [retty much too late
+19:42:33 <wumpus> jonasschnelli: as it adds new translation strings
+19:42:45 <wumpus> translation for 0.13 already started a few weeks ago
+19:42:57 <sipa> that's sad, but understandable
+19:42:58 <jonasschnelli> Yes. I agree. But I just think option to increase fees for 0.14 is to late..
+19:43:01 <achow101> I think the fee bump stuff should definitely be in 0.13
+19:43:03 <wumpus> having the CLI option would make sense though
+19:43:06 <gmaxwell> jonasschnelli: where did we land with bumping interacting with the changs outputs already having been spent?
+19:43:20 <gmaxwell> achow101: I want a pony.
+19:43:36 <wumpus> achow101: 'should', but there's preactical issues with timing and planning we're trying to cope with here
+19:43:36 * btcdrak gives gmaxwell a pony
+19:43:38 <phantomcircuit> jonasschnelli, 0.13.1 ?
+19:43:38 <sipa> achow101: i think we all like that, but we can't bypass safe practices for review and testing because we want it
+19:43:42 <phantomcircuit> it's a minor feature
+19:43:56 <jonasschnelli> Not sure if we want BP a bumpfeature...
+19:44:14 <sipa> BP?
+19:44:17 <jonasschnelli> backport
+19:44:22 <wumpus> to be honest I think getting CB and segwit is enough worry for next week
+19:44:36 <jonasschnelli> yes... agree.
+19:44:58 <jonasschnelli> Although it's a triangle. CB <-> SW <-> RBF
+19:45:16 <petertodd> so, I'd strongly suggest we at least get in my global optin setting, so that people who need RBF can easily use external scripts to do so: https://github.com/bitcoin/bitcoin/pull/7132
+19:45:18 <wumpus> it's unfortunate that your PRs with feebump got little attention, but it's kind of late now, we can't just cram everything in last minute
+19:45:32 <jonasschnelli> wumpus: Agree.
+19:45:48 <wumpus> in any case: RPC functionality must be in before the GUI
+19:45:50 <Chris_Stewart_5> Did we figure the ordering for those merges?
+19:45:50 <jonasschnelli> My feeling is that it is too late for 0.13 and I just wanted to make this clear. :)
+19:45:55 <instagibbs> petertodd, I agree with this
+19:45:56 <sipa> i will focus on reviewing RPC bumpfee
+19:45:56 <wumpus> that's always how we work
+19:46:00 <gmaxwell> wumpus: could we split the sequence setting parts and do those? I think they're simple and not risky and have been reviewed under several PRs.
+19:46:08 <Chris_Stewart_5> segwit -> CB or CB -> segwit?
+19:46:13 <gmaxwell> The issue for them is that those PRs kept getting closed with changing scope.
+19:46:19 <wumpus> gmaxwell: sounds good to me
+19:47:01 <gmaxwell> Chris_Stewart_5: we'll see how it goes with the actual timing of the changes.
+19:47:02 <luke-jr> suggested topic: how should GBT react to pre-segwit miners, once segwit activates?
+19:47:04 <wumpus> make sure the API is extensible enough to add the other things so we don't need to deprecate it already next version
+19:47:07 <gmaxwell> Chris_Stewart_5: we don't need to decide that now.
+19:47:15 <wumpus> but that's arguably a minor concern
+19:47:37 <gmaxwell> luke-jr: what does it do in the current implementation?
+19:47:44 <Chris_Stewart_5> gmaxwell: Also, these are BOTH to be included before the feature freeze, correct? Or is that tbd
+19:47:50 <Chris_Stewart_5> to be determined*
+19:48:02 <wumpus> Chris_Stewart_5: no, CB needs to be in before the feature freeze, softforks can in principle go in any time
+19:48:17 <gmaxwell> Chris_Stewart_5: SW is freeze unrelated, CB has another week to mature.
+19:48:17 <luke-jr> gmaxwell: just errors
+19:48:30 <sipa> luke-jr: what is the alternative?
+19:48:32 <luke-jr> gmaxwell: the RPC call errors, that is. so the miner will failover or stop
+19:48:42 <luke-jr> sipa: mine blocks without any witness transactions
+19:49:02 <gmaxwell> Chris_Stewart_5: question might suggest a misunderstanding, SW merge for master is not tightly coupled to deployment; it's mostly a discussion of code management.
+19:49:18 <sipa> luke-jr: that means mining on top of a chain they have not fully validated
+19:49:23 <sipa> oh, no, they have
+19:49:24 <sipa> sorry
+19:49:28 <luke-jr> sipa: no, the bitcoind is updated, just not the miner
+19:49:30 <sipa> i'm confusing client and server
+19:49:48 <gmaxwell> luke-jr: might be better to return an empty block, if the implementation would be simple.
+19:50:08 <gmaxwell> the failover might just cause it to fail over to something even stupider.
+19:50:16 <btcdrak> Chris_Stewart_5: the lifecycle page got updated to clarify some of this https://bitcoincore.org/en/lifecycle/
+19:50:17 <sdaftuar> presumably this is not a feature that there can possibly be a lot of demand for.  is it relaly worth the trouble?
+19:50:17 <luke-jr> I guess that's another option, but empty block is :<
+19:50:23 <wumpus> consensus changes are not on bitcoin core's major release schedule, the first release introducing segwit would ideally be 0.12.x
+19:50:44 <Chris_Stewart_5> gmaxwell: I guess it seems CB from my understanding isn't tightly coupled to deployment either since I'm assuming old block relay code will still be in core? I'll ask more questions after meeting..
+19:50:46 <wumpus> but that doesn't mean segwit code can't be merged (just not activated) in 0.13
+19:50:59 <luke-jr> gmaxwell: concern with non-witness template being code complexity, I guess?
+19:51:20 <sipa> i prefer empty block
+19:51:21 <luke-jr> I suppose empty blocks are also more likely to get noticed and upgraded
+19:51:30 <gmaxwell> luke-jr: just more features to test when hopefully thats just an emergency fallback.
+19:51:34 <sdaftuar> throwing an error should get noticed very fast
+19:51:42 <wumpus> Chris_Stewart_5: the old relay code will still be used in most cases, like with peers that don't support CB
+19:51:54 <gmaxwell> sdaftuar: error will result in failover to another daemon, perhaps without segwit support, which is somewhat less desirable. :)
+19:51:58 <Chris_Stewart_5> btcdrak: Thanks
+19:52:15 <sdaftuar> little known fact: those blocks will be orphaned,  that should also get noticed!
+19:52:17 <petertodd> ack empty blocks - that's a reasonable failsafe in a lot of conditions in general
+19:52:23 <luke-jr> sdaftuar: they won't, though
+19:52:26 <gmaxwell> I think error and empty are both acceptable, with a small preference for empty that would be overridden if i find out the implementation is more than about 4 lines of code.
+19:52:28 <sdaftuar> they won't relay
+19:52:32 <luke-jr> sdaftuar: they're valid
+19:52:34 <sdaftuar> yes
+19:52:36 <sdaftuar> but they won't relay
+19:52:38 <luke-jr> …
+19:52:41 <luke-jr> why not?
+19:52:41 <sdaftuar> hence, little known fact
+19:52:57 <gmaxwell> ah, well if they won't realy, okay, well no reason to not error then.
+19:53:03 <sipa> why would they not relay?
+19:53:05 <sdaftuar> segwit nodes will try to download blocks from WITNESS peers
+19:53:13 <sdaftuar> after activation
+19:53:14 <sipa> so, this is a witness peer
+19:53:17 <luke-jr> ^
+19:53:19 <sdaftuar> not if it fails over
+19:53:19 <sipa> just not a witness miner
+19:53:24 <luke-jr> hm
+19:53:38 <sipa> oh, i see what you're saying
+19:53:39 <sdaftuar> sorry i was responding to gmaxwell's failover to an old daemon
+19:53:44 <sipa> so, failover seems sufficient
+19:53:45 <gmaxwell> sdaftuar: this is a witness node, but asking what happens when a non-sw hasher connects.
+19:53:52 <gmaxwell> sdaftuar: OH!
+19:54:00 <gmaxwell> well okay, that would get noticed too.
+19:54:08 <luke-jr> yeah, I think this makes error the better behaviour
+19:54:18 <gmaxwell> still, the crap blocks produced would be noise to non-upgraded nodes.
+19:54:19 <petertodd> wait, did or didn't we remove the code that used to push new blocks to peers?
+19:54:42 <sdaftuar> technically, mining a non-witness block on an upgraded peer would relay, as per sipa's suggestion to mine an empty block
+19:54:48 <sdaftuar> i just don't think it's worth the trouble to code that up
+19:55:03 <luke-jr> oh
+19:55:20 <sdaftuar> code up/test/review
+19:55:21 <sdaftuar> etc
+19:55:31 <luke-jr> BFGMiner at least WILL submit blocks to local bitcoind regardless of what pool mined them, BUT it can only do that with GBT pools, and frankly nobody uses that
+19:55:48 <luke-jr> so probably not worth considering IMO
+19:55:58 <sipa> i think we're good
+19:56:06 <gmaxwell> K
+19:56:08 <sipa> unless miners complain about the behaviour
+19:56:13 <sipa> then wr can reconsider
+19:56:16 <sdaftuar> sounds good
+19:56:43 <wumpus> three minutes to go!
+19:56:48 <gmaxwell> jonasschnelli: if you split that PR I will go ack the non-bump part super fast.
+19:56:53 <petertodd> also, if a block is relayed to non-witness peers, we only need one node on the network to bridge that gap...
+19:57:07 <sipa> agree
+19:57:15 <jonasschnelli> gmaxwell: which one?
+19:57:23 <sipa> which their private infrastructure may do unknowlingly
+19:57:27 <gmaxwell> jonasschnelli: the bump fee PR.
+19:57:39 <luke-jr> petertodd: we don't *want* to bridge that gap, but I guess that's your point
+19:57:44 <luke-jr> any malicious actor could do it
+19:58:09 <petertodd> luke-jr: having consensus depend on nuances of network behavior is icky...
+19:58:15 <luke-jr> but on the other hand, these blocks are only defective in being not fully verified parents, which won't affect full nodes
+19:58:20 <gmaxwell> jonasschnelli: the actual bumping reqiures review and testing for that I don't think we have time for pre-freeze regretable, but the rest (setting the sequence numbers and what not) is fine, and I've already reviewed it and tested it.
+19:58:27 <luke-jr> so this can only be done for valid blocks anyway
+19:58:45 <jonasschnelli> gmaxwell: okay. I'll try to factor this out in an independent PR
+19:59:08 <instagibbs> 1 minute
+19:59:30 <petertodd> instagibbs: hopefully we land on the drone ship this time
+19:59:34 <luke-jr> petertodd: consensus doesn't depend on it, just a slightly higher risk miners don't upgrade their nodes
+19:59:36 <phantomcircuit> sdaftuar, it should be only a few lines of code to simply not include any transactions which have witness data
+19:59:39 <gmaxwell> (also, in general, layering in seperate PRs RPC and GUI is useful, since we're usually more eager about merging rpc features-- easier to test, more sophicated users)
+19:59:59 * wumpus turns off thel lights
+20:00:03 <wumpus> #endmeeting
