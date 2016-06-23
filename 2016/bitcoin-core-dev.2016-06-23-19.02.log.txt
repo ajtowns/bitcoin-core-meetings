@@ -1,0 +1,242 @@
+19:02:40 <wumpus> #startmeeting
+19:02:40 <lightningbot> Meeting started Thu Jun 23 19:02:40 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:40 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:03:05 <wumpus> any proposed topics?
+19:04:01 <wumpus> I think https://github.com/bitcoin/bitcoin/issues/8245 needs discussion, whether reindex/verification slowed down
+19:04:04 <gmaxwell> sdaftuar: sipa: phantomcircuit: jonasschnelli: MarcoFalke: jtimon: phantomcircuit: instagibbs: petertodd: morcos:
+19:04:08 <sipa> ack topic
+19:04:11 <gmaxwell> ack.
+19:04:41 <jtimon> I missed a couple of meetings and I have some questions about merging segwit and 0.13 feature freeze, but maybe that can wait for after the meeting
+19:04:46 <wumpus> #topic perceived validation slowdowns
+19:04:58 <sipa> i noticed very slow chainstate writes (close to a minute, even though the chainstate is only 53 MB)
+19:05:03 <gmaxwell> I was just going to go try reindexes with 0.12.1 and master on two hosts, to see if its a regression.  Even if it is not, it's absurdly slow (and I assume for sync too, but that should be validated) and maybe we should consider cranking dbcache and making a release note for loe memory hosts.
+19:05:13 <sipa> though this may be due to my laptop's disk setup (zfs on encrypted lvm volume)
+19:05:27 <wumpus> so, some people are noticiing slow validation, I wonder what changed there
+19:05:29 <gmaxwell> (two identical hosts)
+19:05:49 <sipa> from gmaxwell's numbers, it does not look like his time is dominated by database flushes, however
+19:05:57 <gmaxwell> I think I am often guilty of only testing things with a non-default dbcache.
+19:06:03 <sipa> likewise
+19:06:12 <gmaxwell> I previously _expected_ reindex to be slow due to the signature checking.
+19:06:19 <wumpus> I usually run with default dbcache
+19:06:30 <jtimon> maybe a solution would be to change the default dbcache for something more common among testers?
+19:06:46 <gmaxwell> my laptop runs with default dbcache and I have been noticing verification is slow for a while, but I have not reindexed for quite a long time.
+19:06:48 <sipa> jtimon: we still need to figure out what is behind this... but independently, yes
+19:06:50 <wumpus> yes, we should definitely crank up the dbcache no matter what
+19:06:53 <wumpus> but I like to know what happened
+19:07:08 <jtimon> sipa: yeah, of course, I meant independently
+19:07:30 <wumpus> should at least try to bisec tthis, I know it's frustrating as everything takes so long :)
+19:08:07 <sipa> oh, this is with txindex enabled
+19:08:14 <gmaxwell> Well I will test against 0.12.1 and see if there is a regression.  oh crap. testing against 0.12.1 will be messed up by signature checking, I guess I will test against patched 0.12.1 that skips signature checking before block 295000? does that sound okay?
+19:08:18 <wumpus> gmaxwell didn't you have some suspicions that CB would affect initial sync? could that also affect reindex?
+19:08:24 <wumpus> not in my case
+19:08:27 <sipa> wumpus: gmaxwell's test was before cb was merged
+19:08:57 <gmaxwell> my test is without cb merged, also the CB concern was just related to general sync logic, not processing.
+19:08:58 <jtimon> are there recent changes that people suspect may have caused the regression ?
+19:09:07 <wumpus> wouldbe good to test against #7917, as many people benchmarked that
+19:09:18 <wumpus> and it was perceived fast at the time
+19:09:40 <wumpus> jtimon: not really
+19:09:42 <gmaxwell> I can refine further if it looks like a regression.  I think it's likely when I tested 7917 it was with a high dbcache and the result was that things got much faster.
+19:10:13 <gmaxwell> At least the logs I'm seeing suggest that the slow performace is leveldb performance being slow, so it would be completely hidden by a sufficiently large dbcache.
+19:10:30 <gmaxwell> (maybe not leveldb itself being slow, e.g. making extranious accesses to it)
+19:10:47 <wumpus> it may be the windows machine I'm testing on is just crappy, I also had a strange issue with ldb files: https://github.com/bitcoin/bitcoin/issues/8250 .. possible that the disk is just very slow due to other processes interfering
+19:10:56 <sipa> gmaxwell: note that txindex may actually influence this; the txindex entries are written continuously to the db, and not cached inside the application or batched together with the rist
+19:11:03 <gmaxwell> So actions are. determine if regression, if so where, ... seperately, consider a dbcache increase for the next release.
+19:11:08 <wumpus> I doubt it is leveldb itself as there haven't been changed to that for ages
+19:11:17 <gmaxwell> sipa: yes this might be txindex related. I can test that too.
+19:11:23 <wumpus> yes, txindex is *slow*
+19:11:24 <CodeShark> is something slowing down validation that wasn't before?
+19:11:29 <sipa> CodeShark: maybe
+19:11:32 <wumpus> lots of extra I/O. I also made that mistake once
+19:11:40 <gmaxwell> wumpus: we have changed (reduced) the amount of interaction with leveldb during validation.
+19:11:51 <wumpus> gmaxwell: sure, it may be the level above leveldb
+19:12:00 <sipa> yes, it may be
+19:12:06 <wumpus> I just don't suspect the databse itself this time
+19:12:34 <gmaxwell> but yes, the only path I see to leveldb itself would just be that it now has more data in it than ever before, and perhaps it crossed some performance cliff. but otherwise, nah.
+19:12:36 <wumpus> unless some compiler flag changed things shockingly, say, the c++11 switch, but I doubt it
+19:12:53 <gmaxwell> I think txindex is a good lead, my laptop is the only host I regularly use with it, and I've been noticing poor validation performance for a while.
+19:13:07 <sipa> i briefly suspected the IsInitialBlockDownload change, but apart from using an atomic, its semantics should be unchanged
+19:13:19 <wumpus> especialy if you see the slowdown in the flush; txindex writes a lot of data to the block index databse
+19:13:42 <sipa> wumpus: but the txindex writes don't happen during the flush
+19:13:45 <wumpus> so maybe false alarm, the sync is slow, news at 11
+19:13:59 <sipa> wumpus: though they may accumulate somewhere in leveldb until a flush is issued
+19:14:01 <CodeShark> can't we add tracers around calls to narrow it down?
+19:14:08 <gmaxwell> wumpus: well, the "lets increase the dbcache" is still a useful response to this catching attention again.
+19:14:31 <sipa> action points: benchmark in same conditions without txindex, and with larger dbcache?
+19:14:55 <wumpus> yes we should increate the dbcache, and probably change how it is allocated
+19:15:09 <wumpus> (e.g. a relatively large part now goes to leveldb caches, that's a waste
+19:15:16 <gmaxwell> (as my laptop is about to be on day three of reindex)
+19:15:51 <sipa> wumpus: the reasoning was that leveldb cache is serialized, so it has a much large impact per byte than the internal cache
+19:15:55 <wumpus> leveldb's own caches are completely ineffective compared to bitcoind's application level cache
+19:15:59 <sipa> but it has the deserialization overhead
+19:16:17 <sipa> but that's mostly a guess without substansive benchmarking
+19:16:18 <wumpus> sipa: that makes a lot of sense in theory, but leveldb just sucks at caching :)
+19:16:43 <gmaxwell> I can benchmark a bunch of mixes of cache sizes and see how they pan out.
+19:16:53 <sipa> wumpus: it may also be due to our access pattern... the things that get written to leveldb haven't been touched for a while; maybe they won't be touched any time soon as a result either
+19:17:04 <wumpus> the current values are probably ok, I just mean: if we scale dbcache we probably don't want to scale those caches with it
+19:17:10 <jtimon> not sure I'm following but maybe we want separate options for the "internal" and "external" caches?
+19:17:27 <wumpus> jtimon: for testing that'd be awesome
+19:17:42 <sipa> jtimon: for testing that makes sense, but as a product it should work well with the fewest number of tunable possible
+19:17:46 <gmaxwell> In principle we shouldn't add knobs as a punt for highly technical settings that even we haven't figured out, the users will do no better at it. :P  (as hidden options for testing or whatnot, sure)
+19:17:58 <sipa> jynx
+19:17:59 <instagibbs2> On phone but present
+19:18:21 <jtimon> there's some options that can only be accessed if --debug, right?
+19:18:25 <wumpus> gmaxwell: you'd be surprised :-)
+19:18:35 <wumpus> some users are very persistent in trying to find settings that are fastest for them
+19:18:48 <CodeShark> I'd venture to say it's probably not the majority
+19:18:51 <wumpus> but yes, it should be a hidden option (--help-debug)
+19:18:52 <jtimon> oh, no they may not be showed in the help but they're still accesible I think
+19:19:00 <wumpus> CodeShark: sure, but don't underestimate peole
+19:19:08 <sipa> wumpus: maybe such options should be marked with ("If you find a setting for this value that improves performance, please let us know")
+19:19:15 <wumpus> sipa: +1 :D
+19:19:18 <gmaxwell> -funroll-loops -O20
+19:19:34 <sipa> -femit-broken-code
+19:20:05 <wumpus> -fskip-computing-even-bits
+19:20:13 <wumpus> ok, any other topics?
+19:20:15 <sipa> relatedly, i think -qt can by default use more ram
+19:20:37 <sipa> also, 100 mb is kinda ridiculous with the mempool already being 300 mb
+19:20:42 <wumpus> yes, probably, although qt itself also uses more ram
+19:21:02 <wumpus> yes, agreed
+19:21:11 <sipa> other topic: merge segwit yay or nay
+19:21:16 <wumpus> let's reduce the mempool to 100mb and increase dbcache to 300mb
+19:21:17 <gmaxwell> okay, I have my action items on this. I will benchmark a bunch of configurations. 0.12.1 vs master;  and master  w/wo txindex, w/wo default dbcache.... and also try different cache splits. I may ask for suggestions on the interesting parameter space when I go to do that. If there is a 0.12.1 vs master regression I'll find out where.
+19:21:38 <petertodd> sipa: re: segwit, has it been rebased?
+19:21:45 <wumpus> #topic segwit
+19:21:46 <sipa> petertodd: 12 times by now
+19:21:50 <CodeShark> lol
+19:21:53 <sipa> see 8149
+19:21:55 <CodeShark> poor sipa
+19:21:55 <jtimon> how can we feature freeze without merging segwit?
+19:22:03 <wumpus> sipa is getting carpal tunnel syndrome from rebasing
+19:22:05 <gmaxwell> We can do some checking to see what mempool size should be based on current traffic, in principle I'd agree shifting memory from one to the other.
+19:22:16 <wumpus> jtimon: softforks / consensus changes don't count as software features
+19:22:28 <wumpus> jtimon: that's also why they're allowed to be introduced in minor versions
+19:22:29 <petertodd> sipa: I mean, is the current pull-req rebased since compact blocks got merged?
+19:22:32 <gmaxwell> also it's not even activated in any case. it's pure code updates.
+19:22:35 <sipa> petertodd: yes
+19:22:49 <jtimon> wumpus: so it won't be possible to include any feature post segwit merge in 0.13 ?
+19:22:52 <CodeShark> current is #8149, yes?
+19:23:00 <sipa> petertodd: and i've been running the rebase on both testnet (where it syncs segwit blocks) and on mainnet (where it uses compact blocks)
+19:23:05 <wumpus> jtimon: right, 0.13 is closed feature-wise
+19:23:52 <gmaxwell> I haven't done CB+segwit testing yet, but I'm due to bring up a new testnet node, so I can do that.
+19:23:55 <wumpus> features will be merged again on master after a 0.13 branch is created, which will be around the rc1 release (planned july 6 I think)
+19:24:02 <jtimon> wumpus: that is a no, that is unconvenient and I wasn't expecting it, but thanks
+19:24:34 <wumpus> #link see the release schedule here: https://github.com/bitcoin/bitcoin/issues/8250
+19:24:56 <CodeShark> sipa: which PR should we be testing against?
+19:24:56 <jtimon> yeah, should have asked "what about segwit?" back then
+19:25:06 <sipa> CodeShark: 8149 and 7190 are the exact same code
+19:25:10 <sipa> so whatever you like
+19:25:44 <gmaxwell> I had completed review up to the CB rebase, which I have not looked at yet.
+19:26:03 <gmaxwell> (I mean I haven't looked at segwit's rebase for CB)
+19:26:24 <jtimon> I would have preferred that segwit would have been merged before feature freeze to have time to do something post-segwit for 0.13, but mainly I just wanted to undesrtand the situation
+19:26:45 <sipa> git show -w c4e3c755d7e41aaabe74c84af7e4bf00a62c96fb
+19:26:54 <sipa> and then search for cmpctblk and blocktxn
+19:27:01 <sipa> to see the changes related to that
+19:27:05 <btcdrak> oh I'm late
+19:27:21 <wumpus> jtimon: we all would have preferred other timings, but we have to cope with how things actually are :)
+19:27:46 <jtimon> I planned to rebase/rewrite some of the consensus encapsulation code after segwit, I guess the plan doesn't change anyway
+19:28:02 <wumpus> well you can still do that, it just won't make 0.13
+19:28:37 <jtimon> wumpus: well, yeah, I could have helped more with reviewing and testing segwit
+19:28:41 <gmaxwell> sipa: thanks, will review once I start up the test panel for the prior topic. :)
+19:28:48 <jtimon> wumpus: understood
+19:29:07 <sipa> jtimon: you can still do that, even after merge :)
+19:29:22 <gmaxwell> yes, post merge review and testing is super important too.
+19:29:44 <wumpus> yes, absolutely
+19:30:22 <gmaxwell> In any case I am in favor of the merge. (and don't expect my remaining review to turn up any reason not to)
+19:30:43 <sipa> i'm running the cb+segwit rebase on bitcoin.sipa.be since a few days, to see if there was an impact on memory usage - i see none
+19:30:48 <gmaxwell> Obviously there may still need to be some fixes and nits. But thats what we have time for.
+19:30:54 <sipa> (compared to running just cb before)
+19:30:56 <wumpus> anyone against merging segwit?
+19:31:03 <wumpus> (I mean right now, not in general)
+19:32:00 <wumpus> *crickets*
+19:32:11 <sipa> i have no objections :)
+19:32:14 <wumpus> that's clear then
+19:32:17 <btcdrak> I'd like to see it merged too
+19:32:19 <wumpus> yes, I understood
+19:32:27 <jtimon> sipa: yeah, it just won't make it to 0.13 as wumpus explained
+19:32:30 <CodeShark> the sooner the better (as long as it doesn't break current behavior)
+19:32:39 <wumpus> #action Merge segwit
+19:32:45 <btcdrak> o/
+19:33:10 <gmaxwell> at this point it will amplify testing, since we've done a much of the specialized testing. Testing for incidental effects by a broader audience would be good.
+19:33:26 <instagibbs3> Good.
+19:34:00 <gmaxwell> Would it be awful to suggest that we put out 'testnet binaries' right away off master to also get more people testing with that code in use?
+19:34:19 <petertodd> gmaxwell: fine by me
+19:34:21 <sipa> i believe jonasschnelli builds nightly binaries
+19:34:22 <wumpus> sure, why not
+19:34:47 <wumpus> I prefer doing that outside the 'official' release cycle, but I don't mind running gitian for it
+19:34:51 <gmaxwell> I think that the prior segnet testing didn't include anyone that was likely to be confused by status changes in the UI or whatnot-- too technical an audience since you had to build it. :)
+19:35:15 <gmaxwell> yes, I don't want something part of the release cycle. Just binaries to give to power users to give it a spin.
+19:35:27 <wumpus> testnet-only
+19:35:51 <CodeShark> testnet as in not segnet, right?
+19:35:52 <gmaxwell> yea, pre-RC testnet only, we could one line patch to change the default network, so it'll be easier to use.
+19:36:07 <sipa> CodeShark: segnet has been removed a few weeks ago from the patch
+19:36:17 <gmaxwell> Testnet is segwit now. Segnet is dead long live segnet.
+19:36:21 <petertodd> gmaxwell: maybe better to just make it fail unless -testnet is enabled, in case someone does run it in production
+19:36:26 <wumpus> no, not segnet. Regtest could be allowed. But mainnet disabled and testnet as default
+19:36:32 <CodeShark> is segwit live on testnet?!?!
+19:36:36 <gmaxwell> yea. exactly.
+19:36:38 <sipa> CodeShark: yes, since months
+19:37:01 <wumpus> petertodd: what is the worst that could happen if you accidentally run testnet?
+19:37:14 <petertodd> wumpus: hard to know!
+19:37:39 <gmaxwell> it's just pre-RC master, lots of people do run that in production. I wouldn't worry too much, discretion of whomever makes the testnet-as-default patch?
+19:37:44 <petertodd> wumpus: having to add a -testnet flag isn't a big deal; and failing hard if you don't shouldn't have any consequences
+19:37:46 <wumpus> at least the default ports etc will be different, default data dir is different, etc
+19:38:13 <wumpus> petertodd: apart from GUI users I guess
+19:38:19 <gmaxwell> petertodd: I hope the user doesn't have to set any flags, if they have to set flags far fewer people will try it.
+19:38:25 <sipa> i believe this is a nit not worth minutes of discussion time
+19:38:25 <petertodd> wumpus: yes, but imagine someone has an automated system setup which calls bitcoin-cli...
+19:38:41 <gmaxwell> in any case, can be discussed later or not.
+19:38:42 <gmaxwell> :)
+19:38:46 <btcdrak> any more topics?
+19:40:06 <jtimon> are we merging the bip9 activation parameters for testnet?
+19:40:27 <CodeShark> hmm - I don't see the activation parameters for segwit on testnet
+19:40:39 <CodeShark> how can it be live on testnet?
+19:40:54 <jtimon> CodeShark: people running custom code I assume
+19:40:57 <sipa> CodeShark: in the segwit branch
+19:41:02 <jtimon> oh
+19:41:03 <sipa> not in master
+19:41:20 <btcdrak> CodeShark: it was activated months ago
+19:41:44 <CodeShark> yes, but I'm still confused as to the release here
+19:41:59 <CodeShark> shouldn't testnet only run stuff that's been merged?
+19:42:11 <instagibbs3> bip 9 activation can still be set.
+19:42:13 <btcdrak> no, we set the parameters
+19:42:26 <gmaxwell> CodeShark: we wanted testing in a mixed enviroment with most nodes not upgraded.
+19:42:26 <btcdrak> and that allowed a miner to activate it
+19:42:29 <sipa> CodeShark: it was a very useful testing exercise
+19:42:32 <gmaxwell> CodeShark: since thats realistic.
+19:42:48 <gmaxwell> and segnet couldn't easily provide that.
+19:43:00 <CodeShark> sure, I'm all for the additional testing - I'm just concerned about breaking the master builds for testnet
+19:43:10 <gmaxwell> CodeShark: it's a softfork, hurrah.
+19:43:18 <sipa> (although, there are so few testnet segwit nodes running right now that it really does not work without -addnode)
+19:43:19 <jtimon> answer my own question: yes, the testnet activation is part of #7910 : https://github.com/bitcoin/bitcoin/pull/8149/files#diff-64cbe1ad5465e13bc59ee8bb6f3de2e7R191
+19:43:39 <CodeShark> gmaxwell: yes, but it will still break miners. however, if no issues arose as a result I'm fine with it
+19:43:58 <sipa> CodeShark: testnet miners are clearly already running it
+19:44:05 <CodeShark> yes, indeed
+19:44:09 <sipa> so how could merging break anything for them?
+19:44:19 <CodeShark> nvm, all's good
+19:44:24 <gmaxwell> CodeShark: no issues appear to have arisen.  (also testnet reorgs a lot in any case, so a little instability would have been an issue)
+19:44:37 <gmaxwell> er, wouldn't have been
+19:45:02 <jtimon> it is the first time a softfork is activated on testnet before it is in master thought, right?
+19:45:02 <gmaxwell> in any case, so that would be an action to go with the testnet only builds: get more testnet nodes running upgraded so that it works without addnode.
+19:45:14 <gmaxwell> Are the testnet seeds running the code that can give filtered responses?
+19:45:16 <sipa> indeed, and we can test the dns filtering
+19:45:23 <sipa> gmaxwell: jonasschnelli's is
+19:45:27 <sipa> not sure about petertodd's
+19:45:37 <sipa> oh, yes
+19:45:49 <sipa> https://github.com/bitcoin/bitcoin/pull/8204
+19:46:49 <sipa> petertodd: are you sure that's running the filtering code?
+19:46:57 <jtimon> gmaxwell: the "testnet only" builds are just from master after merging segwit, right?
+19:47:02 <sipa> jtimon: yes
+19:47:02 <petertodd> sipa: should be
+19:47:03 <gmaxwell> good okay, so an action right after merge will be to get some more testnet nodes running it spun up, and cooridnate a pre-rc testnet-default/only binary.
+19:47:10 <petertodd> sipa: I'll recheck
+19:47:14 <sipa> x9.seed.tbtc.petertodd.org gives many results, more than i'd expect
+19:47:32 <petertodd> sipa: note that it is running with extra args to support rbf
+19:47:40 <gmaxwell> jtimon: yes, likely with a trivial patch to change it to default to testnet (or require it). (and maybe a renamed binary)
+19:47:42 <petertodd> sipa: so maybe there's a bug there that you haven't run into yet
+19:48:16 <sipa> petertodd: can i see the code for that?
+19:48:24 <jtimon> gmaxwell: why the changes? aren't this power users?
+19:48:33 <sipa> after the meeting, please
+19:48:44 <petertodd> sipa: it's with the command line arg; which incidentlaly was broken when I tried it (see my pullreq)
+19:49:02 <gmaxwell> any other topics for this meeting?
+19:49:31 <wumpus> doesn't seem so
+19:49:58 <wumpus> #endmeeting
