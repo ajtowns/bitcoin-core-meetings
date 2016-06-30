@@ -1,0 +1,274 @@
+19:01:10 <gmaxwell> #startmeeting
+19:01:10 <lightningbot> Meeting started Thu Jun 30 19:01:10 2016 UTC.  The chair is gmaxwell. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:10 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:13 <btcdrak> ping
+19:01:17 <wumpus> pong
+19:01:20 <sipa> pang
+19:01:26 <gmaxwell> Welcome to the meeting. Hard start today, sorry to not get pings out earlier.
+19:01:35 <jonasschnelli> pong
+19:01:47 <wumpus> <sdaftuar> proposed topic for the meeting today: wrapping up the mining-related changes to 0.13.0 (please see #8294)
+19:02:01 <gmaxwell> wumpus: jtimon: jonasschnelli: petertodd: morcos: MarcoFalke: NicolasDorier: paveljanik:
+19:02:06 <jtimon> pong
+19:02:27 <gmaxwell> #topic wrapping up the mining-related changes to 0.13.0 (please see #8294)
+19:02:32 <wumpus> also segwit 0.12 backport status, maybe
+19:02:39 <sipa> unstarted.
+19:03:21 <sdaftuar> so i mentioned a few things in that issue that i think we need to address for 0.13.0
+19:03:22 <petertodd> hi
+19:03:30 <sdaftuar> a couple should be non-controversial bugfixes
+19:03:41 <kanzure> hi
+19:03:48 <gmaxwell> sdaftuar: blockminsize  should just go
+19:03:57 <sdaftuar> two things i wanted feedback on were (a) removing the old mining algorithm ("addScoreTxs") and (b) -blockminsize
+19:04:01 <sdaftuar> ok great, that's what i think too
+19:04:02 <sipa> in favor of just dropping -blockminsize
+19:04:21 <gmaxwell> sdaftuar: "Should we remove the old transaction selection algorithm"   I'm indifferent to favoring removing code.
+19:04:30 <gmaxwell> luke-jr: your thoughts?
+19:04:52 <wumpus> if the code is not used, it should be removed
+19:04:56 <gmaxwell> (like to sdaftuar's issue: https://github.com/bitcoin/bitcoin/issues/8294 )
+19:04:56 <sipa> i think we shouldn't keep the old algorithm just because we're not sure if the new one works
+19:05:02 <sipa> we can always revert code if needed
+19:05:35 <sipa> the current reason for keeping is because when -blockminsiz or -blockmaxsize are -blockprioritysize are given, the new algorithm does not work (due to missing accounting)
+19:05:49 <sipa> if we fix the accounting, and make the new algorithm support those parameters, the old algorithm can go
+19:05:55 <sdaftuar> sipa: right, and that is addressed in the first commit of #8295
+19:05:59 <gmaxwell> the only gain I see is if there is some stupidity in the new one the old one is a switch away... but the new one has a reasonable amount of testing and if it has some issue it seems unlikely that its so major that just fixing it wouldn't be the prefered solution.
+19:06:02 <sipa> ok, grea;t i haven't looked
+19:06:08 <jtimon> I don't remember addScoreTx, but ack on removing blockminsize
+19:06:43 <wumpus> it's a bit late in the release to be removing arguments, on the other hand it was already not working so let's do it...
+19:07:01 <wumpus> as long as it's documented in the release notes
+19:07:13 <gmaxwell> it should be removed but not cause the daemon to fail to start if specified.
+19:07:15 <sdaftuar> wumpus: agree, the release notes need a bunch of writeup for all the mining changes
+19:07:16 <wumpus> or e.g. emit a warning/error if it is provided
+19:07:31 <sipa> i am perfectly fine with just making -blockminsize work for 0.13 with CPFP, and removing it in 0.14
+19:07:52 <sipa> sdaftuar: unless you think that would be much more work (i think it would be deleting 2 lines to stop supporting it)
+19:08:08 <wumpus> sounds like that would be a waste of work, if it is going to be removed anyway, but I don't know how much work it is
+19:08:15 <sdaftuar> sipa: it'd be adding code to support it.  i think it's probably easy, but i haven't thought carefully about it.  probably a one line change.
+19:08:32 <sipa> i expect it to be trivial to make it work, and also trivial to remove
+19:08:48 <wumpus> if it's trivial to make it work, let's go for that
+19:08:50 <sipa> also, i think it's utterly pointless in the current mining encironment
+19:08:53 <sdaftuar> sipa: agreed.
+19:09:03 <jtimon> emit warning seems a good option
+19:09:19 <gmaxwell> I think it's a goofy option.
+19:09:20 <wumpus> if it's not trivial, or annoying to test, let's get rid of it
+19:09:26 <gmaxwell> less options good.
+19:09:28 <sipa> ack, we could just test for its value, and fail at startup if a nonzero value is passed
+19:09:31 <sdaftuar> we have no tests for it now, i believe.
+19:09:36 <sipa> it has no tests
+19:09:38 <sipa> pretty sure
+19:09:54 <sdaftuar> my preference would be to get rid of it, rather than add a test to make sure it works.
+19:10:07 <sipa> sdaftuar: will review your patch
+19:10:08 <wumpus> right, that's fine
+19:10:32 <jtimon> gmaxwell: why you don't want it to fail if the argument is provided ?
+19:11:04 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon luke-jr cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:11:14 <gmaxwell> (sorry, just creating a ping macro for future use)
+19:11:37 <michagogo> Oh
+19:11:38 <michagogo> Hi
+19:11:43 <sdaftuar> jtimon: my preference for not causing failure is that that would be extra code to write/test/review.  silent failure seems easier, and harmless in this situation.
+19:11:49 <gmaxwell> jtimon: because it's a mostly meaningless setting that some people are going to have by virtue of copy and pasting things.
+19:11:56 <sipa> meh, ok
+19:11:57 <kanzure> i nominate jtimon for double inclusion in the ping, but otherwise ACK
+19:12:02 <wumpus> I don't really like ignoring options, that can be really frustrating
+19:12:25 <wumpus> 'wtf doesn't this work', oh, then after an hour of debugging you notice that the functionality has been removed
+19:12:31 <sipa> agree
+19:12:36 <sdaftuar> wumpus: in this case though, you wouldn't have been noticing the old behavior "working"
+19:12:38 <wumpus> at least add a warning, I don't care about failing
+19:12:39 <jtimon> I'm fine with either failing or giving a warning
+19:12:46 <sdaftuar> i can add a warning, sure.
+19:12:54 <sipa> let's discuss this when the actual PR is created
+19:13:01 <jtimon> fair enough
+19:13:03 <sdaftuar> i included removal of -blockminsize in 8295
+19:13:14 <sdaftuar> i can fix to warn if the argument is given
+19:13:20 <wumpus> great
+19:13:23 <gmaxwell> okay warning fine.
+19:14:08 <sdaftuar> one thing i wanted to mention, if we do decide to remove addScoreTxs(), we could also remove the mining_score from the mempool multiindex
+19:14:15 <gmaxwell> wumpus: I agree in principle except for the fact that a LOT of people have copied the "example config" from the bitcoin wiki and are setting all kinds of crazy things. :)
+19:14:23 <sdaftuar> i didn't incldue that in 8295, but wanted to mention it in case we want to remove for 0.13
+19:14:39 <sdaftuar> it would give us a small memory savings in the mempool, but not sure if that's a change that we'd rather wait for 0.14 tomake
+19:14:43 <sdaftuar> i don't have a preference
+19:14:50 <sipa> ENOCARE
+19:15:00 <jtimon> sdaftuar: can't https://github.com/bitcoin/bitcoin/pull/8295/commits/27362dda4d583a43ebf687ae097d2f45ba1c4c32 be a trivial to review separate PR ?
+19:15:03 <wumpus> gmaxwell: yes, indeed, it's an option that's bound to be misinterpreted/misused anyway
+19:15:16 <gmaxwell> <meme text="Delete all the code."/>
+19:15:42 <sdaftuar> jtimon: it builds on removing addScoreTxs i think?
+19:15:51 <jtimon> sdaftuar: oh, I see
+19:15:59 <sdaftuar> jtimon: but yes i could have split those two commits out
+19:16:00 <jtimon> mhmm
+19:16:52 <gmaxwell> Okay, anything more on this that needs to happen in the meeting?
+19:16:54 <jtimon> whatever, minor point, I just don't think I can ack the pr like that because I haven't been following some of the refactors in miner much
+19:17:33 <sdaftuar> i think we can move on, thanks
+19:17:35 <jtimon> well, refactors and changes
+19:17:40 <wumpus> sdaftuar: I'd say if they are after your changes remove the mempool fields, it's not much of a risk, if everything is alright the compiler checks that nothing is referring to it
+19:17:54 <sdaftuar> wumpus: ok great, thanks
+19:18:03 <sdaftuar> i'll defer that until after 8295 is merged anyway
+19:18:10 <wumpus> right, it's not a priority
+19:18:12 <sdaftuar> yep
+19:18:25 <wumpus> any other topics for today?
+19:18:53 <CodeShark> hmm
+19:19:05 <petertodd> anyone get a chnace to look at https://github.com/bitcoin/bitcoin/issues/8279 ? at a conf right now
+19:19:27 <sipa> petertodd: yes, i think it is a good point
+19:19:42 <petertodd> sipa: cool, thanks
+19:19:48 <sdaftuar> sipa: you noticed a related issue as well, right?
+19:19:56 <petertodd> sipa: (mainly wanted to know if I needed to post a retraction!)
+19:20:37 <sipa> sdaftuar: the sigops counting? i believe that is not vulnerable to mauling (the verb related to 'malleability', apparently)
+19:20:42 <sipa> (also not found by me)
+19:20:43 <gmaxwell> #topic segwit
+19:21:02 <sdaftuar> sipa: it is, because we don't verify that the witness script matches the commitment in the pubkey output
+19:21:08 <sdaftuar> right?
+19:21:28 <petertodd> sdaftuar: no, I think we do that prior to sigops checking
+19:21:48 <sdaftuar> i'll take another look.  pretty sure sipa and i discussed and concluded that we didn't.
+19:21:52 <sipa> sdaftuar: something to look into
+19:22:13 <petertodd> sdaftuar: yeah, wouldn't hurt to take another look - that review was a bunch of owrk and I may have been a bit faded by the end :)
+19:22:35 <sipa> i don't think these are serious problems (it allows preventing a node from getting a transaction, but there are other means for that, like announcing it and not responding)
+19:22:39 <sdaftuar> petertodd: i'm specifically referring to the sigopcount checks in accepttomemorypool, not consensus level checking
+19:22:43 <sipa> but they should be understood
+19:23:16 <petertodd> sdaftuar: yeah, I _thought_ I looked at that, but may have missed it - mempool was the last thing I looked at
+19:23:51 <sipa> petertodd: i'm really glad you did that review, by the way - the writeup makes a lot of things more communicatable
+19:24:08 <petertodd> sipa: thanks! yeah, mainly wanted to demystify the process of doing review
+19:24:47 <gmaxwell> I don't think its of major importance, but "Bitcoin XT" recently started making only outbound connections to other XT nodes.  In combination with segwit, I believe this will partition them.  Because they are such a small number of nodes I don't think it warrents much attention, but something to be aware of.
+19:25:28 <gmaxwell> petertodd: yea, nice work.
+19:25:30 <sdaftuar> gmaxwell: we have a little time before that will happen, as we haven't yet activated the preferential peering yet
+19:25:40 <gmaxwell> sdaftuar: indeed.
+19:26:22 <petertodd> gmaxwell: ...
+19:26:52 <sipa> segwit by the way does not _only_ make outbound connections to segwit
+19:26:58 <sipa> but it strongly prefers them
+19:27:14 <petertodd> sipa: yeah, I noticed that - after 40 tries you connect to non-segwit outgoing
+19:27:22 <gmaxwell> sipa: right, I think that would be sufficient to partition there.
+19:27:26 <sipa> petertodd: yes, totally arbitrary number
+19:28:06 <jl2012> gmaxwell: they should fix that. We just need to let them know
+19:28:07 <petertodd> wouln't be a crazy idea to have a mode that disabled the DoS banning for incoming nodes btw...
+19:28:31 <sipa> petertodd: DoS banning, or also DoS disconnection?
+19:28:48 <gmaxwell> petertodd: one can set that threshold arbritarily high at least.
+19:28:56 <petertodd> sipa: both, to be able to (at least temproarily) work around bugs related to DoS banning
+19:29:24 <petertodd> sipa: equally, have a small subset of nodes that can be set to ignore the DoS banning
+19:29:38 <gmaxwell> Patch accepted to make low-dos-score a ranking criteria in eviction protection logic, which would also make running with a very high dos threshold more reasonable.
+19:29:56 <petertodd> gmaxwell: good idea
+19:30:50 <gmaxwell> jl2012: I was just made aware of it, but sure.
+19:31:02 <gmaxwell> my past expirence with that project has not been very good.
+19:31:14 <wumpus> so a different ban thrshold for incoming versus outgoing connections?
+19:31:25 <petertodd> jl2012: there's a issue open in the XT repo for it already
+19:31:37 <btcdrak> jl2012: there is a ticket open already
+19:31:54 <gmaxwell> petertodd: we should probably just brainstorm some about connection management stuff, there are a number of neat improvements we can make.
+19:32:11 <sipa> if we're thinking about such refactors, the DoS score should probably also attenuate over time
+19:32:14 <petertodd> wumpus: I think the main thing, is just to have different thresholds period for some nodes, so that while you won't wast bandwidth on everyone, keep a few peers connected regardless in case you're dealing with a DoS-related bug and should be distributing the data anyway
+19:32:31 <sipa> otherwise longer-lived connections will accumulate a score they don't deserve
+19:32:35 <wumpus> petertodd: so a sort of halfway-whitelisting
+19:32:39 <petertodd> wumpus: also, along those lines, distributing invalid blocks with valid PoW isn't a crazy idea
+19:32:42 <petertodd> wumpus: yup
+19:32:45 <gmaxwell> petertodd: such a thing could also turn those peers into blocksonly.
+19:32:51 <gmaxwell> since thats all we care about for anti-partitioning.
+19:32:52 <petertodd> gmaxwell: yeah, that's a good idea
+19:33:02 <gmaxwell> and yet it almost completely eliminates dos concerns.
+19:34:42 <petertodd> blocksonly on-DoS + relaying of invalid blocks w/ valid PoW in a separate "may be invalid" message would satisfy everything I think
+19:34:53 <wumpus> sipa: attentuating theDoS score over time makes sense, a very slow DoS attack isn't really a DoS attack (apart from keeping a connection slot open, but that's not what the score is to protect against)
+19:35:27 <sipa> theDos? sister of GLaDoS?
+19:35:34 <petertodd> sipa: lol
+19:35:37 <btcdrak> omg
+19:36:03 <wumpus> then again it's not really a anti-DoS score is it, it won't get triggered on accidental over-use of resources, more a misbehavior score
+19:36:23 <wumpus> hehe
+19:36:37 <sipa> yes, i think there may be reasons to introduce something like a "resource usage score" which is distinct from "misbehaviour"
+19:36:40 <wumpus> the cake is a lie
+19:36:51 <sipa> and which gets used to decide which peers to disconnect in favor of others
+19:36:57 <sipa> but never causes a ban
+19:37:03 <wumpus> yes, indeed
+19:37:15 <sipa> not a disconnection, unless there is a pressing reason to disconnect someone anyway
+19:37:23 <petertodd> wumpus: might not be a bad idea to go through the DoS stuff and remove bans in cases where the misbehavior doesn't take much cpu time to detect (and then use it in the anti-partitioning score instead)
+19:37:46 <gmaxwell> yea, I think there is a lot we can do here.
+19:38:21 <gmaxwell> So-- the issue of dbcache that I brought up last week can we talk about that for a bit?
+19:38:27 <sipa> ack topic
+19:38:30 <wumpus> sure
+19:38:31 <gmaxwell> #topic dbcache
+19:38:50 <wumpus> petertodd: agreed
+19:38:56 <gmaxwell> Last week I brought up that reindex with defaults was SUPER slow on my laptop, been a while since I'd reindexed with default dbcache.
+19:39:29 <gmaxwell> This resulted in more benchmarking, and wumpus has a PR to increase the default dbcache to 300mb and also clamp the leveldb cache usage (so that it doesn't go gigantic as dbcache increases)
+19:39:30 <wumpus> the pull request to bump default dbcache to 300MiB is ready: https://github.com/bitcoin/bitcoin/pull/8273
+19:39:44 <gmaxwell> I did testing to confirm that the leveldb cache sizes don't have much effect.
+19:39:58 <gmaxwell> they seem like they have more effect with txindex enabled, however.
+19:40:03 * jonasschnelli will test 8273
+19:40:31 <wumpus> which makes sense, txindex has a completely different access pattern than the utxo set
+19:40:34 <wumpus> it's almost write-only
+19:40:43 <sipa> morcos: no more work on #6936?
+19:40:52 <gmaxwell> As a related aside txindex performance is fairly slow, makes an 'infinite' dbcache reindex by about 25%.
+19:40:56 <wumpus> so we could cap that at a different value
+19:41:20 <sipa> txindex adds many many more writes
+19:41:29 <gmaxwell> wumpus: yes, ran a test with 32mb which has finished but I didn't have time before the meeting to collect the results, will shortly after.
+19:41:31 <sipa> though they should be configured to bypass all caches
+19:41:33 <wumpus> yes txindex is very slow, just a lot of data
+19:41:47 <gmaxwell> my testing is on a fast spinning disk system, which I think is probaby the right thing to test for on this.
+19:42:00 <sdaftuar> sipa: oh, morcos and i were just talking about whether there were things we were working on that used the mining score index, but i think we had both forgotten about #6936.
+19:42:16 <wumpus> even the idea of indexing every transaction on the block chain is crazy
+19:42:32 <jonasschnelli> My last tests showd me that a reindex (master) was twice as long as a a normal IDB (from rnd peers) from the scratch...
+19:42:44 <wumpus> there's much slower implementations possible though, like stashing everything into mysql :-)
+19:42:55 <sipa> jonasschnelli: wut?!
+19:42:55 <gmaxwell> One result of my testing is showing that even the 300MB dbcache is really not big enough to give good reindex performance.  We should consider something for 0.14 to give mempool memory to dbcache during ibd/reindex or something.
+19:43:17 <gmaxwell> jonasschnelli: that last test was before the signature checking fix?
+19:43:19 <jonasschnelli> sipa: 5.5h reindex against ~3h IBD
+19:43:20 <wumpus> jonasschnelli: whoa
+19:43:28 <jonasschnelli> I'm redoing it now...
+19:43:32 <gmaxwell> jonasschnelli: when was it?
+19:43:36 <sipa> jonasschnelli: what part of that was real reindex, and what was chainstate rebuilding?
+19:43:39 <wumpus> I thought we solved that recently
+19:43:40 <jonasschnelli> a couple of weeks ago after sipas work
+19:43:51 <jonasschnelli> sipa: just a plain -reindex
+19:43:57 <jonasschnelli> wth dbcache=8000
+19:44:10 <sipa> that's painful
+19:44:15 <gmaxwell> Reindex now has that header scan, it adds about 20 minutes on my test hosts that a sync wouldn't have.
+19:44:32 <sipa> jonasschnelli: can you benchmark -reindex-chainstate vs IBD?
+19:44:35 <wumpus> that can't make the difference between 3h and 5.5h though
+19:44:44 <gmaxwell> but I tested with and without signature checking, and in both cases reindex in master is faster than 0.12.1.
+19:44:45 <jonasschnelli> sipa: okay. Will do.
+19:44:51 <wumpus> 20 minutes difference would be ok
+19:45:10 <sipa> it may depend on your disk
+19:45:29 <gmaxwell> I didn't test an IBD but I can easily do that. We do probably lose some time due to out of order blocks.
+19:45:34 <jonasschnelli> Also there is the potential_deadlock_detected that stops my node (-debug) every couple of minutes..
+19:45:35 <sipa> if it's a VM with a file-backed storage which is on a network filesystem stored on an encrypted ZFS container...
+19:46:05 <sipa> jonasschnelli: i hope your normal benchmarks are not with -debug builds
+19:46:06 <wumpus> lock debugging slows down the sync too
+19:46:29 <sipa> additionally, we need to fix that bug
+19:46:39 <sipa> i'll look into that lockorder
+19:46:44 <wumpus> but yes, the deadlock detected in the network code seems to be a real deadlock
+19:46:58 <jonasschnelli> wumpus: yes. Agree. But i have compare -debug IBD against -debug reindex
+19:47:07 <sipa> jonasschnelli: meh, don't do that
+19:47:17 <sipa> debug is not ever going to give you a realistic benchmark
+19:47:32 <jonasschnelli> developer are supposed to run --enable-debug software! :)
+19:47:36 <wumpus> do we have an issue open for that deadlock issue btw?
+19:47:42 <sipa> jonasschnelli: yes, but not for benchmarking
+19:47:49 <gmaxwell> #topic net deadlock
+19:47:50 <jonasschnelli> wumpus: no. Let me open one.
+19:47:56 <sipa> jonasschnelli: thanks
+19:48:07 <jonasschnelli> sipa: Yes. Agree... will benchmark again without -debug
+19:48:14 <sipa> jonasschnelli: please list your exact commit (so we can identify the line numbers)
+19:48:27 <jonasschnelli> okay. Good point.
+19:49:13 <gmaxwell> #action jonasschnelli to open issue on lockorder deadlock report that he's seeing
+19:49:17 <gmaxwell> Any other topics?
+19:50:25 <gmaxwell> okay Seems quiet, perhaps we can end a bit early.
+19:50:29 <sdaftuar> maybe bip152?
+19:50:31 <wumpus> seemingly not :)
+19:50:34 <gmaxwell> ah okay!
+19:50:37 <sdaftuar> not sure if that's worht bringing up here
+19:50:39 <gmaxwell> #topic BIP152
+19:50:53 <gmaxwell> So sipa has SW BIP 152 working on testnet and a number of people testing it.
+19:51:11 <wumpus> good to hear
+19:51:31 <petertodd> gmaxwell: as in, segwit bip152 right? +1
+19:51:39 <btcdrak> I dont recall seeing a PR for that yet?
+19:51:42 <gmaxwell> petertodd: yes.
+19:51:50 <wumpus> there's no PR for that
+19:51:50 <sipa> btcdrak: intentionally not
+19:52:11 <sipa> 1) this allows us to test interaction between non-SW-BIP152 testnet and changed
+19:52:24 <sipa> 2) needs some BIP changes (in BIP144, BIP152, or a separate bip entirely)
+19:52:41 <sipa> 3) not necessary before the segwit softfork
+19:52:41 <petertodd> sipa: +1
+19:53:34 <sipa> branch: github.com/sipa/bitcoin/commits/segwitcb
+19:53:41 <wumpus> not necessary, but would be good to have it before the activation, otherwise CB will suddenly disable
+19:53:59 <sipa> indeed; it is necessary imho before activation in mastdr
+19:54:29 <gmaxwell> Thats my view.
+19:54:54 <wumpus> right, for 0.12 it makes no different, there's no cb there anyhow
+19:54:59 <gmaxwell> jinx
+19:55:01 <sipa> agree
+19:55:22 <gmaxwell> In any case, it's working, didn't require anything too complicated. (says the guy who didn't write it)
+19:56:01 <sdaftuar> sipa, gmaxwell: i still think it'd be better if the information in a blocktxn message could be understood without any state. did i make any progress trying to convince you?
+19:56:23 <wumpus> there's no need to hurry it anyhow, CB and segwit separately are already huge changes, better to test them in isolation for now
+19:56:45 <gmaxwell> sdaftuar: only a very small amount.
+19:57:12 <sipa> sdaftuar: no strong opinion yet
+19:57:19 <gmaxwell> sdaftuar: we can talk more post meeting.
+19:57:30 <sdaftuar> sure
+19:58:32 <gmaxwell> okay, Anything else, we're almost out of time? :)
+19:58:48 <petertodd> ack endmeeting
+19:58:51 <gmaxwell> #endmeeting

@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:10</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun 30 19:01:10 2016 UTC.  The chair is gmaxwell. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:10</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:13</span><span class="nk"> &lt;btcdrak&gt;</span> ping
+<a name="l-5"></a><span class="tm">19:01:17</span><span class="nk"> &lt;wumpus&gt;</span> pong
+<a name="l-6"></a><span class="tm">19:01:20</span><span class="nk"> &lt;sipa&gt;</span> pang
+<a name="l-7"></a><span class="tm">19:01:26</span><span class="nk"> &lt;gmaxwell&gt;</span> Welcome to the meeting. Hard start today, sorry to not get pings out earlier.
+<a name="l-8"></a><span class="tm">19:01:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> pong
+<a name="l-9"></a><span class="tm">19:01:47</span><span class="nk"> &lt;wumpus&gt;</span> &lt;sdaftuar&gt; proposed topic for the meeting today: wrapping up the mining-related changes to 0.13.0 (please see #8294)
+<a name="l-10"></a><span class="tm">19:02:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> jtimon: jonasschnelli: petertodd: morcos: MarcoFalke: NicolasDorier: paveljanik:
+<a name="l-11"></a><span class="tm">19:02:06</span><span class="nk"> &lt;jtimon&gt;</span> pong
+<a name="l-12"></a><span class="tm">19:02:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">wrapping up the mining-related changes to 0.13.0 (please see #8294)</span>
+<a name="l-13"></a><span class="tm">19:02:32</span><span class="nk"> &lt;wumpus&gt;</span> also segwit 0.12 backport status, maybe
+<a name="l-14"></a><span class="tm">19:02:39</span><span class="nk"> &lt;sipa&gt;</span> unstarted.
+<a name="l-15"></a><span class="tm">19:03:21</span><span class="nk"> &lt;sdaftuar&gt;</span> so i mentioned a few things in that issue that i think we need to address for 0.13.0
+<a name="l-16"></a><span class="tm">19:03:22</span><span class="nk"> &lt;petertodd&gt;</span> hi
+<a name="l-17"></a><span class="tm">19:03:30</span><span class="nk"> &lt;sdaftuar&gt;</span> a couple should be non-controversial bugfixes
+<a name="l-18"></a><span class="tm">19:03:41</span><span class="nk"> &lt;kanzure&gt;</span> hi
+<a name="l-19"></a><span class="tm">19:03:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> blockminsize  should just go
+<a name="l-20"></a><span class="tm">19:03:57</span><span class="nk"> &lt;sdaftuar&gt;</span> two things i wanted feedback on were (a) removing the old mining algorithm ("addScoreTxs") and (b) -blockminsize
+<a name="l-21"></a><span class="tm">19:04:01</span><span class="nk"> &lt;sdaftuar&gt;</span> ok great, that's what i think too
+<a name="l-22"></a><span class="tm">19:04:02</span><span class="nk"> &lt;sipa&gt;</span> in favor of just dropping -blockminsize
+<a name="l-23"></a><span class="tm">19:04:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> "Should we remove the old transaction selection algorithm"   I'm indifferent to favoring removing code.
+<a name="l-24"></a><span class="tm">19:04:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> your thoughts?
+<a name="l-25"></a><span class="tm">19:04:52</span><span class="nk"> &lt;wumpus&gt;</span> if the code is not used, it should be removed
+<a name="l-26"></a><span class="tm">19:04:56</span><span class="nk"> &lt;gmaxwell&gt;</span> (like to sdaftuar's issue: https://github.com/bitcoin/bitcoin/issues/8294 )
+<a name="l-27"></a><span class="tm">19:04:56</span><span class="nk"> &lt;sipa&gt;</span> i think we shouldn't keep the old algorithm just because we're not sure if the new one works
+<a name="l-28"></a><span class="tm">19:05:02</span><span class="nk"> &lt;sipa&gt;</span> we can always revert code if needed
+<a name="l-29"></a><span class="tm">19:05:35</span><span class="nk"> &lt;sipa&gt;</span> the current reason for keeping is because when -blockminsiz or -blockmaxsize are -blockprioritysize are given, the new algorithm does not work (due to missing accounting)
+<a name="l-30"></a><span class="tm">19:05:49</span><span class="nk"> &lt;sipa&gt;</span> if we fix the accounting, and make the new algorithm support those parameters, the old algorithm can go
+<a name="l-31"></a><span class="tm">19:05:55</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> right, and that is addressed in the first commit of #8295
+<a name="l-32"></a><span class="tm">19:05:59</span><span class="nk"> &lt;gmaxwell&gt;</span> the only gain I see is if there is some stupidity in the new one the old one is a switch away... but the new one has a reasonable amount of testing and if it has some issue it seems unlikely that its so major that just fixing it wouldn't be the prefered solution.
+<a name="l-33"></a><span class="tm">19:06:02</span><span class="nk"> &lt;sipa&gt;</span> ok, grea;t i haven't looked
+<a name="l-34"></a><span class="tm">19:06:08</span><span class="nk"> &lt;jtimon&gt;</span> I don't remember addScoreTx, but ack on removing blockminsize
+<a name="l-35"></a><span class="tm">19:06:43</span><span class="nk"> &lt;wumpus&gt;</span> it's a bit late in the release to be removing arguments, on the other hand it was already not working so let's do it...
+<a name="l-36"></a><span class="tm">19:07:01</span><span class="nk"> &lt;wumpus&gt;</span> as long as it's documented in the release notes
+<a name="l-37"></a><span class="tm">19:07:13</span><span class="nk"> &lt;gmaxwell&gt;</span> it should be removed but not cause the daemon to fail to start if specified.
+<a name="l-38"></a><span class="tm">19:07:15</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> agree, the release notes need a bunch of writeup for all the mining changes
+<a name="l-39"></a><span class="tm">19:07:16</span><span class="nk"> &lt;wumpus&gt;</span> or e.g. emit a warning/error if it is provided
+<a name="l-40"></a><span class="tm">19:07:31</span><span class="nk"> &lt;sipa&gt;</span> i am perfectly fine with just making -blockminsize work for 0.13 with CPFP, and removing it in 0.14
+<a name="l-41"></a><span class="tm">19:07:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> unless you think that would be much more work (i think it would be deleting 2 lines to stop supporting it)
+<a name="l-42"></a><span class="tm">19:08:08</span><span class="nk"> &lt;wumpus&gt;</span> sounds like that would be a waste of work, if it is going to be removed anyway, but I don't know how much work it is
+<a name="l-43"></a><span class="tm">19:08:15</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> it'd be adding code to support it.  i think it's probably easy, but i haven't thought carefully about it.  probably a one line change.
+<a name="l-44"></a><span class="tm">19:08:32</span><span class="nk"> &lt;sipa&gt;</span> i expect it to be trivial to make it work, and also trivial to remove
+<a name="l-45"></a><span class="tm">19:08:48</span><span class="nk"> &lt;wumpus&gt;</span> if it's trivial to make it work, let's go for that
+<a name="l-46"></a><span class="tm">19:08:50</span><span class="nk"> &lt;sipa&gt;</span> also, i think it's utterly pointless in the current mining encironment
+<a name="l-47"></a><span class="tm">19:08:53</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> agreed.
+<a name="l-48"></a><span class="tm">19:09:03</span><span class="nk"> &lt;jtimon&gt;</span> emit warning seems a good option
+<a name="l-49"></a><span class="tm">19:09:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's a goofy option.
+<a name="l-50"></a><span class="tm">19:09:20</span><span class="nk"> &lt;wumpus&gt;</span> if it's not trivial, or annoying to test, let's get rid of it
+<a name="l-51"></a><span class="tm">19:09:26</span><span class="nk"> &lt;gmaxwell&gt;</span> less options good.
+<a name="l-52"></a><span class="tm">19:09:28</span><span class="nk"> &lt;sipa&gt;</span> ack, we could just test for its value, and fail at startup if a nonzero value is passed
+<a name="l-53"></a><span class="tm">19:09:31</span><span class="nk"> &lt;sdaftuar&gt;</span> we have no tests for it now, i believe.
+<a name="l-54"></a><span class="tm">19:09:36</span><span class="nk"> &lt;sipa&gt;</span> it has no tests
+<a name="l-55"></a><span class="tm">19:09:38</span><span class="nk"> &lt;sipa&gt;</span> pretty sure
+<a name="l-56"></a><span class="tm">19:09:54</span><span class="nk"> &lt;sdaftuar&gt;</span> my preference would be to get rid of it, rather than add a test to make sure it works.
+<a name="l-57"></a><span class="tm">19:10:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> will review your patch
+<a name="l-58"></a><span class="tm">19:10:08</span><span class="nk"> &lt;wumpus&gt;</span> right, that's fine
+<a name="l-59"></a><span class="tm">19:10:32</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> why you don't want it to fail if the argument is provided ?
+<a name="l-60"></a><span class="tm">19:11:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon luke-jr cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-61"></a><span class="tm">19:11:14</span><span class="nk"> &lt;gmaxwell&gt;</span> (sorry, just creating a ping macro for future use)
+<a name="l-62"></a><span class="tm">19:11:37</span><span class="nk"> &lt;michagogo&gt;</span> Oh
+<a name="l-63"></a><span class="tm">19:11:38</span><span class="nk"> &lt;michagogo&gt;</span> Hi
+<a name="l-64"></a><span class="tm">19:11:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jtimon:</span> my preference for not causing failure is that that would be extra code to write/test/review.  silent failure seems easier, and harmless in this situation.
+<a name="l-65"></a><span class="tm">19:11:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> because it's a mostly meaningless setting that some people are going to have by virtue of copy and pasting things.
+<a name="l-66"></a><span class="tm">19:11:56</span><span class="nk"> &lt;sipa&gt;</span> meh, ok
+<a name="l-67"></a><span class="tm">19:11:57</span><span class="nk"> &lt;kanzure&gt;</span> i nominate jtimon for double inclusion in the ping, but otherwise ACK
+<a name="l-68"></a><span class="tm">19:12:02</span><span class="nk"> &lt;wumpus&gt;</span> I don't really like ignoring options, that can be really frustrating
+<a name="l-69"></a><span class="tm">19:12:25</span><span class="nk"> &lt;wumpus&gt;</span> 'wtf doesn't this work', oh, then after an hour of debugging you notice that the functionality has been removed
+<a name="l-70"></a><span class="tm">19:12:31</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-71"></a><span class="tm">19:12:36</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> in this case though, you wouldn't have been noticing the old behavior "working"
+<a name="l-72"></a><span class="tm">19:12:38</span><span class="nk"> &lt;wumpus&gt;</span> at least add a warning, I don't care about failing
+<a name="l-73"></a><span class="tm">19:12:39</span><span class="nk"> &lt;jtimon&gt;</span> I'm fine with either failing or giving a warning
+<a name="l-74"></a><span class="tm">19:12:46</span><span class="nk"> &lt;sdaftuar&gt;</span> i can add a warning, sure.
+<a name="l-75"></a><span class="tm">19:12:54</span><span class="nk"> &lt;sipa&gt;</span> let's discuss this when the actual PR is created
+<a name="l-76"></a><span class="tm">19:13:01</span><span class="nk"> &lt;jtimon&gt;</span> fair enough
+<a name="l-77"></a><span class="tm">19:13:03</span><span class="nk"> &lt;sdaftuar&gt;</span> i included removal of -blockminsize in 8295
+<a name="l-78"></a><span class="tm">19:13:14</span><span class="nk"> &lt;sdaftuar&gt;</span> i can fix to warn if the argument is given
+<a name="l-79"></a><span class="tm">19:13:20</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-80"></a><span class="tm">19:13:23</span><span class="nk"> &lt;gmaxwell&gt;</span> okay warning fine.
+<a name="l-81"></a><span class="tm">19:14:08</span><span class="nk"> &lt;sdaftuar&gt;</span> one thing i wanted to mention, if we do decide to remove addScoreTxs(), we could also remove the mining_score from the mempool multiindex
+<a name="l-82"></a><span class="tm">19:14:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I agree in principle except for the fact that a LOT of people have copied the "example config" from the bitcoin wiki and are setting all kinds of crazy things. :)
+<a name="l-83"></a><span class="tm">19:14:23</span><span class="nk"> &lt;sdaftuar&gt;</span> i didn't incldue that in 8295, but wanted to mention it in case we want to remove for 0.13
+<a name="l-84"></a><span class="tm">19:14:39</span><span class="nk"> &lt;sdaftuar&gt;</span> it would give us a small memory savings in the mempool, but not sure if that's a change that we'd rather wait for 0.14 tomake
+<a name="l-85"></a><span class="tm">19:14:43</span><span class="nk"> &lt;sdaftuar&gt;</span> i don't have a preference
+<a name="l-86"></a><span class="tm">19:14:50</span><span class="nk"> &lt;sipa&gt;</span> ENOCARE
+<a name="l-87"></a><span class="tm">19:15:00</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sdaftuar:</span> can't https://github.com/bitcoin/bitcoin/pull/8295/commits/27362dda4d583a43ebf687ae097d2f45ba1c4c32 be a trivial to review separate PR ?
+<a name="l-88"></a><span class="tm">19:15:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, indeed, it's an option that's bound to be misinterpreted/misused anyway
+<a name="l-89"></a><span class="tm">19:15:16</span><span class="nk"> &lt;gmaxwell&gt;</span> &lt;meme text="Delete all the code."/&gt;
+<a name="l-90"></a><span class="tm">19:15:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jtimon:</span> it builds on removing addScoreTxs i think?
+<a name="l-91"></a><span class="tm">19:15:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sdaftuar:</span> oh, I see
+<a name="l-92"></a><span class="tm">19:15:59</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jtimon:</span> but yes i could have split those two commits out
+<a name="l-93"></a><span class="tm">19:16:00</span><span class="nk"> &lt;jtimon&gt;</span> mhmm
+<a name="l-94"></a><span class="tm">19:16:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay, anything more on this that needs to happen in the meeting?
+<a name="l-95"></a><span class="tm">19:16:54</span><span class="nk"> &lt;jtimon&gt;</span> whatever, minor point, I just don't think I can ack the pr like that because I haven't been following some of the refactors in miner much
+<a name="l-96"></a><span class="tm">19:17:33</span><span class="nk"> &lt;sdaftuar&gt;</span> i think we can move on, thanks
+<a name="l-97"></a><span class="tm">19:17:35</span><span class="nk"> &lt;jtimon&gt;</span> well, refactors and changes
+<a name="l-98"></a><span class="tm">19:17:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> I'd say if they are after your changes remove the mempool fields, it's not much of a risk, if everything is alright the compiler checks that nothing is referring to it
+<a name="l-99"></a><span class="tm">19:17:54</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> ok great, thanks
+<a name="l-100"></a><span class="tm">19:18:03</span><span class="nk"> &lt;sdaftuar&gt;</span> i'll defer that until after 8295 is merged anyway
+<a name="l-101"></a><span class="tm">19:18:10</span><span class="nk"> &lt;wumpus&gt;</span> right, it's not a priority
+<a name="l-102"></a><span class="tm">19:18:12</span><span class="nk"> &lt;sdaftuar&gt;</span> yep
+<a name="l-103"></a><span class="tm">19:18:25</span><span class="nk"> &lt;wumpus&gt;</span> any other topics for today?
+<a name="l-104"></a><span class="tm">19:18:53</span><span class="nk"> &lt;CodeShark&gt;</span> hmm
+<a name="l-105"></a><span class="tm">19:19:05</span><span class="nk"> &lt;petertodd&gt;</span> anyone get a chnace to look at https://github.com/bitcoin/bitcoin/issues/8279 ? at a conf right now
+<a name="l-106"></a><span class="tm">19:19:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> yes, i think it is a good point
+<a name="l-107"></a><span class="tm">19:19:42</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> cool, thanks
+<a name="l-108"></a><span class="tm">19:19:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> you noticed a related issue as well, right?
+<a name="l-109"></a><span class="tm">19:19:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> (mainly wanted to know if I needed to post a retraction!)
+<a name="l-110"></a><span class="tm">19:20:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> the sigops counting? i believe that is not vulnerable to mauling (the verb related to 'malleability', apparently)
+<a name="l-111"></a><span class="tm">19:20:42</span><span class="nk"> &lt;sipa&gt;</span> (also not found by me)
+<a name="l-112"></a><span class="tm">19:20:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit</span>
+<a name="l-113"></a><span class="tm">19:21:02</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> it is, because we don't verify that the witness script matches the commitment in the pubkey output
+<a name="l-114"></a><span class="tm">19:21:08</span><span class="nk"> &lt;sdaftuar&gt;</span> right?
+<a name="l-115"></a><span class="tm">19:21:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> no, I think we do that prior to sigops checking
+<a name="l-116"></a><span class="tm">19:21:48</span><span class="nk"> &lt;sdaftuar&gt;</span> i'll take another look.  pretty sure sipa and i discussed and concluded that we didn't.
+<a name="l-117"></a><span class="tm">19:21:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> something to look into
+<a name="l-118"></a><span class="tm">19:22:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> yeah, wouldn't hurt to take another look - that review was a bunch of owrk and I may have been a bit faded by the end :)
+<a name="l-119"></a><span class="tm">19:22:35</span><span class="nk"> &lt;sipa&gt;</span> i don't think these are serious problems (it allows preventing a node from getting a transaction, but there are other means for that, like announcing it and not responding)
+<a name="l-120"></a><span class="tm">19:22:39</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">petertodd:</span> i'm specifically referring to the sigopcount checks in accepttomemorypool, not consensus level checking
+<a name="l-121"></a><span class="tm">19:22:43</span><span class="nk"> &lt;sipa&gt;</span> but they should be understood
+<a name="l-122"></a><span class="tm">19:23:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> yeah, I _thought_ I looked at that, but may have missed it - mempool was the last thing I looked at
+<a name="l-123"></a><span class="tm">19:23:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> i'm really glad you did that review, by the way - the writeup makes a lot of things more communicatable
+<a name="l-124"></a><span class="tm">19:24:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> thanks! yeah, mainly wanted to demystify the process of doing review
+<a name="l-125"></a><span class="tm">19:24:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think its of major importance, but "Bitcoin XT" recently started making only outbound connections to other XT nodes.  In combination with segwit, I believe this will partition them.  Because they are such a small number of nodes I don't think it warrents much attention, but something to be aware of.
+<a name="l-126"></a><span class="tm">19:25:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> yea, nice work.
+<a name="l-127"></a><span class="tm">19:25:30</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> we have a little time before that will happen, as we haven't yet activated the preferential peering yet
+<a name="l-128"></a><span class="tm">19:25:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> indeed.
+<a name="l-129"></a><span class="tm">19:26:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ...
+<a name="l-130"></a><span class="tm">19:26:52</span><span class="nk"> &lt;sipa&gt;</span> segwit by the way does not _only_ make outbound connections to segwit
+<a name="l-131"></a><span class="tm">19:26:58</span><span class="nk"> &lt;sipa&gt;</span> but it strongly prefers them
+<a name="l-132"></a><span class="tm">19:27:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> yeah, I noticed that - after 40 tries you connect to non-segwit outgoing
+<a name="l-133"></a><span class="tm">19:27:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> right, I think that would be sufficient to partition there.
+<a name="l-134"></a><span class="tm">19:27:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> yes, totally arbitrary number
+<a name="l-135"></a><span class="tm">19:28:06</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">gmaxwell:</span> they should fix that. We just need to let them know
+<a name="l-136"></a><span class="tm">19:28:07</span><span class="nk"> &lt;petertodd&gt;</span> wouln't be a crazy idea to have a mode that disabled the DoS banning for incoming nodes btw...
+<a name="l-137"></a><span class="tm">19:28:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> DoS banning, or also DoS disconnection?
+<a name="l-138"></a><span class="tm">19:28:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> one can set that threshold arbritarily high at least.
+<a name="l-139"></a><span class="tm">19:28:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> both, to be able to (at least temproarily) work around bugs related to DoS banning
+<a name="l-140"></a><span class="tm">19:29:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> equally, have a small subset of nodes that can be set to ignore the DoS banning
+<a name="l-141"></a><span class="tm">19:29:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Patch accepted to make low-dos-score a ranking criteria in eviction protection logic, which would also make running with a very high dos threshold more reasonable.
+<a name="l-142"></a><span class="tm">19:29:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> good idea
+<a name="l-143"></a><span class="tm">19:30:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jl2012:</span> I was just made aware of it, but sure.
+<a name="l-144"></a><span class="tm">19:31:02</span><span class="nk"> &lt;gmaxwell&gt;</span> my past expirence with that project has not been very good.
+<a name="l-145"></a><span class="tm">19:31:14</span><span class="nk"> &lt;wumpus&gt;</span> so a different ban thrshold for incoming versus outgoing connections?
+<a name="l-146"></a><span class="tm">19:31:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jl2012:</span> there's a issue open in the XT repo for it already
+<a name="l-147"></a><span class="tm">19:31:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jl2012:</span> there is a ticket open already
+<a name="l-148"></a><span class="tm">19:31:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> we should probably just brainstorm some about connection management stuff, there are a number of neat improvements we can make.
+<a name="l-149"></a><span class="tm">19:32:11</span><span class="nk"> &lt;sipa&gt;</span> if we're thinking about such refactors, the DoS score should probably also attenuate over time
+<a name="l-150"></a><span class="tm">19:32:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> I think the main thing, is just to have different thresholds period for some nodes, so that while you won't wast bandwidth on everyone, keep a few peers connected regardless in case you're dealing with a DoS-related bug and should be distributing the data anyway
+<a name="l-151"></a><span class="tm">19:32:31</span><span class="nk"> &lt;sipa&gt;</span> otherwise longer-lived connections will accumulate a score they don't deserve
+<a name="l-152"></a><span class="tm">19:32:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> so a sort of halfway-whitelisting
+<a name="l-153"></a><span class="tm">19:32:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> also, along those lines, distributing invalid blocks with valid PoW isn't a crazy idea
+<a name="l-154"></a><span class="tm">19:32:42</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> yup
+<a name="l-155"></a><span class="tm">19:32:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> such a thing could also turn those peers into blocksonly.
+<a name="l-156"></a><span class="tm">19:32:51</span><span class="nk"> &lt;gmaxwell&gt;</span> since thats all we care about for anti-partitioning.
+<a name="l-157"></a><span class="tm">19:32:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> yeah, that's a good idea
+<a name="l-158"></a><span class="tm">19:33:02</span><span class="nk"> &lt;gmaxwell&gt;</span> and yet it almost completely eliminates dos concerns.
+<a name="l-159"></a><span class="tm">19:34:42</span><span class="nk"> &lt;petertodd&gt;</span> blocksonly on-DoS + relaying of invalid blocks w/ valid PoW in a separate "may be invalid" message would satisfy everything I think
+<a name="l-160"></a><span class="tm">19:34:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> attentuating theDoS score over time makes sense, a very slow DoS attack isn't really a DoS attack (apart from keeping a connection slot open, but that's not what the score is to protect against)
+<a name="l-161"></a><span class="tm">19:35:27</span><span class="nk"> &lt;sipa&gt;</span> theDos? sister of GLaDoS?
+<a name="l-162"></a><span class="tm">19:35:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> lol
+<a name="l-163"></a><span class="tm">19:35:37</span><span class="nk"> &lt;btcdrak&gt;</span> omg
+<a name="l-164"></a><span class="tm">19:36:03</span><span class="nk"> &lt;wumpus&gt;</span> then again it's not really a anti-DoS score is it, it won't get triggered on accidental over-use of resources, more a misbehavior score
+<a name="l-165"></a><span class="tm">19:36:23</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-166"></a><span class="tm">19:36:37</span><span class="nk"> &lt;sipa&gt;</span> yes, i think there may be reasons to introduce something like a "resource usage score" which is distinct from "misbehaviour"
+<a name="l-167"></a><span class="tm">19:36:40</span><span class="nk"> &lt;wumpus&gt;</span> the cake is a lie
+<a name="l-168"></a><span class="tm">19:36:51</span><span class="nk"> &lt;sipa&gt;</span> and which gets used to decide which peers to disconnect in favor of others
+<a name="l-169"></a><span class="tm">19:36:57</span><span class="nk"> &lt;sipa&gt;</span> but never causes a ban
+<a name="l-170"></a><span class="tm">19:37:03</span><span class="nk"> &lt;wumpus&gt;</span> yes, indeed
+<a name="l-171"></a><span class="tm">19:37:15</span><span class="nk"> &lt;sipa&gt;</span> not a disconnection, unless there is a pressing reason to disconnect someone anyway
+<a name="l-172"></a><span class="tm">19:37:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> might not be a bad idea to go through the DoS stuff and remove bans in cases where the misbehavior doesn't take much cpu time to detect (and then use it in the anti-partitioning score instead)
+<a name="l-173"></a><span class="tm">19:37:46</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, I think there is a lot we can do here.
+<a name="l-174"></a><span class="tm">19:38:21</span><span class="nk"> &lt;gmaxwell&gt;</span> So-- the issue of dbcache that I brought up last week can we talk about that for a bit?
+<a name="l-175"></a><span class="tm">19:38:27</span><span class="nk"> &lt;sipa&gt;</span> ack topic
+<a name="l-176"></a><span class="tm">19:38:30</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-177"></a><span class="tm">19:38:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">dbcache</span>
+<a name="l-178"></a><span class="tm">19:38:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> agreed
+<a name="l-179"></a><span class="tm">19:38:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Last week I brought up that reindex with defaults was SUPER slow on my laptop, been a while since I'd reindexed with default dbcache.
+<a name="l-180"></a><span class="tm">19:39:29</span><span class="nk"> &lt;gmaxwell&gt;</span> This resulted in more benchmarking, and wumpus has a PR to increase the default dbcache to 300mb and also clamp the leveldb cache usage (so that it doesn't go gigantic as dbcache increases)
+<a name="l-181"></a><span class="tm">19:39:30</span><span class="nk"> &lt;wumpus&gt;</span> the pull request to bump default dbcache to 300MiB is ready: https://github.com/bitcoin/bitcoin/pull/8273
+<a name="l-182"></a><span class="tm">19:39:44</span><span class="nk"> &lt;gmaxwell&gt;</span> I did testing to confirm that the leveldb cache sizes don't have much effect.
+<a name="l-183"></a><span class="tm">19:39:58</span><span class="nk"> &lt;gmaxwell&gt;</span> they seem like they have more effect with txindex enabled, however.
+<a name="l-184"></a><span class="tm">19:40:03 </span><span class="nka">* jonasschnelli</span> <span class="ac">will test 8273</span>
+<a name="l-185"></a><span class="tm">19:40:31</span><span class="nk"> &lt;wumpus&gt;</span> which makes sense, txindex has a completely different access pattern than the utxo set
+<a name="l-186"></a><span class="tm">19:40:34</span><span class="nk"> &lt;wumpus&gt;</span> it's almost write-only
+<a name="l-187"></a><span class="tm">19:40:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> no more work on #6936?
+<a name="l-188"></a><span class="tm">19:40:52</span><span class="nk"> &lt;gmaxwell&gt;</span> As a related aside txindex performance is fairly slow, makes an 'infinite' dbcache reindex by about 25%.
+<a name="l-189"></a><span class="tm">19:40:56</span><span class="nk"> &lt;wumpus&gt;</span> so we could cap that at a different value
+<a name="l-190"></a><span class="tm">19:41:20</span><span class="nk"> &lt;sipa&gt;</span> txindex adds many many more writes
+<a name="l-191"></a><span class="tm">19:41:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes, ran a test with 32mb which has finished but I didn't have time before the meeting to collect the results, will shortly after.
+<a name="l-192"></a><span class="tm">19:41:31</span><span class="nk"> &lt;sipa&gt;</span> though they should be configured to bypass all caches
+<a name="l-193"></a><span class="tm">19:41:33</span><span class="nk"> &lt;wumpus&gt;</span> yes txindex is very slow, just a lot of data
+<a name="l-194"></a><span class="tm">19:41:47</span><span class="nk"> &lt;gmaxwell&gt;</span> my testing is on a fast spinning disk system, which I think is probaby the right thing to test for on this.
+<a name="l-195"></a><span class="tm">19:42:00</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> oh, morcos and i were just talking about whether there were things we were working on that used the mining score index, but i think we had both forgotten about #6936.
+<a name="l-196"></a><span class="tm">19:42:16</span><span class="nk"> &lt;wumpus&gt;</span> even the idea of indexing every transaction on the block chain is crazy
+<a name="l-197"></a><span class="tm">19:42:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> My last tests showd me that a reindex (master) was twice as long as a a normal IDB (from rnd peers) from the scratch...
+<a name="l-198"></a><span class="tm">19:42:44</span><span class="nk"> &lt;wumpus&gt;</span> there's much slower implementations possible though, like stashing everything into mysql :-)
+<a name="l-199"></a><span class="tm">19:42:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> wut?!
+<a name="l-200"></a><span class="tm">19:42:55</span><span class="nk"> &lt;gmaxwell&gt;</span> One result of my testing is showing that even the 300MB dbcache is really not big enough to give good reindex performance.  We should consider something for 0.14 to give mempool memory to dbcache during ibd/reindex or something.
+<a name="l-201"></a><span class="tm">19:43:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> that last test was before the signature checking fix?
+<a name="l-202"></a><span class="tm">19:43:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> 5.5h reindex against ~3h IBD
+<a name="l-203"></a><span class="tm">19:43:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> whoa
+<a name="l-204"></a><span class="tm">19:43:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm redoing it now...
+<a name="l-205"></a><span class="tm">19:43:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> when was it?
+<a name="l-206"></a><span class="tm">19:43:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> what part of that was real reindex, and what was chainstate rebuilding?
+<a name="l-207"></a><span class="tm">19:43:39</span><span class="nk"> &lt;wumpus&gt;</span> I thought we solved that recently
+<a name="l-208"></a><span class="tm">19:43:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> a couple of weeks ago after sipas work
+<a name="l-209"></a><span class="tm">19:43:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> just a plain -reindex
+<a name="l-210"></a><span class="tm">19:43:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> wth dbcache=8000
+<a name="l-211"></a><span class="tm">19:44:10</span><span class="nk"> &lt;sipa&gt;</span> that's painful
+<a name="l-212"></a><span class="tm">19:44:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Reindex now has that header scan, it adds about 20 minutes on my test hosts that a sync wouldn't have.
+<a name="l-213"></a><span class="tm">19:44:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> can you benchmark -reindex-chainstate vs IBD?
+<a name="l-214"></a><span class="tm">19:44:35</span><span class="nk"> &lt;wumpus&gt;</span> that can't make the difference between 3h and 5.5h though
+<a name="l-215"></a><span class="tm">19:44:44</span><span class="nk"> &lt;gmaxwell&gt;</span> but I tested with and without signature checking, and in both cases reindex in master is faster than 0.12.1.
+<a name="l-216"></a><span class="tm">19:44:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> okay. Will do.
+<a name="l-217"></a><span class="tm">19:44:51</span><span class="nk"> &lt;wumpus&gt;</span> 20 minutes difference would be ok
+<a name="l-218"></a><span class="tm">19:45:10</span><span class="nk"> &lt;sipa&gt;</span> it may depend on your disk
+<a name="l-219"></a><span class="tm">19:45:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I didn't test an IBD but I can easily do that. We do probably lose some time due to out of order blocks.
+<a name="l-220"></a><span class="tm">19:45:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also there is the potential_deadlock_detected that stops my node (-debug) every couple of minutes..
+<a name="l-221"></a><span class="tm">19:45:35</span><span class="nk"> &lt;sipa&gt;</span> if it's a VM with a file-backed storage which is on a network filesystem stored on an encrypted ZFS container...
+<a name="l-222"></a><span class="tm">19:46:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i hope your normal benchmarks are not with -debug builds
+<a name="l-223"></a><span class="tm">19:46:06</span><span class="nk"> &lt;wumpus&gt;</span> lock debugging slows down the sync too
+<a name="l-224"></a><span class="tm">19:46:29</span><span class="nk"> &lt;sipa&gt;</span> additionally, we need to fix that bug
+<a name="l-225"></a><span class="tm">19:46:39</span><span class="nk"> &lt;sipa&gt;</span> i'll look into that lockorder
+<a name="l-226"></a><span class="tm">19:46:44</span><span class="nk"> &lt;wumpus&gt;</span> but yes, the deadlock detected in the network code seems to be a real deadlock
+<a name="l-227"></a><span class="tm">19:46:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> yes. Agree. But i have compare -debug IBD against -debug reindex
+<a name="l-228"></a><span class="tm">19:47:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> meh, don't do that
+<a name="l-229"></a><span class="tm">19:47:17</span><span class="nk"> &lt;sipa&gt;</span> debug is not ever going to give you a realistic benchmark
+<a name="l-230"></a><span class="tm">19:47:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> developer are supposed to run --enable-debug software! :)
+<a name="l-231"></a><span class="tm">19:47:36</span><span class="nk"> &lt;wumpus&gt;</span> do we have an issue open for that deadlock issue btw?
+<a name="l-232"></a><span class="tm">19:47:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> yes, but not for benchmarking
+<a name="l-233"></a><span class="tm">19:47:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">net deadlock</span>
+<a name="l-234"></a><span class="tm">19:47:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> no. Let me open one.
+<a name="l-235"></a><span class="tm">19:47:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> thanks
+<a name="l-236"></a><span class="tm">19:48:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Yes. Agree... will benchmark again without -debug
+<a name="l-237"></a><span class="tm">19:48:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> please list your exact commit (so we can identify the line numbers)
+<a name="l-238"></a><span class="tm">19:48:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> okay. Good point.
+<a name="l-239"></a><span class="tm">19:49:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#action </span><span class="cmdline">jonasschnelli to open issue on lockorder deadlock report that he's seeing</span>
+<a name="l-240"></a><span class="tm">19:49:17</span><span class="nk"> &lt;gmaxwell&gt;</span> Any other topics?
+<a name="l-241"></a><span class="tm">19:50:25</span><span class="nk"> &lt;gmaxwell&gt;</span> okay Seems quiet, perhaps we can end a bit early.
+<a name="l-242"></a><span class="tm">19:50:29</span><span class="nk"> &lt;sdaftuar&gt;</span> maybe bip152?
+<a name="l-243"></a><span class="tm">19:50:31</span><span class="nk"> &lt;wumpus&gt;</span> seemingly not :)
+<a name="l-244"></a><span class="tm">19:50:34</span><span class="nk"> &lt;gmaxwell&gt;</span> ah okay!
+<a name="l-245"></a><span class="tm">19:50:37</span><span class="nk"> &lt;sdaftuar&gt;</span> not sure if that's worht bringing up here
+<a name="l-246"></a><span class="tm">19:50:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP152</span>
+<a name="l-247"></a><span class="tm">19:50:53</span><span class="nk"> &lt;gmaxwell&gt;</span> So sipa has SW BIP 152 working on testnet and a number of people testing it.
+<a name="l-248"></a><span class="tm">19:51:11</span><span class="nk"> &lt;wumpus&gt;</span> good to hear
+<a name="l-249"></a><span class="tm">19:51:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> as in, segwit bip152 right? +1
+<a name="l-250"></a><span class="tm">19:51:39</span><span class="nk"> &lt;btcdrak&gt;</span> I dont recall seeing a PR for that yet?
+<a name="l-251"></a><span class="tm">19:51:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> yes.
+<a name="l-252"></a><span class="tm">19:51:50</span><span class="nk"> &lt;wumpus&gt;</span> there's no PR for that
+<a name="l-253"></a><span class="tm">19:51:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> intentionally not
+<a name="l-254"></a><span class="tm">19:52:11</span><span class="nk"> &lt;sipa&gt;</span> 1) this allows us to test interaction between non-SW-BIP152 testnet and changed
+<a name="l-255"></a><span class="tm">19:52:24</span><span class="nk"> &lt;sipa&gt;</span> 2) needs some BIP changes (in BIP144, BIP152, or a separate bip entirely)
+<a name="l-256"></a><span class="tm">19:52:41</span><span class="nk"> &lt;sipa&gt;</span> 3) not necessary before the segwit softfork
+<a name="l-257"></a><span class="tm">19:52:41</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-258"></a><span class="tm">19:53:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">branch:</span> github.com/sipa/bitcoin/commits/segwitcb
+<a name="l-259"></a><span class="tm">19:53:41</span><span class="nk"> &lt;wumpus&gt;</span> not necessary, but would be good to have it before the activation, otherwise CB will suddenly disable
+<a name="l-260"></a><span class="tm">19:53:59</span><span class="nk"> &lt;sipa&gt;</span> indeed; it is necessary imho before activation in mastdr
+<a name="l-261"></a><span class="tm">19:54:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Thats my view.
+<a name="l-262"></a><span class="tm">19:54:54</span><span class="nk"> &lt;wumpus&gt;</span> right, for 0.12 it makes no different, there's no cb there anyhow
+<a name="l-263"></a><span class="tm">19:54:59</span><span class="nk"> &lt;gmaxwell&gt;</span> jinx
+<a name="l-264"></a><span class="tm">19:55:01</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-265"></a><span class="tm">19:55:22</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, it's working, didn't require anything too complicated. (says the guy who didn't write it)
+<a name="l-266"></a><span class="tm">19:56:01</span><span class="nk"> &lt;sdaftuar&gt;</span> sipa, gmaxwell: i still think it'd be better if the information in a blocktxn message could be understood without any state. did i make any progress trying to convince you?
+<a name="l-267"></a><span class="tm">19:56:23</span><span class="nk"> &lt;wumpus&gt;</span> there's no need to hurry it anyhow, CB and segwit separately are already huge changes, better to test them in isolation for now
+<a name="l-268"></a><span class="tm">19:56:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> only a very small amount.
+<a name="l-269"></a><span class="tm">19:57:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> no strong opinion yet
+<a name="l-270"></a><span class="tm">19:57:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> we can talk more post meeting.
+<a name="l-271"></a><span class="tm">19:57:30</span><span class="nk"> &lt;sdaftuar&gt;</span> sure
+<a name="l-272"></a><span class="tm">19:58:32</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, Anything else, we're almost out of time? :)
+<a name="l-273"></a><span class="tm">19:58:48</span><span class="nk"> &lt;petertodd&gt;</span> ack endmeeting
+<a name="l-274"></a><span class="tm">19:58:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
