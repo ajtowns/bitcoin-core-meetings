@@ -1,0 +1,242 @@
+19:00:10 <wumpus> #startmeeting
+19:00:10 <lightningbot> Meeting started Thu Jul  7 19:00:10 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:10 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:13 <cfields> gmaxwell: thanks. here.
+19:00:16 <sdaftuar> hi
+19:00:28 <gmaxwell> Welcome to meeting.
+19:00:43 <wumpus> proposed topic: 0.13.0rc1
+19:00:51 <petertodd> wumpus: ack
+19:00:56 <gmaxwell> This week was a week of many reverts. Reverting will continue until morale improves.
+19:01:01 <michagogo> Hi
+19:01:03 <wumpus> #topic 0.13.0rc1
+19:01:13 <sipa> somewhat present
+19:01:19 <jonasschnelli> Are we +1 day with the 0.13 splitoff?
+19:01:19 <wumpus> foremost, I cannot build a release at this moment, as gitian lxc building is broken
+19:01:21 <sdaftuar> wumpus: so there are a couple bugs that still need to be fixed for 0.13
+19:01:21 <MarcoFalke> Is the HD issue a blocker for the rc?
+19:01:37 <wumpus> https://github.com/bitcoin/bitcoin/issues/8212 / https://github.com/bitcoin/bitcoin/pull/8213
+19:01:50 <cfields> wumpus: ok. I'll handle those next.
+19:01:53 <wumpus> MarcoFalke: which HD issue?
+19:02:02 <MarcoFalke> I couldn't restore from a HD backup
+19:02:03 <jonasschnelli> I think there is no "real" HD issue
+19:02:07 <michagogo> wumpus: Broken in what way?
+19:02:16 <wumpus> michagogo: please read the issues
+19:02:17 <MarcoFalke> jonasschnelli: Could you look into the travis failure
+19:02:19 <MarcoFalke> ?
+19:02:23 <jonasschnelli> Yes. Will do..
+19:02:24 <gmaxwell> MarcoFalke: It's unclear to me if we understand the issue you've encountered completely, if we do not understand it, I think it is a blocker.
+19:02:28 <michagogo> (Sorry, I've not had much free time for this stuff in the past months)
+19:02:35 * michagogo goes to check
+19:02:40 <wumpus> if HD is broken, we have to disable  it for 0.13
+19:02:47 <michagogo> (Gitian issues or Bitcoin Core?)
+19:02:53 <wumpus> or at least rc1
+19:02:57 <MarcoFalke> gmaxwell: You can see the issue on travis
+19:02:57 <jonasschnelli> Sure. Let me check MarcoFalke HD test
+19:03:06 <MarcoFalke> It is either an error in my test code
+19:03:06 <gmaxwell> Disabling it indeed would be an option.
+19:03:15 <MarcoFalke> or some issue with IsMine() or something else
+19:03:27 <gmaxwell> This may be a current design limitation if my understanding is correct. But I'm happy to discuss elsewhere/elsetime.
+19:03:33 <MarcoFalke> I'd rather fix it than disable it
+19:03:40 <cfields> MarcoFalke: link to travis failure?
+19:03:42 <wumpus> I don't want to block rc1 too long
+19:03:45 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8309/files
+19:03:52 <wumpus> rather have a test release out as soon as possible
+19:03:54 <btcdrak> remaining issue/prs for 0.13 https://github.com/bitcoin/bitcoin/milestones/0.13.0
+19:04:02 <MarcoFalke> pull 8309
+19:04:06 <MarcoFalke> cfields: ^
+19:04:11 <gmaxwell> lets talk about the other things then move on to the hd issue as it's own topic.
+19:04:12 <cfields> thanks
+19:04:30 <wumpus> planning was to do rc1 yesterday, but it was clear it wasn't possible
+19:04:46 <wumpus> btcdrak: some things can be merged as-is I think
+19:04:52 <MarcoFalke> Also there are some issues open by sdaftuar
+19:05:00 <sdaftuar> #8305 (headers sync issue), #8312 (mempool DoS post-segwit merge), and #8295 (mining code fixes post segwit-merge) are all meant for 0.13.0
+19:05:28 <wumpus> #7678 (release notes) is a TODO for -final, not rc1, could use some help there though
+19:06:13 <wumpus> are they ready for merge?
+19:06:15 <btcdrak> sdaftuar those should be tagged with the milestone then
+19:06:27 <sipa> i will write some release notes for the tx relay changes
+19:06:35 <sipa> (but not now)
+19:06:48 <sdaftuar> i believe all could be merged now.  after discussing with sipa, i think i'll make #8312 simpler even than it is now, since no one has reviewed anyway
+19:06:50 <wumpus> right, release notes is not urgent now, just needs to be done before final
+19:06:54 <wumpus> let's worry about rc1 now
+19:07:12 <sdaftuar> #8305 and #8295 are done as far as i know
+19:07:17 <sdaftuar> (no review though)
+19:07:32 <wumpus> yes the problem is review - I don't think people are very active at the moment, probably tired from all the big merges such as segwit
+19:08:19 <gmaxwell> I've been very busy with testing, in fact.
+19:08:38 <wumpus> testing is good
+19:08:47 <wumpus> releasing rc1 will result in a lot of testing, too
+19:09:16 <sipa> wumpus: i was less active the past week; i'll be back tomorrow
+19:10:31 <wumpus> ok I see jonasschnelli already added 0.13 milestone to sdaftuar's pulls, thanks
+19:10:35 <jonasschnelli> Yes.
+19:10:42 <cfields> I've been inactive as well. Nice and refreshed now, I can help with review of 8295/8312 once the build issues are worked out
+19:11:43 <petertodd> i'll try to look at 8312 this weekend
+19:11:44 <wumpus> cfields: I wish we could get rid of the as-root patching requirement for arm linux, it'd make things much easier build-ssytem wise
+19:12:40 <cfields> wumpus: i can look into a quick-hack work-around for rc1. but iirc, it's hard to avoid until ubuntu fixes
+19:13:34 <wumpus> cfields: well for 0.14 we can switch to 16.04, which I guess has fixed this, but for 0.13 we're stuck with it. I don't mind the gitian prepare script change, but I'm not sure what the gitian people think about it, devrandom hasnt' commented on it
+19:13:48 <cfields> wumpus: quick alternative would bt c/p the descriptor to linux-arm.yml for now
+19:14:00 <gmaxwell> will we be able to distribute arm linux binaries for 0.13?
+19:14:23 <wumpus> gmaxwell: yes, that was done, but it has added an awkward requirement to the gitian build descriptor
+19:14:24 <jonasschnelli> yes
+19:15:31 <cfields> wumpus: would you like me to just copy the descriptor for now? The issue is the conflicting toolchains, so that would solve it. It would just mean an extra gbuild.
+19:15:34 <wumpus> in any case, to conclude this topic: https://github.com/bitcoin/bitcoin/milestone/20 is an accurate reflection of what has to be done before rc1? (apart from the release notes issue)
+19:16:46 <petertodd> wumpus: ack
+19:17:12 <wumpus> cfields: I'll try to contact devrandom about the gitian change, if we can't speed that up, I think splitting up the descriptor makes sense. It does mean temporary changes to the release process, I preferred it this way :)
+19:17:53 <cfields> ok
+19:18:08 <wumpus> #action wumpus contact devrandom about https://github.com/devrandom/gitian-builder/pull/123
+19:18:12 <achow101> what about segwit deployment parameters
+19:18:23 <btcdrak> achow101: not for 0.13.0
+19:18:42 <wumpus> we could add that as proposed topic, but not relevant for 0.13
+19:19:06 <sipa> achow101: first backport to 0.12, figuring out cb+segwit, and planning releases
+19:19:08 <btcdrak> achow101: it's explained in https://bitcoincore.org/en/lifecycle/#consensus-rules
+19:19:11 <MarcoFalke> #action Help with review on https://github.com/bitcoin/bitcoin/milestone/20
+19:19:17 <wumpus> we're done with this topic though so i'm ok with switching
+19:20:14 <gmaxwell> Okay can we talk briefly about the HD wallet thing?
+19:20:20 <wumpus> #topic HD wallet issue
+19:20:43 <sipa> what is the hd wallet issue number?
+19:20:56 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8309/files
+19:21:00 <jonasschnelli> Its a PR (failing test)
+19:21:29 <jonasschnelli> currently looking at it.
+19:21:31 <MarcoFalke> The rpc-test is pretty simple: usehd=1, then backup wallet.dat
+19:21:35 <jonasschnelli> The addresses are re-generated deterministic... but somehow reindex fails..
+19:21:36 <MarcoFalke> Do some transactions and discard wallet.dat
+19:21:36 <gmaxwell> If I understand the issue correctly there is a design limitation that we can easily work around.  I believe the limitation is that it only scans the keys currently in the pool, and when the pool expands it doesn't go back at all, and it doesn't expand the pool based on used keys as it goes. This means that recovery will miss things without a recan in many cases.
+19:21:39 <gmaxwell> But I could misunderstand.
+19:22:07 <jonasschnelli> Yes. The simples HD feature does not cover restores...
+19:22:17 <MarcoFalke> I am running rescan and reindex. None of it fixes it
+19:22:18 <gmaxwell> If I am not incorrect here, then simply setting the keypool default really large when usehd is set would be an adequate workaround, I believe.
+19:22:20 <jonasschnelli> Restore is manual work (including a rescan)
+19:22:36 <gmaxwell> if a rescan isn't fixing it, thats a more serious issue than I was thinking.
+19:23:01 <MarcoFalke> I was logging the result of IsMine on each tx and it retured false, so the transactions were never added to the wallet in the second run (rescan)
+19:23:02 <jonasschnelli> Yes... I currently trying to find out why MarcoFalke test fails even after a rescan.
+19:23:20 <gmaxwell> In any case we cannot RC it with a serious doubt about it not working. It could be disabled in an RC if needed.
+19:23:21 <wumpus> but if you set keypool really large then it will generate and store all those keys, defeating the purpose of using HD in the first place, or not?
+19:23:25 <jonasschnelli> But IMO it's unrelated to HD,... the keys are recreated.
+19:23:49 <wumpus> yes, I think this scary, I don't think this is ready for a release
+19:23:52 <gmaxwell> wumpus: it's the same keys every time, no defeating.
+19:23:56 <jonasschnelli> Sure. Let me first try to find the root cause before we consider a revert
+19:24:16 <MarcoFalke> agree
+19:24:18 <wumpus> rever wouldn't be necessary, just default the flag to false
+19:24:46 <wumpus> it defaults to true for new wallets now which is what makes it scary if it would be somehow broken
+19:24:47 <jonasschnelli> Sure. But we probably don't want to ship a (per default disabled) feature which _could_ includes bugs. :)
+19:24:47 <gmaxwell> In any case we cannot RC it with a serious doubt about it not working. It could be disabled in an RC if needed. If the issue can be reduced to needs rescan I described then I think increasing the pool is adequate.
+19:24:56 <petertodd> wumpus: is the flag documented in --help?
+19:25:34 <gmaxwell> We need to understand the issue at a minimum or make it unavailable, too risky as even an option. IMO. But I don't have any doubt that we will understand the issue in a day or so.
+19:25:39 <jonasschnelli> MarcoFalke: have you tried the test with HD disabled (just import your created keys)?
+19:25:55 <gmaxwell> I haven't looked at it yet myself except passively watching the discussion.
+19:25:59 <sipa> likewise
+19:26:04 <sipa> i will look soon
+19:26:04 <MarcoFalke> no
+19:26:20 <jonasschnelli> I think without knowing the root cause of the problem actions are useless.
+19:26:33 <wumpus> agreed
+19:26:40 <sipa> agree; we need to understand it
+19:26:41 <jonasschnelli> I will know more about it in a couple of hours.
+19:26:47 <sipa> and i believe there is plenty of time for that
+19:27:08 <wumpus> before when?
+19:27:11 <gmaxwell> Okay well the action is to determine the issue(s). :)  Though if wumpus decides to cut an RC before we do, I'd ask that the option be disabled in it.
+19:27:27 <wumpus> yes, need to disable it completely then, I agree
+19:27:41 <jonasschnelli> Yes. But it could also be a serious import/rescan issue (not related to HD)
+19:28:09 <wumpus> the non-HD rescan test passes, right?
+19:28:19 <MarcoFalke> yes
+19:28:23 <sipa> i believe that rpc test is less elaborate
+19:28:47 <wumpus> did you try your new test without HD MarcoFalke?
+19:28:50 <jonasschnelli> I think we would need the same test (that fails) without HD
+19:29:18 <MarcoFalke> You can't create keys deterministically without HD
+19:29:33 <jonasschnelli> I can see the exact keys in the wallet after the restore but I can see rescan failing to reconstruct the wtxs.
+19:29:37 <sipa> no need to discuss the details here
+19:29:43 <wumpus> oh sure, you can't do exactly the dsame thing
+19:29:44 <jonasschnelli> MarcoFalke: you could create 100 keys and reimport them...
+19:30:05 <jonasschnelli> anyways,... I'll have a look at it and will report on the PR
+19:30:07 <gmaxwell> in any case, I think this can move outside the meeting now, we known what general things we need to do to make progress.
+19:30:14 <jonasschnelli> ack
+19:30:15 <wumpus> right
+19:30:19 <wumpus> any other topics?
+19:31:07 <gmaxwell> Sure, an announcement:
+19:31:47 <sipa> *crickets*
+19:31:54 <jonasschnelli> oO
+19:32:20 * petertodd braces for an incoming text wall
+19:32:34 <gmaxwell> Matt has announced his new relaynetwork work that uses UDP and FEC, http://bluematt.bitcoin.ninja/2016/07/07/relay-networks/  the current not really fully cooked software gets worldwide block propagation 99% of the time in less than 100ms over the fiber-path distances.
+19:32:44 <petertodd> +1
+19:32:58 <jonasschnelli> Saw this. Impressive work! Well done.
+19:33:01 <gmaxwell> (actually 98% of the time in the last day)
+19:33:11 <btcdrak> Also the FIBRE website is http://bitcoinfibre.org/
+19:33:14 <cfields> nice!
+19:33:17 <wumpus> awesome!
+19:33:23 <gmaxwell> And his deployment uses only cheap VPSes.
+19:33:38 <sipa> wow, i saw the website but hadn't appreciated how good the numbers were
+19:33:45 <sipa> i just looked at how oretty the graphs were
+19:33:54 <gmaxwell> may be of some interest to some people, he's trying to get other people to setup parallel networks, and put up an extensive guide, including tricks for getting access to low latency connectivity between asia and europe. :)
+19:34:18 <sipa> we need neutrino-based transmissions.
+19:34:25 <petertodd> sipa: lol, I was just about to say
+19:34:34 <gmaxwell> Stats are at http://bitcoinrelaynetwork.org/stats_ng.html   there is also plety of room to improve the software/protocol still.
+19:34:37 <petertodd> sipa: reminds me, I wrote a short story about that awhile back...
+19:35:10 <wumpus> neutrono-based transmissions are easy, compared to the receiver part :)
+19:35:21 <btcdrak> The github project is at https://github.com/bitcoinfibre
+19:35:54 <petertodd> wumpus: what? don't you have a few tonnes of heavy water laying around?
+19:36:21 <gmaxwell> Including the actual speed of light delays, he gets worldwide sync in 98% of the time in under 238ms, 80% in under 165ms.  So thats all fun.
+19:36:26 <sipa> i believe production of heavy water may be more decentralized than sha256 asic mining production.
+19:37:00 <petertodd> sipa: yes! https://www.youtube.com/watch?v=Sxl78pWW8Vk
+19:38:18 <gmaxwell> onto other subjects, I'd still like to see a testnet-defaulting binary during the RCs. My contribution to that effort was getting master working correctly on testnet again. :) but I haven't done anything else. :(
+19:38:33 <wumpus> petertodd: of course I do, but not enough shielded undergorund space to put it
+19:39:20 <gmaxwell> there are trillions of gallons of heavy water not so many miles from me; ... it's just unfortunately mixed with lots of light water and salt.
+19:39:36 <petertodd> wumpus: that's why I took up caving
+19:40:01 <cfields> gmaxwell: what's the reason for an additional binary?
+19:40:31 <cfields> gmaxwell: oh, you mean default to testnet until final release?
+19:40:31 <wumpus> gmaxwell: we could do that now, eg before the rc1
+19:40:47 <wumpus> well at least if I could build releases, dang
+19:40:51 <gmaxwell> wumpus: yea, I think we should too, we just couldn't do it when testnet was getting stuck for many, but it's fixed now.
+19:41:18 <wumpus> cfields: not the rc1 itself, more like a master-build-with-only-testnet-enabled
+19:41:54 <gmaxwell> cfields: I've found that a lot of people would like to play with it are actually thrown off by setting an option. It's not so intutive for GUI users.  I think this would greatly increase testnet usage to have builds that work more like bitcoin/altcoin installs.
+19:41:54 <wumpus> rc1 should definitely have mainnet by default, like any rc
+19:42:32 <wumpus> gmaxwell: did you see #8285? it's super-easy now for windows GUI users
+19:42:38 <cfields> hmm
+19:42:40 <gmaxwell> one possibility I considered is that we could just sniff the binary name and have -testnet and -testnet-qt change the default, and ship a link. :P
+19:42:50 <petertodd> gmaxwell: I wonder if a wrapper script with -testnet would help those users?
+19:42:55 <gmaxwell> but perhaps thats too much for now. :)
+19:43:18 <wumpus> https://github.com/bitcoin/bitcoin/pull/8285 exactly does that
+19:43:22 <cfields> wumpus: ah nice, i missed that
+19:43:27 <gmaxwell> I didn't see it.
+19:43:36 <gmaxwell> (or forgot seeing it!)
+19:43:59 <petertodd> wumpus: ah cool, thanks!
+19:44:03 <gmaxwell> Thats really awesome.
+19:44:21 <petertodd> wumpus: just like mainnet/testnet wallets on my android phone
+19:44:49 <gmaxwell> in any case, it's still left with the 'upgrade testnet without upgrading mainnet' issue, that a testnet only build from master would fix.
+19:44:51 <wumpus> petertodd: indeed, bitcoin wallet for android has been doing a similar thing
+19:44:58 <gmaxwell> if you could do builds. :P
+19:46:16 <cfields> heh, hint taken. Working on the split descriptors now.
+19:47:29 <wumpus> thanks cfields
+19:47:34 <wumpus> any other topics?
+19:47:44 <petertodd> wumpus: happy halving day :
+19:47:45 <petertodd> )
+19:47:46 <petertodd> :)
+19:48:05 <wumpus> hah, same to you
+19:48:39 <gmaxwell> I wonder if there is some scifi where halving day is where half the people die? it seems right.
+19:48:41 <petertodd> wumpus: I'll be hiding in a cave most of that day fyi - so if the world ends don't call me :P
+19:49:04 <petertodd> gmaxwell: satoshi should have made it a 10% think, so we could call it DECIMATION DAY
+19:49:19 <petertodd> *thing
+19:49:30 <wumpus> petertodd: that sounds like a wise thing to do, hide in a cave until it blows over
+19:49:49 <sipa> i wish i had a cave here
+19:49:54 <sipa> i'm in the middle of paris
+19:50:00 <sipa> and there is some football thing
+19:50:16 <petertodd> sipa: you've got the most awesome sewer system, and the catacombs!
+19:50:18 <gmaxwell> sipa: catacombs.
+19:50:33 <sipa> catacombs close in 10 minutes.
+19:50:47 <petertodd> sipa: "officially" speaking...
+19:51:01 <jonasschnelli> shortly back to the HD issue: I think it's a simple bug in the test https://github.com/bitcoin/bitcoin/pull/8309/files#diff-ee4afcd6c3d5f19104c21bcc03407aeaR71 ( self.node_args[1].extend(['-rescan']) does not work)
+19:51:08 <sipa> hah.
+19:51:11 <jonasschnelli> All light are green. :)
+19:51:12 <sipa> yay
+19:51:13 <gmaxwell> pfft. plenty of people have gone after hours and spent the rest of their lives there.
+19:51:22 <jonasschnelli> self.node_args[1].extend(['-rescan']) should be  self.node_args[1] + ['-rescan']
+19:51:56 <MarcoFalke> Wow
+19:52:24 <wumpus> jonasschnelli: wow, very good news, and you found it within the meeting :D
+19:52:25 <petertodd> jonasschnelli: oh, is node_args[1] a tuple?
+19:52:39 <gmaxwell> that may just leave us with the surprising behavior that it doesn't fill the pool on its own. which would be good news, since thats easy to workaround.
+19:52:48 <jonasschnelli> I'm not familiar with extend() but seems to be the wrong function for that purpose.
+19:53:05 <jonasschnelli> But I guess we want MarcoFalke's RPC test in 0.13! :)
+19:53:19 <petertodd> jonasschnelli: extend() is list only, and modifies in place
+19:53:57 <wumpus> yes, extend is in place and returns nothing
+19:54:23 <jonasschnelli> At least we tested again the HD feature...
+19:54:38 <sipa> 6 minutes
+19:54:51 <sipa> are we done?
+19:54:59 <gmaxwell> sipa: until we lose you to the catacombs?
+19:54:59 <wumpus> I think so?
+19:55:31 <wumpus> #endmeeting
