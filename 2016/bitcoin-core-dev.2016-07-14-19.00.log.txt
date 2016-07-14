@@ -1,0 +1,349 @@
+19:00:52 <wumpus> #startmeeting
+19:00:52 <lightningbot> Meeting started Thu Jul 14 19:00:52 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:52 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:53 <instagibbs> actually here this time
+19:01:47 <cfields> gmaxwell: ping for pings :)
+19:01:48 <wumpus> gmaxwell jonasschnelli sdaftuar jtimon kanzure MarcoFalke
+19:01:57 <jonasschnelli> pong
+19:02:33 <wumpus> topic suggestions?
+19:02:41 <jonasschnelli> proposal: open 0.13 PRs (https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.13.0)
+19:02:42 <wumpus> (besides 0.13.0rc1)
+19:02:52 <instagibbs> segwit backport?
+19:02:58 <sipa> ack topic
+19:03:13 <wumpus> #topic 0.13.0rc1
+19:03:20 <wumpus> #link https://github.com/bitcoin/bitcoin/milestone/20
+19:03:29 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:03:48 <jonasschnelli> I have opened #8323 some days ago and I think we need to have this in 0.13 to avoid later HD/non-HD mix problems
+19:03:48 <wumpus> most of the remaining PRs have been merged, but there are still a few open
+19:04:09 <jonasschnelli> I beg for reviews...
+19:04:13 <instagibbs> jonasschnelli, I can review
+19:04:24 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/8305 Improve handling of unconnecting headers by sdaftuar
+19:04:44 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/8295 Mining-related fixups for 0.13.0 also by sdaftuar
+19:04:49 <wumpus> and jonasschnelli's
+19:05:04 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8323
+19:05:14 <instagibbs> #link https://github.com/bitcoin/bitcoin/pull/8323
+19:05:38 <wumpus> I think #8305 is pretty much ready
+19:06:02 <wumpus> has ACK by sipa and is being tested by gmaxwell
+19:06:10 <sdaftuar> i think sipa acked an earlier version of the code
+19:06:12 <bsm2357> pong
+19:06:37 <instagibbs> jeremyrubin *ping*
+19:07:00 <wumpus> cfields: has your comment there been addressed sufficiently?
+19:07:19 <sdaftuar> oh, thanks sipa :)
+19:07:51 <cfields> wumpus: yes, i'm happy with the slow DOS trickle
+19:08:04 <jeremyrubin> instagibbs: yes?
+19:08:32 <wumpus> as for #8295, mining changes are always harder to get people to review/test, I'd encourage people to get involved, though I see sipa ACKed that one too
+19:09:13 <sipa> yeah, the reason i didn't include telhr 8295 approach myself was because i incorectly assumed it would require extra counters
+19:09:27 <wumpus> jonasschnelli: #8323 still has some open comments
+19:09:40 <sipa> and the existing tests cover it
+19:09:41 <wumpus> trivial things though
+19:09:48 <MarcoFalke> no blockers
+19:09:58 <jonasschnelli> Yes. paveljanik just added some... will fix the trivials together (once there are some)
+19:10:05 <morcos> sipa: are you referring to mining unit tests?
+19:10:10 <sipa> morcos: yes
+19:10:25 <sipa> (well, and any rpc test that mines)
+19:10:30 <morcos> sipa: those aren't worth much, they've been in need of redoing for some time
+19:10:43 <sipa> hmm, ok
+19:10:49 <wumpus> jonasschnelli: I'll also review and test it soon
+19:10:55 <jonasschnelli> thanks
+19:11:03 <morcos> not that i'm objecting to 8295 though
+19:11:07 <sipa> morcos: i'll test by running old and new in parallel and comparing then
+19:12:08 <wumpus> great
+19:13:19 <wumpus> sdaftuar: I don't think all items of https://github.com/bitcoin/bitcoin/issues/8294 are currenly being addressed in PRs?
+19:13:29 <luke-jr> a quick glance at 8323 suggests it won't make problems with key origin stuff, rihgt?
+19:14:09 <wumpus> sdaftuar: any blockers remaining there?
+19:14:20 <wumpus> (after all currenly 0.13-tagged PRs are merged)
+19:14:35 <wumpus> luke-jr: let's discuss that outside the meeting please
+19:14:51 <luke-jr> ….
+19:14:57 <sdaftuar> wumpus: i was waiting for #8295 to be merged before doing the release notes writeups
+19:15:14 <sdaftuar> oh, should we talk about -blockmaxcost briefly?
+19:15:16 <wumpus> sdaftuar: oh release notes writeups aren't urgent, they need to be done for final but not rc1
+19:15:17 <luke-jr> (what's the point of a meeting if not to discuss the topics raised?)
+19:15:41 <sdaftuar> one of the to do items was better documentation for that option, but as has been pointed out, it's an awful name :)
+19:16:08 <sipa> sdaftuar: suggested replacement?
+19:16:25 <wumpus> yes, the 'max cost' confuses people, they think it's about monetary cost
+19:16:31 <petertodd> wumpus: +1
+19:16:33 <wumpus> (and that's also how translators translate it)
+19:16:40 <luke-jr> >_<
+19:16:50 <wumpus> (and it's a public command line option so the help gets translated)
+19:16:59 <sipa> we could have maxblockvsize instead
+19:16:59 <petertodd> blockmaxcost is still just a size limit isn't it?
+19:17:02 <gmaxwell> Cost has been a repeated source of confusion.
+19:17:02 <wumpus> but that means the help needs to be improved, not necessarily the option renamed
+19:17:03 <luke-jr> well, it *is* indirectly monetary
+19:17:17 <jeremyrubin> maybe utilization
+19:17:20 <sipa> petertodd: it's the 'cost' as defined in the BIP, which is vsize*4
+19:17:40 <gmaxwell> Score/points/weight/usage/ouchie/bitgo  would all be better words for it.
+19:17:42 <luke-jr> "network resource usage"?
+19:17:43 <sdaftuar> sipa: i think my best idea was to change the term in the BIP.  i think we use "block cost" in the BIP.  if we change that to something more descriptive, "block size validation cost" or something, and reference that in the documentation for the option, then i think that'd be good enough maybe
+19:17:43 <wumpus> it's an abstract cost, and CS students understand that, but for most users it's confusing :)
+19:18:01 <sipa> sdaftuar: yes, agree, let's makr it consistent, whatever we agree upon
+19:18:15 <petertodd> sdaftuar: yeah, I think changing the BIP's term is a good idea too - it's still a size, just a redefined size
+19:18:23 <CodeShark> #agree
+19:18:24 <wumpus> block size validation cost would already be better help than there is now
+19:18:30 <luke-jr> petertodd: it's not a size.
+19:18:32 <petertodd> notably, if we had referred to block size in the BIP, that'd help discourage the trolls...
+19:18:33 <gmaxwell> "externality"
+19:18:44 <gmaxwell> luke-jr: it is a size, in cost-space.
+19:18:47 <sipa> well, any reason not use vsize?
+19:18:49 <petertodd> segwit *is* a blocksize increase, so just continue to call it a size
+19:18:53 <petertodd> sipa: vsize is fine
+19:19:00 <wumpus> yes vsize is fine
+19:19:09 <btcdrak> yes
+19:19:10 <petertodd> sipa: (so long as the help text explains what vsize is)
+19:19:12 <luke-jr> vsize is inaccurate
+19:19:15 <gmaxwell> V means validation?
+19:19:21 <sipa> virtual
+19:19:24 <luke-jr> going to *4 the meaning, so people specify x.25 now?
+19:19:27 <sdaftuar> hm, we have been using vsize to refer to the scaled down value, not the *4 value?
+19:19:27 <btcdrak> v for vendetta
+19:19:28 <gmaxwell> ugh, there is nothing virtual about it.
+19:19:36 <petertodd> gmaxwell: +1
+19:19:38 <luke-jr> fractional values for consensus code?
+19:19:50 <petertodd> sdaftuar: that's a mistake then
+19:19:56 <sipa> sdaftuar: yes, cost == vsize * 4
+19:19:59 <gmaxwell> re fractional values, haven't we learned from difficulty?
+19:20:06 <sipa> vsize is cost, but scaled down for compatibility with old code
+19:20:15 <sipa> so they don't start sending 4x fees etc
+19:20:18 <gmaxwell> if we use fractional values for display friendlyness, other people will use them in consensus code and cause faults.
+19:20:35 * luke-jr grabs a thesaurus
+19:20:36 <gmaxwell> sipa: ::sigh:: point.
+19:20:37 <btcdrak> agreed
+19:20:46 <jeremyrubin> I like weight the best
+19:20:56 <wumpus> agree jeremyrubin
+19:20:59 <jeremyrubin> because usually you would say a weighted sum
+19:21:05 <sipa> jeremyrubin: nice idea
+19:21:07 <wumpus> weight is a pretty good term for it
+19:21:09 <CodeShark> #agree
+19:21:17 <btcdrak> good call
+19:21:21 <wumpus> and it's not used anywhere yet in bitcoin
+19:21:24 <jeremyrubin> (gmaxwell: mentioned first)
+19:21:33 <luke-jr> outlay? :/
+19:21:41 <luke-jr> weight sounds fine
+19:22:30 <jtimon> yeah, there's two sizes with their weights, it's a cost heuristic
+19:22:40 <wumpus> so: rename blockmaxcost to blockmaxweight?
+19:22:43 <instagibbs> "weight" also carries a nice intuitive notion
+19:22:57 <sipa> yes, and let's report weight for transactions too
+19:22:57 <jeremyrubin> maxblockweightcostheuristic
+19:23:06 <gmaxwell> I read that as block mascot.
+19:23:18 <wumpus> hehe
+19:23:19 <petertodd> OTOH, if we just call the command line stuff a block size, we help educate people on the fact that segwit is a blocksize increase - some miners will leave it at 1000000, but that's a temporary problem
+19:23:21 <jeremyrubin> virtualmaxblockweightcostheuristic
+19:23:21 <jtimon> sorry, I missed the first 15 mins or so, but why do we need to rename blockmaxcost ?
+19:23:32 <luke-jr> petertodd: size is something else
+19:23:33 <gmaxwell> jtimon: because the word cost is confused as fee.
+19:24:02 <sdaftuar> i think "block weight" and -blockmaxweight [
+19:24:11 <sdaftuar> both work okay
+19:24:14 <btcdrak> ack
+19:24:31 <wumpus> jtimon: well it started as that the help for that option was confusing, then people realized the option was named terribly too, but please just read back :)
+19:24:35 <jtimon> mhmm, no, it's costs for the miners, although that's also why they charge you fees
+19:24:40 <luke-jr> weight also should be fine for GBT; nothing is released using the old cost stuff yet
+19:24:59 <luke-jr> jtimon: is there a problem with "weight"?
+19:25:08 <gmaxwell> in any case, I support the great cost to weight renaming.
+19:25:09 <sipa> petertodd: that's what i did originally
+19:25:14 <wumpus> #action rename blockmaxcost to blockmaxweight
+19:25:23 <jtimon> yeah, sorry I'll wait for botbot.me to update
+19:25:26 <instagibbs> We can chew it over offline
+19:25:29 <petertodd> sipa: well, ack your original idea :)
+19:25:46 <sipa> petertodd: but then people started complaining that there had to be a way to limit the serialized size too
+19:26:01 <jeremyrubin> jtimon: but that's not the units of the cost, otherwise you would denote it into BTC or something...
+19:26:05 <btcdrak> jtimon: you can see.logs in slack
+19:27:00 <petertodd> jeremyrubin: blockbytescost :)
+19:27:34 <jtimon> jeremyrubin: the cost for miners is in size, or in "costs relative to the maximum limit" or whatever, but sorry, let's move on
+19:28:20 <wumpus> other topics?
+19:28:28 <sipa> segwit backport
+19:28:31 <wumpus> ah yes
+19:28:34 <wumpus> #topic segwit backport
+19:28:39 <jtimon> btcdrak: I didn't knew, never used the bitcoin slack
+19:29:04 <sipa> wumpus: some people have raised concerns about backporting segwit to 0.12
+19:29:24 <wumpus> concerns about doing it at all?
+19:29:25 <jtimon> what's the concern?
+19:29:31 <luke-jr> ^
+19:29:35 <wumpus> well, next chance is 0.13.1
+19:29:51 <sipa> morcos, btcdrak: ?
+19:30:21 <morcos> :), yes i was arguing that it would be a mistake
+19:30:33 <jl2012> me too
+19:30:36 <instagibbs> could you reiterate for the audience
+19:30:49 <jtimon> if the backport doesn't get enough review and testing there's no new 0.12 release, simple, no?
+19:30:54 <morcos> I dont' think that it's worth it.  I'm not sure there are are benefits that outweight hte cost (weight) in terms of developer time and increased risk for bugs in the backport
+19:31:04 <sipa> one concern i have is that it would likely be the first segwit code that gets actually deployed on the network, and that it is hard to give it the same amount of testing and review as 0.13 did
+19:31:04 <wumpus> I think it would easier for miners if it was backported to 0.12, but if it turns out to be too much technical difficulty/risk, well too bad I suppose...
+19:31:06 <maaku> if that were the case then I would have to argue that we wait until 0.14.1 .. so strong argument is needed
+19:31:10 <luke-jr> jtimon: backports never do, unless they're the tip release
+19:31:28 <morcos> jtimon: agree that its that simple, but woudl be a shame for some people to sacrafice time backporting and reviewing if its not going to pass the bar
+19:31:34 <btcdrak> yes. I share morcos concerns about backporting
+19:31:44 <luke-jr> wumpus: "too bad" may result in delayed deployment maybe
+19:31:46 <jtimon> luke-jr: so all previous backported softforks were unsafe ?
+19:31:58 <luke-jr> jtimon: such as?
+19:31:59 <wumpus> luke-jr: yes, but delay is better than messing up
+19:32:08 <sipa> about this topic
+19:32:21 <sipa> in the past we've seen miners often run even pre-release code
+19:32:27 <jtimon> luke-jr: I don't know if any of them was unsafe, I'm asking
+19:32:34 <sipa> if that is going to happen, my concerns about a backport go down
+19:32:38 <wumpus> I hate delays, but minimizing risk is the highest priority
+19:32:39 <sipa> but so does its usefulness
+19:32:40 <jl2012> have anyone asked miners that they really need a backport?
+19:32:41 <maaku> i'm strongly against "too bad" -- we need to take our support guarantees seriously
+19:32:46 <gmaxwell> the concern is mostly that we don't want to force people to quickly adopt 0.13 derrived code just to catch up with segwit, otherwise 0.13.1 would be fine.
+19:33:03 <morcos> maaku: we already didn't backport CSV
+19:33:11 <wumpus> maaku: there are no guarantees
+19:33:11 <maaku> people are running businesses assuming we support "current plus prior" not "current plus prior, except when it's inconvenient"
+19:33:18 <gmaxwell> maaku: doing segwit in 0.13.1 isn't a violation of the process, that still remains no softforks in major feature releases.
+19:33:37 <wumpus> maaku: from the begining we've said that the plan would be 0.12.1, but if it would somehow lapse it would be 0.13.1
+19:33:49 <maaku> gmaxwell: it would mean you could no longer mine on 0.12
+19:33:50 <sipa> jl2012: that's the most important question
+19:33:56 <wumpus> this is not about 'inconvenient', this is about risk
+19:33:58 <morcos> gmaxwell: are you more worried about miners or users?
+19:34:18 <gmaxwell> maaku: with things like CPFP I'm not sure that anyone will be mining on 0.12 in short order. But thats something we could inquire about.
+19:34:26 <gmaxwell> morcos: users.
+19:34:35 <morcos> i just think it's very likely to be safer consensus wise to upgrade to 0.13.1 from 0.12.1 than to upgrade to 0.12.2 (segwit backport) which is more likely to have bugs
+19:34:49 <wumpus> we wouldn't want a DAO scale disaster over over-hurried release of hardly-reviewed and tested code
+19:35:03 <CodeShark> wumpus +1
+19:35:07 <petertodd> miners that truly need v0.12 might be better off mining with a v0.12 node behind a segwit 0.13 node...
+19:35:09 <wumpus> so if it needs to be 0.13.1, it will be 0.13.1
+19:35:25 <gmaxwell> Sure.
+19:35:39 <morcos> wumpus: i thought it was definitely going to be 0.13.1, the question was whether we'd also make a 0.12.2?
+19:35:44 <luke-jr> maaku: we need to stop guaranteeing things we can't providr
+19:36:01 <achow101> how many miners even use backports?
+19:36:05 <wumpus> morcos: no - if it would be in 0.12.2, it could make it into 0.13.0 too
+19:36:14 <gmaxwell> So one risk we have right now is that 0.13.x would end up releasing concurrently or likely ahead of 0.12.2, which would be bad for network consistency in general.
+19:36:17 <wumpus> morcos: assuming 0.12.2 is released before 0.13.0 of course
+19:36:18 <luke-jr> achow101: all of htem right now I think
+19:36:22 <jtimon> morcos: maybe rebasing my code to 0.13.1 is not easier than rebasing it to 0.12.2
+19:36:24 <wumpus> morcos: then again that ship sailed already
+19:37:31 <morcos> ok, well i don't have a strong opinion on release numbers or timing.  my objection is to spreading ourselves too thing by having to thoroughly review a very substantial set of changes in 2 code bases and then putting the network at risk
+19:37:32 <gmaxwell> morcos: oh no, plan was always 0.12.2, but I agree it might be reasonable to not do that based on current timing.
+19:38:08 <achow101> what about releasing 0.13.1 and then 0.12.2?
+19:38:20 <morcos> i think segwit in master is now relatively well reviewed...  it will be very difficult to get that level of review in the 0.12 branch, which woud make me uncomfortable releasing that
+19:38:53 <morcos> on top of that, its not something i'd want to spend my time on...  i think all our time would be more wisely spent on moving forward with future work
+19:38:53 <wumpus> achow101: well if a backport is released at all, why would it matter in what order?
+19:39:00 <gmaxwell> Wouldn't want to make a classic blunder, "never get involved in a land war in Asia"!
+19:39:00 <morcos> anyway, sorry, i have to catch a train, got to run!
+19:39:03 <sipa> assuming the demand for a backport of segwit is for users and not miners, releasing 0.12.2 with segwit backport after releasing it in 0.13 is not unreasonablr
+19:39:30 <btcdrak> It's also a lot cleaner releasing in 0.13.1 because 0.12 would not have compact blocks
+19:39:37 <luke-jr> wumpus: order matters a lot for testing
+19:39:48 <petertodd> sipa: sure, if it removed getblocktemplate that'd be an easy idea to support
+19:39:56 <gmaxwell> well right now 0.13.0 doesn't have CB for segwit, though I suppose 0.13.1 could.
+19:39:57 <jtimon> sipa: yeah, I assumed that was the plan
+19:40:00 <achow101> wumpus: for proper review of the backport without delaying deployment
+19:40:03 <wumpus> I do wish we had realized this sooner, instead of seeming like a last minute decision
+19:40:09 <gmaxwell> wumpus: likewise.
+19:40:21 <wumpus> achow101: even fewer people will care about 0.12.x if 0.13 is already out
+19:40:31 <gmaxwell> otoh, decisions to do _less_ at the last minute are better than decisions to do _more_. :)
+19:40:35 <btcdrak> gmaxwell: right, but if we released 0.12.2 then segwit would not have CB. If we release with 0.13.1 then we get CB at the get go.
+19:40:37 <sipa> i guess the question is what has priority: segwit backport or 0.13 release?
+19:40:38 <wumpus> gmaxwell: hah, fully agreed
+19:40:54 <petertodd> sipa: 0.13 release I think
+19:41:00 <gmaxwell> We have real problems with virtually no one ever using backports.
+19:41:06 <wumpus> for me the 0.13 release has priority
+19:41:09 <helo> +1 release
+19:41:17 <jonasschnelli> agree with wumpus
+19:41:18 <sipa> my assumption was that we'd do 0.13.0, then 0.12.2 backport with segwit, then 0.13.1 release with segwit active
+19:41:30 <gmaxwell> 0.13 release has priority.
+19:41:33 <sipa> and if that is the case, a backport would be urgent
+19:41:36 <jtimon> waiting to release 0.13 to release 0.12.2 first sounds stupid to me
+19:41:43 <sipa> or 0.13.1 would suffer delays
+19:41:55 <btcdrak> sipa: getting enough review for backport to 0.12.2 would be questionable.
+19:41:57 <gmaxwell> sipa: yes, that was my expectation too, though the release of 0.13 would likely sabotage 0.12.2 deployment.
+19:42:00 <luke-jr> IMO we should remove any promise to maintain older branches once the newer one has a release, and provide backports only as a at-your-own-risk basis
+19:42:08 <petertodd> I'd suggest putting a "if you want 0.12.2 w/ segwit, please let us know" in the release nodes for v0.13.0
+19:42:24 <jtimon> petertodd: that's a good idea
+19:42:35 <jonasschnelli> Don't we take serious risks in BP SW in 0.12.2? Would it be evil to not BP SW to 0.12 and require 0.13 for SW? Would this delay supermajority activation significant?
+19:42:37 <sipa> if there are critical bugs in 0.12.1, we can always release 0.12.2 to fix them
+19:42:37 <btcdrak> we didnt backport CSV to 0.11 because the changes were too extensive - to be clear the backport was done, but we decided not to merge it (and there was not enough review either).
+19:42:39 <petertodd> jtimon: I think we've done it before too
+19:42:56 <jtimon> and depending on the response decide to the the backport or not
+19:42:57 <sipa> btcdrak: tbh, i think that the difficulty of a segwit backport is not that hard
+19:43:02 <gmaxwell> luke-jr: that would be unfortunate in that its the wrong direction for the industry. The lack of professionality in software lifecycle isn't something we should be cementing, though I'm not sure I see much choice when we don't actually get the review/testing.
+19:43:11 <btcdrak> sipa: you would say that though :)
+19:43:12 <sipa> btcdrak: the original segwit PR was made with mostly 0.12 code still
+19:43:14 <gmaxwell> luke-jr: maybe we should start making more really disruptive changes in major releases. :)
+19:43:29 <wumpus> 'maintain' older branches does not mean backport everything
+19:43:35 <jonasschnelli> agree
+19:43:37 <luke-jr> gmaxwell: I agree we should strive to support stable branches of course (as I've tried for years now), but the reality is we *can't* as things stand now
+19:43:48 <wumpus> just that serious and critical issues are addressed
+19:43:53 <sipa> yes  0.12.2 can still happen if a serioud bug in 0.12.1 is founf
+19:44:06 <luke-jr> wumpus: not supporting a deployed softfork is a critical issue for a full node
+19:44:08 <jtimon> gmaxwell: I've been always in favor of doing disruptive refactors just before branching instead of right after
+19:44:39 <sipa> ok, i need to run
+19:44:49 <jonasschnelli> luke-jr: SW could be deployed, I guess the majoriry is already on 0.13 and there is no need to keep 0.12
+19:44:57 <sipa> i'll still work on a backport if there is demand
+19:45:08 <luke-jr> jonasschnelli: that's a point I suppose
+19:45:16 <gmaxwell> sipa: it might be a useful excercise from a review perspective in any case.
+19:45:19 <wumpus> jtimon: that increases the pre-release pressure even more, and the potential number of problems what need to be solved before release ('disruptive refactors' have been known to introduce serious bugs in some cases)
+19:45:27 <petertodd> luke-jr: remember that you can always run a node not supporting a soft-fork behind one that does to get the same security
+19:45:52 <luke-jr> petertodd: true; we should make this more well-known IMO
+19:45:58 <luke-jr> not sure how many people realise it
+19:46:02 <petertodd> luke-jr: good thing for the release notes!
+19:46:05 <gmaxwell> I always point it out.
+19:46:08 <jtimon> wumpus: I mean the of the kind that present low risk (like file renaming on moveonly commits)
+19:46:16 <gmaxwell> but it's the sort of thing that needs a diagram. :)
+19:46:20 <luke-jr> gmaxwell: did you for Eligius? :P
+19:46:26 <CodeShark> petertodd +1
+19:46:32 <maaku> has anyone actually quantified what level of review is required for a backport?
+19:46:32 * luke-jr knows he overlooked it
+19:46:33 <jtimon> wumpus: but I guess you're right about the pre-release preassure
+19:46:47 <maaku> segwit was written against 0.12.
+19:46:48 <luke-jr> actually, I guess it might not entirely work for CSV + mining
+19:46:48 <wumpus> jtimon: in any case I doubt raneming and moveonly commits are what really makes it difficult to backport things :)
+19:46:53 <wumpus> jtimon: more things like the mempool changes
+19:47:34 <jl2012> petertodd: except you can't mine any segwit tx with a 0.12 behind 0.13
+19:47:40 <btcdrak> well I'd like to see a refactoring window right after branching, maybe 2 weeks
+19:47:41 <jtimon> but you don't need to backport segwit from the present, you backport it from when it was merged, no?
+19:47:54 <gmaxwell> maaku: it's not been done yet, so no-- but right now in general we're struggling to maintain the backport releases at all, because virtually no one uses them.
+19:48:11 <jtimon> how would any refactor now difficult backporting segwit?
+19:48:15 <gmaxwell> luke-jr: I don't consider that a great configuration for mining, but I think I'd mentioned it for a prior softfork.
+19:48:45 <wumpus> we're spread really thin - agree fully on the 'don't get involved in a land war in asia' comment
+19:49:16 <petertodd> jl2012: "can't mine" is a smaller group of people than all full node users
+19:50:14 <jtimon> btcdrak: I would like to get refactor code reviewed during that "refactor window", just declaring the week of refactor doesn't make things get merged :p
+19:50:17 <petertodd> incidentally, in my consulting practice I've always advised clients to use architectures where the exact behavior of full node implementations isn't important, which makes upgrades much less risky
+19:51:54 <btcdrak> jtimon: ack
+19:52:14 <gmaxwell> petertodd: careful, though that thinking also drives the "I made my own 'node' implementation and have plugged it directly into the public p2p network! yippie!"
+19:52:56 <gmaxwell> in any case, short on time. Are we done on this subject?
+19:53:03 <instagibbs> 8 minutes left
+19:53:08 <petertodd> gmaxwell: well, my advice is to either use a lite-client w/ up-to-date full node, or if you're using bitcoin core, plan to put it behind an up-to-date node
+19:53:54 <gmaxwell> petertodd: perhaps we should talk to harding and write a deployment guide that  shows things like that layering and test infrastructure.
+19:53:55 <wumpus> seems so
+19:54:01 <petertodd> gmaxwell: good idea
+19:54:15 <gmaxwell> Generally you should have a two later setup in any case, don't put your production node up exposed to the internet...
+19:54:29 <petertodd> gmaxwell: that too...
+19:54:47 <wumpus> other topics? last-minute announcements?
+19:55:38 <gmaxwell> I was getting flammed on reddit that it's common knoweldge that bitcoin core's wallet was unusuable for commercial use.  I tried to get some unpacking there: https://www.reddit.com/r/Bitcoin/comments/4snk48/roger_ver_and_his_supporters_are_pushing_policies/d5bb73w?context=3  might be worth looking at the comments.
+19:56:00 <gmaxwell> As I've lamented in the past, commercial users just generally don't report issues they encounter. I don't know how to improve that.
+19:56:11 <jtimon> can be after the meeting but...
+19:56:12 <wumpus> well if bitcoin core's wallet is unusable for commercial use, I wonder what wallet is..
+19:56:25 <bsm117532> FWIW I've been encountering wallet issues, and am working on a patch that addresses some of them, especially WRT segwit.
+19:56:28 <gmaxwell> What I could extra there was related to wallet performance, which phantomcircuit has recently done some improvement (and has more in the pipeline)
+19:56:42 <gmaxwell> wumpus: people use centeralized api providers instead almost universally.
+19:56:55 <bsm117532> But I would like to see removal of "accounts".  Is anyone working on that?
+19:57:17 <wumpus> bsm117532: I tried to introduce a label API for 0.13 to replace it, then deprecate accounts in 0.14
+19:57:21 <petertodd> bsm117532: re: removing accounts, have you checked with joinmarket on what they'll do? they use accounts
+19:57:28 <wumpus> bsm117532: but that didn't get enough review
+19:57:41 <jtimon> without having to ack or nack #8328 right now, general thoughts about moving consensus files to the consensus folder? I have heard different things, but if it's not clear, I will take it out of the base of my latest consensus branch
+19:57:54 <jtimon> yay nay ?
+19:58:02 <wumpus> bsm117532: https://github.com/bitcoin/bitcoin/pull/7729
+19:58:06 <sipa> jtimon: yay, after 0
+19:58:25 <jtimon> sipa: yeah, I'm assuming after 0.13 branches
+19:58:51 <wumpus> petertodd: that'd be really ill-adviced, given that we've been discouraging use of them for years, are you sure?
+19:58:52 <gmaxwell> ironically, one of the complaints I got there was that accounts are discouraged. ::shrugs::
+19:58:56 <sipa> though i prefer to leave some things as "base logic" like maaku suggests
+19:58:58 <jtimon> I mean, if people want before I'm all in, but I highly doubt it
+19:59:12 <btcdrak> we should ping belcher
+19:59:13 <petertodd> wumpus: yes, I'm 99% sure - I use joinmarket all the time
+19:59:34 <bsm117532> wumpus: I will review 7729 and try to offer some feedback
+19:59:39 <btcdrak> he's got some homework then...
+19:59:45 <maaku> as I wrote in the PR I think pushing everything used by consensus into `src/consensus` makes the source code less organized and less approachable by newbies
+19:59:50 <luke-jr> I need to get back on the road, bbl
+19:59:53 <sipa> maaku: agree
+19:59:56 <jtimon> sipa: mhmm, you mean making another "base logic" dir and package in the makefile ?
+20:00:13 <sipa> jtimon: well one such piece of base logic is primitives
+20:00:26 <petertodd> maaku: less approchable? I'd argue more - makes it easier to understand what consensus is and isn't
+20:00:29 <wumpus> gmaxwell: it's also taking so insanely long to remove it
+20:00:37 <jtimon> maaku: I strongly disagree (but maybe not all people are mostly interested in the consensus code like me)
+20:00:49 <wumpus> gmaxwell: same as I've seen with the label API pull - no one is really interested in it
+20:00:54 <sipa> jtimon: things like prevector and so seem also more broadly usable than consensus
+20:00:58 <maaku> petertodd: that's rarely someone's first question when approaching the code base
+20:01:00 <afk11> I think keeping some base logic outside may work, ultimately serialization libraries might be soft-forks wrt an older consensus implementation
+20:01:15 <sipa> time up
+20:01:18 <btcdrak> well I hate to say it, but its not like the code is that approachable as is...
+20:01:20 <gmaxwell> wumpus: is this the point where I hang my head in shame and point out that I've forgotten there was a label pull?
+20:01:20 <wumpus> #endmeeting

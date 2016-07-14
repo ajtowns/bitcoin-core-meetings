@@ -1,0 +1,376 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:52</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jul 14 19:00:52 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:52</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:53</span><span class="nk"> &lt;instagibbs&gt;</span> actually here this time
+<a name="l-5"></a><span class="tm">19:01:47</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> ping for pings :)
+<a name="l-6"></a><span class="tm">19:01:48</span><span class="nk"> &lt;wumpus&gt;</span> gmaxwell jonasschnelli sdaftuar jtimon kanzure MarcoFalke
+<a name="l-7"></a><span class="tm">19:01:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> pong
+<a name="l-8"></a><span class="tm">19:02:33</span><span class="nk"> &lt;wumpus&gt;</span> topic suggestions?
+<a name="l-9"></a><span class="tm">19:02:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">proposal:</span> open 0.13 PRs (https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.13.0)
+<a name="l-10"></a><span class="tm">19:02:42</span><span class="nk"> &lt;wumpus&gt;</span> (besides 0.13.0rc1)
+<a name="l-11"></a><span class="tm">19:02:52</span><span class="nk"> &lt;instagibbs&gt;</span> segwit backport?
+<a name="l-12"></a><span class="tm">19:02:58</span><span class="nk"> &lt;sipa&gt;</span> ack topic
+<a name="l-13"></a><span class="tm">19:03:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.13.0rc1</span>
+<a name="l-14"></a><span class="tm">19:03:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/milestone/20</span>
+<a name="l-15"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-16"></a><span class="tm">19:03:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have opened #8323 some days ago and I think we need to have this in 0.13 to avoid later HD/non-HD mix problems
+<a name="l-17"></a><span class="tm">19:03:48</span><span class="nk"> &lt;wumpus&gt;</span> most of the remaining PRs have been merged, but there are still a few open
+<a name="l-18"></a><span class="tm">19:04:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> I beg for reviews...
+<a name="l-19"></a><span class="tm">19:04:13</span><span class="nk"> &lt;instagibbs&gt;</span> jonasschnelli, I can review
+<a name="l-20"></a><span class="tm">19:04:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8305 Improve handling of unconnecting headers by sdaftuar</span>
+<a name="l-21"></a><span class="tm">19:04:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8295 Mining-related fixups for 0.13.0 also by sdaftuar</span>
+<a name="l-22"></a><span class="tm">19:04:49</span><span class="nk"> &lt;wumpus&gt;</span> and jonasschnelli's
+<a name="l-23"></a><span class="tm">19:05:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/8323
+<a name="l-24"></a><span class="tm">19:05:14</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8323</span>
+<a name="l-25"></a><span class="tm">19:05:38</span><span class="nk"> &lt;wumpus&gt;</span> I think #8305 is pretty much ready
+<a name="l-26"></a><span class="tm">19:06:02</span><span class="nk"> &lt;wumpus&gt;</span> has ACK by sipa and is being tested by gmaxwell
+<a name="l-27"></a><span class="tm">19:06:10</span><span class="nk"> &lt;sdaftuar&gt;</span> i think sipa acked an earlier version of the code
+<a name="l-28"></a><span class="tm">19:06:12</span><span class="nk"> &lt;bsm2357&gt;</span> pong
+<a name="l-29"></a><span class="tm">19:06:37</span><span class="nk"> &lt;instagibbs&gt;</span> jeremyrubin *ping*
+<a name="l-30"></a><span class="tm">19:07:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> has your comment there been addressed sufficiently?
+<a name="l-31"></a><span class="tm">19:07:19</span><span class="nk"> &lt;sdaftuar&gt;</span> oh, thanks sipa :)
+<a name="l-32"></a><span class="tm">19:07:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> yes, i'm happy with the slow DOS trickle
+<a name="l-33"></a><span class="tm">19:08:04</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">instagibbs:</span> yes?
+<a name="l-34"></a><span class="tm">19:08:32</span><span class="nk"> &lt;wumpus&gt;</span> as for #8295, mining changes are always harder to get people to review/test, I'd encourage people to get involved, though I see sipa ACKed that one too
+<a name="l-35"></a><span class="tm">19:09:13</span><span class="nk"> &lt;sipa&gt;</span> yeah, the reason i didn't include telhr 8295 approach myself was because i incorectly assumed it would require extra counters
+<a name="l-36"></a><span class="tm">19:09:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> #8323 still has some open comments
+<a name="l-37"></a><span class="tm">19:09:40</span><span class="nk"> &lt;sipa&gt;</span> and the existing tests cover it
+<a name="l-38"></a><span class="tm">19:09:41</span><span class="nk"> &lt;wumpus&gt;</span> trivial things though
+<a name="l-39"></a><span class="tm">19:09:48</span><span class="nk"> &lt;MarcoFalke&gt;</span> no blockers
+<a name="l-40"></a><span class="tm">19:09:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. paveljanik just added some... will fix the trivials together (once there are some)
+<a name="l-41"></a><span class="tm">19:10:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> are you referring to mining unit tests?
+<a name="l-42"></a><span class="tm">19:10:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> yes
+<a name="l-43"></a><span class="tm">19:10:25</span><span class="nk"> &lt;sipa&gt;</span> (well, and any rpc test that mines)
+<a name="l-44"></a><span class="tm">19:10:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> those aren't worth much, they've been in need of redoing for some time
+<a name="l-45"></a><span class="tm">19:10:43</span><span class="nk"> &lt;sipa&gt;</span> hmm, ok
+<a name="l-46"></a><span class="tm">19:10:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I'll also review and test it soon
+<a name="l-47"></a><span class="tm">19:10:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> thanks
+<a name="l-48"></a><span class="tm">19:11:03</span><span class="nk"> &lt;morcos&gt;</span> not that i'm objecting to 8295 though
+<a name="l-49"></a><span class="tm">19:11:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i'll test by running old and new in parallel and comparing then
+<a name="l-50"></a><span class="tm">19:12:08</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-51"></a><span class="tm">19:13:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> I don't think all items of https://github.com/bitcoin/bitcoin/issues/8294 are currenly being addressed in PRs?
+<a name="l-52"></a><span class="tm">19:13:29</span><span class="nk"> &lt;luke-jr&gt;</span> a quick glance at 8323 suggests it won't make problems with key origin stuff, rihgt?
+<a name="l-53"></a><span class="tm">19:14:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> any blockers remaining there?
+<a name="l-54"></a><span class="tm">19:14:20</span><span class="nk"> &lt;wumpus&gt;</span> (after all currenly 0.13-tagged PRs are merged)
+<a name="l-55"></a><span class="tm">19:14:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> let's discuss that outside the meeting please
+<a name="l-56"></a><span class="tm">19:14:51</span><span class="nk"> &lt;luke-jr&gt;</span> ….
+<a name="l-57"></a><span class="tm">19:14:57</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> i was waiting for #8295 to be merged before doing the release notes writeups
+<a name="l-58"></a><span class="tm">19:15:14</span><span class="nk"> &lt;sdaftuar&gt;</span> oh, should we talk about -blockmaxcost briefly?
+<a name="l-59"></a><span class="tm">19:15:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> oh release notes writeups aren't urgent, they need to be done for final but not rc1
+<a name="l-60"></a><span class="tm">19:15:17</span><span class="nk"> &lt;luke-jr&gt;</span> (what's the point of a meeting if not to discuss the topics raised?)
+<a name="l-61"></a><span class="tm">19:15:41</span><span class="nk"> &lt;sdaftuar&gt;</span> one of the to do items was better documentation for that option, but as has been pointed out, it's an awful name :)
+<a name="l-62"></a><span class="tm">19:16:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> suggested replacement?
+<a name="l-63"></a><span class="tm">19:16:25</span><span class="nk"> &lt;wumpus&gt;</span> yes, the 'max cost' confuses people, they think it's about monetary cost
+<a name="l-64"></a><span class="tm">19:16:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-65"></a><span class="tm">19:16:33</span><span class="nk"> &lt;wumpus&gt;</span> (and that's also how translators translate it)
+<a name="l-66"></a><span class="tm">19:16:40</span><span class="nk"> &lt;luke-jr&gt;</span> &gt;_&lt;
+<a name="l-67"></a><span class="tm">19:16:50</span><span class="nk"> &lt;wumpus&gt;</span> (and it's a public command line option so the help gets translated)
+<a name="l-68"></a><span class="tm">19:16:59</span><span class="nk"> &lt;sipa&gt;</span> we could have maxblockvsize instead
+<a name="l-69"></a><span class="tm">19:16:59</span><span class="nk"> &lt;petertodd&gt;</span> blockmaxcost is still just a size limit isn't it?
+<a name="l-70"></a><span class="tm">19:17:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Cost has been a repeated source of confusion.
+<a name="l-71"></a><span class="tm">19:17:02</span><span class="nk"> &lt;wumpus&gt;</span> but that means the help needs to be improved, not necessarily the option renamed
+<a name="l-72"></a><span class="tm">19:17:03</span><span class="nk"> &lt;luke-jr&gt;</span> well, it *is* indirectly monetary
+<a name="l-73"></a><span class="tm">19:17:17</span><span class="nk"> &lt;jeremyrubin&gt;</span> maybe utilization
+<a name="l-74"></a><span class="tm">19:17:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> it's the 'cost' as defined in the BIP, which is vsize*4
+<a name="l-75"></a><span class="tm">19:17:40</span><span class="nk"> &lt;gmaxwell&gt;</span> Score/points/weight/usage/ouchie/bitgo  would all be better words for it.
+<a name="l-76"></a><span class="tm">19:17:42</span><span class="nk"> &lt;luke-jr&gt;</span> "network resource usage"?
+<a name="l-77"></a><span class="tm">19:17:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i think my best idea was to change the term in the BIP.  i think we use "block cost" in the BIP.  if we change that to something more descriptive, "block size validation cost" or something, and reference that in the documentation for the option, then i think that'd be good enough maybe
+<a name="l-78"></a><span class="tm">19:17:43</span><span class="nk"> &lt;wumpus&gt;</span> it's an abstract cost, and CS students understand that, but for most users it's confusing :)
+<a name="l-79"></a><span class="tm">19:18:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes, agree, let's makr it consistent, whatever we agree upon
+<a name="l-80"></a><span class="tm">19:18:15</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> yeah, I think changing the BIP's term is a good idea too - it's still a size, just a redefined size
+<a name="l-81"></a><span class="tm">19:18:23</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="cmd">#agree</span><span class="cmdline"></span>
+<a name="l-82"></a><span class="tm">19:18:24</span><span class="nk"> &lt;wumpus&gt;</span> block size validation cost would already be better help than there is now
+<a name="l-83"></a><span class="tm">19:18:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> it's not a size.
+<a name="l-84"></a><span class="tm">19:18:32</span><span class="nk"> &lt;petertodd&gt;</span> notably, if we had referred to block size in the BIP, that'd help discourage the trolls...
+<a name="l-85"></a><span class="tm">19:18:33</span><span class="nk"> &lt;gmaxwell&gt;</span> "externality"
+<a name="l-86"></a><span class="tm">19:18:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> it is a size, in cost-space.
+<a name="l-87"></a><span class="tm">19:18:47</span><span class="nk"> &lt;sipa&gt;</span> well, any reason not use vsize?
+<a name="l-88"></a><span class="tm">19:18:49</span><span class="nk"> &lt;petertodd&gt;</span> segwit *is* a blocksize increase, so just continue to call it a size
+<a name="l-89"></a><span class="tm">19:18:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> vsize is fine
+<a name="l-90"></a><span class="tm">19:19:00</span><span class="nk"> &lt;wumpus&gt;</span> yes vsize is fine
+<a name="l-91"></a><span class="tm">19:19:09</span><span class="nk"> &lt;btcdrak&gt;</span> yes
+<a name="l-92"></a><span class="tm">19:19:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> (so long as the help text explains what vsize is)
+<a name="l-93"></a><span class="tm">19:19:12</span><span class="nk"> &lt;luke-jr&gt;</span> vsize is inaccurate
+<a name="l-94"></a><span class="tm">19:19:15</span><span class="nk"> &lt;gmaxwell&gt;</span> V means validation?
+<a name="l-95"></a><span class="tm">19:19:21</span><span class="nk"> &lt;sipa&gt;</span> virtual
+<a name="l-96"></a><span class="tm">19:19:24</span><span class="nk"> &lt;luke-jr&gt;</span> going to *4 the meaning, so people specify x.25 now?
+<a name="l-97"></a><span class="tm">19:19:27</span><span class="nk"> &lt;sdaftuar&gt;</span> hm, we have been using vsize to refer to the scaled down value, not the *4 value?
+<a name="l-98"></a><span class="tm">19:19:27</span><span class="nk"> &lt;btcdrak&gt;</span> v for vendetta
+<a name="l-99"></a><span class="tm">19:19:28</span><span class="nk"> &lt;gmaxwell&gt;</span> ugh, there is nothing virtual about it.
+<a name="l-100"></a><span class="tm">19:19:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-101"></a><span class="tm">19:19:38</span><span class="nk"> &lt;luke-jr&gt;</span> fractional values for consensus code?
+<a name="l-102"></a><span class="tm">19:19:50</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> that's a mistake then
+<a name="l-103"></a><span class="tm">19:19:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes, cost == vsize * 4
+<a name="l-104"></a><span class="tm">19:19:59</span><span class="nk"> &lt;gmaxwell&gt;</span> re fractional values, haven't we learned from difficulty?
+<a name="l-105"></a><span class="tm">19:20:06</span><span class="nk"> &lt;sipa&gt;</span> vsize is cost, but scaled down for compatibility with old code
+<a name="l-106"></a><span class="tm">19:20:15</span><span class="nk"> &lt;sipa&gt;</span> so they don't start sending 4x fees etc
+<a name="l-107"></a><span class="tm">19:20:18</span><span class="nk"> &lt;gmaxwell&gt;</span> if we use fractional values for display friendlyness, other people will use them in consensus code and cause faults.
+<a name="l-108"></a><span class="tm">19:20:35 </span><span class="nka">* luke-jr</span> <span class="ac">grabs a thesaurus</span>
+<a name="l-109"></a><span class="tm">19:20:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> ::sigh:: point.
+<a name="l-110"></a><span class="tm">19:20:37</span><span class="nk"> &lt;btcdrak&gt;</span> agreed
+<a name="l-111"></a><span class="tm">19:20:46</span><span class="nk"> &lt;jeremyrubin&gt;</span> I like weight the best
+<a name="l-112"></a><span class="tm">19:20:56</span><span class="nk"> &lt;wumpus&gt;</span> agree jeremyrubin
+<a name="l-113"></a><span class="tm">19:20:59</span><span class="nk"> &lt;jeremyrubin&gt;</span> because usually you would say a weighted sum
+<a name="l-114"></a><span class="tm">19:21:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jeremyrubin:</span> nice idea
+<a name="l-115"></a><span class="tm">19:21:07</span><span class="nk"> &lt;wumpus&gt;</span> weight is a pretty good term for it
+<a name="l-116"></a><span class="tm">19:21:09</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="cmd">#agree</span><span class="cmdline"></span>
+<a name="l-117"></a><span class="tm">19:21:17</span><span class="nk"> &lt;btcdrak&gt;</span> good call
+<a name="l-118"></a><span class="tm">19:21:21</span><span class="nk"> &lt;wumpus&gt;</span> and it's not used anywhere yet in bitcoin
+<a name="l-119"></a><span class="tm">19:21:24</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">(gmaxwell:</span> mentioned first)
+<a name="l-120"></a><span class="tm">19:21:33</span><span class="nk"> &lt;luke-jr&gt;</span> outlay? :/
+<a name="l-121"></a><span class="tm">19:21:41</span><span class="nk"> &lt;luke-jr&gt;</span> weight sounds fine
+<a name="l-122"></a><span class="tm">19:22:30</span><span class="nk"> &lt;jtimon&gt;</span> yeah, there's two sizes with their weights, it's a cost heuristic
+<a name="l-123"></a><span class="tm">19:22:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">so:</span> rename blockmaxcost to blockmaxweight?
+<a name="l-124"></a><span class="tm">19:22:43</span><span class="nk"> &lt;instagibbs&gt;</span> "weight" also carries a nice intuitive notion
+<a name="l-125"></a><span class="tm">19:22:57</span><span class="nk"> &lt;sipa&gt;</span> yes, and let's report weight for transactions too
+<a name="l-126"></a><span class="tm">19:22:57</span><span class="nk"> &lt;jeremyrubin&gt;</span> maxblockweightcostheuristic
+<a name="l-127"></a><span class="tm">19:23:06</span><span class="nk"> &lt;gmaxwell&gt;</span> I read that as block mascot.
+<a name="l-128"></a><span class="tm">19:23:18</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-129"></a><span class="tm">19:23:19</span><span class="nk"> &lt;petertodd&gt;</span> OTOH, if we just call the command line stuff a block size, we help educate people on the fact that segwit is a blocksize increase - some miners will leave it at 1000000, but that's a temporary problem
+<a name="l-130"></a><span class="tm">19:23:21</span><span class="nk"> &lt;jeremyrubin&gt;</span> virtualmaxblockweightcostheuristic
+<a name="l-131"></a><span class="tm">19:23:21</span><span class="nk"> &lt;jtimon&gt;</span> sorry, I missed the first 15 mins or so, but why do we need to rename blockmaxcost ?
+<a name="l-132"></a><span class="tm">19:23:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> size is something else
+<a name="l-133"></a><span class="tm">19:23:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> because the word cost is confused as fee.
+<a name="l-134"></a><span class="tm">19:24:02</span><span class="nk"> &lt;sdaftuar&gt;</span> i think "block weight" and -blockmaxweight [
+<a name="l-135"></a><span class="tm">19:24:11</span><span class="nk"> &lt;sdaftuar&gt;</span> both work okay
+<a name="l-136"></a><span class="tm">19:24:14</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-137"></a><span class="tm">19:24:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> well it started as that the help for that option was confusing, then people realized the option was named terribly too, but please just read back :)
+<a name="l-138"></a><span class="tm">19:24:35</span><span class="nk"> &lt;jtimon&gt;</span> mhmm, no, it's costs for the miners, although that's also why they charge you fees
+<a name="l-139"></a><span class="tm">19:24:40</span><span class="nk"> &lt;luke-jr&gt;</span> weight also should be fine for GBT; nothing is released using the old cost stuff yet
+<a name="l-140"></a><span class="tm">19:24:59</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> is there a problem with "weight"?
+<a name="l-141"></a><span class="tm">19:25:08</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, I support the great cost to weight renaming.
+<a name="l-142"></a><span class="tm">19:25:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> that's what i did originally
+<a name="l-143"></a><span class="tm">19:25:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">rename blockmaxcost to blockmaxweight</span>
+<a name="l-144"></a><span class="tm">19:25:23</span><span class="nk"> &lt;jtimon&gt;</span> yeah, sorry I'll wait for botbot.me to update
+<a name="l-145"></a><span class="tm">19:25:26</span><span class="nk"> &lt;instagibbs&gt;</span> We can chew it over offline
+<a name="l-146"></a><span class="tm">19:25:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> well, ack your original idea :)
+<a name="l-147"></a><span class="tm">19:25:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> but then people started complaining that there had to be a way to limit the serialized size too
+<a name="l-148"></a><span class="tm">19:26:01</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">jtimon:</span> but that's not the units of the cost, otherwise you would denote it into BTC or something...
+<a name="l-149"></a><span class="tm">19:26:05</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> you can see.logs in slack
+<a name="l-150"></a><span class="tm">19:27:00</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jeremyrubin:</span> blockbytescost :)
+<a name="l-151"></a><span class="tm">19:27:34</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jeremyrubin:</span> the cost for miners is in size, or in "costs relative to the maximum limit" or whatever, but sorry, let's move on
+<a name="l-152"></a><span class="tm">19:28:20</span><span class="nk"> &lt;wumpus&gt;</span> other topics?
+<a name="l-153"></a><span class="tm">19:28:28</span><span class="nk"> &lt;sipa&gt;</span> segwit backport
+<a name="l-154"></a><span class="tm">19:28:31</span><span class="nk"> &lt;wumpus&gt;</span> ah yes
+<a name="l-155"></a><span class="tm">19:28:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit backport</span>
+<a name="l-156"></a><span class="tm">19:28:39</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> I didn't knew, never used the bitcoin slack
+<a name="l-157"></a><span class="tm">19:29:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> some people have raised concerns about backporting segwit to 0.12
+<a name="l-158"></a><span class="tm">19:29:24</span><span class="nk"> &lt;wumpus&gt;</span> concerns about doing it at all?
+<a name="l-159"></a><span class="tm">19:29:25</span><span class="nk"> &lt;jtimon&gt;</span> what's the concern?
+<a name="l-160"></a><span class="tm">19:29:31</span><span class="nk"> &lt;luke-jr&gt;</span> ^
+<a name="l-161"></a><span class="tm">19:29:35</span><span class="nk"> &lt;wumpus&gt;</span> well, next chance is 0.13.1
+<a name="l-162"></a><span class="tm">19:29:51</span><span class="nk"> &lt;sipa&gt;</span> morcos, btcdrak: ?
+<a name="l-163"></a><span class="tm">19:30:21</span><span class="nk"> &lt;morcos&gt;</span> :), yes i was arguing that it would be a mistake
+<a name="l-164"></a><span class="tm">19:30:33</span><span class="nk"> &lt;jl2012&gt;</span> me too
+<a name="l-165"></a><span class="tm">19:30:36</span><span class="nk"> &lt;instagibbs&gt;</span> could you reiterate for the audience
+<a name="l-166"></a><span class="tm">19:30:49</span><span class="nk"> &lt;jtimon&gt;</span> if the backport doesn't get enough review and testing there's no new 0.12 release, simple, no?
+<a name="l-167"></a><span class="tm">19:30:54</span><span class="nk"> &lt;morcos&gt;</span> I dont' think that it's worth it.  I'm not sure there are are benefits that outweight hte cost (weight) in terms of developer time and increased risk for bugs in the backport
+<a name="l-168"></a><span class="tm">19:31:04</span><span class="nk"> &lt;sipa&gt;</span> one concern i have is that it would likely be the first segwit code that gets actually deployed on the network, and that it is hard to give it the same amount of testing and review as 0.13 did
+<a name="l-169"></a><span class="tm">19:31:04</span><span class="nk"> &lt;wumpus&gt;</span> I think it would easier for miners if it was backported to 0.12, but if it turns out to be too much technical difficulty/risk, well too bad I suppose...
+<a name="l-170"></a><span class="tm">19:31:06</span><span class="nk"> &lt;maaku&gt;</span> if that were the case then I would have to argue that we wait until 0.14.1 .. so strong argument is needed
+<a name="l-171"></a><span class="tm">19:31:10</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> backports never do, unless they're the tip release
+<a name="l-172"></a><span class="tm">19:31:28</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> agree that its that simple, but woudl be a shame for some people to sacrafice time backporting and reviewing if its not going to pass the bar
+<a name="l-173"></a><span class="tm">19:31:34</span><span class="nk"> &lt;btcdrak&gt;</span> yes. I share morcos concerns about backporting
+<a name="l-174"></a><span class="tm">19:31:44</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> "too bad" may result in delayed deployment maybe
+<a name="l-175"></a><span class="tm">19:31:46</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> so all previous backported softforks were unsafe ?
+<a name="l-176"></a><span class="tm">19:31:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> such as?
+<a name="l-177"></a><span class="tm">19:31:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes, but delay is better than messing up
+<a name="l-178"></a><span class="tm">19:32:08</span><span class="nk"> &lt;sipa&gt;</span> about this topic
+<a name="l-179"></a><span class="tm">19:32:21</span><span class="nk"> &lt;sipa&gt;</span> in the past we've seen miners often run even pre-release code
+<a name="l-180"></a><span class="tm">19:32:27</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> I don't know if any of them was unsafe, I'm asking
+<a name="l-181"></a><span class="tm">19:32:34</span><span class="nk"> &lt;sipa&gt;</span> if that is going to happen, my concerns about a backport go down
+<a name="l-182"></a><span class="tm">19:32:38</span><span class="nk"> &lt;wumpus&gt;</span> I hate delays, but minimizing risk is the highest priority
+<a name="l-183"></a><span class="tm">19:32:39</span><span class="nk"> &lt;sipa&gt;</span> but so does its usefulness
+<a name="l-184"></a><span class="tm">19:32:40</span><span class="nk"> &lt;jl2012&gt;</span> have anyone asked miners that they really need a backport?
+<a name="l-185"></a><span class="tm">19:32:41</span><span class="nk"> &lt;maaku&gt;</span> i'm strongly against "too bad" -- we need to take our support guarantees seriously
+<a name="l-186"></a><span class="tm">19:32:46</span><span class="nk"> &lt;gmaxwell&gt;</span> the concern is mostly that we don't want to force people to quickly adopt 0.13 derrived code just to catch up with segwit, otherwise 0.13.1 would be fine.
+<a name="l-187"></a><span class="tm">19:33:03</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">maaku:</span> we already didn't backport CSV
+<a name="l-188"></a><span class="tm">19:33:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">maaku:</span> there are no guarantees
+<a name="l-189"></a><span class="tm">19:33:11</span><span class="nk"> &lt;maaku&gt;</span> people are running businesses assuming we support "current plus prior" not "current plus prior, except when it's inconvenient"
+<a name="l-190"></a><span class="tm">19:33:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> doing segwit in 0.13.1 isn't a violation of the process, that still remains no softforks in major feature releases.
+<a name="l-191"></a><span class="tm">19:33:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">maaku:</span> from the begining we've said that the plan would be 0.12.1, but if it would somehow lapse it would be 0.13.1
+<a name="l-192"></a><span class="tm">19:33:49</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">gmaxwell:</span> it would mean you could no longer mine on 0.12
+<a name="l-193"></a><span class="tm">19:33:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> that's the most important question
+<a name="l-194"></a><span class="tm">19:33:56</span><span class="nk"> &lt;wumpus&gt;</span> this is not about 'inconvenient', this is about risk
+<a name="l-195"></a><span class="tm">19:33:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> are you more worried about miners or users?
+<a name="l-196"></a><span class="tm">19:34:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> with things like CPFP I'm not sure that anyone will be mining on 0.12 in short order. But thats something we could inquire about.
+<a name="l-197"></a><span class="tm">19:34:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> users.
+<a name="l-198"></a><span class="tm">19:34:35</span><span class="nk"> &lt;morcos&gt;</span> i just think it's very likely to be safer consensus wise to upgrade to 0.13.1 from 0.12.1 than to upgrade to 0.12.2 (segwit backport) which is more likely to have bugs
+<a name="l-199"></a><span class="tm">19:34:49</span><span class="nk"> &lt;wumpus&gt;</span> we wouldn't want a DAO scale disaster over over-hurried release of hardly-reviewed and tested code
+<a name="l-200"></a><span class="tm">19:35:03</span><span class="nk"> &lt;CodeShark&gt;</span> wumpus +1
+<a name="l-201"></a><span class="tm">19:35:07</span><span class="nk"> &lt;petertodd&gt;</span> miners that truly need v0.12 might be better off mining with a v0.12 node behind a segwit 0.13 node...
+<a name="l-202"></a><span class="tm">19:35:09</span><span class="nk"> &lt;wumpus&gt;</span> so if it needs to be 0.13.1, it will be 0.13.1
+<a name="l-203"></a><span class="tm">19:35:25</span><span class="nk"> &lt;gmaxwell&gt;</span> Sure.
+<a name="l-204"></a><span class="tm">19:35:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i thought it was definitely going to be 0.13.1, the question was whether we'd also make a 0.12.2?
+<a name="l-205"></a><span class="tm">19:35:44</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">maaku:</span> we need to stop guaranteeing things we can't providr
+<a name="l-206"></a><span class="tm">19:36:01</span><span class="nk"> &lt;achow101&gt;</span> how many miners even use backports?
+<a name="l-207"></a><span class="tm">19:36:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> no - if it would be in 0.12.2, it could make it into 0.13.0 too
+<a name="l-208"></a><span class="tm">19:36:14</span><span class="nk"> &lt;gmaxwell&gt;</span> So one risk we have right now is that 0.13.x would end up releasing concurrently or likely ahead of 0.12.2, which would be bad for network consistency in general.
+<a name="l-209"></a><span class="tm">19:36:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> assuming 0.12.2 is released before 0.13.0 of course
+<a name="l-210"></a><span class="tm">19:36:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> all of htem right now I think
+<a name="l-211"></a><span class="tm">19:36:22</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> maybe rebasing my code to 0.13.1 is not easier than rebasing it to 0.12.2
+<a name="l-212"></a><span class="tm">19:36:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> then again that ship sailed already
+<a name="l-213"></a><span class="tm">19:37:31</span><span class="nk"> &lt;morcos&gt;</span> ok, well i don't have a strong opinion on release numbers or timing.  my objection is to spreading ourselves too thing by having to thoroughly review a very substantial set of changes in 2 code bases and then putting the network at risk
+<a name="l-214"></a><span class="tm">19:37:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> oh no, plan was always 0.12.2, but I agree it might be reasonable to not do that based on current timing.
+<a name="l-215"></a><span class="tm">19:38:08</span><span class="nk"> &lt;achow101&gt;</span> what about releasing 0.13.1 and then 0.12.2?
+<a name="l-216"></a><span class="tm">19:38:20</span><span class="nk"> &lt;morcos&gt;</span> i think segwit in master is now relatively well reviewed...  it will be very difficult to get that level of review in the 0.12 branch, which woud make me uncomfortable releasing that
+<a name="l-217"></a><span class="tm">19:38:53</span><span class="nk"> &lt;morcos&gt;</span> on top of that, its not something i'd want to spend my time on...  i think all our time would be more wisely spent on moving forward with future work
+<a name="l-218"></a><span class="tm">19:38:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> well if a backport is released at all, why would it matter in what order?
+<a name="l-219"></a><span class="tm">19:39:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Wouldn't want to make a classic blunder, "never get involved in a land war in Asia"!
+<a name="l-220"></a><span class="tm">19:39:00</span><span class="nk"> &lt;morcos&gt;</span> anyway, sorry, i have to catch a train, got to run!
+<a name="l-221"></a><span class="tm">19:39:03</span><span class="nk"> &lt;sipa&gt;</span> assuming the demand for a backport of segwit is for users and not miners, releasing 0.12.2 with segwit backport after releasing it in 0.13 is not unreasonablr
+<a name="l-222"></a><span class="tm">19:39:30</span><span class="nk"> &lt;btcdrak&gt;</span> It's also a lot cleaner releasing in 0.13.1 because 0.12 would not have compact blocks
+<a name="l-223"></a><span class="tm">19:39:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> order matters a lot for testing
+<a name="l-224"></a><span class="tm">19:39:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> sure, if it removed getblocktemplate that'd be an easy idea to support
+<a name="l-225"></a><span class="tm">19:39:56</span><span class="nk"> &lt;gmaxwell&gt;</span> well right now 0.13.0 doesn't have CB for segwit, though I suppose 0.13.1 could.
+<a name="l-226"></a><span class="tm">19:39:57</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> yeah, I assumed that was the plan
+<a name="l-227"></a><span class="tm">19:40:00</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> for proper review of the backport without delaying deployment
+<a name="l-228"></a><span class="tm">19:40:03</span><span class="nk"> &lt;wumpus&gt;</span> I do wish we had realized this sooner, instead of seeming like a last minute decision
+<a name="l-229"></a><span class="tm">19:40:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> likewise.
+<a name="l-230"></a><span class="tm">19:40:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> even fewer people will care about 0.12.x if 0.13 is already out
+<a name="l-231"></a><span class="tm">19:40:31</span><span class="nk"> &lt;gmaxwell&gt;</span> otoh, decisions to do _less_ at the last minute are better than decisions to do _more_. :)
+<a name="l-232"></a><span class="tm">19:40:35</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> right, but if we released 0.12.2 then segwit would not have CB. If we release with 0.13.1 then we get CB at the get go.
+<a name="l-233"></a><span class="tm">19:40:37</span><span class="nk"> &lt;sipa&gt;</span> i guess the question is what has priority: segwit backport or 0.13 release?
+<a name="l-234"></a><span class="tm">19:40:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> hah, fully agreed
+<a name="l-235"></a><span class="tm">19:40:54</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> 0.13 release I think
+<a name="l-236"></a><span class="tm">19:41:00</span><span class="nk"> &lt;gmaxwell&gt;</span> We have real problems with virtually no one ever using backports.
+<a name="l-237"></a><span class="tm">19:41:06</span><span class="nk"> &lt;wumpus&gt;</span> for me the 0.13 release has priority
+<a name="l-238"></a><span class="tm">19:41:09</span><span class="nk"> &lt;helo&gt;</span> +1 release
+<a name="l-239"></a><span class="tm">19:41:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree with wumpus
+<a name="l-240"></a><span class="tm">19:41:18</span><span class="nk"> &lt;sipa&gt;</span> my assumption was that we'd do 0.13.0, then 0.12.2 backport with segwit, then 0.13.1 release with segwit active
+<a name="l-241"></a><span class="tm">19:41:30</span><span class="nk"> &lt;gmaxwell&gt;</span> 0.13 release has priority.
+<a name="l-242"></a><span class="tm">19:41:33</span><span class="nk"> &lt;sipa&gt;</span> and if that is the case, a backport would be urgent
+<a name="l-243"></a><span class="tm">19:41:36</span><span class="nk"> &lt;jtimon&gt;</span> waiting to release 0.13 to release 0.12.2 first sounds stupid to me
+<a name="l-244"></a><span class="tm">19:41:43</span><span class="nk"> &lt;sipa&gt;</span> or 0.13.1 would suffer delays
+<a name="l-245"></a><span class="tm">19:41:55</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> getting enough review for backport to 0.12.2 would be questionable.
+<a name="l-246"></a><span class="tm">19:41:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> yes, that was my expectation too, though the release of 0.13 would likely sabotage 0.12.2 deployment.
+<a name="l-247"></a><span class="tm">19:42:00</span><span class="nk"> &lt;luke-jr&gt;</span> IMO we should remove any promise to maintain older branches once the newer one has a release, and provide backports only as a at-your-own-risk basis
+<a name="l-248"></a><span class="tm">19:42:08</span><span class="nk"> &lt;petertodd&gt;</span> I'd suggest putting a "if you want 0.12.2 w/ segwit, please let us know" in the release nodes for v0.13.0
+<a name="l-249"></a><span class="tm">19:42:24</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">petertodd:</span> that's a good idea
+<a name="l-250"></a><span class="tm">19:42:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Don't we take serious risks in BP SW in 0.12.2? Would it be evil to not BP SW to 0.12 and require 0.13 for SW? Would this delay supermajority activation significant?
+<a name="l-251"></a><span class="tm">19:42:37</span><span class="nk"> &lt;sipa&gt;</span> if there are critical bugs in 0.12.1, we can always release 0.12.2 to fix them
+<a name="l-252"></a><span class="tm">19:42:37</span><span class="nk"> &lt;btcdrak&gt;</span> we didnt backport CSV to 0.11 because the changes were too extensive - to be clear the backport was done, but we decided not to merge it (and there was not enough review either).
+<a name="l-253"></a><span class="tm">19:42:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jtimon:</span> I think we've done it before too
+<a name="l-254"></a><span class="tm">19:42:56</span><span class="nk"> &lt;jtimon&gt;</span> and depending on the response decide to the the backport or not
+<a name="l-255"></a><span class="tm">19:42:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> tbh, i think that the difficulty of a segwit backport is not that hard
+<a name="l-256"></a><span class="tm">19:43:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> that would be unfortunate in that its the wrong direction for the industry. The lack of professionality in software lifecycle isn't something we should be cementing, though I'm not sure I see much choice when we don't actually get the review/testing.
+<a name="l-257"></a><span class="tm">19:43:11</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> you would say that though :)
+<a name="l-258"></a><span class="tm">19:43:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> the original segwit PR was made with mostly 0.12 code still
+<a name="l-259"></a><span class="tm">19:43:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> maybe we should start making more really disruptive changes in major releases. :)
+<a name="l-260"></a><span class="tm">19:43:29</span><span class="nk"> &lt;wumpus&gt;</span> 'maintain' older branches does not mean backport everything
+<a name="l-261"></a><span class="tm">19:43:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree
+<a name="l-262"></a><span class="tm">19:43:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I agree we should strive to support stable branches of course (as I've tried for years now), but the reality is we *can't* as things stand now
+<a name="l-263"></a><span class="tm">19:43:48</span><span class="nk"> &lt;wumpus&gt;</span> just that serious and critical issues are addressed
+<a name="l-264"></a><span class="tm">19:43:53</span><span class="nk"> &lt;sipa&gt;</span> yes  0.12.2 can still happen if a serioud bug in 0.12.1 is founf
+<a name="l-265"></a><span class="tm">19:44:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> not supporting a deployed softfork is a critical issue for a full node
+<a name="l-266"></a><span class="tm">19:44:08</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> I've been always in favor of doing disruptive refactors just before branching instead of right after
+<a name="l-267"></a><span class="tm">19:44:39</span><span class="nk"> &lt;sipa&gt;</span> ok, i need to run
+<a name="l-268"></a><span class="tm">19:44:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> SW could be deployed, I guess the majoriry is already on 0.13 and there is no need to keep 0.12
+<a name="l-269"></a><span class="tm">19:44:57</span><span class="nk"> &lt;sipa&gt;</span> i'll still work on a backport if there is demand
+<a name="l-270"></a><span class="tm">19:45:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> that's a point I suppose
+<a name="l-271"></a><span class="tm">19:45:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> it might be a useful excercise from a review perspective in any case.
+<a name="l-272"></a><span class="tm">19:45:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> that increases the pre-release pressure even more, and the potential number of problems what need to be solved before release ('disruptive refactors' have been known to introduce serious bugs in some cases)
+<a name="l-273"></a><span class="tm">19:45:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> remember that you can always run a node not supporting a soft-fork behind one that does to get the same security
+<a name="l-274"></a><span class="tm">19:45:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> true; we should make this more well-known IMO
+<a name="l-275"></a><span class="tm">19:45:58</span><span class="nk"> &lt;luke-jr&gt;</span> not sure how many people realise it
+<a name="l-276"></a><span class="tm">19:46:02</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> good thing for the release notes!
+<a name="l-277"></a><span class="tm">19:46:05</span><span class="nk"> &lt;gmaxwell&gt;</span> I always point it out.
+<a name="l-278"></a><span class="tm">19:46:08</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I mean the of the kind that present low risk (like file renaming on moveonly commits)
+<a name="l-279"></a><span class="tm">19:46:16</span><span class="nk"> &lt;gmaxwell&gt;</span> but it's the sort of thing that needs a diagram. :)
+<a name="l-280"></a><span class="tm">19:46:20</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> did you for Eligius? :P
+<a name="l-281"></a><span class="tm">19:46:26</span><span class="nk"> &lt;CodeShark&gt;</span> petertodd +1
+<a name="l-282"></a><span class="tm">19:46:32</span><span class="nk"> &lt;maaku&gt;</span> has anyone actually quantified what level of review is required for a backport?
+<a name="l-283"></a><span class="tm">19:46:32 </span><span class="nka">* luke-jr</span> <span class="ac">knows he overlooked it</span>
+<a name="l-284"></a><span class="tm">19:46:33</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> but I guess you're right about the pre-release preassure
+<a name="l-285"></a><span class="tm">19:46:47</span><span class="nk"> &lt;maaku&gt;</span> segwit was written against 0.12.
+<a name="l-286"></a><span class="tm">19:46:48</span><span class="nk"> &lt;luke-jr&gt;</span> actually, I guess it might not entirely work for CSV + mining
+<a name="l-287"></a><span class="tm">19:46:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> in any case I doubt raneming and moveonly commits are what really makes it difficult to backport things :)
+<a name="l-288"></a><span class="tm">19:46:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> more things like the mempool changes
+<a name="l-289"></a><span class="tm">19:47:34</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">petertodd:</span> except you can't mine any segwit tx with a 0.12 behind 0.13
+<a name="l-290"></a><span class="tm">19:47:40</span><span class="nk"> &lt;btcdrak&gt;</span> well I'd like to see a refactoring window right after branching, maybe 2 weeks
+<a name="l-291"></a><span class="tm">19:47:41</span><span class="nk"> &lt;jtimon&gt;</span> but you don't need to backport segwit from the present, you backport it from when it was merged, no?
+<a name="l-292"></a><span class="tm">19:47:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">maaku:</span> it's not been done yet, so no-- but right now in general we're struggling to maintain the backport releases at all, because virtually no one uses them.
+<a name="l-293"></a><span class="tm">19:48:11</span><span class="nk"> &lt;jtimon&gt;</span> how would any refactor now difficult backporting segwit?
+<a name="l-294"></a><span class="tm">19:48:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I don't consider that a great configuration for mining, but I think I'd mentioned it for a prior softfork.
+<a name="l-295"></a><span class="tm">19:48:45</span><span class="nk"> &lt;wumpus&gt;</span> we're spread really thin - agree fully on the 'don't get involved in a land war in asia' comment
+<a name="l-296"></a><span class="tm">19:49:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jl2012:</span> "can't mine" is a smaller group of people than all full node users
+<a name="l-297"></a><span class="tm">19:50:14</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> I would like to get refactor code reviewed during that "refactor window", just declaring the week of refactor doesn't make things get merged :p
+<a name="l-298"></a><span class="tm">19:50:17</span><span class="nk"> &lt;petertodd&gt;</span> incidentally, in my consulting practice I've always advised clients to use architectures where the exact behavior of full node implementations isn't important, which makes upgrades much less risky
+<a name="l-299"></a><span class="tm">19:51:54</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> ack
+<a name="l-300"></a><span class="tm">19:52:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> careful, though that thinking also drives the "I made my own 'node' implementation and have plugged it directly into the public p2p network! yippie!"
+<a name="l-301"></a><span class="tm">19:52:56</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, short on time. Are we done on this subject?
+<a name="l-302"></a><span class="tm">19:53:03</span><span class="nk"> &lt;instagibbs&gt;</span> 8 minutes left
+<a name="l-303"></a><span class="tm">19:53:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> well, my advice is to either use a lite-client w/ up-to-date full node, or if you're using bitcoin core, plan to put it behind an up-to-date node
+<a name="l-304"></a><span class="tm">19:53:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> perhaps we should talk to harding and write a deployment guide that  shows things like that layering and test infrastructure.
+<a name="l-305"></a><span class="tm">19:53:55</span><span class="nk"> &lt;wumpus&gt;</span> seems so
+<a name="l-306"></a><span class="tm">19:54:01</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> good idea
+<a name="l-307"></a><span class="tm">19:54:15</span><span class="nk"> &lt;gmaxwell&gt;</span> Generally you should have a two later setup in any case, don't put your production node up exposed to the internet...
+<a name="l-308"></a><span class="tm">19:54:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> that too...
+<a name="l-309"></a><span class="tm">19:54:47</span><span class="nk"> &lt;wumpus&gt;</span> other topics? last-minute announcements?
+<a name="l-310"></a><span class="tm">19:55:38</span><span class="nk"> &lt;gmaxwell&gt;</span> I was getting flammed on reddit that it's common knoweldge that bitcoin core's wallet was unusuable for commercial use.  I tried to get some unpacking there: https://www.reddit.com/r/Bitcoin/comments/4snk48/roger_ver_and_his_supporters_are_pushing_policies/d5bb73w?context=3  might be worth looking at the comments.
+<a name="l-311"></a><span class="tm">19:56:00</span><span class="nk"> &lt;gmaxwell&gt;</span> As I've lamented in the past, commercial users just generally don't report issues they encounter. I don't know how to improve that.
+<a name="l-312"></a><span class="tm">19:56:11</span><span class="nk"> &lt;jtimon&gt;</span> can be after the meeting but...
+<a name="l-313"></a><span class="tm">19:56:12</span><span class="nk"> &lt;wumpus&gt;</span> well if bitcoin core's wallet is unusable for commercial use, I wonder what wallet is..
+<a name="l-314"></a><span class="tm">19:56:25</span><span class="nk"> &lt;bsm117532&gt;</span> FWIW I've been encountering wallet issues, and am working on a patch that addresses some of them, especially WRT segwit.
+<a name="l-315"></a><span class="tm">19:56:28</span><span class="nk"> &lt;gmaxwell&gt;</span> What I could extra there was related to wallet performance, which phantomcircuit has recently done some improvement (and has more in the pipeline)
+<a name="l-316"></a><span class="tm">19:56:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> people use centeralized api providers instead almost universally.
+<a name="l-317"></a><span class="tm">19:56:55</span><span class="nk"> &lt;bsm117532&gt;</span> But I would like to see removal of "accounts".  Is anyone working on that?
+<a name="l-318"></a><span class="tm">19:57:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bsm117532:</span> I tried to introduce a label API for 0.13 to replace it, then deprecate accounts in 0.14
+<a name="l-319"></a><span class="tm">19:57:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">bsm117532:</span> re: removing accounts, have you checked with joinmarket on what they'll do? they use accounts
+<a name="l-320"></a><span class="tm">19:57:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bsm117532:</span> but that didn't get enough review
+<a name="l-321"></a><span class="tm">19:57:41</span><span class="nk"> &lt;jtimon&gt;</span> without having to ack or nack #8328 right now, general thoughts about moving consensus files to the consensus folder? I have heard different things, but if it's not clear, I will take it out of the base of my latest consensus branch
+<a name="l-322"></a><span class="tm">19:57:54</span><span class="nk"> &lt;jtimon&gt;</span> yay nay ?
+<a name="l-323"></a><span class="tm">19:58:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bsm117532:</span> https://github.com/bitcoin/bitcoin/pull/7729
+<a name="l-324"></a><span class="tm">19:58:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> yay, after 0
+<a name="l-325"></a><span class="tm">19:58:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> yeah, I'm assuming after 0.13 branches
+<a name="l-326"></a><span class="tm">19:58:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> that'd be really ill-adviced, given that we've been discouraging use of them for years, are you sure?
+<a name="l-327"></a><span class="tm">19:58:52</span><span class="nk"> &lt;gmaxwell&gt;</span> ironically, one of the complaints I got there was that accounts are discouraged. ::shrugs::
+<a name="l-328"></a><span class="tm">19:58:56</span><span class="nk"> &lt;sipa&gt;</span> though i prefer to leave some things as "base logic" like maaku suggests
+<a name="l-329"></a><span class="tm">19:58:58</span><span class="nk"> &lt;jtimon&gt;</span> I mean, if people want before I'm all in, but I highly doubt it
+<a name="l-330"></a><span class="tm">19:59:12</span><span class="nk"> &lt;btcdrak&gt;</span> we should ping belcher
+<a name="l-331"></a><span class="tm">19:59:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> yes, I'm 99% sure - I use joinmarket all the time
+<a name="l-332"></a><span class="tm">19:59:34</span><span class="nk"> &lt;bsm117532&gt;</span> <span class="hi">wumpus:</span> I will review 7729 and try to offer some feedback
+<a name="l-333"></a><span class="tm">19:59:39</span><span class="nk"> &lt;btcdrak&gt;</span> he's got some homework then...
+<a name="l-334"></a><span class="tm">19:59:45</span><span class="nk"> &lt;maaku&gt;</span> as I wrote in the PR I think pushing everything used by consensus into `src/consensus` makes the source code less organized and less approachable by newbies
+<a name="l-335"></a><span class="tm">19:59:50</span><span class="nk"> &lt;luke-jr&gt;</span> I need to get back on the road, bbl
+<a name="l-336"></a><span class="tm">19:59:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">maaku:</span> agree
+<a name="l-337"></a><span class="tm">19:59:56</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> mhmm, you mean making another "base logic" dir and package in the makefile ?
+<a name="l-338"></a><span class="tm">20:00:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> well one such piece of base logic is primitives
+<a name="l-339"></a><span class="tm">20:00:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">maaku:</span> less approchable? I'd argue more - makes it easier to understand what consensus is and isn't
+<a name="l-340"></a><span class="tm">20:00:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it's also taking so insanely long to remove it
+<a name="l-341"></a><span class="tm">20:00:37</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">maaku:</span> I strongly disagree (but maybe not all people are mostly interested in the consensus code like me)
+<a name="l-342"></a><span class="tm">20:00:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> same as I've seen with the label API pull - no one is really interested in it
+<a name="l-343"></a><span class="tm">20:00:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> things like prevector and so seem also more broadly usable than consensus
+<a name="l-344"></a><span class="tm">20:00:58</span><span class="nk"> &lt;maaku&gt;</span> <span class="hi">petertodd:</span> that's rarely someone's first question when approaching the code base
+<a name="l-345"></a><span class="tm">20:01:00</span><span class="nk"> &lt;afk11&gt;</span> I think keeping some base logic outside may work, ultimately serialization libraries might be soft-forks wrt an older consensus implementation
+<a name="l-346"></a><span class="tm">20:01:15</span><span class="nk"> &lt;sipa&gt;</span> time up
+<a name="l-347"></a><span class="tm">20:01:18</span><span class="nk"> &lt;btcdrak&gt;</span> well I hate to say it, but its not like the code is that approachable as is...
+<a name="l-348"></a><span class="tm">20:01:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> is this the point where I hang my head in shame and point out that I've forgotten there was a label pull?
+<a name="l-349"></a><span class="tm">20:01:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
