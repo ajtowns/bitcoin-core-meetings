@@ -1,0 +1,335 @@
+18:59:51 <wumpus> #startmeeting
+18:59:51 <lightningbot> Meeting started Thu Jul 21 18:59:51 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:51 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+18:59:52 <sipa> here
+18:59:58 <luke-jr> guess he won't do it XD
+19:00:02 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:16 <kanzure> topics?
+19:00:16 <sipa> thanks, gmaxwellbot
+19:00:20 <wumpus> topic: 0.13
+19:00:24 <gmaxwell> s'not a bot.
+19:00:30 <jonasschnelli> topic: 0.13 OSX determinism
+19:00:32 <btcdrak> /msg gmaxwell help topics
+19:00:32 <cfields> here, but at conference and only 1/2 present
+19:00:36 <luke-jr> gribble: nicks
+19:00:44 <grubles> luke-jr: ?
+19:00:45 <btcdrak> maxwellbot appears to be down
+19:00:45 <wumpus> jonasschnelli: wasn't that solved already?
+19:00:50 <luke-jr> grubles: mixed you up with the box :p
+19:00:55 <wumpus> #topic 0.13
+19:01:07 <jonasschnelli> wumpus: ah. Was that merged already... sorry, have't noticed.
+19:01:11 <wumpus> any criticial issues reported with the rc1 yet?
+19:01:14 <grubles> luke-jr: oh ok :)
+19:01:24 <luke-jr> wumpus: lack of a way to export the seed has been a complaint on reddit at least
+19:01:34 <jonasschnelli> I'm working on the critical bug with HD and wallet encrypt (that's the only feedback I got from Rc1)
+19:01:39 <cfields> jonasschnelli: yes. I need to upstream it though.
+19:02:00 <wumpus> jonasschnelli: thanks, yes I've added 0.13 milestone to https://github.com/bitcoin/bitcoin/issues/8383
+19:02:01 <jonasschnelli> there is a PR to export the seed in dumpwallet
+19:02:07 <jonasschnelli> we could consider that for 0.13
+19:02:12 <jonasschnelli> its easy to review.
+19:02:15 <jonasschnelli> Low impacts
+19:02:15 <wumpus> jonasschnelli: if it's low-impact, why not
+19:02:21 <luke-jr> wumpus: the default policy not performing as well as inadvisable policies is apparently an issue, which I just PR'd a fix for an hour or so ago
+19:02:21 <sipa> agree on that
+19:02:27 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8206
+19:02:28 <CodeShark> wumpus: there are a few issues with the release notes - I'll try to submit comments shortly
+19:02:33 <luke-jr> jonasschnelli: IMO yes
+19:02:47 <sipa> jonasschnelli: also in importwallet ?
+19:02:52 <jonasschnelli> Ino
+19:02:55 <jonasschnelli> no
+19:02:57 <wumpus> no, just exporting
+19:03:03 <jonasschnelli> import wallet imples "import" and no change the see
+19:03:05 <wumpus> importing is a wholly different issue
+19:03:05 <jonasschnelli> seed
+19:03:21 <luke-jr> jonasschnelli: I don't see why import doesn't imply adding the seed
+19:03:22 <jonasschnelli> Import would just pick the keys.
+19:03:23 <wumpus> (e.g. in some cases you may want to change the seed, but usually probably not)
+19:03:34 <luke-jr> does the current format all multiple seeds?
+19:03:35 <jonasschnelli> luke-jr: adding yes, but not overwriting the current one
+19:03:35 <wumpus> luke-jr: because you may be importing to *combine* wallets
+19:03:44 <jonasschnelli> luke-jr: a seed is just a key
+19:03:45 <luke-jr> err
+19:03:52 <luke-jr> *does the current format support having multiple seeds?
+19:03:56 <sipa> nope
+19:03:59 <gmaxwell> nope
+19:04:02 <wumpus> in any case that's too much impact
+19:04:06 <luke-jr> I suppose
+19:04:10 <wumpus> exporting is easy to do for 0.13 so I think we should
+19:04:15 <sipa> that would require having multiple lookahead key pools etc
+19:04:18 <sipa> ack on export
+19:04:18 <gmaxwell> it's the simplest possible.
+19:04:33 <wumpus> for 0.14 we could consider things like support multiple seeds
+19:04:45 <jonasschnelli> Okay. Marked #8206 for 0.13
+19:04:48 <jonasschnelli> #action review #8206
+19:04:53 <luke-jr> IMO as long as we're not ruling out multi-seed wallets in 0.14+, ok
+19:04:54 <wumpus> thanks
+19:05:06 <sipa> luke-jr: agree
+19:05:23 <jonasschnelli> Since we have now the most important change done for HD, we can try to add lots of features for 0.14.
+19:05:25 <jtimon> proposed topic: remove ISM
+19:06:21 <wumpus> proposed topic from jeremyrubin: checkqueue.h change
+19:06:43 <sipa> are we done with 0.13 discussion?
+19:06:45 <jeremyrubin> wumpus: topic proposal checkqueue performance
+19:07:03 <jeremyrubin> ah oops sorry network lag
+19:07:09 <jtimon> jeremyrubin: thanks for being more specific
+19:07:16 <wumpus> sipa: I think so, unless there are other issues reported I think that's all for 0.13 for this week
+19:07:38 <jtimon> jeremyrubin: seriously, don't be sorry, it helped me
+19:07:39 <sipa> ok
+19:07:55 <wumpus> #topic remove ISM
+19:08:12 <luke-jr> (https://github.com/bitcoin/bitcoin/pull/8388 needs a 0.13 tag I guess)
+19:08:47 <sipa> about removing ISM
+19:08:49 <sipa> how?
+19:09:04 <wumpus> ISM=IsSuperMajority?
+19:09:08 <instagibbs> yes
+19:09:08 <sipa> 1) just a height after which the previous softforks activate
+19:09:09 <btcdrak> wumpus: yes
+19:09:13 <jtimon> well, my preference would be to introduce a getflags function first
+19:09:16 <gmaxwell> when are we branching? I've been holding off on patches until after the branch.
+19:09:27 <sipa> gmaxwell: branch was a few days ago
+19:09:29 <btcdrak> gmaxwell: we branched already
+19:09:29 <wumpus> gmaxwell: we've already branched a few days ago
+19:09:31 <luke-jr> how many exceptional blocks violate softfork-added rules?
+19:09:50 <sdaftuar> i'm curious to know what you're thinking about doing for regtest
+19:10:01 <btcdrak> for some reason github didnt ping the channel on new branch creation
+19:10:23 <gmaxwell> oh I missed that.
+19:10:24 <instagibbs> sdaftuar, any issues you can think of?
+19:10:30 <sipa> sdaftuar: ugh... a command line option to enable the rules individually (from the start, over the entire chain)?
+19:10:33 <jtimon> but knowing that ISM is going to be reomved, just don't touch any ISM call and leave it all prepared for ISM calls to be simply removed from main and replaced with the new code inside versionbits::getflags()\
+19:10:57 <wumpus> luke-jr: 8388 is a pretty large change, isn't that a lot to do last-minute? also you don't have a description on the pull at all
+19:11:04 <gmaxwell> jtimon: ISM things are not versionbits.
+19:11:08 <gmaxwell> We went over this before.
+19:11:17 <btcdrak> yes we did
+19:11:21 <jtimon> I was previously of the opinion that a height was enough but I changed my mind, yes, block hash too
+19:11:39 <gmaxwell> sipa: see         consensus.BIP34Height = 227931;
+19:11:46 <gmaxwell> sipa: in chainparams.cpp
+19:11:47 <btcdrak> jtimon: gmaxwell said he is working on a ISM removal PR
+19:11:48 <gmaxwell> "like that"
+19:12:14 <luke-jr> wumpus: well, I didn't expect counting bytes to be used as an excuse to have the release notes pressure miners to use bad policy configs
+19:12:44 <jtimon> gmaxwell: agreed, I only want a getconsensusflags function, if it's defined in versionbits or consensus/header_verify.cpp or somewhere else I don't care so much
+19:12:53 <gmaxwell> sdaftuar: what I'd done is just set regtest to 0, but hadn't checked to see what tests doing that would break.
+19:13:13 <jtimon> but I strongly oppose to define getflags in main.cpp
+19:13:22 <gmaxwell> jtimon: the things which are ISM should not be flags, becuase they're not optional anymore.
+19:13:22 <wumpus> luke-jr: ok, fair enough, I do think it requires more discussion
+19:13:40 <btcdrak> jtimon: but that doesnt mean you can stuff them into an unrelated unit
+19:13:44 <sdaftuar> gmaxwell: i guess we can just change the tests that test activation of ISM things
+19:14:00 <sdaftuar> gmaxwell: so maybe that will work fine?
+19:14:15 <morcos> gmaxwell: they still need flags right?  for when they are active and when they aren't?
+19:14:34 <gmaxwell> sdaftuar: yea, thats what I was thinking. the obvious alternative is to set it to something not 0, like 5.. and let the tests handle it.
+19:14:36 <sdaftuar> i wonder if there are cases where we might want to test how a chain behaves when some blocks don't satisfy a rule (like bip34) and then later ones do.
+19:15:02 <gmaxwell> morcos: some of the things are not accomplished via flags like mechenisms, e.g. the version number checks. They're not a script feature.
+19:15:27 <jtimon> btcdrak: yep, I just want to coordinate with him, in fact, I believe NicolasDorier and I will benifit more than gmaxwell from this coordination, gmaxwell doesn't really need us and can do it all in main
+19:15:31 <sipa> sdaftuar: versionbits does not need that anymore, and i don't care strongly about testing that for purely historical features
+19:15:45 <sipa> jtimon: please
+19:16:22 <sdaftuar> sipa: yeah i think you're basically right, we can just enumerate each of the ISM soft forks and make a decision, there's only a handful
+19:16:29 <sipa> sdaftuar: exactly
+19:16:43 <wumpus> jtimon: where to put it and what solution to use are orthogonal issues
+19:18:04 * luke-jr observes that P2SH was actually more like BIP 9 than ISM was
+19:18:08 <gmaxwell> Some future softforks that get virtified might even have no violations anywhere in the chain, in which case, I'd propose just removing all conditional logic for them entirely.
+19:18:09 <jtimon> wumpus: agreed, but two people trying to complete verifyblock would benefit in sharing the most common refactors as possible
+19:18:29 <gmaxwell> I believe CSV might be an example of that.
+19:18:46 <jtimon> gmaxwell: I agree, but I was talking much shorter term here
+19:18:58 <jtimon> as in, whithin the refactor window
+19:19:11 <gmaxwell> adding a bunch of additional 'flags' for things like height checks would be undesirable code smell.
+19:19:32 <gmaxwell> as would moving ISM logic into a file called versionbits.cpp.
+19:19:40 <sipa> agree
+19:19:47 <luke-jr> gmaxwell: GBT will likely pose a problem for that, but probably not insurmountable (worst case we can neuter GBT by removing the clients-can-modify-the-template aspect, since nobody much uses it afaik)
+19:19:54 <CodeShark> I had proposed a softforks unit to solve this a while back ;)
+19:20:32 <gmaxwell> To be honest, I am really frustrated right now with some of the pointless nitpicky behavior being driven by 'refactoring' all of a sudden. It's making me want to not be involved in the project.
+19:20:37 <NicolasDorier> btw, I'm almost done with the PR removing ISM
+19:21:01 <gmaxwell> I don't have the time to endlessly debate minutia with people who are being very tunnel vision about varrious things.
+19:21:26 <CodeShark> ?
+19:21:33 <GitHub128> [13bitcoin] 15jonasschnelli opened pull request #8389: [0.13] Create a new HD seed after encrypting the wallet (060.13...062016/07/hd_enc) 02https://github.com/bitcoin/bitcoin/pull/8389
+19:21:37 <jtimon> gmaxwell: the movement of ISM to versionbits was only in preparation to more cleanly remove it later and not having to include main.h from consensus files, but yeah no need to move it, just delete it beforehand
+19:21:44 <wumpus> well code that is going away doesn't need to be moved
+19:21:57 <jtimon> of course, agreed
+19:22:30 <wumpus> but refactoring main.cpp is also important - we've held it off for so long now
+19:22:57 <CodeShark> Making sure the code doesn't get cluttered in the long run and establishing good habits for this early on are not tunnel vision, imho
+19:22:58 <sipa> agree
+19:23:02 <wumpus> after all that time we still have that huge c++ file with so many different responsibilities
+19:23:02 <jtimon> all I want to agree is that is "going away" to getflags, and that getflags has some place to exist (it may not be versionbits.o)
+19:23:16 <jtimon> it won't go away
+19:23:29 <sipa> jtimon: is getflags the "one set of flags for everything"? if so, nack
+19:23:36 <kanzure> while we're busy refactoring everything i would like libconsensus and a pony
+19:24:07 <jtimon> it will be replaced and we can leave it all preapare for where it will be replaced with something like bip34 and that will simplify things, I believe
+19:24:24 <sipa> ok, can we move on?
+19:24:28 <wumpus> in any case, this doesn't seem to be a constructive topic in the meeting anymore
+19:24:35 <CodeShark> yes, let's move ob
+19:24:39 <sipa> or are there still things about ISM?
+19:24:40 <CodeShark> on
+19:24:49 <wumpus> #topic checkqueue.h optimization
+19:24:58 <btcdrak> ping jeremyrubin
+19:25:36 <jtimon> sipa: thank you for being so direct. After our discussions on the subject, I agree the script flags should be separated, but for now it should be libconsensus flags and script flags, yes
+19:25:40 <jeremyrubin> Hi
+19:26:07 <jeremyrubin> So all I wanted to say is that I am doing some refactoring of checkqueue, have some nice improvements preliminarily.
+19:26:25 <jeremyrubin> Will push something to my fork if you're particularly interested in it
+19:26:34 <jtimon> sipa: I know you won't like non-script flags in script/interpreter even temporarily, I'm working on changing that, but that's just hwat I have right now
+19:26:45 <wumpus> jeremyrubin: looking forward to the pull request :)
+19:26:51 <jonasschnelli> jeremyrubin: nice!
+19:27:09 <sipa> jeremyrubin: looking forward to it, obviously
+19:27:23 <sipa> (as long as it doesn't rely on MIPS assembly)
+19:27:25 <jtimon> wumpus: well, it is constructive for me, I'm getting useful feedback
+19:27:26 <jeremyrubin> just wanted to note it as I've heard some other people looking at it, so don't want to duplicte work
+19:27:52 <jeremyrubin> that's all!
+19:28:31 <cfields> jeremyrubin: along those lines, I've been working on optimizing the sigcache, after morcos pointed out some cool speedups. maybe we should work together to come up with a good representative bench for testing improvements?
+19:28:33 <wumpus> jtimon: ok that's good; it didn't seem to be going the right way. Seems that gmaxwell wants to get rid of ISM as soon as possible, so refactoring the ISM part is just a waste of work
+19:28:57 <cfields> morcos: or are you still hacking on that? ^^
+19:29:00 <NicolasDorier> I will propose a PR for removing ISM in one or two hours normally
+19:29:10 <gmaxwell> I wanted to remove it in 0.13 but didn't want to introduct a conflict with the SW merge so I held off.
+19:29:14 <morcos> cfields: yep, we're working on it together!
+19:29:29 <gmaxwell> It saves like two whole milliseconds from block connecting times. :P
+19:29:32 <wumpus> NicolasDorier: great
+19:29:59 <jeremyrubin> cfields: sounds good -- will msg out of meeting
+19:30:07 <CodeShark> wumpus: focusing too much on ISM given its impending death is probably not the most urgent thing - my concern is more ovet general habits
+19:30:18 <CodeShark> *over
+19:30:23 <cfields> morcos: ah, ok.
+19:30:23 <wumpus> CodeShark: well the topic was removing ISM
+19:30:29 <sipa> gmaxwell: that's 12 minites of sync time :o
+19:30:32 <morcos> gmaxwell: i think with the lock free stuff jeremy is working on, i can get validation times down from 200ms to sub 50ms on my machine
+19:30:43 <sipa> morcos: impressive
+19:30:54 <sdaftuar> he has a lot of cores :P
+19:31:03 <jonasschnelli> heh
+19:31:17 <BlueMatt> sdaftuar: but across 2 cpus, so numa :/
+19:31:36 <wumpus> oh no numa, is that still a thing
+19:31:38 <jtimon> wumpus: I also want ISM to go away as soon as possible and I'll rebase on top of the PR as soon as it appears, I was just asking for an agreed trivial plan on how to "just don't touch ISM, the replacement will go here" that we could work on in the meantime
+19:31:50 <gmaxwell> wumpus: any multisocket system is numa.
+19:32:04 <gmaxwell> (these days)
+19:32:09 <jtimon> wumpus: in my experience "will go here" can take a lot of time
+19:33:08 <wumpus> gmaxwell: I didn't know, haven't seen much multisocket systems in recent times, I was hoping it was a crippled thing from the past :)
+19:33:24 <jtimon> so we should totally not touch ISM in any consensus refactor PR, but where the replacement should go is something we can discuss after the meeting
+19:33:38 <wumpus> in any case optimizing bitcoind for numa is very much out of scope :p
+19:34:11 <btcdrak> we seem to have drifted off topic
+19:34:13 <wumpus> anything else to discuss?
+19:34:18 <NicolasDorier> #topic Handling Dust on the wallet
+19:34:32 <wumpus> hey, I'm supposed to set the topic
+19:34:37 <NicolasDorier> oh sorry :D
+19:34:40 <NicolasDorier> noob here
+19:34:40 <wumpus> (but no problem with this one)
+19:34:51 <gmaxwell> Has anyone picked up that simulator work and improved it?
+19:34:57 <sipa> it also does not work (for logs) if someone else than the chair does it
+19:35:08 <wumpus> #topic Handling Dust on the wallet
+19:35:23 <NicolasDorier> so the problem is boring: wallet code is preventing to create output below dust using ::txminRelayFee
+19:35:30 <jtimon> I think the ISM removal topic is mostly finished, TODO adapt any refactor for ISM to be removed before-hand, TODO decide where the replacement need to go during the refactor
+19:35:50 <NicolasDorier> problem is that when we bumped it long time ago, some transaction could not be relayed anymore
+19:36:05 <NicolasDorier> causing some stress to users
+19:36:16 <NicolasDorier> several way to fix the problem
+19:36:19 <jonasschnelli> You can if you add new/fresh larger coins? right?
+19:36:25 <jonasschnelli> (econimical painful)
+19:36:26 <morcos> NicolasDorier: I dont' have a good sense for how to make this work properly and be something the at doesnt involve fiddlign with a bunch of variables
+19:36:38 <sipa> NicolasDorier: if all wallets at all times would not create outputs that were uneconomical to spend, there would be no issue, i think
+19:36:40 <luke-jr> I thought the wallet avoided change below some number much larger than dust?
+19:36:57 <MarcoFalke> yes
+19:36:59 <morcos> But I think its clear we should have the MinimumOutput be higher than the dust level, so that when we raise the dust level, we know prev releases are still not generating dust
+19:37:01 <NicolasDorier> luke-jr: problem is that it is not "much larger"
+19:37:05 <NicolasDorier> it is "exactly"
+19:37:08 <MarcoFalke> but this does not affect when you pay someone dust
+19:37:08 <luke-jr> NicolasDorier: 0.01 BTC last I checked
+19:37:09 <gmaxwell> This was intentional; not the stress of course, but not relaying transactions with produce outputs which are a loss to consume. But it sounds like you're not talking about the wallet, but relay behavior.
+19:37:26 <sipa> gmaxwell: no, this is about wallet
+19:37:32 <luke-jr> MarcoFalke: sure, but that's user error
+19:37:40 <gmaxwell> The wallet tries to produce change >0.01 btc as luke mentions. (which is its own stupidity, see my earlier simulator question)
+19:38:09 <NicolasDorier> oh ? I am surprised I did https://github.com/bitcoin/bitcoin/pull/8356  recently and it seemed using the ::minTxRelayFee
+19:38:14 <NicolasDorier> for calculating the smallest output
+19:38:15 <MarcoFalke> gmaxwell: I asked murch to present his findings of his masters thesis in one of the meetings
+19:38:32 <jonasschnelli> I think it should try much higher min change outputs if possible.
+19:38:38 <jtimon> btw, GetDustThreshold and IsDust are still in primitives/transaction.h (libconsensus), unrelated, but maybe cheap to do both at the same time
+19:38:39 <morcos> NicolasDorier: i also forgot about that 0.01 btc thing
+19:38:44 <jonasschnelli> We don't know the fees in – lets say – 2 years.
+19:38:47 <luke-jr> jonasschnelli: how much higher? this could be a privacy problem
+19:38:57 <gmaxwell> NicolasDorier: if select coins does not make an exact match, it attempts again with amount + 0.01 btc as the target.
+19:39:02 <luke-jr> jonasschnelli: we have fee learning logic..
+19:39:07 <jonasschnelli> luke-jr:If possible 1:1 like the spend itself
+19:39:09 <jonasschnelli> :-)
+19:39:14 <luke-jr> jonasschnelli: that harms privacy
+19:39:26 <jonasschnelli> (and would also not be possible)
+19:39:39 <gmaxwell> luke-jr: it can be done in ways which don't. Please see my comments on the remove extranious inputs PR.
+19:39:42 <NicolasDorier> gmaxwell: this is coin selection, but it does not prevent the creation of an output below 0.01 right ?
+19:39:58 <MarcoFalke> no
+19:40:18 <jtimon> luke-jr: please tell me "fee learning logic" is in policy/fees.o and not consensus/deeplearning.o
+19:40:20 <MarcoFalke> Those are different objectives to optimize
+19:40:24 <gmaxwell> NicolasDorier: it may not be possible to prevent that except by turning small amounts into fees.
+19:40:35 <luke-jr> jtimon: afaik yes
+19:40:56 <luke-jr> gmaxwell: if both outputs have the same or near-same value, any observer can see the approximate tx value, no?
+19:41:06 <jtimon> luke-jr: cool :)
+19:41:27 <gmaxwell> luke-jr: I'll explain more outside of the meeting.
+19:41:30 <luke-jr> ok
+19:41:34 <NicolasDorier> ok I'll need to study more about this 0.01 thing and the implication, will catch up with morcos
+19:41:58 <gmaxwell> the whole logic with that stuff is braindamaged imo.
+19:42:32 <NicolasDorier> I heard someone is doing some work in that area (Xekyo)
+19:42:44 <gmaxwell> manages to fail under every kind of metric I can come up with, except for consistency with the existing code. (which, unsurprisingly, is the property the tests test for... :) )
+19:42:56 <murch> marcofalke: My thesis is still in the making, sorry.
+19:43:00 <MarcoFalke> NicolasDorier: it's murch in this channel
+19:43:05 <NicolasDorier> oh ok
+19:44:02 <gmaxwell> okay, is there anything else?
+19:44:16 <wumpus> no proposed topics at lesat
+19:44:49 <kanzure> well, i am assembling a list of things to talk about in person
+19:44:55 <kanzure> similar to https://gist.github.com/kanzure/8d193f82aabd85eeba78a61815d3038d
+19:45:06 <kanzure> so i will be heckling some or most of you regarding proposed subjects
+19:45:18 <jtimon> well, you could talk more about that to close the meeting, no?
+19:45:26 <gmaxwell> wumpus:  I have a topic.
+19:45:38 <gmaxwell> wumpus: sigops max size, and the sigops per byte limit.
+19:45:43 <kanzure> jtimon: what would you like to hear?
+19:46:02 <wumpus> #topic  sigops max size, and the sigops per byte limit
+19:46:15 <luke-jr> (gmaxwell: btw, I have no strong opinions on the coin selection stuff, if it's one of those minutia you'd rather not spend time on.)
+19:46:26 <jtimon> kanzure: nothing specifically just things to talk about in person, I didn't folloed your link yet
+19:46:32 <gmaxwell> We have ongoing complaints that the bytespersigops limit has made some bare multsig outputs difficult to spend (normal software behavior won't work)
+19:46:54 <wumpus> this is about https://github.com/bitcoin/bitcoin/pull/8365?
+19:47:00 <gmaxwell> This was an unintended side effect of the limits put in to stop the sigops exhaustion spam attack.
+19:47:16 <luke-jr> we have a fix for that, which introduces a new concern; and a fix for the new concern, that slightly complicates fee estimation
+19:47:21 <gmaxwell> https://github.com/bitcoin/bitcoin/pull/8365 and https://github.com/bitcoin/bitcoin/pull/8364
+19:47:33 <gmaxwell> I don't agree with the position luke is taking.
+19:47:46 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/8365
+19:47:49 <wumpus> #link https://github.com/bitcoin/bitcoin/pull/8364
+19:47:55 <jonasschnelli> Shouldn't this be included in 0.13 then?
+19:48:15 <luke-jr> jonasschnelli: probably
+19:48:21 <gmaxwell> It's unambigious why the limit was introduced. There is was a consensus sigops exhaustion attack resulting in small blocks.
+19:48:24 <sipa> i think 8365 should be in 0.13; i think 8364 is needless complication
+19:48:34 <sdaftuar> sipa: i agree
+19:48:38 <gmaxwell> 8365 corrects it in the way I originally proposed (so I like it)
+19:48:43 <sipa> (but apart from that i'm not strongly against 8364)
+19:48:52 <luke-jr> gmaxwell: that isn't why the limit was introduced, though.. it was to filter spam
+19:49:02 <wumpus> for 0.13 we should prefer a simple solution
+19:49:02 <sipa> luke-jr: in your world view perhaps
+19:49:20 <jonasschnelli> Im in favor of #8365 (at least for 0.13)
+19:49:23 <luke-jr> sipa: considering I wrote it..
+19:49:24 <gmaxwell> Luke proposes 8364 in addition, driven by a concern that allowing high sigops transactions but with high fees is sending an implicit endorsement that it's okay for random transactions to burn up lots of actual signature operations needlessly if they pay for it.
+19:49:25 <sdaftuar> the PR that introduced the limit lacks explanation
+19:49:52 <sipa> luke-jr: sure  it may have been your intention; that was certainly noy clear to me (or many, i think)
+19:50:00 <jtimon> is this about #8362 ?
+19:50:09 <sipa> luke-jr: i disagree that it helps at all with preventing spam, and only encourages further bloating
+19:50:11 <wumpus> sdaftuar: because it was a DoS fix
+19:50:23 <luke-jr> jtimon: no, 8364 and 8365
+19:50:36 <gmaxwell> It was extensively discussed in here. It's revisionist to suggest that it was merged for any reason other than consensus sigops exhaustion.
+19:50:47 <jtimon> luke-jr: thanks, scrolling back
+19:51:08 <gmaxwell> I wouldn't have supported it otherwise.
+19:51:38 <gmaxwell> In any case, 8365 corrects the issue though sdaftuar expressed some concern that it also causes small miscosting of a small amount of transactions.
+19:51:52 <gmaxwell> (since most of the time no sigops flooding attack is happening)
+19:52:21 <sdaftuar> gmaxwell: in the current form, #8365 sets the conversion at 20, not 50
+19:52:31 <sdaftuar> by default
+19:52:32 <luke-jr> I don't think we can solve that without a much more complicated change..?
+19:52:34 <CodeShark> luke-jr: I still adhere to the view that "spam" lacks a technical definition here
+19:52:52 <sdaftuar> so i think it's fine as is.  if another sigops attack were to hit the network, miners could bump it up to 50 and avoid being attacked
+19:53:00 <luke-jr> CodeShark: in this context, it is non-pubkey data fed to sigops as a key
+19:53:07 <sdaftuar> in its current form, users affected by the old policy have a better alternative to bloating up their transactions
+19:53:16 <wumpus> CodeShark: storing unnecessary data in the utxo set counts as spam to me
+19:53:22 <sdaftuar> we can think about better policies in the long run later, imo -- this is good enough for now
+19:54:05 <wumpus> sdaftuar: for 0.13 that's the most important
+19:54:08 <luke-jr> 8365 as-is, is a regression of used behaviour
+19:54:42 <sdaftuar> wumpus: yep agreed
+19:54:47 <CodeShark> wumpus: if someone is willing to pay for it it's income to someone else
+19:54:54 <sipa> luke-jr: as-is, i think it will have as sole effect that some people who are now bloating their transactions to bypass the limit, will stop doing so
+19:54:55 <gmaxwell> luke-jr: I don't agree that it is. since the change manages to except the counterparty data storage transactions, I'm not aware of anything that could be classified as spam that exists now that it usefully blocks.
+19:55:08 <wumpus> CodeShark: everyone with a full node suffers from it, without being paid for it
+19:55:27 <CodeShark> wumpus: that's a problem with incentives, not spam
+19:55:31 <wumpus> CodeShark: that's just like e-mail spam - everyone with an email account has to handle the extra messages
+19:55:42 <sipa> can we keep philosophical discussions for elsewhere?
+19:55:43 <luke-jr> gmaxwell: can you rephrase?
+19:56:41 <wumpus> uhm, okay
+19:56:50 <gmaxwell> luke-jr: point me to a transaction that 8364 would block that should be blocked? the only thing the sigopsperbyte limit was blocking was the sigops exhaust transactions (blocked by 8365) and counterparty data storage transactions, which 8364 jumps though enormous hoops to not block.
+19:57:53 <GitHub86> [13bitcoin] 15jonasschnelli opened pull request #8390: [Wallet] Correct hdmasterkeyid/hdmasterkey name confusion (06master...062016/07/hd_masterkeyrename) 02https://github.com/bitcoin/bitcoin/pull/8390
+19:58:16 <sipa> wumpus, CodeShark: sorry for interrupting, but i don't think you guys disagree at all - only about what certain words meam
+19:58:23 <luke-jr> gmaxwell: both of those should be blocked, and AFAIK 8365 doesn't block anything at all?
+19:58:46 <luke-jr> gmaxwell: (to be clear, Counterparty should be using OP_RETURN only for their data)
+19:58:47 <gmaxwell> luke-jr: 8365 closes the sigops bloat attack vector.
+19:58:57 <wumpus> only roughly one minute to go
+19:59:11 <gmaxwell> I think we should close the meeting.
+19:59:15 <wumpus> #closemeeting
+19:59:17 <wumpus> #endmeeting

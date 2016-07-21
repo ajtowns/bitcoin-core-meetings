@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:51</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jul 21 18:59:51 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:51</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">18:59:52</span><span class="nk"> &lt;sipa&gt;</span> here
+<a name="l-5"></a><span class="tm">18:59:58</span><span class="nk"> &lt;luke-jr&gt;</span> guess he won't do it XD
+<a name="l-6"></a><span class="tm">19:00:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-7"></a><span class="tm">19:00:16</span><span class="nk"> &lt;kanzure&gt;</span> topics?
+<a name="l-8"></a><span class="tm">19:00:16</span><span class="nk"> &lt;sipa&gt;</span> thanks, gmaxwellbot
+<a name="l-9"></a><span class="tm">19:00:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">topic:</span> 0.13
+<a name="l-10"></a><span class="tm">19:00:24</span><span class="nk"> &lt;gmaxwell&gt;</span> s'not a bot.
+<a name="l-11"></a><span class="tm">19:00:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">topic:</span> 0.13 OSX determinism
+<a name="l-12"></a><span class="tm">19:00:32</span><span class="nk"> &lt;btcdrak&gt;</span> /msg gmaxwell help topics
+<a name="l-13"></a><span class="tm">19:00:32</span><span class="nk"> &lt;cfields&gt;</span> here, but at conference and only 1/2 present
+<a name="l-14"></a><span class="tm">19:00:36</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gribble:</span> nicks
+<a name="l-15"></a><span class="tm">19:00:44</span><span class="nk"> &lt;grubles&gt;</span> <span class="hi">luke-jr:</span> ?
+<a name="l-16"></a><span class="tm">19:00:45</span><span class="nk"> &lt;btcdrak&gt;</span> maxwellbot appears to be down
+<a name="l-17"></a><span class="tm">19:00:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> wasn't that solved already?
+<a name="l-18"></a><span class="tm">19:00:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">grubles:</span> mixed you up with the box :p
+<a name="l-19"></a><span class="tm">19:00:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.13</span>
+<a name="l-20"></a><span class="tm">19:01:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> ah. Was that merged already... sorry, have't noticed.
+<a name="l-21"></a><span class="tm">19:01:11</span><span class="nk"> &lt;wumpus&gt;</span> any criticial issues reported with the rc1 yet?
+<a name="l-22"></a><span class="tm">19:01:14</span><span class="nk"> &lt;grubles&gt;</span> <span class="hi">luke-jr:</span> oh ok :)
+<a name="l-23"></a><span class="tm">19:01:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> lack of a way to export the seed has been a complaint on reddit at least
+<a name="l-24"></a><span class="tm">19:01:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm working on the critical bug with HD and wallet encrypt (that's the only feedback I got from Rc1)
+<a name="l-25"></a><span class="tm">19:01:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> yes. I need to upstream it though.
+<a name="l-26"></a><span class="tm">19:02:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> thanks, yes I've added 0.13 milestone to https://github.com/bitcoin/bitcoin/issues/8383
+<a name="l-27"></a><span class="tm">19:02:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> there is a PR to export the seed in dumpwallet
+<a name="l-28"></a><span class="tm">19:02:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> we could consider that for 0.13
+<a name="l-29"></a><span class="tm">19:02:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> its easy to review.
+<a name="l-30"></a><span class="tm">19:02:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Low impacts
+<a name="l-31"></a><span class="tm">19:02:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> if it's low-impact, why not
+<a name="l-32"></a><span class="tm">19:02:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> the default policy not performing as well as inadvisable policies is apparently an issue, which I just PR'd a fix for an hour or so ago
+<a name="l-33"></a><span class="tm">19:02:21</span><span class="nk"> &lt;sipa&gt;</span> agree on that
+<a name="l-34"></a><span class="tm">19:02:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/8206
+<a name="l-35"></a><span class="tm">19:02:28</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> there are a few issues with the release notes - I'll try to submit comments shortly
+<a name="l-36"></a><span class="tm">19:02:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> IMO yes
+<a name="l-37"></a><span class="tm">19:02:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> also in importwallet ?
+<a name="l-38"></a><span class="tm">19:02:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ino
+<a name="l-39"></a><span class="tm">19:02:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> no
+<a name="l-40"></a><span class="tm">19:02:57</span><span class="nk"> &lt;wumpus&gt;</span> no, just exporting
+<a name="l-41"></a><span class="tm">19:03:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> import wallet imples "import" and no change the see
+<a name="l-42"></a><span class="tm">19:03:05</span><span class="nk"> &lt;wumpus&gt;</span> importing is a wholly different issue
+<a name="l-43"></a><span class="tm">19:03:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> seed
+<a name="l-44"></a><span class="tm">19:03:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> I don't see why import doesn't imply adding the seed
+<a name="l-45"></a><span class="tm">19:03:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> Import would just pick the keys.
+<a name="l-46"></a><span class="tm">19:03:23</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. in some cases you may want to change the seed, but usually probably not)
+<a name="l-47"></a><span class="tm">19:03:34</span><span class="nk"> &lt;luke-jr&gt;</span> does the current format all multiple seeds?
+<a name="l-48"></a><span class="tm">19:03:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> adding yes, but not overwriting the current one
+<a name="l-49"></a><span class="tm">19:03:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> because you may be importing to *combine* wallets
+<a name="l-50"></a><span class="tm">19:03:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> a seed is just a key
+<a name="l-51"></a><span class="tm">19:03:45</span><span class="nk"> &lt;luke-jr&gt;</span> err
+<a name="l-52"></a><span class="tm">19:03:52</span><span class="nk"> &lt;luke-jr&gt;</span> *does the current format support having multiple seeds?
+<a name="l-53"></a><span class="tm">19:03:56</span><span class="nk"> &lt;sipa&gt;</span> nope
+<a name="l-54"></a><span class="tm">19:03:59</span><span class="nk"> &lt;gmaxwell&gt;</span> nope
+<a name="l-55"></a><span class="tm">19:04:02</span><span class="nk"> &lt;wumpus&gt;</span> in any case that's too much impact
+<a name="l-56"></a><span class="tm">19:04:06</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose
+<a name="l-57"></a><span class="tm">19:04:10</span><span class="nk"> &lt;wumpus&gt;</span> exporting is easy to do for 0.13 so I think we should
+<a name="l-58"></a><span class="tm">19:04:15</span><span class="nk"> &lt;sipa&gt;</span> that would require having multiple lookahead key pools etc
+<a name="l-59"></a><span class="tm">19:04:18</span><span class="nk"> &lt;sipa&gt;</span> ack on export
+<a name="l-60"></a><span class="tm">19:04:18</span><span class="nk"> &lt;gmaxwell&gt;</span> it's the simplest possible.
+<a name="l-61"></a><span class="tm">19:04:33</span><span class="nk"> &lt;wumpus&gt;</span> for 0.14 we could consider things like support multiple seeds
+<a name="l-62"></a><span class="tm">19:04:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Marked #8206 for 0.13
+<a name="l-63"></a><span class="tm">19:04:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #8206</span>
+<a name="l-64"></a><span class="tm">19:04:53</span><span class="nk"> &lt;luke-jr&gt;</span> IMO as long as we're not ruling out multi-seed wallets in 0.14+, ok
+<a name="l-65"></a><span class="tm">19:04:54</span><span class="nk"> &lt;wumpus&gt;</span> thanks
+<a name="l-66"></a><span class="tm">19:05:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> agree
+<a name="l-67"></a><span class="tm">19:05:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Since we have now the most important change done for HD, we can try to add lots of features for 0.14.
+<a name="l-68"></a><span class="tm">19:05:25</span><span class="nk"> &lt;jtimon&gt;</span> proposed topic: remove ISM
+<a name="l-69"></a><span class="tm">19:06:21</span><span class="nk"> &lt;wumpus&gt;</span> proposed topic from jeremyrubin: checkqueue.h change
+<a name="l-70"></a><span class="tm">19:06:43</span><span class="nk"> &lt;sipa&gt;</span> are we done with 0.13 discussion?
+<a name="l-71"></a><span class="tm">19:06:45</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> topic proposal checkqueue performance
+<a name="l-72"></a><span class="tm">19:07:03</span><span class="nk"> &lt;jeremyrubin&gt;</span> ah oops sorry network lag
+<a name="l-73"></a><span class="tm">19:07:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jeremyrubin:</span> thanks for being more specific
+<a name="l-74"></a><span class="tm">19:07:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I think so, unless there are other issues reported I think that's all for 0.13 for this week
+<a name="l-75"></a><span class="tm">19:07:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jeremyrubin:</span> seriously, don't be sorry, it helped me
+<a name="l-76"></a><span class="tm">19:07:39</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-77"></a><span class="tm">19:07:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">remove ISM</span>
+<a name="l-78"></a><span class="tm">19:08:12</span><span class="nk"> &lt;luke-jr&gt;</span> (https://github.com/bitcoin/bitcoin/pull/8388 needs a 0.13 tag I guess)
+<a name="l-79"></a><span class="tm">19:08:47</span><span class="nk"> &lt;sipa&gt;</span> about removing ISM
+<a name="l-80"></a><span class="tm">19:08:49</span><span class="nk"> &lt;sipa&gt;</span> how?
+<a name="l-81"></a><span class="tm">19:09:04</span><span class="nk"> &lt;wumpus&gt;</span> ISM=IsSuperMajority?
+<a name="l-82"></a><span class="tm">19:09:08</span><span class="nk"> &lt;instagibbs&gt;</span> yes
+<a name="l-83"></a><span class="tm">19:09:08</span><span class="nk"> &lt;sipa&gt;</span> 1) just a height after which the previous softforks activate
+<a name="l-84"></a><span class="tm">19:09:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> yes
+<a name="l-85"></a><span class="tm">19:09:13</span><span class="nk"> &lt;jtimon&gt;</span> well, my preference would be to introduce a getflags function first
+<a name="l-86"></a><span class="tm">19:09:16</span><span class="nk"> &lt;gmaxwell&gt;</span> when are we branching? I've been holding off on patches until after the branch.
+<a name="l-87"></a><span class="tm">19:09:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> branch was a few days ago
+<a name="l-88"></a><span class="tm">19:09:29</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> we branched already
+<a name="l-89"></a><span class="tm">19:09:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> we've already branched a few days ago
+<a name="l-90"></a><span class="tm">19:09:31</span><span class="nk"> &lt;luke-jr&gt;</span> how many exceptional blocks violate softfork-added rules?
+<a name="l-91"></a><span class="tm">19:09:50</span><span class="nk"> &lt;sdaftuar&gt;</span> i'm curious to know what you're thinking about doing for regtest
+<a name="l-92"></a><span class="tm">19:10:01</span><span class="nk"> &lt;btcdrak&gt;</span> for some reason github didnt ping the channel on new branch creation
+<a name="l-93"></a><span class="tm">19:10:23</span><span class="nk"> &lt;gmaxwell&gt;</span> oh I missed that.
+<a name="l-94"></a><span class="tm">19:10:24</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, any issues you can think of?
+<a name="l-95"></a><span class="tm">19:10:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> ugh... a command line option to enable the rules individually (from the start, over the entire chain)?
+<a name="l-96"></a><span class="tm">19:10:33</span><span class="nk"> &lt;jtimon&gt;</span> but knowing that ISM is going to be reomved, just don't touch any ISM call and leave it all prepared for ISM calls to be simply removed from main and replaced with the new code inside versionbits::getflags()\
+<a name="l-97"></a><span class="tm">19:10:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> 8388 is a pretty large change, isn't that a lot to do last-minute? also you don't have a description on the pull at all
+<a name="l-98"></a><span class="tm">19:11:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> ISM things are not versionbits.
+<a name="l-99"></a><span class="tm">19:11:08</span><span class="nk"> &lt;gmaxwell&gt;</span> We went over this before.
+<a name="l-100"></a><span class="tm">19:11:17</span><span class="nk"> &lt;btcdrak&gt;</span> yes we did
+<a name="l-101"></a><span class="tm">19:11:21</span><span class="nk"> &lt;jtimon&gt;</span> I was previously of the opinion that a height was enough but I changed my mind, yes, block hash too
+<a name="l-102"></a><span class="tm">19:11:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> see         consensus.BIP34Height = 227931;
+<a name="l-103"></a><span class="tm">19:11:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> in chainparams.cpp
+<a name="l-104"></a><span class="tm">19:11:47</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> gmaxwell said he is working on a ISM removal PR
+<a name="l-105"></a><span class="tm">19:11:48</span><span class="nk"> &lt;gmaxwell&gt;</span> "like that"
+<a name="l-106"></a><span class="tm">19:12:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> well, I didn't expect counting bytes to be used as an excuse to have the release notes pressure miners to use bad policy configs
+<a name="l-107"></a><span class="tm">19:12:44</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> agreed, I only want a getconsensusflags function, if it's defined in versionbits or consensus/header_verify.cpp or somewhere else I don't care so much
+<a name="l-108"></a><span class="tm">19:12:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> what I'd done is just set regtest to 0, but hadn't checked to see what tests doing that would break.
+<a name="l-109"></a><span class="tm">19:13:13</span><span class="nk"> &lt;jtimon&gt;</span> but I strongly oppose to define getflags in main.cpp
+<a name="l-110"></a><span class="tm">19:13:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> the things which are ISM should not be flags, becuase they're not optional anymore.
+<a name="l-111"></a><span class="tm">19:13:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> ok, fair enough, I do think it requires more discussion
+<a name="l-112"></a><span class="tm">19:13:40</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jtimon:</span> but that doesnt mean you can stuff them into an unrelated unit
+<a name="l-113"></a><span class="tm">19:13:44</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i guess we can just change the tests that test activation of ISM things
+<a name="l-114"></a><span class="tm">19:14:00</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> so maybe that will work fine?
+<a name="l-115"></a><span class="tm">19:14:15</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> they still need flags right?  for when they are active and when they aren't?
+<a name="l-116"></a><span class="tm">19:14:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> yea, thats what I was thinking. the obvious alternative is to set it to something not 0, like 5.. and let the tests handle it.
+<a name="l-117"></a><span class="tm">19:14:36</span><span class="nk"> &lt;sdaftuar&gt;</span> i wonder if there are cases where we might want to test how a chain behaves when some blocks don't satisfy a rule (like bip34) and then later ones do.
+<a name="l-118"></a><span class="tm">19:15:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> some of the things are not accomplished via flags like mechenisms, e.g. the version number checks. They're not a script feature.
+<a name="l-119"></a><span class="tm">19:15:27</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">btcdrak:</span> yep, I just want to coordinate with him, in fact, I believe NicolasDorier and I will benifit more than gmaxwell from this coordination, gmaxwell doesn't really need us and can do it all in main
+<a name="l-120"></a><span class="tm">19:15:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> versionbits does not need that anymore, and i don't care strongly about testing that for purely historical features
+<a name="l-121"></a><span class="tm">19:15:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> please
+<a name="l-122"></a><span class="tm">19:16:22</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> yeah i think you're basically right, we can just enumerate each of the ISM soft forks and make a decision, there's only a handful
+<a name="l-123"></a><span class="tm">19:16:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> exactly
+<a name="l-124"></a><span class="tm">19:16:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> where to put it and what solution to use are orthogonal issues
+<a name="l-125"></a><span class="tm">19:18:04 </span><span class="nka">* luke-jr</span> <span class="ac">observes that P2SH was actually more like BIP 9 than ISM was</span>
+<a name="l-126"></a><span class="tm">19:18:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Some future softforks that get virtified might even have no violations anywhere in the chain, in which case, I'd propose just removing all conditional logic for them entirely.
+<a name="l-127"></a><span class="tm">19:18:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> agreed, but two people trying to complete verifyblock would benefit in sharing the most common refactors as possible
+<a name="l-128"></a><span class="tm">19:18:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe CSV might be an example of that.
+<a name="l-129"></a><span class="tm">19:18:46</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> I agree, but I was talking much shorter term here
+<a name="l-130"></a><span class="tm">19:18:58</span><span class="nk"> &lt;jtimon&gt;</span> as in, whithin the refactor window
+<a name="l-131"></a><span class="tm">19:19:11</span><span class="nk"> &lt;gmaxwell&gt;</span> adding a bunch of additional 'flags' for things like height checks would be undesirable code smell.
+<a name="l-132"></a><span class="tm">19:19:32</span><span class="nk"> &lt;gmaxwell&gt;</span> as would moving ISM logic into a file called versionbits.cpp.
+<a name="l-133"></a><span class="tm">19:19:40</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-134"></a><span class="tm">19:19:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> GBT will likely pose a problem for that, but probably not insurmountable (worst case we can neuter GBT by removing the clients-can-modify-the-template aspect, since nobody much uses it afaik)
+<a name="l-135"></a><span class="tm">19:19:54</span><span class="nk"> &lt;CodeShark&gt;</span> I had proposed a softforks unit to solve this a while back ;)
+<a name="l-136"></a><span class="tm">19:20:32</span><span class="nk"> &lt;gmaxwell&gt;</span> To be honest, I am really frustrated right now with some of the pointless nitpicky behavior being driven by 'refactoring' all of a sudden. It's making me want to not be involved in the project.
+<a name="l-137"></a><span class="tm">19:20:37</span><span class="nk"> &lt;NicolasDorier&gt;</span> btw, I'm almost done with the PR removing ISM
+<a name="l-138"></a><span class="tm">19:21:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't have the time to endlessly debate minutia with people who are being very tunnel vision about varrious things.
+<a name="l-139"></a><span class="tm">19:21:26</span><span class="nk"> &lt;CodeShark&gt;</span> ?
+<a name="l-140"></a><span class="tm">19:21:33</span><span class="nk"> &lt;GitHub128&gt;</span> [13bitcoin] 15jonasschnelli opened pull request #8389: [0.13] Create a new HD seed after encrypting the wallet (060.13...062016/07/hd_enc) 02https://github.com/bitcoin/bitcoin/pull/8389
+<a name="l-141"></a><span class="tm">19:21:37</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> the movement of ISM to versionbits was only in preparation to more cleanly remove it later and not having to include main.h from consensus files, but yeah no need to move it, just delete it beforehand
+<a name="l-142"></a><span class="tm">19:21:44</span><span class="nk"> &lt;wumpus&gt;</span> well code that is going away doesn't need to be moved
+<a name="l-143"></a><span class="tm">19:21:57</span><span class="nk"> &lt;jtimon&gt;</span> of course, agreed
+<a name="l-144"></a><span class="tm">19:22:30</span><span class="nk"> &lt;wumpus&gt;</span> but refactoring main.cpp is also important - we've held it off for so long now
+<a name="l-145"></a><span class="tm">19:22:57</span><span class="nk"> &lt;CodeShark&gt;</span> Making sure the code doesn't get cluttered in the long run and establishing good habits for this early on are not tunnel vision, imho
+<a name="l-146"></a><span class="tm">19:22:58</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-147"></a><span class="tm">19:23:02</span><span class="nk"> &lt;wumpus&gt;</span> after all that time we still have that huge c++ file with so many different responsibilities
+<a name="l-148"></a><span class="tm">19:23:02</span><span class="nk"> &lt;jtimon&gt;</span> all I want to agree is that is "going away" to getflags, and that getflags has some place to exist (it may not be versionbits.o)
+<a name="l-149"></a><span class="tm">19:23:16</span><span class="nk"> &lt;jtimon&gt;</span> it won't go away
+<a name="l-150"></a><span class="tm">19:23:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> is getflags the "one set of flags for everything"? if so, nack
+<a name="l-151"></a><span class="tm">19:23:36</span><span class="nk"> &lt;kanzure&gt;</span> while we're busy refactoring everything i would like libconsensus and a pony
+<a name="l-152"></a><span class="tm">19:24:07</span><span class="nk"> &lt;jtimon&gt;</span> it will be replaced and we can leave it all preapare for where it will be replaced with something like bip34 and that will simplify things, I believe
+<a name="l-153"></a><span class="tm">19:24:24</span><span class="nk"> &lt;sipa&gt;</span> ok, can we move on?
+<a name="l-154"></a><span class="tm">19:24:28</span><span class="nk"> &lt;wumpus&gt;</span> in any case, this doesn't seem to be a constructive topic in the meeting anymore
+<a name="l-155"></a><span class="tm">19:24:35</span><span class="nk"> &lt;CodeShark&gt;</span> yes, let's move ob
+<a name="l-156"></a><span class="tm">19:24:39</span><span class="nk"> &lt;sipa&gt;</span> or are there still things about ISM?
+<a name="l-157"></a><span class="tm">19:24:40</span><span class="nk"> &lt;CodeShark&gt;</span> on
+<a name="l-158"></a><span class="tm">19:24:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">checkqueue.h optimization</span>
+<a name="l-159"></a><span class="tm">19:24:58</span><span class="nk"> &lt;btcdrak&gt;</span> ping jeremyrubin
+<a name="l-160"></a><span class="tm">19:25:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> thank you for being so direct. After our discussions on the subject, I agree the script flags should be separated, but for now it should be libconsensus flags and script flags, yes
+<a name="l-161"></a><span class="tm">19:25:40</span><span class="nk"> &lt;jeremyrubin&gt;</span> Hi
+<a name="l-162"></a><span class="tm">19:26:07</span><span class="nk"> &lt;jeremyrubin&gt;</span> So all I wanted to say is that I am doing some refactoring of checkqueue, have some nice improvements preliminarily.
+<a name="l-163"></a><span class="tm">19:26:25</span><span class="nk"> &lt;jeremyrubin&gt;</span> Will push something to my fork if you're particularly interested in it
+<a name="l-164"></a><span class="tm">19:26:34</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I know you won't like non-script flags in script/interpreter even temporarily, I'm working on changing that, but that's just hwat I have right now
+<a name="l-165"></a><span class="tm">19:26:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> looking forward to the pull request :)
+<a name="l-166"></a><span class="tm">19:26:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jeremyrubin:</span> nice!
+<a name="l-167"></a><span class="tm">19:27:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jeremyrubin:</span> looking forward to it, obviously
+<a name="l-168"></a><span class="tm">19:27:23</span><span class="nk"> &lt;sipa&gt;</span> (as long as it doesn't rely on MIPS assembly)
+<a name="l-169"></a><span class="tm">19:27:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well, it is constructive for me, I'm getting useful feedback
+<a name="l-170"></a><span class="tm">19:27:26</span><span class="nk"> &lt;jeremyrubin&gt;</span> just wanted to note it as I've heard some other people looking at it, so don't want to duplicte work
+<a name="l-171"></a><span class="tm">19:27:52</span><span class="nk"> &lt;jeremyrubin&gt;</span> that's all!
+<a name="l-172"></a><span class="tm">19:28:31</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jeremyrubin:</span> along those lines, I've been working on optimizing the sigcache, after morcos pointed out some cool speedups. maybe we should work together to come up with a good representative bench for testing improvements?
+<a name="l-173"></a><span class="tm">19:28:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> ok that's good; it didn't seem to be going the right way. Seems that gmaxwell wants to get rid of ISM as soon as possible, so refactoring the ISM part is just a waste of work
+<a name="l-174"></a><span class="tm">19:28:57</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> or are you still hacking on that? ^^
+<a name="l-175"></a><span class="tm">19:29:00</span><span class="nk"> &lt;NicolasDorier&gt;</span> I will propose a PR for removing ISM in one or two hours normally
+<a name="l-176"></a><span class="tm">19:29:10</span><span class="nk"> &lt;gmaxwell&gt;</span> I wanted to remove it in 0.13 but didn't want to introduct a conflict with the SW merge so I held off.
+<a name="l-177"></a><span class="tm">19:29:14</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> yep, we're working on it together!
+<a name="l-178"></a><span class="tm">19:29:29</span><span class="nk"> &lt;gmaxwell&gt;</span> It saves like two whole milliseconds from block connecting times. :P
+<a name="l-179"></a><span class="tm">19:29:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">NicolasDorier:</span> great
+<a name="l-180"></a><span class="tm">19:29:59</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">cfields:</span> sounds good -- will msg out of meeting
+<a name="l-181"></a><span class="tm">19:30:07</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> focusing too much on ISM given its impending death is probably not the most urgent thing - my concern is more ovet general habits
+<a name="l-182"></a><span class="tm">19:30:18</span><span class="nk"> &lt;CodeShark&gt;</span> *over
+<a name="l-183"></a><span class="tm">19:30:23</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> ah, ok.
+<a name="l-184"></a><span class="tm">19:30:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> well the topic was removing ISM
+<a name="l-185"></a><span class="tm">19:30:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> that's 12 minites of sync time :o
+<a name="l-186"></a><span class="tm">19:30:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i think with the lock free stuff jeremy is working on, i can get validation times down from 200ms to sub 50ms on my machine
+<a name="l-187"></a><span class="tm">19:30:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> impressive
+<a name="l-188"></a><span class="tm">19:30:54</span><span class="nk"> &lt;sdaftuar&gt;</span> he has a lot of cores :P
+<a name="l-189"></a><span class="tm">19:31:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-190"></a><span class="tm">19:31:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> but across 2 cpus, so numa :/
+<a name="l-191"></a><span class="tm">19:31:36</span><span class="nk"> &lt;wumpus&gt;</span> oh no numa, is that still a thing
+<a name="l-192"></a><span class="tm">19:31:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I also want ISM to go away as soon as possible and I'll rebase on top of the PR as soon as it appears, I was just asking for an agreed trivial plan on how to "just don't touch ISM, the replacement will go here" that we could work on in the meantime
+<a name="l-193"></a><span class="tm">19:31:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> any multisocket system is numa.
+<a name="l-194"></a><span class="tm">19:32:04</span><span class="nk"> &lt;gmaxwell&gt;</span> (these days)
+<a name="l-195"></a><span class="tm">19:32:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> in my experience "will go here" can take a lot of time
+<a name="l-196"></a><span class="tm">19:33:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I didn't know, haven't seen much multisocket systems in recent times, I was hoping it was a crippled thing from the past :)
+<a name="l-197"></a><span class="tm">19:33:24</span><span class="nk"> &lt;jtimon&gt;</span> so we should totally not touch ISM in any consensus refactor PR, but where the replacement should go is something we can discuss after the meeting
+<a name="l-198"></a><span class="tm">19:33:38</span><span class="nk"> &lt;wumpus&gt;</span> in any case optimizing bitcoind for numa is very much out of scope :p
+<a name="l-199"></a><span class="tm">19:34:11</span><span class="nk"> &lt;btcdrak&gt;</span> we seem to have drifted off topic
+<a name="l-200"></a><span class="tm">19:34:13</span><span class="nk"> &lt;wumpus&gt;</span> anything else to discuss?
+<a name="l-201"></a><span class="tm">19:34:18</span><span class="nk"> &lt;NicolasDorier&gt;</span> <span class="topic">#topic </span><span class="topicline">Handling Dust on the wallet</span>
+<a name="l-202"></a><span class="tm">19:34:32</span><span class="nk"> &lt;wumpus&gt;</span> hey, I'm supposed to set the topic
+<a name="l-203"></a><span class="tm">19:34:37</span><span class="nk"> &lt;NicolasDorier&gt;</span> oh sorry :D
+<a name="l-204"></a><span class="tm">19:34:40</span><span class="nk"> &lt;NicolasDorier&gt;</span> noob here
+<a name="l-205"></a><span class="tm">19:34:40</span><span class="nk"> &lt;wumpus&gt;</span> (but no problem with this one)
+<a name="l-206"></a><span class="tm">19:34:51</span><span class="nk"> &lt;gmaxwell&gt;</span> Has anyone picked up that simulator work and improved it?
+<a name="l-207"></a><span class="tm">19:34:57</span><span class="nk"> &lt;sipa&gt;</span> it also does not work (for logs) if someone else than the chair does it
+<a name="l-208"></a><span class="tm">19:35:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Handling Dust on the wallet</span>
+<a name="l-209"></a><span class="tm">19:35:23</span><span class="nk"> &lt;NicolasDorier&gt;</span> so the problem is boring: wallet code is preventing to create output below dust using ::txminRelayFee
+<a name="l-210"></a><span class="tm">19:35:30</span><span class="nk"> &lt;jtimon&gt;</span> I think the ISM removal topic is mostly finished, TODO adapt any refactor for ISM to be removed before-hand, TODO decide where the replacement need to go during the refactor
+<a name="l-211"></a><span class="tm">19:35:50</span><span class="nk"> &lt;NicolasDorier&gt;</span> problem is that when we bumped it long time ago, some transaction could not be relayed anymore
+<a name="l-212"></a><span class="tm">19:36:05</span><span class="nk"> &lt;NicolasDorier&gt;</span> causing some stress to users
+<a name="l-213"></a><span class="tm">19:36:16</span><span class="nk"> &lt;NicolasDorier&gt;</span> several way to fix the problem
+<a name="l-214"></a><span class="tm">19:36:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> You can if you add new/fresh larger coins? right?
+<a name="l-215"></a><span class="tm">19:36:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> (econimical painful)
+<a name="l-216"></a><span class="tm">19:36:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">NicolasDorier:</span> I dont' have a good sense for how to make this work properly and be something the at doesnt involve fiddlign with a bunch of variables
+<a name="l-217"></a><span class="tm">19:36:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">NicolasDorier:</span> if all wallets at all times would not create outputs that were uneconomical to spend, there would be no issue, i think
+<a name="l-218"></a><span class="tm">19:36:40</span><span class="nk"> &lt;luke-jr&gt;</span> I thought the wallet avoided change below some number much larger than dust?
+<a name="l-219"></a><span class="tm">19:36:57</span><span class="nk"> &lt;MarcoFalke&gt;</span> yes
+<a name="l-220"></a><span class="tm">19:36:59</span><span class="nk"> &lt;morcos&gt;</span> But I think its clear we should have the MinimumOutput be higher than the dust level, so that when we raise the dust level, we know prev releases are still not generating dust
+<a name="l-221"></a><span class="tm">19:37:01</span><span class="nk"> &lt;NicolasDorier&gt;</span> <span class="hi">luke-jr:</span> problem is that it is not "much larger"
+<a name="l-222"></a><span class="tm">19:37:05</span><span class="nk"> &lt;NicolasDorier&gt;</span> it is "exactly"
+<a name="l-223"></a><span class="tm">19:37:08</span><span class="nk"> &lt;MarcoFalke&gt;</span> but this does not affect when you pay someone dust
+<a name="l-224"></a><span class="tm">19:37:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">NicolasDorier:</span> 0.01 BTC last I checked
+<a name="l-225"></a><span class="tm">19:37:09</span><span class="nk"> &lt;gmaxwell&gt;</span> This was intentional; not the stress of course, but not relaying transactions with produce outputs which are a loss to consume. But it sounds like you're not talking about the wallet, but relay behavior.
+<a name="l-226"></a><span class="tm">19:37:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> no, this is about wallet
+<a name="l-227"></a><span class="tm">19:37:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">MarcoFalke:</span> sure, but that's user error
+<a name="l-228"></a><span class="tm">19:37:40</span><span class="nk"> &lt;gmaxwell&gt;</span> The wallet tries to produce change &gt;0.01 btc as luke mentions. (which is its own stupidity, see my earlier simulator question)
+<a name="l-229"></a><span class="tm">19:38:09</span><span class="nk"> &lt;NicolasDorier&gt;</span> oh ? I am surprised I did https://github.com/bitcoin/bitcoin/pull/8356  recently and it seemed using the ::minTxRelayFee
+<a name="l-230"></a><span class="tm">19:38:14</span><span class="nk"> &lt;NicolasDorier&gt;</span> for calculating the smallest output
+<a name="l-231"></a><span class="tm">19:38:15</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">gmaxwell:</span> I asked murch to present his findings of his masters thesis in one of the meetings
+<a name="l-232"></a><span class="tm">19:38:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it should try much higher min change outputs if possible.
+<a name="l-233"></a><span class="tm">19:38:38</span><span class="nk"> &lt;jtimon&gt;</span> btw, GetDustThreshold and IsDust are still in primitives/transaction.h (libconsensus), unrelated, but maybe cheap to do both at the same time
+<a name="l-234"></a><span class="tm">19:38:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">NicolasDorier:</span> i also forgot about that 0.01 btc thing
+<a name="l-235"></a><span class="tm">19:38:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> We don't know the fees in – lets say – 2 years.
+<a name="l-236"></a><span class="tm">19:38:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> how much higher? this could be a privacy problem
+<a name="l-237"></a><span class="tm">19:38:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">NicolasDorier:</span> if select coins does not make an exact match, it attempts again with amount + 0.01 btc as the target.
+<a name="l-238"></a><span class="tm">19:39:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> we have fee learning logic..
+<a name="l-239"></a><span class="tm">19:39:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> luke-jr:If possible 1:1 like the spend itself
+<a name="l-240"></a><span class="tm">19:39:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> :-)
+<a name="l-241"></a><span class="tm">19:39:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> that harms privacy
+<a name="l-242"></a><span class="tm">19:39:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> (and would also not be possible)
+<a name="l-243"></a><span class="tm">19:39:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> it can be done in ways which don't. Please see my comments on the remove extranious inputs PR.
+<a name="l-244"></a><span class="tm">19:39:42</span><span class="nk"> &lt;NicolasDorier&gt;</span> <span class="hi">gmaxwell:</span> this is coin selection, but it does not prevent the creation of an output below 0.01 right ?
+<a name="l-245"></a><span class="tm">19:39:58</span><span class="nk"> &lt;MarcoFalke&gt;</span> no
+<a name="l-246"></a><span class="tm">19:40:18</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> please tell me "fee learning logic" is in policy/fees.o and not consensus/deeplearning.o
+<a name="l-247"></a><span class="tm">19:40:20</span><span class="nk"> &lt;MarcoFalke&gt;</span> Those are different objectives to optimize
+<a name="l-248"></a><span class="tm">19:40:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">NicolasDorier:</span> it may not be possible to prevent that except by turning small amounts into fees.
+<a name="l-249"></a><span class="tm">19:40:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> afaik yes
+<a name="l-250"></a><span class="tm">19:40:56</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> if both outputs have the same or near-same value, any observer can see the approximate tx value, no?
+<a name="l-251"></a><span class="tm">19:41:06</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> cool :)
+<a name="l-252"></a><span class="tm">19:41:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I'll explain more outside of the meeting.
+<a name="l-253"></a><span class="tm">19:41:30</span><span class="nk"> &lt;luke-jr&gt;</span> ok
+<a name="l-254"></a><span class="tm">19:41:34</span><span class="nk"> &lt;NicolasDorier&gt;</span> ok I'll need to study more about this 0.01 thing and the implication, will catch up with morcos
+<a name="l-255"></a><span class="tm">19:41:58</span><span class="nk"> &lt;gmaxwell&gt;</span> the whole logic with that stuff is braindamaged imo.
+<a name="l-256"></a><span class="tm">19:42:32</span><span class="nk"> &lt;NicolasDorier&gt;</span> I heard someone is doing some work in that area (Xekyo)
+<a name="l-257"></a><span class="tm">19:42:44</span><span class="nk"> &lt;gmaxwell&gt;</span> manages to fail under every kind of metric I can come up with, except for consistency with the existing code. (which, unsurprisingly, is the property the tests test for... :) )
+<a name="l-258"></a><span class="tm">19:42:56</span><span class="nk"> &lt;murch&gt;</span> <span class="hi">marcofalke:</span> My thesis is still in the making, sorry.
+<a name="l-259"></a><span class="tm">19:43:00</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">NicolasDorier:</span> it's murch in this channel
+<a name="l-260"></a><span class="tm">19:43:05</span><span class="nk"> &lt;NicolasDorier&gt;</span> oh ok
+<a name="l-261"></a><span class="tm">19:44:02</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, is there anything else?
+<a name="l-262"></a><span class="tm">19:44:16</span><span class="nk"> &lt;wumpus&gt;</span> no proposed topics at lesat
+<a name="l-263"></a><span class="tm">19:44:49</span><span class="nk"> &lt;kanzure&gt;</span> well, i am assembling a list of things to talk about in person
+<a name="l-264"></a><span class="tm">19:44:55</span><span class="nk"> &lt;kanzure&gt;</span> similar to https://gist.github.com/kanzure/8d193f82aabd85eeba78a61815d3038d
+<a name="l-265"></a><span class="tm">19:45:06</span><span class="nk"> &lt;kanzure&gt;</span> so i will be heckling some or most of you regarding proposed subjects
+<a name="l-266"></a><span class="tm">19:45:18</span><span class="nk"> &lt;jtimon&gt;</span> well, you could talk more about that to close the meeting, no?
+<a name="l-267"></a><span class="tm">19:45:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span>  I have a topic.
+<a name="l-268"></a><span class="tm">19:45:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> sigops max size, and the sigops per byte limit.
+<a name="l-269"></a><span class="tm">19:45:43</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jtimon:</span> what would you like to hear?
+<a name="l-270"></a><span class="tm">19:46:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic  </span><span class="topicline">sigops max size, and the sigops per byte limit</span>
+<a name="l-271"></a><span class="tm">19:46:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">(gmaxwell:</span> btw, I have no strong opinions on the coin selection stuff, if it's one of those minutia you'd rather not spend time on.)
+<a name="l-272"></a><span class="tm">19:46:26</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> nothing specifically just things to talk about in person, I didn't folloed your link yet
+<a name="l-273"></a><span class="tm">19:46:32</span><span class="nk"> &lt;gmaxwell&gt;</span> We have ongoing complaints that the bytespersigops limit has made some bare multsig outputs difficult to spend (normal software behavior won't work)
+<a name="l-274"></a><span class="tm">19:46:54</span><span class="nk"> &lt;wumpus&gt;</span> this is about https://github.com/bitcoin/bitcoin/pull/8365?
+<a name="l-275"></a><span class="tm">19:47:00</span><span class="nk"> &lt;gmaxwell&gt;</span> This was an unintended side effect of the limits put in to stop the sigops exhaustion spam attack.
+<a name="l-276"></a><span class="tm">19:47:16</span><span class="nk"> &lt;luke-jr&gt;</span> we have a fix for that, which introduces a new concern; and a fix for the new concern, that slightly complicates fee estimation
+<a name="l-277"></a><span class="tm">19:47:21</span><span class="nk"> &lt;gmaxwell&gt;</span> https://github.com/bitcoin/bitcoin/pull/8365 and https://github.com/bitcoin/bitcoin/pull/8364
+<a name="l-278"></a><span class="tm">19:47:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't agree with the position luke is taking.
+<a name="l-279"></a><span class="tm">19:47:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8365</span>
+<a name="l-280"></a><span class="tm">19:47:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/pull/8364</span>
+<a name="l-281"></a><span class="tm">19:47:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Shouldn't this be included in 0.13 then?
+<a name="l-282"></a><span class="tm">19:48:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> probably
+<a name="l-283"></a><span class="tm">19:48:21</span><span class="nk"> &lt;gmaxwell&gt;</span> It's unambigious why the limit was introduced. There is was a consensus sigops exhaustion attack resulting in small blocks.
+<a name="l-284"></a><span class="tm">19:48:24</span><span class="nk"> &lt;sipa&gt;</span> i think 8365 should be in 0.13; i think 8364 is needless complication
+<a name="l-285"></a><span class="tm">19:48:34</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i agree
+<a name="l-286"></a><span class="tm">19:48:38</span><span class="nk"> &lt;gmaxwell&gt;</span> 8365 corrects it in the way I originally proposed (so I like it)
+<a name="l-287"></a><span class="tm">19:48:43</span><span class="nk"> &lt;sipa&gt;</span> (but apart from that i'm not strongly against 8364)
+<a name="l-288"></a><span class="tm">19:48:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> that isn't why the limit was introduced, though.. it was to filter spam
+<a name="l-289"></a><span class="tm">19:49:02</span><span class="nk"> &lt;wumpus&gt;</span> for 0.13 we should prefer a simple solution
+<a name="l-290"></a><span class="tm">19:49:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> in your world view perhaps
+<a name="l-291"></a><span class="tm">19:49:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> Im in favor of #8365 (at least for 0.13)
+<a name="l-292"></a><span class="tm">19:49:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> considering I wrote it..
+<a name="l-293"></a><span class="tm">19:49:24</span><span class="nk"> &lt;gmaxwell&gt;</span> Luke proposes 8364 in addition, driven by a concern that allowing high sigops transactions but with high fees is sending an implicit endorsement that it's okay for random transactions to burn up lots of actual signature operations needlessly if they pay for it.
+<a name="l-294"></a><span class="tm">19:49:25</span><span class="nk"> &lt;sdaftuar&gt;</span> the PR that introduced the limit lacks explanation
+<a name="l-295"></a><span class="tm">19:49:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> sure  it may have been your intention; that was certainly noy clear to me (or many, i think)
+<a name="l-296"></a><span class="tm">19:50:00</span><span class="nk"> &lt;jtimon&gt;</span> is this about #8362 ?
+<a name="l-297"></a><span class="tm">19:50:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i disagree that it helps at all with preventing spam, and only encourages further bloating
+<a name="l-298"></a><span class="tm">19:50:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> because it was a DoS fix
+<a name="l-299"></a><span class="tm">19:50:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> no, 8364 and 8365
+<a name="l-300"></a><span class="tm">19:50:36</span><span class="nk"> &lt;gmaxwell&gt;</span> It was extensively discussed in here. It's revisionist to suggest that it was merged for any reason other than consensus sigops exhaustion.
+<a name="l-301"></a><span class="tm">19:50:47</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> thanks, scrolling back
+<a name="l-302"></a><span class="tm">19:51:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I wouldn't have supported it otherwise.
+<a name="l-303"></a><span class="tm">19:51:38</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, 8365 corrects the issue though sdaftuar expressed some concern that it also causes small miscosting of a small amount of transactions.
+<a name="l-304"></a><span class="tm">19:51:52</span><span class="nk"> &lt;gmaxwell&gt;</span> (since most of the time no sigops flooding attack is happening)
+<a name="l-305"></a><span class="tm">19:52:21</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> in the current form, #8365 sets the conversion at 20, not 50
+<a name="l-306"></a><span class="tm">19:52:31</span><span class="nk"> &lt;sdaftuar&gt;</span> by default
+<a name="l-307"></a><span class="tm">19:52:32</span><span class="nk"> &lt;luke-jr&gt;</span> I don't think we can solve that without a much more complicated change..?
+<a name="l-308"></a><span class="tm">19:52:34</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">luke-jr:</span> I still adhere to the view that "spam" lacks a technical definition here
+<a name="l-309"></a><span class="tm">19:52:52</span><span class="nk"> &lt;sdaftuar&gt;</span> so i think it's fine as is.  if another sigops attack were to hit the network, miners could bump it up to 50 and avoid being attacked
+<a name="l-310"></a><span class="tm">19:53:00</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">CodeShark:</span> in this context, it is non-pubkey data fed to sigops as a key
+<a name="l-311"></a><span class="tm">19:53:07</span><span class="nk"> &lt;sdaftuar&gt;</span> in its current form, users affected by the old policy have a better alternative to bloating up their transactions
+<a name="l-312"></a><span class="tm">19:53:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> storing unnecessary data in the utxo set counts as spam to me
+<a name="l-313"></a><span class="tm">19:53:22</span><span class="nk"> &lt;sdaftuar&gt;</span> we can think about better policies in the long run later, imo -- this is good enough for now
+<a name="l-314"></a><span class="tm">19:54:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> for 0.13 that's the most important
+<a name="l-315"></a><span class="tm">19:54:08</span><span class="nk"> &lt;luke-jr&gt;</span> 8365 as-is, is a regression of used behaviour
+<a name="l-316"></a><span class="tm">19:54:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> yep agreed
+<a name="l-317"></a><span class="tm">19:54:47</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> if someone is willing to pay for it it's income to someone else
+<a name="l-318"></a><span class="tm">19:54:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> as-is, i think it will have as sole effect that some people who are now bloating their transactions to bypass the limit, will stop doing so
+<a name="l-319"></a><span class="tm">19:54:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I don't agree that it is. since the change manages to except the counterparty data storage transactions, I'm not aware of anything that could be classified as spam that exists now that it usefully blocks.
+<a name="l-320"></a><span class="tm">19:55:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> everyone with a full node suffers from it, without being paid for it
+<a name="l-321"></a><span class="tm">19:55:27</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> that's a problem with incentives, not spam
+<a name="l-322"></a><span class="tm">19:55:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> that's just like e-mail spam - everyone with an email account has to handle the extra messages
+<a name="l-323"></a><span class="tm">19:55:42</span><span class="nk"> &lt;sipa&gt;</span> can we keep philosophical discussions for elsewhere?
+<a name="l-324"></a><span class="tm">19:55:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> can you rephrase?
+<a name="l-325"></a><span class="tm">19:56:41</span><span class="nk"> &lt;wumpus&gt;</span> uhm, okay
+<a name="l-326"></a><span class="tm">19:56:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> point me to a transaction that 8364 would block that should be blocked? the only thing the sigopsperbyte limit was blocking was the sigops exhaust transactions (blocked by 8365) and counterparty data storage transactions, which 8364 jumps though enormous hoops to not block.
+<a name="l-327"></a><span class="tm">19:57:53</span><span class="nk"> &lt;GitHub86&gt;</span> [13bitcoin] 15jonasschnelli opened pull request #8390: [Wallet] Correct hdmasterkeyid/hdmasterkey name confusion (06master...062016/07/hd_masterkeyrename) 02https://github.com/bitcoin/bitcoin/pull/8390
+<a name="l-328"></a><span class="tm">19:58:16</span><span class="nk"> &lt;sipa&gt;</span> wumpus, CodeShark: sorry for interrupting, but i don't think you guys disagree at all - only about what certain words meam
+<a name="l-329"></a><span class="tm">19:58:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> both of those should be blocked, and AFAIK 8365 doesn't block anything at all?
+<a name="l-330"></a><span class="tm">19:58:46</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> (to be clear, Counterparty should be using OP_RETURN only for their data)
+<a name="l-331"></a><span class="tm">19:58:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> 8365 closes the sigops bloat attack vector.
+<a name="l-332"></a><span class="tm">19:58:57</span><span class="nk"> &lt;wumpus&gt;</span> only roughly one minute to go
+<a name="l-333"></a><span class="tm">19:59:11</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we should close the meeting.
+<a name="l-334"></a><span class="tm">19:59:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#closemeeting</span><span class="cmdline"></span>
+<a name="l-335"></a><span class="tm">19:59:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
