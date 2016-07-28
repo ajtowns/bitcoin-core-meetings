@@ -1,0 +1,254 @@
+19:01:03 <wumpus> #startmeeting
+19:01:03 <lightningbot> Meeting started Thu Jul 28 19:01:03 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:03 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:05 <kanzure> greetings
+19:01:42 <wumpus> topc suggestions?
+19:01:49 <jtimon> proposed topic eliminate ISM (NicolasDorier's #8391)
+19:02:10 <luke-jr> about to board flight..
+19:02:15 <wumpus> rc2 is very near being tagged, https://github.com/bitcoin/bitcoin/milestone/20, could use some extra review for https://github.com/bitcoin/bitcoin/pull/8408
+19:02:40 <wumpus> but that's the only remaining pull tagged 0.13 left
+19:02:48 <luke-jr> wumpus: releadse notes still need to not recommend/opressure bad policy
+19:03:08 <wumpus> luke-jr: ok
+19:03:19 <luke-jr> tag applicable pr pls
+19:03:20 <jtimon> wumpus: shouldn't #8412 be in 0.13?
+19:03:25 <wumpus> but I guess people don't agree on what 'bad policy' is
+19:03:38 <kanzure> also about to board a flight in a bit
+19:03:41 <luke-jr> wumpus: …
+19:03:50 <gmaxwell> luke-jr: don't elipises wumpus.
+19:03:51 <jonasschnelli> I think it should
+19:03:57 <jonasschnelli> (8412)
+19:04:19 <jonasschnelli> I'll tag it
+19:04:20 <jtimon> in fact, I think it should go in 0.12.2 if there's going to be one
+19:04:27 <wumpus> I'm fine with 8412, hadn't heard of it before
+19:04:40 <jtimon> wumpus: yeah, just created it yesterday
+19:04:47 <sipa> 8412 seems harmless and silly not to include
+19:04:53 <jonasschnelli> It's a inconsequence with no risk attached to it (IMO)
+19:05:00 <wumpus> seems we agree
+19:05:08 <jtimon> great
+19:05:18 <luke-jr> the current release nites recommends and undisputably bad policy. if there is controversy it shouldnt recommend anything
+19:05:32 <wumpus> luke-jr: do you have a proposed update to the release notes?
+19:05:37 <gmaxwell> RE 8412: why are we adding flags for long locked in network features?
+19:05:59 <cfields> sdaftuar: any clues where to poke at #8096? Do you still think that's a blocker for release, or calling it a fluke?
+19:06:22 <luke-jr> wumpus: yes, the pr is open for a week now
+19:06:33 <cfields> err.. sorry for topic drift. we can pick that up later.
+19:06:36 <jtimon> what is the "bad policy"? what am I missing?
+19:06:43 <gmaxwell> okay never mind, I didn't look at the patch initially, I thought it was GBT rather than libconsensus.
+19:06:52 <wumpus> luke-jr: the only PR I know of also changes quite some code
+19:06:55 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8388/
+19:07:05 <jonasschnelli> Yes. Its not an release not only PR
+19:07:12 <morcos> luke-jr: i don't understand why we need to change anything now.  segwit is not released.  using blockmaxcost is fine for 0.13
+19:07:17 <gmaxwell> s/not/note/
+19:07:26 <luke-jr> jtimon: blockmaxweight rsther than blockmaxsize
+19:07:27 <morcos> uh, or weight
+19:07:44 <jonasschnelli> gmaxwell: thanks. :)
+19:07:58 <luke-jr> wumpus: because people were insisting the code had to change to remove the recommencaation
+19:08:14 <gmaxwell> I think it's foolish that we're still releasing with settings that don't reflect the near ubiquitious network usage.
+19:08:32 <sipa> luke-jr: we shouldn't be relying on miners picking safe policy that only harms themselves
+19:08:37 <jtimon> gmaxwell: on that note, agree with sipa that we should decouple the consensus flags bit poisitions from the script flags', but that's only for master
+19:08:48 <sipa> luke-jr: if we're not fine with larger blocks, we shouldn't do segwit as-is
+19:09:02 <morcos> sipa: agreed
+19:09:15 <morcos> where we is the big we
+19:09:16 <sipa> in practice, nearly every miner will set the max block size and weight to the maximum allowed value
+19:09:22 <sipa> morcos: yes!
+19:09:40 <luke-jr> sipa: we cannot stop segwit for better or worse
+19:09:46 <gmaxwell> Asking miners to produce blocks smaller than the network technically allows is a failed policy, in nay case, as we've seen. The default has been 750k-- but go look at the chain, no 750k blocks to be seen. :P
+19:09:48 <luke-jr> and hopefully in some monthhs larger blocks WILL vbe fine
+19:10:00 <luke-jr> sipa: prqactice is tbd
+19:10:01 <sipa> luke-jr: 'fine' is not a boolean
+19:10:27 <luke-jr> i need to board…
+19:10:41 <wumpus> gmaxwell: on the other hand, miners not dumbly using the default settings is great, it's exactly what should be happening
+19:10:44 <gmaxwell> luke-jr: well nothing special will happen because you aren't here. :P go board, we can talk later.
+19:10:45 <morcos> i think it would be fine to include an explanation of the difference in the release notes without making a judgement about whether or not you should want to have blocks with size smaller than what might be created if you only limited by weight
+19:10:54 <luke-jr> bbl
+19:11:49 <jtimon> the way I see it, the default is stupid to kind of force miners not to use the default (and to avoid being changing some defaults all the time)
+19:11:57 <morcos> if we don't recommend using size but explain why the option exists, then i also see no reason to cache size, if some people want to use it, its ok if its calc'ed on the fly (as current code does)_
+19:12:06 <jtimon> so the issue is that weight has a bigger default than size had?
+19:12:10 <wumpus> jtimon: yes, I thought that was the point
+19:12:30 <wumpus> jtimon: otherwise it's back to 'devs decide the values'
+19:12:46 <btcdrak> sorry I am late. #8412 should be included.
+19:12:52 <jtimon> yeah, and people asking to increase op_return size and shit
+19:13:20 <gmaxwell> IMO we should just make the defaults the maximums. Doing otherwise is thereatics, we know that users will immediately set them to the largest allowed values. And the few that wouldn't will happily manually reduce them.
+19:13:52 <jtimon> re #8412 should I open the PR to 0.13 then?
+19:13:54 <gmaxwell> this argument specifically applies to the 'max weight/size' things because we have expirence there with how they will be set in practice.
+19:14:20 <sipa> jtimon: 8412 will backport trivially, no need for backport PR
+19:14:35 <gmaxwell> (also, FWIW, the income difference between 750k size and maximum is non-trivial).
+19:15:29 <jtimon> no strong opinion, it seems natural to take the oportunity of moving from size to weight to change the default to something more used, but I will complain when somebody asks to change it later
+19:15:34 <wumpus> I really don't like to go back to discussing what defaults to use, e.g. we've had tons of pull requests to change the default block size and we've always used the reasoning explained by jtimon to hold them off
+19:15:40 <wumpus> but indeed, no strong opinion either
+19:16:10 <jtimon> if we want to set a lower default to "force people" not to use defaults there, that's fine with me as well
+19:16:31 <sipa> the current 0.13 code does not change any defaults
+19:16:36 <morcos> wumpus: i suppose the confusion is that now that we have 2 options, its totally non-intuitive how to se tthem given they have non max defaults
+19:16:46 <jtimon> sipa: then what's the problem again?
+19:16:49 <sipa> and the release notes explain the difference, and that only using weight is faster
+19:16:54 <wumpus> yes, what is the problem then?
+19:16:58 <sipa> i think the code and notes in 0.13 are fine
+19:17:46 <gmaxwell> The notes don't seem to inform me how to set it to the maximum.
+19:18:07 <gmaxwell> which is what 99% of the users are going to want to do, as it's what they currently do.
+19:18:21 <sipa> ok, let's fix that in the --help message?
+19:18:47 <gmaxwell> They won't read that. They'll read the release notes with greater odds than --help.
+19:18:55 <wumpus> if it's what they currently do ,then why would the default even matter? they override it already.
+19:18:57 <gmaxwell> (otherwise they wouldn't know of the maxweight option at all)
+19:18:58 <sipa> i assume they'll read neither
+19:19:13 <sdaftuar> (Note that for mainnet, in this release, the equivalent parameter for -blockmaxweight would be four times the desired -blockmaxsize. See BIP 141 for additional details.)
+19:19:16 <morcos> you need to know how to set the limits to max, and also not have the code to unnecessary extra serialization
+19:19:28 <gmaxwell> The default doesn't matter, except it forces people to override, which they'll likely get wrong now that it's been made more complicated.
+19:19:59 <wumpus> in any case the help message and release notes should be clear, if they are missing information that needs to be added
+19:20:22 <gmaxwell> E.g. you'll read that release note and then change your maxsize to maxweight, and then be surprised when their blocks are 250k. :P
+19:20:43 <achow101> why not just set it to the max? I can't see any reason why users would complain about that given that that is what they are going to do anyways
+19:21:13 <gmaxwell> achow101: that was the argument I was making before. wumpus correctly notes that going and debating defaults again isn't great.
+19:21:17 <jtimon> gmaxwell: ok, so you want to just clarify how to select the max block size in the --help because now it's more complicated than before and add something to the release notes?
+19:21:30 <gmaxwell> In particular luke will go on a public attack campaign, and some are trying to avoid it.
+19:21:42 <wumpus> because we should not be in the business of determining what values miners should use, we've always tried to avoid that, for good reason
+19:21:47 <gmaxwell> (because he sees a kind of principled position arising from setting a more correct default which no one uses)
+19:22:34 <gmaxwell> wumpus: not at question of should, it's a question of 'does', and forcing people to set settings which are now somewhat complex due to the new option is a bit unfortunate.
+19:22:38 <wumpus> if you want to inform people how to set the maximum, then adding how to do so in the release notes makes sense
+19:22:52 <gmaxwell> yes, I can make a PR that explains how to do that.
+19:22:53 <wumpus> gmaxwell: we've been there; this really feels like deja vu
+19:23:34 <wumpus> so to be clear: the current 0.13 defaults will cause miners to do something else than create 750kb blocks, as was the case for 0.12?
+19:23:56 <gmaxwell> No, the defaults are functionally equal to 0.12's.
+19:23:59 <sdaftuar> wumpus: no, that is not the case.
+19:24:07 <wumpus> ok, good then
+19:24:17 <morcos> i think the release notes are accurate and relatively comprehensive enough right now.  unfortunately, i think the logic that exists is complicated enough that miners will make mistakes and either create smaller blocks than they meant to or slow down their mining computation
+19:24:32 <gmaxwell> the default maxweight is 3 million, which, with no witness txn is exactly equal to 750k maxsize.
+19:24:43 <jtimon> I really don't understand luke-jr's issue if the defaults are untouched
+19:25:03 <morcos> i'm not sure what the solution to that is other than explaining exactly what you should do if you want to mine max size blocks, which might be seen as a recommendation
+19:25:25 <wumpus> explaining in the release notes and documentation is exactly the right thing to do
+19:25:29 <gmaxwell> jtimon: because a maxweight of 3m allows for a 3mb block in future versions with segwit activated and he doesn't want miners being instructed to use maxweight.
+19:25:31 <instagibbs> jtimon, theoretical size max would be 3MB I think
+19:25:35 <wumpus> so people understand what is being done
+19:25:50 <wumpus> instead of saying 'this is too complicated for you, just follow the defaults'
+19:26:10 <gmaxwell> wumpus: 'just follow the defaults' was never my position.
+19:26:31 <jtimon> gmaxwell: why do miners need to be instructed about maxweight before activation? (not that I'm against informing people beforehand)
+19:26:43 <gmaxwell> Rather, we have defaults that match AFAICT what _no one_ wants, meaning that there is no one who can go "oh what the defaults want is already what I want, so I don't have to screw with anything."
+19:26:50 <wumpus> gmaxwell: I know, but that's what would effectively happen if the defaults are just the maximum which everyone uses
+19:26:52 <morcos> gmaxwell: exactly
+19:27:42 <wumpus> gmaxwell: people will start using the defaults, and be recommended using the defaults, which makes us in charge of determining the values. Next release there will be 20 pulls again of people that want to change the default to their favourite value, to lead others into using it
+19:27:47 <morcos> jtimon: they need to be informed because we kept blockmaxsize as an option, but it is slower to calculate (by unknown amount)
+19:27:59 <gmaxwell> jtimon: because he believes its establishing a bad set of practices which will hold over. I think he's right that it will hold over.. but only slightly, people are also going to immediately crank to maximum. I think luke realizes this too, but is adopting a principled position of not supporting something he thinks is bad even if it is inevitable.
+19:28:00 <jtimon> ok, so imagining what most are doing and assuming they don't touch their configuration for now and don't do anything about weigh (ie use the default), everything will be fine, right?
+19:28:16 <gmaxwell> And he think it is bad until compactblock deployment has proven that miners producing larger blocks is okay.
+19:28:16 <jtimon> morcos: I see
+19:28:18 <wumpus> hence, I really think defaults discussion is a waste of time, it just creates more of the same
+19:29:08 <gmaxwell> instead we get worse discussions because we have setting which actively trip up users.
+19:29:08 <sipa> i think we can just leave defaults as they are now
+19:29:21 <gmaxwell> Sorry, wumpus, the software doesn't exist to save us from discussion, it exists to serve its users.
+19:29:28 <wumpus> that's what we've learned from previous messing around with defaults, I don't understand why you've certainly changed your mind about this
+19:29:28 <gmaxwell> I agree that we can leave them.
+19:29:31 <instagibbs> ack for leaving as-is
+19:29:45 <jtimon> mhmm, if they were creating bigger blocks, they will keep doing so, and if they were using the default, they will keep doing so
+19:29:57 <gmaxwell> But we need instructions for setting them to maximum, because as is people will screw it up and produce 250k blocks (and if you care about complaining: they'll accuse us of being sneaky)
+19:30:08 <wumpus> gmaxwell: where did I claim that the software exists to save us from discussion!??
+19:30:14 <wumpus> gmaxwell: wtf is this
+19:30:16 <jtimon> if they move to weigh because it's cheaper but still use the default, the size is the same
+19:30:19 <morcos> I think the lesson to be learned here is we make the code too complicated by trying to be all things to all people.  For policy (not consensus) related decisions, i don't think we need to be able to support every possible thing.   We waste so much time trying to shoehorn in things like priority and maxsize, while simultaneously trying to make the code more efficient
+19:30:31 <sipa> agree
+19:31:33 <gmaxwell> wumpus: I'm sorry, thats what I'm reading out of your position on the defaults. I feel like you're basically arguing that we should have setting we know are bad and don't match usage, because it allows to refuse to discuss the defaults.
+19:31:52 <Eliel_> Well, you could always just make the mining part refuse to function unless the user manually sets the required config values :P
+19:31:55 <gmaxwell> I think thats an argument that we should make the software objectively worse in order to avoid debates over what is better.
+19:32:04 <gmaxwell> I apologize for reading so much into it.
+19:32:06 <Eliel_> as in, no dfaults
+19:32:17 <jtimon> anyway, it seems this is mostly an issue for luke-jr, so I don't see the point in keeping discussing it while he is on a plane
+19:32:25 <achow101> Eliel_: it's not very user friendly though
+19:32:30 <sipa> how about we leave things as is, and in the future (whenever that may be) we find a way to simplify the options (back to one argument, for example)
+19:32:40 <sdaftuar> ACK simplifying in the future
+19:32:45 <morcos> sipa: i think thats the best we're going to get at this point
+19:32:47 <sipa> that can 1) solve the problem of inadvisable defaults
+19:32:49 <gmaxwell> But we really do need to have instructions on doing what people will do. And when we write those luke will complain because it will be arguable that we are endorsing those settings. Cannot escape the drama. :)
+19:33:07 <wumpus> Eliel_: yes, that has been suggested before
+19:33:19 <sipa> and 2) by changing things at the same time as simplifying the logic, it is not necessarily a recommendation
+19:33:21 <achow101> gmaxwell: just tell him to suck it up  and deal with it
+19:33:22 <Eliel_> achow101: that depends... if the error message comes with a link to a good instructional document, it might actually be a pretty good result.
+19:33:36 <gmaxwell> luke only insisted we have the size option because compactblocks is not yet deployed, and if relay network isn't working, orphaning is highly related to size.
+19:33:46 <gmaxwell> It didn't seem like it was worth debating.
+19:33:52 <morcos> gmaxwell: i'd argue we can leave the release notes as is (which luke might still object to) and then just use other channels to explain to people very simply how they can create max blocks if they want.  simple.  set -blockmaxweight=4000000 and dont' set blockmaxsize at all
+19:33:57 <wumpus> Eliel_: it may be better than setting silly defaults, but there was never agreement to do it
+19:34:09 <gmaxwell> morcos: I can agree with that too.
+19:34:24 <jtimon> gmaxwell: maybe overkill instructions with all the options (keep using the default in a more efficient way (ie not using maxsize) and do what most poeple do) is enough for luke-jr?
+19:34:26 <Eliel_> wumpus: that's pretty much my reasoning behind the suggestion.
+19:34:41 <Eliel_> if you can't set defaults the way most people want them, don't set any.
+19:34:51 <morcos> I'm also fine with that suggestion
+19:35:04 <gmaxwell> luke argued for that for years.
+19:35:11 <Eliel_> and about user friendliness... do you really want to allow people to mine without understanding what they're doing?
+19:35:15 <wumpus> Eliel_: the thing is that people disagree deeply over these setings
+19:35:26 <jtimon> other topics?
+19:36:02 <wumpus> #topic eliminate ISM (NicolasDorier's #8391)
+19:36:11 <gmaxwell> Eliel_: absolutely.
+19:36:51 <gmaxwell> Eliel_: participants in the network should be avoiding judgement, they're not in charge of the system because they participate.. and not because they have some theoretical technical ability to censor varrious behaviors.
+19:37:04 <kanzure> i need to leave. i would like to request that folks send me topic suggestions for my wishlist for the upcoming gathering. not end of the world if it doesn't happen, but having a few thoughts prepared is worthwhile.
+19:37:37 <wumpus> ping jtimon
+19:37:43 <jtimon> this is quite important for other libconsensus refactors, the sooner it is merged the easy it will be to PR other changes, I would really appreciate fast review, test and merge of #8391
+19:38:18 <jtimon> I would say it's the most important libconsensus' PR opened right now
+19:38:32 <wumpus> I think we already agreed removing ISM was a good thing lastm eeting, is there more to discuss about it?
+19:39:03 <jtimon> wumpus: well, I hope not, but that's why I bring it up (apart from asking for review)
+19:39:21 <wumpus> yes it does need more review/testing
+19:39:27 <wumpus> #action review https://github.com/bitcoin/bitcoin/pull/8391
+19:39:40 <jtimon> thanks
+19:39:42 <cfields> next topic suggestion: boost threads/sync replacement for master
+19:40:01 <wumpus> #topic boost threads/sync replacement for master
+19:40:11 <jtimon> and of course nacks and nits always the sooner the better
+19:40:16 <cfields> https://github.com/bitcoin/bitcoin/pull/8023
+19:40:27 <cfields> is nowish a good time to start pushing for that?
+19:40:37 <wumpus> sounds good to me
+19:41:18 <gmaxwell> neat.
+19:41:20 <cfields> ok. it's a drop-in replacement for interruptible boost threads/condvars. preferred to switch chunks at a time, or all in one go?
+19:41:26 <jtimon> cfields: since it's disruptive, the "refactor window" seems like the perfect time for it, no?
+19:41:31 <wumpus> what about your network refactor? seems we should start merging for that as well?
+19:42:11 <wumpus> cfields: what would 'chunks at a time' mean, using two potentially conflicting thread libraries?
+19:42:11 <cfields> wumpus: yea, review/acks of 2 outstanding PRs would be a big help...
+19:42:17 <jtimon> oh, #8023 is not disruptive at all
+19:42:23 <cfields> sec for numbers
+19:42:29 <wumpus> cfields: can you post the links? ok
+19:42:58 <NicolasDorier> I'm back.
+19:43:03 <NicolasDorier> for removing ISM
+19:43:04 <wumpus> welcome back
+19:43:10 <NicolasDorier> I synched nodes successfully
+19:43:20 <NicolasDorier> so basically, it needs some review from other people, but should be good
+19:43:27 <cfields> #8128 and #8085
+19:43:51 <btcdrak> NicolasDorier: ok I'll run a full sync this weekend
+19:43:52 <wumpus> #action review+test https://github.com/bitcoin/bitcoin/pull/8128 Net: Turn net structures into dumb storage classes
+19:44:03 <cfields> #8085 is a beast to rebase. I have it done locally, but I'm waiting for #8128 to go in before rebasing again and pushing
+19:44:10 <sipa> i tried switching some subset of the code to std::thread before, and it was impossible... you need to change it everywhere at once
+19:44:24 <wumpus> #action review+test https://github.com/bitcoin/bitcoin/pull/8085 p2p: Begin encapsulation
+19:44:54 <cfields> ok, I'll approach it as one big change then
+19:45:11 <wumpus> yes it probably makes most sense to do it all as once, it's painful but at least it should be a one time pain then
+19:46:24 <NicolasDorier> question: what you call "refactor windows" what is it ?
+19:46:31 <cfields> ok. iirc there are 1/2 pre-reqs left for boost-specific usage, then basically a search/replace. I'll go back through my notes and do pulls for the pre-reqs.
+19:47:52 <wumpus> NicolasDorier: well the best time for larger changes in 0.14 is now, as there's still some months to go before the release and there is enough time to address problems that come up
+19:48:16 <wumpus> e.g. you wouldn't want to switch the thread library a few days before release
+19:48:25 <NicolasDorier> ok nice to know, as I'm working around libconsensus... will go a bit quicker so
+19:48:49 <NicolasDorier> oh
+19:49:29 <NicolasDorier> about https://github.com/bitcoin/bitcoin/pull/8259 when will it be merged for 0.13 ?
+19:49:47 <jtimon> re ISM (sorry for not saying it earlier), thoughts on https://github.com/jtimon/bitcoin/commit/273e27bd0c086f5ba20cebc2f5ec9e24f9d79015 ? independently on adding it to the PR or leave it for later
+19:49:51 <sipa> NicolasDorier: we'll need to backport that to 0.13 before segwit
+19:50:03 <NicolasDorier> ok
+19:51:01 <wumpus> NicolasDorier: it's not even merged for master yet, after it is it can be backported
+19:51:37 <wumpus> I'll add a "needs backport" label
+19:51:50 <NicolasDorier> ok no prob
+19:52:03 <sipa> NicolasDorier: thanks for the reminder on that btw
+19:52:13 <wumpus> seems to need some more review too
+19:52:29 <NicolasDorier> jtimon: I'd like to see it go personally, but I don't know the reason why bip34Hash was here in the first place
+19:52:50 <sipa> jtimon: i vaguely remember there were ugly interactions between the cache code that avoids some database operation, bip30 and bip34... but i don't remember the details
+19:52:53 <wumpus> #action review https://github.com/bitcoin/bitcoin/pull/8259 Hash Cache
+19:53:14 <jtimon> uff, #8259 is ultra disruptive to consensus branch, should review...
+19:53:46 <NicolasDorier> jtimon: yes, I was asking because as part of our work on libconsensus, we'll need to be fixed on that
+19:54:21 <jtimon> yep, you agreed on #8346 first, right?
+19:54:46 <sipa> jtimon: 8259 will need backport to 0.13
+19:55:03 <NicolasDorier> yes
+19:56:07 <wumpus> ok, any final topics?
+19:57:01 <jtimon> sipa: damm, and #8346 cannot be backported because it's a refactor, "refactor winwow interlocking", before a release it's really the worse time to make refactors, but I repeated this many times...
+19:57:18 <wumpus> no, refactors will not be backported, that is too risky
+19:58:02 <jtimon> wumpus: then having the "refactor window" precisely when we're backporting more stuff is a bad idea
+19:58:03 <sipa> it's fine, we'll find a solution for that
+19:58:05 <wumpus> well wait until after the release then jtimon
+19:58:19 <wumpus> hopefully rc2 will be the last
+19:58:34 <wumpus> that'd mean the release can be next week or so
+19:58:48 <jtimon> wumpus: if that still counts as "refactor window" I'm happy, I know when they start but I don't have a clear idea on when they finish
+19:58:59 <sipa> wumpus: the issue is that 8346 won't be backported to 0.13, but 8259 will be, thus 8259 can't be based on that refactor
+19:59:31 <sipa> but i don't think it's a big issue
+19:59:32 <wumpus> sipa: yes, moving the refactor window to after the 0.13.0 release won't help for that
+19:59:53 <sipa> sometimes code needs non-trivial backports
+19:59:55 <sipa> so be it
+19:59:58 <wumpus> yes
+20:00:08 <wumpus> it's still trivial compared to backporting to 0.12
+20:00:23 <sipa> DOING
+20:00:26 <wumpus> #endmeeting
