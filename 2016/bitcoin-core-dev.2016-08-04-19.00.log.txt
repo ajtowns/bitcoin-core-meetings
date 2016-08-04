@@ -1,0 +1,238 @@
+19:00:43 <wumpus> #startmeeting
+19:00:43 <lightningbot> Meeting started Thu Aug  4 19:00:43 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:43 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:01 <cfields> gmaxwell: mm, i just stuck some "#error foo" in the asm paths, it blows up as expected.
+19:01:06 <cfields> whoops, will continue after meeting
+19:01:15 <MarcoFalke> topic 0.13.0, I guess?
+19:01:22 <wumpus> #topic 0.13.0 final?
+19:01:33 <wumpus> did anyone hear of any critical problems with rc2?
+19:01:54 <gmaxwell> I haven't heard much on it. Been quiet.
+19:02:03 <sipa> we forgot to backport 8438/8365 into 0.13...
+19:02:16 <wumpus> sipa something for 0.13.1?
+19:02:29 <kanzure> hi. greetings.
+19:02:39 <luke-jr> wumpus: the release notes are still inappropriate AFAIK
+19:03:07 <luke-jr> also gmaxwell was going to add a section I believe, covering the new relay policy influences (maybe I missed that being added)
+19:03:11 <jeremyrubin> hi
+19:03:12 <gmaxwell> I think I owed some release note text which I haven't done yet re max blocksize settings.
+19:03:12 <kanzure> this isn't short-term development related but it's high signal-noise crypto content that a few developers recently participated in, http://diyhpl.us/wiki/transcripts/2016-july-bitcoin-developers-miners-meeting/dan-boneh/
+19:03:16 <MarcoFalke> Wouldn't 8438 require rc3?
+19:03:16 <wumpus> luke-jr: then update them, sipa also still wants to add something
+19:03:22 <wumpus> MarcoFalke: yes
+19:03:28 <luke-jr> wumpus: my PR to update them is still open.
+19:03:35 <wumpus> luke-jr: it also updates code
+19:03:43 <jonasschnelli> luke-jr: does the PR still contain code changes?
+19:03:46 <luke-jr> so you want a version without code changes?
+19:04:06 <wumpus> luke-jr: if you make a PR that just updates the changelog, and it's accepted by others, it would have been merged a long time ago
+19:04:47 <luke-jr> wumpus: the current language was not accepted.
+19:04:59 <jonasschnelli> sipa: do you think https://github.com/bitcoin/bitcoin/pull/8438 can wait for 0.13.1?
+19:05:06 <luke-jr> I find this double-standard somewhat annoying.
+19:05:12 <morcos> sigh, if this is another meeting of us all arguing against luke-jr then i'm going to find something else to do
+19:05:29 <jonasschnelli> heh. Yes. Finish this. luke-jr can open a pr (action)
+19:05:40 <wumpus> I'm not arguing against luke-jr
+19:06:08 <wumpus> anyhow that derailed my question - so no one had any critical problems with 0.13.0rc2?
+19:06:22 <wumpus> and I don't mean with the release notes
+19:06:30 <sipa> is there any fear of instagibbs' problem being due to a code error?
+19:06:38 <wumpus> what problem?
+19:06:41 <instagibbs> sipa, fwiw it's showing up on older fork...
+19:06:58 <instagibbs> it's not HD-related, or anything fairly recent
+19:07:00 <gmaxwell> instagibbs: so without the bip32 changes?
+19:07:04 <instagibbs> correct
+19:07:05 <wumpus> you mean the salvagewallet problem? that's old hat, there's two issues open with salvagewallet problems
+19:07:09 <sipa> instagibbs: ok, good to know
+19:07:11 <wumpus> as I mentioned
+19:07:19 <sipa> sorry, i didn't follow the whole discussion
+19:07:19 <wumpus> this is not a last minute problem
+19:07:21 <luke-jr> wumpus: earlier we were discussing 0.13.0's failure mode downgrading from 0.13.1; I am not clear what the status of that is, or if we need changes for it
+19:07:22 <instagibbs> yes I'll double-check that keys aren't actually going away
+19:07:26 <instagibbs> but not worried now
+19:07:31 <gmaxwell> OK.
+19:07:36 <instagibbs> LoadWallet works anyhoo :P
+19:07:39 <wumpus> yes
+19:08:26 <wumpus> so, all agree that it is time to release 0.13.0 final?
+19:08:34 <wumpus> (after say, a day of updating the release notes)
+19:09:06 <sipa> do we care about what happens when someone downgrades 0.13.1 to 0.13.0 after segwit activates?
+19:09:08 <jonasschnelli> ACK, I can live with https://github.com/bitcoin/bitcoin/pull/8438  for 0.13.1 but don't know about others opinions.
+19:09:09 <sdaftuar> i think we can just tell users who want to downgrade to 0.13.0 after segwit activates to do a reindex?
+19:09:27 <sdaftuar> they'll end up redownloading blocks, without witnesses, but that seems fine
+19:09:30 <luke-jr> sipa: I care only to the extent that it shouldn't make a "working" node that doesn't match consensus
+19:09:32 <sdaftuar> kind of a weird case to try to optimize
+19:09:45 <wumpus> agree with luke-jr - it should give a clear error
+19:09:49 <luke-jr> ie, it should give a hard error or reindex or something
+19:09:54 <wumpus> it should not seem to work, but if it requires a reindex that's fine
+19:10:04 <jonasschnelli> sdaftuar: Yes. I think this would be good. I don't think we need to cover the downgrade case.
+19:10:05 <sipa> luke-jr: i think the only risk (but i haven't tried) is that it either works fine or crashes
+19:10:11 <gmaxwell> Loss of #8438 is unfortunate but if including it would mean delaying the release I don't think it would be good to do so.
+19:10:15 <sipa> luke-jr: the UTXO set is identical across the two
+19:10:42 <luke-jr> I suggest someone should try it before final 0.13.0
+19:10:53 <luke-jr> probably not difficult using testnet?
+19:10:56 <sdaftuar> sipa: i guess its somewhat unfortunate that it will seem to work fine.
+19:10:57 <sipa> luke-jr: ack
+19:11:00 <gmaxwell> it can be tested by changing the testnet parameters.
+19:11:10 <sipa> detecting this situation is not hard, btw
+19:11:24 <sdaftuar> oh because 0.13.1 will use OPT_WITNESS?
+19:11:32 <sipa> sdaftuar: yes
+19:12:03 <sdaftuar> hm so maybe we should add code then to look for that, hmm
+19:12:16 <sipa> it's very last minute though...
+19:12:23 <sdaftuar> i agree. and seemingly not that important
+19:12:25 <sipa> i wish we thought of this before
+19:12:35 <sipa> but i don't think it's worth holding up the release for
+19:12:56 <luke-jr> it's trivial to test I think; if everyone else is too busy, I will try to do it today
+19:13:02 <wumpus> gmaxwell: it would mean doing another rc, we could do final next week
+19:13:58 <gmaxwell> that woudl also allow adding segwit downgrade protection sipa is currently discussing. (should be 3loc or so)
+19:14:10 <wumpus> I don't know if it is that critical though, at some point we should just make the cut and stop slipping
+19:14:32 <wumpus> yes that is true
+19:15:06 * sipa notes that we're only 3 days past the date in https://github.com/bitcoin/bitcoin/issues/7679
+19:15:36 <sipa> ideally deadlines don't slip, but iirc we're much more on track than for earlier major releases
+19:15:37 <jonasschnelli> Yes. Maybe https://github.com/bitcoin/bitcoin/pull/8438  + SW0.13 downgrade compatibility is worth a week delay
+19:15:40 <wumpus> yes, we've caught up a bit with the rc1 slip by doing a fast rc phase
+19:15:48 <GitHub107> [13bitcoin] 15luke-jr opened pull request #8458: [0.13] release notes: remove bad advice to switch to blockmaxweight prematurely (06master...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8458
+19:15:51 <btcdrak> 0.13.1 shouldnt be too far behind at least, but my preference is to include it and do another rc
+19:15:54 <wumpus> note that I planned amonth for the rc1 phase
+19:15:59 <wumpus> eh for the rc phase
+19:16:31 <wumpus> well the downgrade protection cna't be postponed to 0.13.1
+19:16:34 <wumpus> that'd defeat the point
+19:16:38 <wumpus> otherwise that'd be my preference
+19:16:45 <luke-jr> 8458 also mentions an idea I had for a 3-liner to make blockmaxsize perform identical to blockmaxweight, if we do another rc.. if that's desired, someone please say so and I'll do it now
+19:17:01 <sipa> luke-jr: i think you included a few commits too many
+19:17:01 <wumpus> yes now everyone starts with last minute ideas
+19:17:02 <wumpus> great
+19:17:11 <luke-jr> oh crap, I made it against master
+19:17:34 <GitHub168> [13bitcoin] 15luke-jr closed pull request #8458: [0.13] release notes: remove bad advice to switch to blockmaxweight prematurely (06master...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8458
+19:17:38 <gmaxwell> luke-jr: nah, something changing transaction selection.. not a good thing now.
+19:17:41 <luke-jr> wumpus: well, it's trivial and probably unnecessary; fine if we don't do it
+19:18:28 <wumpus> #action check if downgrade protection is really needed, or whether it already fails
+19:18:52 <GitHub10> [13bitcoin] 15luke-jr opened pull request #8459: [0.13] release-notes: Do not encourage changing blockmaxsize to blockmaxweight (060.13...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8459
+19:19:40 <wumpus> other topics?
+19:19:59 <cfields> oh
+19:20:29 <sipa> segwit mempool malleability dos (#8279)
+19:20:33 <cfields> (sec, someone else feel free to go ahead)
+19:20:52 <wumpus> #topic segwit mempool malleability dos
+19:21:51 <wumpus> wasn't that supposed to be solved in #8312?
+19:21:57 <sdaftuar> no, it was only solved for 0.13.0
+19:22:04 <sdaftuar> we need to decide what to do in our first segwit release
+19:22:08 <sipa> so i suggested removing the "transaction failure purely due to witness does not cause rejection cache entry"
+19:22:42 <sipa> with the rationale that all it does it prevent an attacker from hiding a valid transaction from you in some cases
+19:23:04 <sipa> but it doesn't prevent it entirely (they can announce and just never send the transaction)
+19:23:35 <sipa> sdaftuar notes that the mempool malleability attack only needs a short lived connection, while the never send tx data attack needs a persistent one
+19:23:53 <sdaftuar> and it needs more than one persistent one -- you need several, as we retry tx download from other peers
+19:24:18 <sipa> sdaftuar: rejection cache is also temporary, but a node won't just re-request...
+19:24:31 <morcos> i think i'm coming around to the idea of full verification of all txs
+19:24:39 <gmaxwell> morcos: hah
+19:24:51 <BlueMatt> was there rationale to inv'ing with txid instead of wtxid for segwit nodes?
+19:25:31 <BlueMatt> (just noting that wtxid would be Keep The Same Behavior As Pre SegWit (tm))
+19:26:38 <sipa> BlueMatt: duplicating a lot of logic (mempool, orphan, caches, ...), and causes at least a potential doubling anyway (you could be inved the same tx from a pre-segwit and post-segwit node once with txid and once with wtxid, without being able to tell they're the same)
+19:27:24 <gmaxwell> also in the long term, the high malleability of witnesses would let an attacker waste lots of bandwidth. with nodes relaying different witness versions of the same txn among each other.
+19:27:42 <BlueMatt> sipa: if you're inved a tx with a witness from a pre-segwit node we get a double anyway since its garbage to us
+19:28:19 <BlueMatt> gmaxwell: same is true for scriptSigs...up to IsStandard limits (which could, in fact, be more easily enforced on witnesses)
+19:28:22 <sdaftuar> BlueMatt: that's true but shouldn't happen, as pre-segwit nodes shouldn't be accepting segwit transactions unless they're running with an unusual policy
+19:28:29 <sipa> also, if you have a tx with malleable witness (say, op_drop argument), nodes on the network could modify the witness without invalidating, and you wouldn't even be able to tell you already had the transaction before download
+19:28:59 <sipa> and you couldn't ban them for it, because they're all valid transactions
+19:30:00 <gmaxwell> BlueMatt: the kind of isstandard restriction against malleability only works great for limited classes of transactions, at least in the long term that isn't great.
+19:30:10 <BlueMatt> I'm aware
+19:30:18 <sipa> a solution is inving with both txid and wtxid... but if we go that way, we should also adds resource information to all invs (fees, size, sigops, ...)
+19:30:35 <BlueMatt> sipa: I was about to say that...seems like a real solution is inving both...
+19:30:41 <morcos> aren't we approachign the size of the tx at that point
+19:31:04 <sipa> morcos: certainly within an order of magnitude
+19:31:07 <BlueMatt> gmaxwell: but IsStandard is allowed to serve the same purpose as always - enforce reasonable limits to ensure code sanity until we've explored edge cases thouroughly
+19:31:20 <gmaxwell> the txid is within an order of magnitude. :P
+19:31:30 <sdaftuar> sipa: i think we might we just end up overfitting current policy rules by adding resource information
+19:31:32 <gmaxwell> (for the median size)
+19:31:50 <sipa> sdaftuar: 'overfitting' ?
+19:31:51 <gmaxwell> but future mempool sync these sizes will matter less.
+19:32:03 <gmaxwell> sdaftuar: feerate is pretty fundimental, however.
+19:32:04 <sdaftuar> ie policy will change, and the information will be insufficient
+19:32:08 <gmaxwell> I think including sigops would be dumb.
+19:32:22 <sdaftuar> gmaxwell: yes, but already handled with less bandwidth by feefilter
+19:32:29 <gmaxwell> if sigops really matter, something is wrong.
+19:32:48 <gmaxwell> sdaftuar: indeed. feefilter makes it implicit.
+19:32:53 <sipa> well, ok... we could send size and fee
+19:33:05 <sipa> but that's not much better than making feefilter mandatory
+19:33:12 <sipa> except slightly more flexible
+19:33:20 <sipa> and sending two hashes is annoying
+19:33:24 <gmaxwell> we're in the weeds for this right now.
+19:33:31 <sipa> agree
+19:33:45 <sipa> i think there is no simple clear cut solution for this
+19:34:08 <gmaxwell> if we're doing set recon it doesn't really matter that much how long the identifiers are.
+19:34:16 <sipa> but that's much further out
+19:34:20 <BlueMatt> if inv'ing both hashes werent stupid for bandwidth, Id say that was a pretty great solution
+19:34:29 <BlueMatt> true
+19:34:57 <gmaxwell> sipa: depends on how long it takes me to convince you to implement the relevant number theory code. :P
+19:35:52 <gmaxwell> In any case, the witnessID really doesn't matter for much of anything except rejection here.
+19:36:00 <sipa> alternative idea: make feefilter mandatory for segwit, and just disable rejectioncache...
+19:36:16 <sipa> rejectioncache only helps in practice against repeated announcements of transactions below your threshold
+19:36:28 <sipa> it's not a protection against attacks
+19:38:01 <sdaftuar> hm, not a bad idea
+19:38:03 <luke-jr> feefilter isn't even used by default last I knew? (because there is no min fee until the mempool fills)
+19:38:15 <sipa> luke-jr: good point
+19:38:40 <BlueMatt> damn, mem^H^H^Hdiskpool was too late :(
+19:38:47 <morcos> i'm all for making fee filter mandatory, if i'd known people would have liked it this much, we should have designed it that way from teh beginning
+19:39:06 <morcos> i'm a bit worried about removing the rejection cache entirely
+19:39:16 <gmaxwell> luke-jr: there is a minrelayfee.
+19:39:27 <gmaxwell> Do we not feefilter on that?
+19:39:29 <sdaftuar> gmaxwell: but we let in free transactions still
+19:39:35 <gmaxwell> oh right.
+19:39:58 <morcos> anytime there is any policy difference between nodes (such as a change in minrelay fee change isDust) then you get txs bouncing aroudn the network between the sets of nodes with different policies
+19:40:06 <gmaxwell> full validation and distinguishing why rejection happened would help.
+19:40:11 <morcos> i think its nice to have a sort of protection against that
+19:42:12 <gmaxwell> we could just have one rejection filter per peer type.
+19:42:25 <gmaxwell> e.g. rejection filter for non-sw peers and a rejection filter for sw peers.
+19:43:03 <sdaftuar> with sw peers using wtxid invs?
+19:43:30 <sipa> sdaftuar: still not enough... you need to be able to tell whether you already have another version of the same tx
+19:43:35 <sipa> even with only sw peers
+19:43:58 <gmaxwell> +full validation.
+19:44:44 <sdaftuar> sipa: i don't see why that's needed, any more than we have today with not knowing a tx is a double-spend before processing
+19:45:50 <sipa> sdaftuar: someone connects to a 1000 nodes on the network, and relays a different version of the same valid transaction to each
+19:45:59 <sipa> sdaftuar: now you potentially need to download 1000 transactions
+19:46:14 <sipa> only one of which pays fees
+19:46:20 <morcos> proposal: make feefilter mandatory. fully validate txs so we can punish peers who send us invalid stuff. don't put any witness tx in the rejection cache.  then evaluate how useful rejection cache continues to be or whether we have policy violating segwit txs bouncing around
+19:46:21 <sdaftuar> so you mean a 3rd party uses signature malleability to do this?
+19:46:32 <sdaftuar> because the tx originator can already do that
+19:46:59 <sipa> sdaftuar: right, the distinction isn't all that big
+19:47:34 <sipa> morcos: i like that... but i think it's a big change for 0.13.1
+19:47:34 <gmaxwell> the distinction though is that an attacker doing it pays fees, eventually runs out of funds, vs an attacker doing it to other peoples' txn does not ever run out of funds.
+19:48:10 <morcos> sipa: i think if we start with " don't put any witness tx in the rejection cache" then we'll be ok
+19:48:27 <sipa> morcos: ack
+19:48:32 <morcos> we can see how easy and short he other 2 are
+19:50:18 <wumpus> that concludes the topic for this meeting?
+19:50:27 <wumpus> any other topic proposals? cfields?
+19:50:29 <NicolasDorier> for information, I created ##libconsensus bikeshedding room about how to handle libconsensus for anybody interested.
+19:50:48 <cfields> NicolasDorier: haha, i was just about to paste a blurb for that
+19:51:06 <NicolasDorier> aha I just woke up for that, will go back bed :D
+19:51:22 <instagibbs> I have to leave now, but just letting you know salvage is finding lots of "extra" keys vs keys actually in wallet. *shrug*
+19:52:02 <cfields> NicolasDorier and I discussed libconsensus a bit this weekend. We're hoping to discuss amongst ourselves, come up with some goals, and present them clearly for easier review
+19:52:12 <morcos> +100
+19:52:16 <cfields> jtimon: ^^
+19:52:25 <wumpus> #topic libconsensus
+19:52:37 <cfields> that was it :)
+19:52:54 <NicolasDorier> wumpus: we have not started the bikeshedding yet, expect longer fight about it soon :p
+19:53:08 <luke-jr> NicolasDorier: IMO just discuss it here
+19:53:14 <luke-jr> way too many channels already
+19:53:31 <NicolasDorier> the reason I prefer a separate channel is so we can keep history and review it more easily
+19:53:46 <wumpus> it's not like this channel is very busy\
+19:53:47 <NicolasDorier> things said here get lost quickly enough in the sea of discussion
+19:54:25 <wumpus> that always happens on IRC, if you want discussions with good history/memory then it may be better to use a different discussion mechanism, or keep summaries or such
+19:54:36 <sipa> i think having a separate place to 'form' a proposal makes sense
+19:55:00 <luke-jr> #bitcoin-dev is also fairly quiet
+19:55:08 <sipa> involving the whole world in a design rarely leads to something useful
+19:55:27 <jtimon> from what I talked with NicolasDorier in previous times, the current goal is to complete a verifyBlock without necessarily exposing it in libconsensus at first
+19:55:28 <wumpus> that's true, as long as you can get the people you want to pay attention to join it's fine
+19:55:41 <wumpus> sometimes it's good to not have too many people there
+19:55:51 <wumpus> but speaking for myself, I'm already in so many channels, I have a hard time following more
+19:55:52 <morcos> to be clear, the design will be presented to the bigger group for feedback and not set in stone
+19:55:57 <btcdrak> yeah ack on limiting channel proliferation, also it is more open in a logged channel
+19:56:34 <morcos> i don't plan on joining the libconsensus subgroup, but i think having a focused small group will make progress actually happen
+19:56:37 <BlueMatt> I'm with wumpus...too many channels these days (not that I've been paying enough attention to have much of a voice, but still)
+19:56:43 <wumpus> then again that's up to you, doesn't need to be a discussion topic here to decide onthat.
+19:56:48 <jtimon> I don't think creating a new channel or not is going to be important either way...
+19:56:59 <cfields> morcos: sure. doesn't matter to me where the discussion takes place, just hoping to organize the discussion/planning a bit.
+19:57:03 <wumpus> any other topics? 4 minutes to go
+19:57:14 <sipa> i'm in favor of having it in a separate channel because i prefer not to see all discussions around it before there is clean design :)
+19:57:33 <NicolasDorier> bikeshedding about the creation of the channel libconsensus announce the color of the future bikeshedding on the actual code ;)
+19:57:40 <wumpus> NicolasDorier: exactly
+19:57:47 <wumpus> let's stop that
+19:57:49 <cfields> heh
+19:57:50 <sipa> haha
+19:58:01 <sipa> 3 minutes
+19:58:17 <jtimon> cfields: NicolasDorier if you can share the goals
+19:58:23 <wumpus> looks like we're done
+19:58:24 <wumpus> #endmeeting

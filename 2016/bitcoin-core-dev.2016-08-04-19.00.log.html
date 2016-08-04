@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:43</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug  4 19:00:43 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:43</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:01</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> mm, i just stuck some "#error foo" in the asm paths, it blows up as expected.
+<a name="l-5"></a><span class="tm">19:01:06</span><span class="nk"> &lt;cfields&gt;</span> whoops, will continue after meeting
+<a name="l-6"></a><span class="tm">19:01:15</span><span class="nk"> &lt;MarcoFalke&gt;</span> topic 0.13.0, I guess?
+<a name="l-7"></a><span class="tm">19:01:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.13.0 final?</span>
+<a name="l-8"></a><span class="tm">19:01:33</span><span class="nk"> &lt;wumpus&gt;</span> did anyone hear of any critical problems with rc2?
+<a name="l-9"></a><span class="tm">19:01:54</span><span class="nk"> &lt;gmaxwell&gt;</span> I haven't heard much on it. Been quiet.
+<a name="l-10"></a><span class="tm">19:02:03</span><span class="nk"> &lt;sipa&gt;</span> we forgot to backport 8438/8365 into 0.13...
+<a name="l-11"></a><span class="tm">19:02:16</span><span class="nk"> &lt;wumpus&gt;</span> sipa something for 0.13.1?
+<a name="l-12"></a><span class="tm">19:02:29</span><span class="nk"> &lt;kanzure&gt;</span> hi. greetings.
+<a name="l-13"></a><span class="tm">19:02:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> the release notes are still inappropriate AFAIK
+<a name="l-14"></a><span class="tm">19:03:07</span><span class="nk"> &lt;luke-jr&gt;</span> also gmaxwell was going to add a section I believe, covering the new relay policy influences (maybe I missed that being added)
+<a name="l-15"></a><span class="tm">19:03:11</span><span class="nk"> &lt;jeremyrubin&gt;</span> hi
+<a name="l-16"></a><span class="tm">19:03:12</span><span class="nk"> &lt;gmaxwell&gt;</span> I think I owed some release note text which I haven't done yet re max blocksize settings.
+<a name="l-17"></a><span class="tm">19:03:12</span><span class="nk"> &lt;kanzure&gt;</span> this isn't short-term development related but it's high signal-noise crypto content that a few developers recently participated in, http://diyhpl.us/wiki/transcripts/2016-july-bitcoin-developers-miners-meeting/dan-boneh/
+<a name="l-18"></a><span class="tm">19:03:16</span><span class="nk"> &lt;MarcoFalke&gt;</span> Wouldn't 8438 require rc3?
+<a name="l-19"></a><span class="tm">19:03:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> then update them, sipa also still wants to add something
+<a name="l-20"></a><span class="tm">19:03:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> yes
+<a name="l-21"></a><span class="tm">19:03:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> my PR to update them is still open.
+<a name="l-22"></a><span class="tm">19:03:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it also updates code
+<a name="l-23"></a><span class="tm">19:03:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> does the PR still contain code changes?
+<a name="l-24"></a><span class="tm">19:03:46</span><span class="nk"> &lt;luke-jr&gt;</span> so you want a version without code changes?
+<a name="l-25"></a><span class="tm">19:04:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> if you make a PR that just updates the changelog, and it's accepted by others, it would have been merged a long time ago
+<a name="l-26"></a><span class="tm">19:04:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> the current language was not accepted.
+<a name="l-27"></a><span class="tm">19:04:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> do you think https://github.com/bitcoin/bitcoin/pull/8438 can wait for 0.13.1?
+<a name="l-28"></a><span class="tm">19:05:06</span><span class="nk"> &lt;luke-jr&gt;</span> I find this double-standard somewhat annoying.
+<a name="l-29"></a><span class="tm">19:05:12</span><span class="nk"> &lt;morcos&gt;</span> sigh, if this is another meeting of us all arguing against luke-jr then i'm going to find something else to do
+<a name="l-30"></a><span class="tm">19:05:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh. Yes. Finish this. luke-jr can open a pr (action)
+<a name="l-31"></a><span class="tm">19:05:40</span><span class="nk"> &lt;wumpus&gt;</span> I'm not arguing against luke-jr
+<a name="l-32"></a><span class="tm">19:06:08</span><span class="nk"> &lt;wumpus&gt;</span> anyhow that derailed my question - so no one had any critical problems with 0.13.0rc2?
+<a name="l-33"></a><span class="tm">19:06:22</span><span class="nk"> &lt;wumpus&gt;</span> and I don't mean with the release notes
+<a name="l-34"></a><span class="tm">19:06:30</span><span class="nk"> &lt;sipa&gt;</span> is there any fear of instagibbs' problem being due to a code error?
+<a name="l-35"></a><span class="tm">19:06:38</span><span class="nk"> &lt;wumpus&gt;</span> what problem?
+<a name="l-36"></a><span class="tm">19:06:41</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, fwiw it's showing up on older fork...
+<a name="l-37"></a><span class="tm">19:06:58</span><span class="nk"> &lt;instagibbs&gt;</span> it's not HD-related, or anything fairly recent
+<a name="l-38"></a><span class="tm">19:07:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> so without the bip32 changes?
+<a name="l-39"></a><span class="tm">19:07:04</span><span class="nk"> &lt;instagibbs&gt;</span> correct
+<a name="l-40"></a><span class="tm">19:07:05</span><span class="nk"> &lt;wumpus&gt;</span> you mean the salvagewallet problem? that's old hat, there's two issues open with salvagewallet problems
+<a name="l-41"></a><span class="tm">19:07:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> ok, good to know
+<a name="l-42"></a><span class="tm">19:07:11</span><span class="nk"> &lt;wumpus&gt;</span> as I mentioned
+<a name="l-43"></a><span class="tm">19:07:19</span><span class="nk"> &lt;sipa&gt;</span> sorry, i didn't follow the whole discussion
+<a name="l-44"></a><span class="tm">19:07:19</span><span class="nk"> &lt;wumpus&gt;</span> this is not a last minute problem
+<a name="l-45"></a><span class="tm">19:07:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> earlier we were discussing 0.13.0's failure mode downgrading from 0.13.1; I am not clear what the status of that is, or if we need changes for it
+<a name="l-46"></a><span class="tm">19:07:22</span><span class="nk"> &lt;instagibbs&gt;</span> yes I'll double-check that keys aren't actually going away
+<a name="l-47"></a><span class="tm">19:07:26</span><span class="nk"> &lt;instagibbs&gt;</span> but not worried now
+<a name="l-48"></a><span class="tm">19:07:31</span><span class="nk"> &lt;gmaxwell&gt;</span> OK.
+<a name="l-49"></a><span class="tm">19:07:36</span><span class="nk"> &lt;instagibbs&gt;</span> LoadWallet works anyhoo :P
+<a name="l-50"></a><span class="tm">19:07:39</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-51"></a><span class="tm">19:08:26</span><span class="nk"> &lt;wumpus&gt;</span> so, all agree that it is time to release 0.13.0 final?
+<a name="l-52"></a><span class="tm">19:08:34</span><span class="nk"> &lt;wumpus&gt;</span> (after say, a day of updating the release notes)
+<a name="l-53"></a><span class="tm">19:09:06</span><span class="nk"> &lt;sipa&gt;</span> do we care about what happens when someone downgrades 0.13.1 to 0.13.0 after segwit activates?
+<a name="l-54"></a><span class="tm">19:09:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> ACK, I can live with https://github.com/bitcoin/bitcoin/pull/8438  for 0.13.1 but don't know about others opinions.
+<a name="l-55"></a><span class="tm">19:09:09</span><span class="nk"> &lt;sdaftuar&gt;</span> i think we can just tell users who want to downgrade to 0.13.0 after segwit activates to do a reindex?
+<a name="l-56"></a><span class="tm">19:09:27</span><span class="nk"> &lt;sdaftuar&gt;</span> they'll end up redownloading blocks, without witnesses, but that seems fine
+<a name="l-57"></a><span class="tm">19:09:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> I care only to the extent that it shouldn't make a "working" node that doesn't match consensus
+<a name="l-58"></a><span class="tm">19:09:32</span><span class="nk"> &lt;sdaftuar&gt;</span> kind of a weird case to try to optimize
+<a name="l-59"></a><span class="tm">19:09:45</span><span class="nk"> &lt;wumpus&gt;</span> agree with luke-jr - it should give a clear error
+<a name="l-60"></a><span class="tm">19:09:49</span><span class="nk"> &lt;luke-jr&gt;</span> ie, it should give a hard error or reindex or something
+<a name="l-61"></a><span class="tm">19:09:54</span><span class="nk"> &lt;wumpus&gt;</span> it should not seem to work, but if it requires a reindex that's fine
+<a name="l-62"></a><span class="tm">19:10:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sdaftuar:</span> Yes. I think this would be good. I don't think we need to cover the downgrade case.
+<a name="l-63"></a><span class="tm">19:10:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i think the only risk (but i haven't tried) is that it either works fine or crashes
+<a name="l-64"></a><span class="tm">19:10:11</span><span class="nk"> &lt;gmaxwell&gt;</span> Loss of #8438 is unfortunate but if including it would mean delaying the release I don't think it would be good to do so.
+<a name="l-65"></a><span class="tm">19:10:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> the UTXO set is identical across the two
+<a name="l-66"></a><span class="tm">19:10:42</span><span class="nk"> &lt;luke-jr&gt;</span> I suggest someone should try it before final 0.13.0
+<a name="l-67"></a><span class="tm">19:10:53</span><span class="nk"> &lt;luke-jr&gt;</span> probably not difficult using testnet?
+<a name="l-68"></a><span class="tm">19:10:56</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i guess its somewhat unfortunate that it will seem to work fine.
+<a name="l-69"></a><span class="tm">19:10:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> ack
+<a name="l-70"></a><span class="tm">19:11:00</span><span class="nk"> &lt;gmaxwell&gt;</span> it can be tested by changing the testnet parameters.
+<a name="l-71"></a><span class="tm">19:11:10</span><span class="nk"> &lt;sipa&gt;</span> detecting this situation is not hard, btw
+<a name="l-72"></a><span class="tm">19:11:24</span><span class="nk"> &lt;sdaftuar&gt;</span> oh because 0.13.1 will use OPT_WITNESS?
+<a name="l-73"></a><span class="tm">19:11:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes
+<a name="l-74"></a><span class="tm">19:12:03</span><span class="nk"> &lt;sdaftuar&gt;</span> hm so maybe we should add code then to look for that, hmm
+<a name="l-75"></a><span class="tm">19:12:16</span><span class="nk"> &lt;sipa&gt;</span> it's very last minute though...
+<a name="l-76"></a><span class="tm">19:12:23</span><span class="nk"> &lt;sdaftuar&gt;</span> i agree. and seemingly not that important
+<a name="l-77"></a><span class="tm">19:12:25</span><span class="nk"> &lt;sipa&gt;</span> i wish we thought of this before
+<a name="l-78"></a><span class="tm">19:12:35</span><span class="nk"> &lt;sipa&gt;</span> but i don't think it's worth holding up the release for
+<a name="l-79"></a><span class="tm">19:12:56</span><span class="nk"> &lt;luke-jr&gt;</span> it's trivial to test I think; if everyone else is too busy, I will try to do it today
+<a name="l-80"></a><span class="tm">19:13:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it would mean doing another rc, we could do final next week
+<a name="l-81"></a><span class="tm">19:13:58</span><span class="nk"> &lt;gmaxwell&gt;</span> that woudl also allow adding segwit downgrade protection sipa is currently discussing. (should be 3loc or so)
+<a name="l-82"></a><span class="tm">19:14:10</span><span class="nk"> &lt;wumpus&gt;</span> I don't know if it is that critical though, at some point we should just make the cut and stop slipping
+<a name="l-83"></a><span class="tm">19:14:32</span><span class="nk"> &lt;wumpus&gt;</span> yes that is true
+<a name="l-84"></a><span class="tm">19:15:06 </span><span class="nka">* sipa</span> <span class="ac">notes that we're only 3 days past the date in https://github.com/bitcoin/bitcoin/issues/7679</span>
+<a name="l-85"></a><span class="tm">19:15:36</span><span class="nk"> &lt;sipa&gt;</span> ideally deadlines don't slip, but iirc we're much more on track than for earlier major releases
+<a name="l-86"></a><span class="tm">19:15:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Maybe https://github.com/bitcoin/bitcoin/pull/8438  + SW0.13 downgrade compatibility is worth a week delay
+<a name="l-87"></a><span class="tm">19:15:40</span><span class="nk"> &lt;wumpus&gt;</span> yes, we've caught up a bit with the rc1 slip by doing a fast rc phase
+<a name="l-88"></a><span class="tm">19:15:48</span><span class="nk"> &lt;GitHub107&gt;</span> [13bitcoin] 15luke-jr opened pull request #8458: [0.13] release notes: remove bad advice to switch to blockmaxweight prematurely (06master...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8458
+<a name="l-89"></a><span class="tm">19:15:51</span><span class="nk"> &lt;btcdrak&gt;</span> 0.13.1 shouldnt be too far behind at least, but my preference is to include it and do another rc
+<a name="l-90"></a><span class="tm">19:15:54</span><span class="nk"> &lt;wumpus&gt;</span> note that I planned amonth for the rc1 phase
+<a name="l-91"></a><span class="tm">19:15:59</span><span class="nk"> &lt;wumpus&gt;</span> eh for the rc phase
+<a name="l-92"></a><span class="tm">19:16:31</span><span class="nk"> &lt;wumpus&gt;</span> well the downgrade protection cna't be postponed to 0.13.1
+<a name="l-93"></a><span class="tm">19:16:34</span><span class="nk"> &lt;wumpus&gt;</span> that'd defeat the point
+<a name="l-94"></a><span class="tm">19:16:38</span><span class="nk"> &lt;wumpus&gt;</span> otherwise that'd be my preference
+<a name="l-95"></a><span class="tm">19:16:45</span><span class="nk"> &lt;luke-jr&gt;</span> 8458 also mentions an idea I had for a 3-liner to make blockmaxsize perform identical to blockmaxweight, if we do another rc.. if that's desired, someone please say so and I'll do it now
+<a name="l-96"></a><span class="tm">19:17:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i think you included a few commits too many
+<a name="l-97"></a><span class="tm">19:17:01</span><span class="nk"> &lt;wumpus&gt;</span> yes now everyone starts with last minute ideas
+<a name="l-98"></a><span class="tm">19:17:02</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-99"></a><span class="tm">19:17:11</span><span class="nk"> &lt;luke-jr&gt;</span> oh crap, I made it against master
+<a name="l-100"></a><span class="tm">19:17:34</span><span class="nk"> &lt;GitHub168&gt;</span> [13bitcoin] 15luke-jr closed pull request #8458: [0.13] release notes: remove bad advice to switch to blockmaxweight prematurely (06master...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8458
+<a name="l-101"></a><span class="tm">19:17:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> nah, something changing transaction selection.. not a good thing now.
+<a name="l-102"></a><span class="tm">19:17:41</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> well, it's trivial and probably unnecessary; fine if we don't do it
+<a name="l-103"></a><span class="tm">19:18:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">check if downgrade protection is really needed, or whether it already fails</span>
+<a name="l-104"></a><span class="tm">19:18:52</span><span class="nk"> &lt;GitHub10&gt;</span> [13bitcoin] 15luke-jr opened pull request #8459: [0.13] release-notes: Do not encourage changing blockmaxsize to blockmaxweight (060.13...060.13_relnotes_remove_bad_advice) 02https://github.com/bitcoin/bitcoin/pull/8459
+<a name="l-105"></a><span class="tm">19:19:40</span><span class="nk"> &lt;wumpus&gt;</span> other topics?
+<a name="l-106"></a><span class="tm">19:19:59</span><span class="nk"> &lt;cfields&gt;</span> oh
+<a name="l-107"></a><span class="tm">19:20:29</span><span class="nk"> &lt;sipa&gt;</span> segwit mempool malleability dos (#8279)
+<a name="l-108"></a><span class="tm">19:20:33</span><span class="nk"> &lt;cfields&gt;</span> (sec, someone else feel free to go ahead)
+<a name="l-109"></a><span class="tm">19:20:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit mempool malleability dos</span>
+<a name="l-110"></a><span class="tm">19:21:51</span><span class="nk"> &lt;wumpus&gt;</span> wasn't that supposed to be solved in #8312?
+<a name="l-111"></a><span class="tm">19:21:57</span><span class="nk"> &lt;sdaftuar&gt;</span> no, it was only solved for 0.13.0
+<a name="l-112"></a><span class="tm">19:22:04</span><span class="nk"> &lt;sdaftuar&gt;</span> we need to decide what to do in our first segwit release
+<a name="l-113"></a><span class="tm">19:22:08</span><span class="nk"> &lt;sipa&gt;</span> so i suggested removing the "transaction failure purely due to witness does not cause rejection cache entry"
+<a name="l-114"></a><span class="tm">19:22:42</span><span class="nk"> &lt;sipa&gt;</span> with the rationale that all it does it prevent an attacker from hiding a valid transaction from you in some cases
+<a name="l-115"></a><span class="tm">19:23:04</span><span class="nk"> &lt;sipa&gt;</span> but it doesn't prevent it entirely (they can announce and just never send the transaction)
+<a name="l-116"></a><span class="tm">19:23:35</span><span class="nk"> &lt;sipa&gt;</span> sdaftuar notes that the mempool malleability attack only needs a short lived connection, while the never send tx data attack needs a persistent one
+<a name="l-117"></a><span class="tm">19:23:53</span><span class="nk"> &lt;sdaftuar&gt;</span> and it needs more than one persistent one -- you need several, as we retry tx download from other peers
+<a name="l-118"></a><span class="tm">19:24:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> rejection cache is also temporary, but a node won't just re-request...
+<a name="l-119"></a><span class="tm">19:24:31</span><span class="nk"> &lt;morcos&gt;</span> i think i'm coming around to the idea of full verification of all txs
+<a name="l-120"></a><span class="tm">19:24:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> hah
+<a name="l-121"></a><span class="tm">19:24:51</span><span class="nk"> &lt;BlueMatt&gt;</span> was there rationale to inv'ing with txid instead of wtxid for segwit nodes?
+<a name="l-122"></a><span class="tm">19:25:31</span><span class="nk"> &lt;BlueMatt&gt;</span> (just noting that wtxid would be Keep The Same Behavior As Pre SegWit (tm))
+<a name="l-123"></a><span class="tm">19:26:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> duplicating a lot of logic (mempool, orphan, caches, ...), and causes at least a potential doubling anyway (you could be inved the same tx from a pre-segwit and post-segwit node once with txid and once with wtxid, without being able to tell they're the same)
+<a name="l-124"></a><span class="tm">19:27:24</span><span class="nk"> &lt;gmaxwell&gt;</span> also in the long term, the high malleability of witnesses would let an attacker waste lots of bandwidth. with nodes relaying different witness versions of the same txn among each other.
+<a name="l-125"></a><span class="tm">19:27:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> if you're inved a tx with a witness from a pre-segwit node we get a double anyway since its garbage to us
+<a name="l-126"></a><span class="tm">19:28:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> same is true for scriptSigs...up to IsStandard limits (which could, in fact, be more easily enforced on witnesses)
+<a name="l-127"></a><span class="tm">19:28:22</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> that's true but shouldn't happen, as pre-segwit nodes shouldn't be accepting segwit transactions unless they're running with an unusual policy
+<a name="l-128"></a><span class="tm">19:28:29</span><span class="nk"> &lt;sipa&gt;</span> also, if you have a tx with malleable witness (say, op_drop argument), nodes on the network could modify the witness without invalidating, and you wouldn't even be able to tell you already had the transaction before download
+<a name="l-129"></a><span class="tm">19:28:59</span><span class="nk"> &lt;sipa&gt;</span> and you couldn't ban them for it, because they're all valid transactions
+<a name="l-130"></a><span class="tm">19:30:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> the kind of isstandard restriction against malleability only works great for limited classes of transactions, at least in the long term that isn't great.
+<a name="l-131"></a><span class="tm">19:30:10</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm aware
+<a name="l-132"></a><span class="tm">19:30:18</span><span class="nk"> &lt;sipa&gt;</span> a solution is inving with both txid and wtxid... but if we go that way, we should also adds resource information to all invs (fees, size, sigops, ...)
+<a name="l-133"></a><span class="tm">19:30:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I was about to say that...seems like a real solution is inving both...
+<a name="l-134"></a><span class="tm">19:30:41</span><span class="nk"> &lt;morcos&gt;</span> aren't we approachign the size of the tx at that point
+<a name="l-135"></a><span class="tm">19:31:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> certainly within an order of magnitude
+<a name="l-136"></a><span class="tm">19:31:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> but IsStandard is allowed to serve the same purpose as always - enforce reasonable limits to ensure code sanity until we've explored edge cases thouroughly
+<a name="l-137"></a><span class="tm">19:31:20</span><span class="nk"> &lt;gmaxwell&gt;</span> the txid is within an order of magnitude. :P
+<a name="l-138"></a><span class="tm">19:31:30</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i think we might we just end up overfitting current policy rules by adding resource information
+<a name="l-139"></a><span class="tm">19:31:32</span><span class="nk"> &lt;gmaxwell&gt;</span> (for the median size)
+<a name="l-140"></a><span class="tm">19:31:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> 'overfitting' ?
+<a name="l-141"></a><span class="tm">19:31:51</span><span class="nk"> &lt;gmaxwell&gt;</span> but future mempool sync these sizes will matter less.
+<a name="l-142"></a><span class="tm">19:32:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> feerate is pretty fundimental, however.
+<a name="l-143"></a><span class="tm">19:32:04</span><span class="nk"> &lt;sdaftuar&gt;</span> ie policy will change, and the information will be insufficient
+<a name="l-144"></a><span class="tm">19:32:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I think including sigops would be dumb.
+<a name="l-145"></a><span class="tm">19:32:22</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yes, but already handled with less bandwidth by feefilter
+<a name="l-146"></a><span class="tm">19:32:29</span><span class="nk"> &lt;gmaxwell&gt;</span> if sigops really matter, something is wrong.
+<a name="l-147"></a><span class="tm">19:32:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> indeed. feefilter makes it implicit.
+<a name="l-148"></a><span class="tm">19:32:53</span><span class="nk"> &lt;sipa&gt;</span> well, ok... we could send size and fee
+<a name="l-149"></a><span class="tm">19:33:05</span><span class="nk"> &lt;sipa&gt;</span> but that's not much better than making feefilter mandatory
+<a name="l-150"></a><span class="tm">19:33:12</span><span class="nk"> &lt;sipa&gt;</span> except slightly more flexible
+<a name="l-151"></a><span class="tm">19:33:20</span><span class="nk"> &lt;sipa&gt;</span> and sending two hashes is annoying
+<a name="l-152"></a><span class="tm">19:33:24</span><span class="nk"> &lt;gmaxwell&gt;</span> we're in the weeds for this right now.
+<a name="l-153"></a><span class="tm">19:33:31</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-154"></a><span class="tm">19:33:45</span><span class="nk"> &lt;sipa&gt;</span> i think there is no simple clear cut solution for this
+<a name="l-155"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> if we're doing set recon it doesn't really matter that much how long the identifiers are.
+<a name="l-156"></a><span class="tm">19:34:16</span><span class="nk"> &lt;sipa&gt;</span> but that's much further out
+<a name="l-157"></a><span class="tm">19:34:20</span><span class="nk"> &lt;BlueMatt&gt;</span> if inv'ing both hashes werent stupid for bandwidth, Id say that was a pretty great solution
+<a name="l-158"></a><span class="tm">19:34:29</span><span class="nk"> &lt;BlueMatt&gt;</span> true
+<a name="l-159"></a><span class="tm">19:34:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> depends on how long it takes me to convince you to implement the relevant number theory code. :P
+<a name="l-160"></a><span class="tm">19:35:52</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, the witnessID really doesn't matter for much of anything except rejection here.
+<a name="l-161"></a><span class="tm">19:36:00</span><span class="nk"> &lt;sipa&gt;</span> alternative idea: make feefilter mandatory for segwit, and just disable rejectioncache...
+<a name="l-162"></a><span class="tm">19:36:16</span><span class="nk"> &lt;sipa&gt;</span> rejectioncache only helps in practice against repeated announcements of transactions below your threshold
+<a name="l-163"></a><span class="tm">19:36:28</span><span class="nk"> &lt;sipa&gt;</span> it's not a protection against attacks
+<a name="l-164"></a><span class="tm">19:38:01</span><span class="nk"> &lt;sdaftuar&gt;</span> hm, not a bad idea
+<a name="l-165"></a><span class="tm">19:38:03</span><span class="nk"> &lt;luke-jr&gt;</span> feefilter isn't even used by default last I knew? (because there is no min fee until the mempool fills)
+<a name="l-166"></a><span class="tm">19:38:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> good point
+<a name="l-167"></a><span class="tm">19:38:40</span><span class="nk"> &lt;BlueMatt&gt;</span> damn, mem^H^H^Hdiskpool was too late :(
+<a name="l-168"></a><span class="tm">19:38:47</span><span class="nk"> &lt;morcos&gt;</span> i'm all for making fee filter mandatory, if i'd known people would have liked it this much, we should have designed it that way from teh beginning
+<a name="l-169"></a><span class="tm">19:39:06</span><span class="nk"> &lt;morcos&gt;</span> i'm a bit worried about removing the rejection cache entirely
+<a name="l-170"></a><span class="tm">19:39:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> there is a minrelayfee.
+<a name="l-171"></a><span class="tm">19:39:27</span><span class="nk"> &lt;gmaxwell&gt;</span> Do we not feefilter on that?
+<a name="l-172"></a><span class="tm">19:39:29</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> but we let in free transactions still
+<a name="l-173"></a><span class="tm">19:39:35</span><span class="nk"> &lt;gmaxwell&gt;</span> oh right.
+<a name="l-174"></a><span class="tm">19:39:58</span><span class="nk"> &lt;morcos&gt;</span> anytime there is any policy difference between nodes (such as a change in minrelay fee change isDust) then you get txs bouncing aroudn the network between the sets of nodes with different policies
+<a name="l-175"></a><span class="tm">19:40:06</span><span class="nk"> &lt;gmaxwell&gt;</span> full validation and distinguishing why rejection happened would help.
+<a name="l-176"></a><span class="tm">19:40:11</span><span class="nk"> &lt;morcos&gt;</span> i think its nice to have a sort of protection against that
+<a name="l-177"></a><span class="tm">19:42:12</span><span class="nk"> &lt;gmaxwell&gt;</span> we could just have one rejection filter per peer type.
+<a name="l-178"></a><span class="tm">19:42:25</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. rejection filter for non-sw peers and a rejection filter for sw peers.
+<a name="l-179"></a><span class="tm">19:43:03</span><span class="nk"> &lt;sdaftuar&gt;</span> with sw peers using wtxid invs?
+<a name="l-180"></a><span class="tm">19:43:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> still not enough... you need to be able to tell whether you already have another version of the same tx
+<a name="l-181"></a><span class="tm">19:43:35</span><span class="nk"> &lt;sipa&gt;</span> even with only sw peers
+<a name="l-182"></a><span class="tm">19:43:58</span><span class="nk"> &lt;gmaxwell&gt;</span> +full validation.
+<a name="l-183"></a><span class="tm">19:44:44</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i don't see why that's needed, any more than we have today with not knowing a tx is a double-spend before processing
+<a name="l-184"></a><span class="tm">19:45:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> someone connects to a 1000 nodes on the network, and relays a different version of the same valid transaction to each
+<a name="l-185"></a><span class="tm">19:45:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> now you potentially need to download 1000 transactions
+<a name="l-186"></a><span class="tm">19:46:14</span><span class="nk"> &lt;sipa&gt;</span> only one of which pays fees
+<a name="l-187"></a><span class="tm">19:46:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">proposal:</span> make feefilter mandatory. fully validate txs so we can punish peers who send us invalid stuff. don't put any witness tx in the rejection cache.  then evaluate how useful rejection cache continues to be or whether we have policy violating segwit txs bouncing around
+<a name="l-188"></a><span class="tm">19:46:21</span><span class="nk"> &lt;sdaftuar&gt;</span> so you mean a 3rd party uses signature malleability to do this?
+<a name="l-189"></a><span class="tm">19:46:32</span><span class="nk"> &lt;sdaftuar&gt;</span> because the tx originator can already do that
+<a name="l-190"></a><span class="tm">19:46:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> right, the distinction isn't all that big
+<a name="l-191"></a><span class="tm">19:47:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i like that... but i think it's a big change for 0.13.1
+<a name="l-192"></a><span class="tm">19:47:34</span><span class="nk"> &lt;gmaxwell&gt;</span> the distinction though is that an attacker doing it pays fees, eventually runs out of funds, vs an attacker doing it to other peoples' txn does not ever run out of funds.
+<a name="l-193"></a><span class="tm">19:48:10</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> i think if we start with " don't put any witness tx in the rejection cache" then we'll be ok
+<a name="l-194"></a><span class="tm">19:48:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-195"></a><span class="tm">19:48:32</span><span class="nk"> &lt;morcos&gt;</span> we can see how easy and short he other 2 are
+<a name="l-196"></a><span class="tm">19:50:18</span><span class="nk"> &lt;wumpus&gt;</span> that concludes the topic for this meeting?
+<a name="l-197"></a><span class="tm">19:50:27</span><span class="nk"> &lt;wumpus&gt;</span> any other topic proposals? cfields?
+<a name="l-198"></a><span class="tm">19:50:29</span><span class="nk"> &lt;NicolasDorier&gt;</span> for information, I created ##libconsensus bikeshedding room about how to handle libconsensus for anybody interested.
+<a name="l-199"></a><span class="tm">19:50:48</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">NicolasDorier:</span> haha, i was just about to paste a blurb for that
+<a name="l-200"></a><span class="tm">19:51:06</span><span class="nk"> &lt;NicolasDorier&gt;</span> aha I just woke up for that, will go back bed :D
+<a name="l-201"></a><span class="tm">19:51:22</span><span class="nk"> &lt;instagibbs&gt;</span> I have to leave now, but just letting you know salvage is finding lots of "extra" keys vs keys actually in wallet. *shrug*
+<a name="l-202"></a><span class="tm">19:52:02</span><span class="nk"> &lt;cfields&gt;</span> NicolasDorier and I discussed libconsensus a bit this weekend. We're hoping to discuss amongst ourselves, come up with some goals, and present them clearly for easier review
+<a name="l-203"></a><span class="tm">19:52:12</span><span class="nk"> &lt;morcos&gt;</span> +100
+<a name="l-204"></a><span class="tm">19:52:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> ^^
+<a name="l-205"></a><span class="tm">19:52:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">libconsensus</span>
+<a name="l-206"></a><span class="tm">19:52:37</span><span class="nk"> &lt;cfields&gt;</span> that was it :)
+<a name="l-207"></a><span class="tm">19:52:54</span><span class="nk"> &lt;NicolasDorier&gt;</span> <span class="hi">wumpus:</span> we have not started the bikeshedding yet, expect longer fight about it soon :p
+<a name="l-208"></a><span class="tm">19:53:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">NicolasDorier:</span> IMO just discuss it here
+<a name="l-209"></a><span class="tm">19:53:14</span><span class="nk"> &lt;luke-jr&gt;</span> way too many channels already
+<a name="l-210"></a><span class="tm">19:53:31</span><span class="nk"> &lt;NicolasDorier&gt;</span> the reason I prefer a separate channel is so we can keep history and review it more easily
+<a name="l-211"></a><span class="tm">19:53:46</span><span class="nk"> &lt;wumpus&gt;</span> it's not like this channel is very busy\
+<a name="l-212"></a><span class="tm">19:53:47</span><span class="nk"> &lt;NicolasDorier&gt;</span> things said here get lost quickly enough in the sea of discussion
+<a name="l-213"></a><span class="tm">19:54:25</span><span class="nk"> &lt;wumpus&gt;</span> that always happens on IRC, if you want discussions with good history/memory then it may be better to use a different discussion mechanism, or keep summaries or such
+<a name="l-214"></a><span class="tm">19:54:36</span><span class="nk"> &lt;sipa&gt;</span> i think having a separate place to 'form' a proposal makes sense
+<a name="l-215"></a><span class="tm">19:55:00</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="cmd">#bitcoin-dev </span><span class="cmdline">is also fairly quiet</span>
+<a name="l-216"></a><span class="tm">19:55:08</span><span class="nk"> &lt;sipa&gt;</span> involving the whole world in a design rarely leads to something useful
+<a name="l-217"></a><span class="tm">19:55:27</span><span class="nk"> &lt;jtimon&gt;</span> from what I talked with NicolasDorier in previous times, the current goal is to complete a verifyBlock without necessarily exposing it in libconsensus at first
+<a name="l-218"></a><span class="tm">19:55:28</span><span class="nk"> &lt;wumpus&gt;</span> that's true, as long as you can get the people you want to pay attention to join it's fine
+<a name="l-219"></a><span class="tm">19:55:41</span><span class="nk"> &lt;wumpus&gt;</span> sometimes it's good to not have too many people there
+<a name="l-220"></a><span class="tm">19:55:51</span><span class="nk"> &lt;wumpus&gt;</span> but speaking for myself, I'm already in so many channels, I have a hard time following more
+<a name="l-221"></a><span class="tm">19:55:52</span><span class="nk"> &lt;morcos&gt;</span> to be clear, the design will be presented to the bigger group for feedback and not set in stone
+<a name="l-222"></a><span class="tm">19:55:57</span><span class="nk"> &lt;btcdrak&gt;</span> yeah ack on limiting channel proliferation, also it is more open in a logged channel
+<a name="l-223"></a><span class="tm">19:56:34</span><span class="nk"> &lt;morcos&gt;</span> i don't plan on joining the libconsensus subgroup, but i think having a focused small group will make progress actually happen
+<a name="l-224"></a><span class="tm">19:56:37</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm with wumpus...too many channels these days (not that I've been paying enough attention to have much of a voice, but still)
+<a name="l-225"></a><span class="tm">19:56:43</span><span class="nk"> &lt;wumpus&gt;</span> then again that's up to you, doesn't need to be a discussion topic here to decide onthat.
+<a name="l-226"></a><span class="tm">19:56:48</span><span class="nk"> &lt;jtimon&gt;</span> I don't think creating a new channel or not is going to be important either way...
+<a name="l-227"></a><span class="tm">19:56:59</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> sure. doesn't matter to me where the discussion takes place, just hoping to organize the discussion/planning a bit.
+<a name="l-228"></a><span class="tm">19:57:03</span><span class="nk"> &lt;wumpus&gt;</span> any other topics? 4 minutes to go
+<a name="l-229"></a><span class="tm">19:57:14</span><span class="nk"> &lt;sipa&gt;</span> i'm in favor of having it in a separate channel because i prefer not to see all discussions around it before there is clean design :)
+<a name="l-230"></a><span class="tm">19:57:33</span><span class="nk"> &lt;NicolasDorier&gt;</span> bikeshedding about the creation of the channel libconsensus announce the color of the future bikeshedding on the actual code ;)
+<a name="l-231"></a><span class="tm">19:57:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">NicolasDorier:</span> exactly
+<a name="l-232"></a><span class="tm">19:57:47</span><span class="nk"> &lt;wumpus&gt;</span> let's stop that
+<a name="l-233"></a><span class="tm">19:57:49</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-234"></a><span class="tm">19:57:50</span><span class="nk"> &lt;sipa&gt;</span> haha
+<a name="l-235"></a><span class="tm">19:58:01</span><span class="nk"> &lt;sipa&gt;</span> 3 minutes
+<a name="l-236"></a><span class="tm">19:58:17</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">cfields:</span> NicolasDorier if you can share the goals
+<a name="l-237"></a><span class="tm">19:58:23</span><span class="nk"> &lt;wumpus&gt;</span> looks like we're done
+<a name="l-238"></a><span class="tm">19:58:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
