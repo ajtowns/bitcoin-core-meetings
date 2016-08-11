@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:45</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 11 18:59:45 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:45</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:25</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-5"></a><span class="tm">19:00:37</span><span class="nk"> &lt;wumpus&gt;</span> sipa proposed some topics earlier today: 1) segwit policy limits  2) can we propose a softfork to make low-s required simultaneously with segwit?  3) 3) raising mandatory script flags to include bip66 4)
+<a name="l-6"></a><span class="tm">19:00:41</span><span class="nk"> &lt;wumpus&gt;</span> eh no 4
+<a name="l-7"></a><span class="tm">19:01:11</span><span class="nk"> &lt;wumpus&gt;</span> can anyone do the giant highlight list?
+<a name="l-8"></a><span class="tm">19:01:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> ping gmaxwell
+<a name="l-9"></a><span class="tm">19:01:47</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> paging bot
+<a name="l-10"></a><span class="tm">19:01:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-11"></a><span class="tm">19:01:55</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-12"></a><span class="tm">19:02:08</span><span class="nk"> &lt;instagibbs&gt;</span> oops, it's not wednesday, how about that
+<a name="l-13"></a><span class="tm">19:02:08</span><span class="nk"> &lt;wumpus&gt;</span> thanks
+<a name="l-14"></a><span class="tm">19:02:41</span><span class="nk"> &lt;luke-jr&gt;</span> heh
+<a name="l-15"></a><span class="tm">19:02:47</span><span class="nk"> &lt;wumpus&gt;</span> another topic would be rc3 go-ahead
+<a name="l-16"></a><span class="tm">19:02:48</span><span class="nk"> &lt;kanzure&gt;</span> not sure about priority but jtimon was asking for code review eyeballs on #8493
+<a name="l-17"></a><span class="tm">19:03:05</span><span class="nk"> &lt;wumpus&gt;</span> but let's start with sipa's topics
+<a name="l-18"></a><span class="tm">19:03:07</span><span class="nk"> &lt;btcdrak&gt;</span> hi
+<a name="l-19"></a><span class="tm">19:03:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit policy limits</span>
+<a name="l-20"></a><span class="tm">19:03:27</span><span class="nk"> &lt;michagogo&gt;</span> <span class="hi">cfields:</span> I think last time he said it's not a bot...
+<a name="l-21"></a><span class="tm">19:03:48</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">michagogo:</span> was a joke :)
+<a name="l-22"></a><span class="tm">19:03:49</span><span class="nk"> &lt;gmaxwell&gt;</span> it's just an alias.
+<a name="l-23"></a><span class="tm">19:03:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">michagogo:</span> all bots say that!
+<a name="l-24"></a><span class="tm">19:03:51</span><span class="nk"> &lt;sipa&gt;</span> jl2012 has suggested some changes to prevent DoS attacks with segwit
+<a name="l-25"></a><span class="tm">19:04:08</span><span class="nk"> &lt;michagogo&gt;</span> Also, if anyone's interested I think the KSK ceremony is starting soon
+<a name="l-26"></a><span class="tm">19:04:21</span><span class="nk"> &lt;sipa&gt;</span> do we in addition want per txin witness size limits or so
+<a name="l-27"></a><span class="tm">19:04:56</span><span class="nk"> &lt;wumpus&gt;</span> may make sense to add some initial limits, they can always be removed later
+<a name="l-28"></a><span class="tm">19:05:02</span><span class="nk"> &lt;wumpus&gt;</span> adding limits later is more controversial
+<a name="l-29"></a><span class="tm">19:05:14</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-30"></a><span class="tm">19:05:51</span><span class="nk"> &lt;instagibbs&gt;</span> is this merely to offset people stuffing data for 25% the price
+<a name="l-31"></a><span class="tm">19:05:54</span><span class="nk"> &lt;sipa&gt;</span> but i'd like to know what opinions people have about this
+<a name="l-32"></a><span class="tm">19:06:06</span><span class="nk"> &lt;instagibbs&gt;</span> could you elaborate additional motivations if any
+<a name="l-33"></a><span class="tm">19:06:07</span><span class="nk"> &lt;jl2012&gt;</span> this is a conceptual PR: https://github.com/bitcoin/bitcoin/pull/8499
+<a name="l-34"></a><span class="tm">19:06:11</span><span class="nk"> &lt;wumpus&gt;</span> ofc
+<a name="l-35"></a><span class="tm">19:06:18</span><span class="nk"> &lt;luke-jr&gt;</span> a policy limit matching p2sh's consensus limit sounds uncontroversial
+<a name="l-36"></a><span class="tm">19:06:37</span><span class="nk"> &lt;luke-jr&gt;</span> but this is too small for N-of-&gt;15, so maybe slightly larger is desirable
+<a name="l-37"></a><span class="tm">19:07:28</span><span class="nk"> &lt;luke-jr&gt;</span> someone involved with Lightning probably should comment as well
+<a name="l-38"></a><span class="tm">19:07:58</span><span class="nk"> &lt;wumpus&gt;</span> yes, it would be important not to sabotage that
+<a name="l-39"></a><span class="tm">19:08:28</span><span class="nk"> &lt;btcdrak&gt;</span> ping roasbeef GreenIsMyPepper rusty ^
+<a name="l-40"></a><span class="tm">19:08:33</span><span class="nk"> &lt;instagibbs&gt;</span> could someone tell me what we're protecting against first? I can't really form an opinion
+<a name="l-41"></a><span class="tm">19:09:06</span><span class="nk"> &lt;jtimon&gt;</span> is this a new consensus rule or just policy? (looking at 8499 seems policy only, just want to confirm)
+<a name="l-42"></a><span class="tm">19:09:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> policy
+<a name="l-43"></a><span class="tm">19:09:16</span><span class="nk"> &lt;sipa&gt;</span> eh, jtimon ^
+<a name="l-44"></a><span class="tm">19:09:16</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">instagibbs:</span> txin witness size bloating
+<a name="l-45"></a><span class="tm">19:09:20</span><span class="nk"> &lt;jtimon&gt;</span> thanks
+<a name="l-46"></a><span class="tm">19:10:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> 8499 does not set a size limit, right?
+<a name="l-47"></a><span class="tm">19:10:35</span><span class="nk"> &lt;instagibbs&gt;</span> 8499 I think just bans peers for bad witnesses
+<a name="l-48"></a><span class="tm">19:10:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> also protection against the problems discussed in #8279
+<a name="l-49"></a><span class="tm">19:11:18</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">sipa:</span> it's per input size limit
+<a name="l-50"></a><span class="tm">19:11:26</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, yes, makes sense
+<a name="l-51"></a><span class="tm">19:11:37</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-52"></a><span class="tm">19:12:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> but no limits for p2wsh
+<a name="l-53"></a><span class="tm">19:12:39</span><span class="nk"> &lt;sipa&gt;</span> (sorry, i haven't looked in detail; correct me if i'm wrong)
+<a name="l-54"></a><span class="tm">19:13:53</span><span class="nk"> &lt;sipa&gt;</span> seems there are not too many opinions; i'll propose some thing for next meeting
+<a name="l-55"></a><span class="tm">19:14:19</span><span class="nk"> &lt;sipa&gt;</span> next topic?
+<a name="l-56"></a><span class="tm">19:14:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">softfork to make low-s required simultaneously with segwit</span>
+<a name="l-57"></a><span class="tm">19:15:37</span><span class="nk"> &lt;wumpus&gt;</span> there was some discussion about this earliet today between sipa and jl2012
+<a name="l-58"></a><span class="tm">19:15:38</span><span class="nk"> &lt;luke-jr&gt;</span> IIRC, this just blocks transactions that can be fixed with malleation anyway. might as well.
+<a name="l-59"></a><span class="tm">19:15:39</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; sipa: why would you like to have a low-s softfork? And is it for segwit  scripts only, or for all scripts?
+<a name="l-60"></a><span class="tm">19:15:39</span><span class="nk"> &lt;wumpus&gt;</span> &lt;sipa&gt; jl2012: it's already nonstandard for a long time, it doesn't hurt anyone, and removes a source of malleability
+<a name="l-61"></a><span class="tm">19:15:39</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; so you want it for non-segwit scripts too?
+<a name="l-62"></a><span class="tm">19:15:39</span><span class="nk"> &lt;wumpus&gt;</span> &lt;sipa&gt; well to be discussed
+<a name="l-63"></a><span class="tm">19:15:52</span><span class="nk"> &lt;murch&gt;</span> Are there any downsides to that?
+<a name="l-64"></a><span class="tm">19:15:57</span><span class="nk"> &lt;sipa&gt;</span> so it was recently suggested that since low-s has been non-standard and not present on the network for over a year now, we could propose to turn it into a consensus rules
+<a name="l-65"></a><span class="tm">19:16:06</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; with low-s rule, even the wtxid of a p2wpkh tx is not malleable
+<a name="l-66"></a><span class="tm">19:16:13</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; I don't see a compelling reason to have a low-s soft fork with segwit (in 0.13.1). Non-segwit txs are hopeless and we should not spend any energy to fix them. For segwit txs, why would we need immallable wtxid?
+<a name="l-67"></a><span class="tm">19:16:13</span><span class="nk"> &lt;wumpus&gt;</span> &lt;sipa&gt; one reason would be avoid 3rd party relayers messing with compact block relay
+<a name="l-68"></a><span class="tm">19:16:41</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">sipa:</span> limiting p2wsh is more difficult, I think it could only be done case-by-case
+<a name="l-69"></a><span class="tm">19:16:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> agreed; the thing for discussion is mostly why to combine it with segwit
+<a name="l-70"></a><span class="tm">19:17:13</span><span class="nk"> &lt;wumpus&gt;</span> a low-s softfork itself at some point is uncontroversial imo
+<a name="l-71"></a><span class="tm">19:17:17</span><span class="nk"> &lt;sipa&gt;</span> pro combining it with segwit: it may be hard to do this as a separate softfork
+<a name="l-72"></a><span class="tm">19:17:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> why is it hard?
+<a name="l-73"></a><span class="tm">19:17:34</span><span class="nk"> &lt;luke-jr&gt;</span> ^
+<a name="l-74"></a><span class="tm">19:17:52</span><span class="nk"> &lt;sipa&gt;</span> miners need to upgrade software
+<a name="l-75"></a><span class="tm">19:18:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> Combine it with another, later software?
+<a name="l-76"></a><span class="tm">19:18:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> softfork
+<a name="l-77"></a><span class="tm">19:18:16</span><span class="nk"> &lt;sipa&gt;</span> a low-s softfork would be uncontroversial, but also very low benefit
+<a name="l-78"></a><span class="tm">19:18:27</span><span class="nk"> &lt;luke-jr&gt;</span> no reason to make it urgent; just roll it out and let miners deploy on their own time?
+<a name="l-79"></a><span class="tm">19:18:30</span><span class="nk"> &lt;sipa&gt;</span> that's possible, but i thought it would be neat to just never have anything but low-s in segwit
+<a name="l-80"></a><span class="tm">19:18:30</span><span class="nk"> &lt;wumpus&gt;</span> but rolling everything into one giant softfork is more risky
+<a name="l-81"></a><span class="tm">19:18:36</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> reading scrollback...
+<a name="l-82"></a><span class="tm">19:19:30</span><span class="nk"> &lt;wumpus&gt;</span> that is true
+<a name="l-83"></a><span class="tm">19:19:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it's useful to combine to low-s restriction with the SW software in 0.13.1
+<a name="l-84"></a><span class="tm">19:19:52</span><span class="nk"> &lt;sipa&gt;</span> it's literally, VersionBitsActive(pindexPrev, DEPLOYMENT_LOW_S) == ACTIVE { flags |= SCRIPT_VERIFY_LOW_S; }
+<a name="l-85"></a><span class="tm">19:19:56</span><span class="nk"> &lt;wumpus&gt;</span> well yes that would be 0.13.1
+<a name="l-86"></a><span class="tm">19:19:59</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> is the policy limit for number of sigs? (sorry for the noise)
+<a name="l-87"></a><span class="tm">19:20:11</span><span class="nk"> &lt;kanzure&gt;</span> size
+<a name="l-88"></a><span class="tm">19:20:13</span><span class="nk"> &lt;jtimon&gt;</span> a low s softfork should be also quite easy, no? it's already implemented, just make a flag mandatory for consensus
+<a name="l-89"></a><span class="tm">19:20:18</span><span class="nk"> &lt;luke-jr&gt;</span> oh, right. speaking of 0.13.1, it seems quite uncontroversial
+<a name="l-90"></a><span class="tm">19:20:20</span><span class="nk"> &lt;instagibbs&gt;</span> Oh, if the two bip9 aren't packaged, I think we should
+<a name="l-91"></a><span class="tm">19:20:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes, sipa just quoted the code change :)
+<a name="l-92"></a><span class="tm">19:20:28</span><span class="nk"> &lt;instagibbs&gt;</span> (duh, bip9)
+<a name="l-93"></a><span class="tm">19:21:31</span><span class="nk"> &lt;sipa&gt;</span> jl2012 sounded like he thought this would require more testing; and i agree that if due to extra testing this would delay the segwit softfork, we should not
+<a name="l-94"></a><span class="tm">19:21:45</span><span class="nk"> &lt;wumpus&gt;</span> I like coupling an uncontroversial change to a more risky one more than the other way around at least
+<a name="l-95"></a><span class="tm">19:21:46</span><span class="nk"> &lt;kanzure&gt;</span> s/we should not/we should not bundle
+<a name="l-96"></a><span class="tm">19:21:53</span><span class="nk"> &lt;luke-jr&gt;</span> (huh, it occurs to me - not a real suggestion - that we *could* have de-bundled the block size increase from segwit into a separate BIP9 bit, so long as all deployment of segwit included support for the separate blocksize-increase bit; IMO interesting)
+<a name="l-97"></a><span class="tm">19:22:13</span><span class="nk"> &lt;jtimon&gt;</span> no strong opinion about doing the low-s sf with segwit or later
+<a name="l-98"></a><span class="tm">19:22:35</span><span class="nk"> &lt;jtimon&gt;</span> but yeah, the sf itself seems uncontroversial
+<a name="l-99"></a><span class="tm">19:22:41</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell countered that if low_s requires testing, that's testing we should be doing already, as it's being enforced on every transaction on the network already, so making it consensus likely just removes the possibility for untested cases
+<a name="l-100"></a><span class="tm">19:23:13</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> seems cleaner to have low-S from the start, no?
+<a name="l-101"></a><span class="tm">19:24:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> coupling an uncontroversial change to a more controversial one, could be taken as pressure to activate the controversial one; so for that reason, it may be best to keep them separate (like how we don't do softforks in .0 releases)
+<a name="l-102"></a><span class="tm">19:24:34</span><span class="nk"> &lt;luke-jr&gt;</span> (separate in the BIP9 sense, not necessarily a different release)
+<a name="l-103"></a><span class="tm">19:24:53</span><span class="nk"> &lt;instagibbs&gt;</span> luke-jr, my assumption would be a different bit
+<a name="l-104"></a><span class="tm">19:24:54</span><span class="nk"> &lt;btcdrak&gt;</span> I think lowS softfork is a nobrainer, it's also easy and uncomplicated since it's already policy.
+<a name="l-105"></a><span class="tm">19:25:04</span><span class="nk"> &lt;wumpus&gt;</span> luke-jr:that would be if it is uncontroverial *and* attractive, but there's no one really waiting for low-s enforcement, it's just a cleanup
+<a name="l-106"></a><span class="tm">19:25:05</span><span class="nk"> &lt;jtimon&gt;</span> I mean, we can also deploy low-s in, say 0.12.2 before segwit (oh, wait, backport bip9)
+<a name="l-107"></a><span class="tm">19:25:24</span><span class="nk"> &lt;jtimon&gt;</span> if they go in the same release, why separate them in the bip9 sense?
+<a name="l-108"></a><span class="tm">19:25:29</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> that's at best an argument for your segwit bip9 activation decoupling idea.
+<a name="l-109"></a><span class="tm">19:25:39</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we should deploy anything before segwit
+<a name="l-110"></a><span class="tm">19:25:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree
+<a name="l-111"></a><span class="tm">19:25:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree
+<a name="l-112"></a><span class="tm">19:26:27</span><span class="nk"> &lt;wumpus&gt;</span> it's time for segwit now, we should try to move ahead with things instead of introducing more things in between
+<a name="l-113"></a><span class="tm">19:26:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> well, it's almost certainly too late for that (it definitely would add to testing required)
+<a name="l-114"></a><span class="tm">19:26:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> just saying that together is not the only option for having low-s from the start of segwit, no strong opinion
+<a name="l-115"></a><span class="tm">19:26:54</span><span class="nk"> &lt;wumpus&gt;</span> so, yeah, let's get 0.13.0 out asap then decide on a timeframe etc for segwit and do 0.13.1
+<a name="l-116"></a><span class="tm">19:27:02</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-117"></a><span class="tm">19:27:08</span><span class="nk"> &lt;GreenIsMyPepper&gt;</span> <span class="hi">luke-jr:</span> to follow up with the above ping, we're presuming a policy limit to be the same as P2SH constraints with the redeemScript size
+<a name="l-118"></a><span class="tm">19:27:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">GreenIsMyPepper:</span> thanks
+<a name="l-119"></a><span class="tm">19:27:57</span><span class="nk"> &lt;wumpus&gt;</span> adding LOW_S is fine with me, it's simple to do and not risky and not controversial, indeed is a lot of overhead to do a seperate softfork for it
+<a name="l-120"></a><span class="tm">19:28:32</span><span class="nk"> &lt;instagibbs&gt;</span> also segwit could activate first, in some universe
+<a name="l-121"></a><span class="tm">19:28:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">GreenIsMyPepper:</span> oh sure - no reason why segwit would be able to do less than what is currently possible with P2SH
+<a name="l-122"></a><span class="tm">19:29:26</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-123"></a><span class="tm">19:29:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">raising mandatory script flags to include bip66</span>
+<a name="l-124"></a><span class="tm">19:29:53</span><span class="nk"> &lt;btcdrak&gt;</span> I would prefer we combine lowS with segwit.
+<a name="l-125"></a><span class="tm">19:29:58</span><span class="nk"> &lt;jtimon&gt;</span> regarding luke-jr's argument, I don't think segwit is controversial either, but if segwit+low-s deployment fails, you can always try again with them separated
+<a name="l-126"></a><span class="tm">19:29:59</span><span class="nk"> &lt;sipa&gt;</span> so, we have 3 sets of flags currently
+<a name="l-127"></a><span class="tm">19:30:00</span><span class="nk"> &lt;luke-jr&gt;</span> what node versions does this result in cutting off from the network? pre-0.8, I think?
+<a name="l-128"></a><span class="tm">19:30:16</span><span class="nk"> &lt;sipa&gt;</span> 1) mandatory flags 2) consensus flags 3) standardness
+<a name="l-129"></a><span class="tm">19:30:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> no one is 'cut off' from the network?
+<a name="l-130"></a><span class="tm">19:30:39</span><span class="nk"> &lt;luke-jr&gt;</span> then I am misunderstanding
+<a name="l-131"></a><span class="tm">19:30:42</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> how are mandatory flags different from consensus flags?
+<a name="l-132"></a><span class="tm">19:30:50</span><span class="nk"> &lt;sipa&gt;</span> luke-jr is not misunderstanding
+<a name="l-133"></a><span class="tm">19:31:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it's a softfork so 0.8 nodes should still be able to verify?
+<a name="l-134"></a><span class="tm">19:31:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i'm explaining
+<a name="l-135"></a><span class="tm">19:31:27</span><span class="nk"> &lt;instagibbs&gt;</span> Mandatory script verification flags that all new blocks must comply with for
+<a name="l-136"></a><span class="tm">19:31:28</span><span class="nk"> &lt;instagibbs&gt;</span> * them to be valid. (but old blocks may not comply with) Currently just P2SH,
+<a name="l-137"></a><span class="tm">19:31:34</span><span class="nk"> &lt;sipa&gt;</span> the reason why mandatory flags are different from consensus is because old nodes are not guaranteed to not send us currently-invalid transactions
+<a name="l-138"></a><span class="tm">19:31:50</span><span class="nk"> &lt;sipa&gt;</span> and we would ban them if they send a BIP66-invalid transaction, for example
+<a name="l-139"></a><span class="tm">19:31:55</span><span class="nk"> &lt;instagibbs&gt;</span> "Failing one of these tests may trigger a DoS ban" I see
+<a name="l-140"></a><span class="tm">19:32:01</span><span class="nk"> &lt;sipa&gt;</span> so that's why BIP66 is not part of mandatory flags
+<a name="l-141"></a><span class="tm">19:32:18</span><span class="nk"> &lt;sipa&gt;</span> i just wanted to bring up the topic, not necessarily for anytime soon
+<a name="l-142"></a><span class="tm">19:32:20</span><span class="nk"> &lt;wumpus&gt;</span> right, so they would not be cut off the network, but only if they actually generate or relay something invalid by new rules
+<a name="l-143"></a><span class="tm">19:32:28</span><span class="nk"> &lt;luke-jr&gt;</span> note we have a fork of 0.5.3 that is actively "maintained" and used
+<a name="l-144"></a><span class="tm">19:32:33</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">instagibbs:</span> also bip66, bip65 and bip112, no?
+<a name="l-145"></a><span class="tm">19:32:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> it could partition the network, though
+<a name="l-146"></a><span class="tm">19:32:41</span><span class="nk"> &lt;luke-jr&gt;</span> s/we/someone else on the network/
+<a name="l-147"></a><span class="tm">19:32:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> ok, let's look at it from the other side then
+<a name="l-148"></a><span class="tm">19:32:57</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, oh, the comment is straight from master
+<a name="l-149"></a><span class="tm">19:33:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> what would be the advantage?
+<a name="l-150"></a><span class="tm">19:33:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> if there is a large group of pre-0.8 nodes connected to eachother, and they get an invalid transactions relayed to eachother
+<a name="l-151"></a><span class="tm">19:33:23</span><span class="nk"> &lt;jtimon&gt;</span> but all new blocks must comply with those too
+<a name="l-152"></a><span class="tm">19:33:45</span><span class="nk"> &lt;wumpus&gt;</span> does it cost a node a lot of resources to verify BIP66 compliance? if not, why does it warrant DoS banning?
+<a name="l-153"></a><span class="tm">19:33:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> good point
+<a name="l-154"></a><span class="tm">19:34:22</span><span class="nk"> &lt;sipa&gt;</span> perhaps the policy should just be to never extend mandatory flags
+<a name="l-155"></a><span class="tm">19:34:31</span><span class="nk"> &lt;sipa&gt;</span> unless there is a DoS attack that needs it to be fixed
+<a name="l-156"></a><span class="tm">19:34:39</span><span class="nk"> &lt;wumpus&gt;</span> I remember a previous discussion about being less trigger happy regarding DoS banning
+<a name="l-157"></a><span class="tm">19:34:49</span><span class="nk"> &lt;wumpus&gt;</span> right, if there is DoS risk it is the appropriate measure
+<a name="l-158"></a><span class="tm">19:35:04</span><span class="nk"> &lt;sipa&gt;</span> i just noticed that this is something we've been ignoring the value of mandatory flags
+<a name="l-159"></a><span class="tm">19:35:20</span><span class="nk"> &lt;wumpus&gt;</span> yes, sure, it's confusing
+<a name="l-160"></a><span class="tm">19:35:25</span><span class="nk"> &lt;sipa&gt;</span> yes, indeed, i remember reducing dos banning flags
+<a name="l-161"></a><span class="tm">19:35:50</span><span class="nk"> &lt;wumpus&gt;</span> but adding a comment explaining this rationale would do just as well as extending the mandatory flags
+<a name="l-162"></a><span class="tm">19:36:08</span><span class="nk"> &lt;sipa&gt;</span> fair enough
+<a name="l-163"></a><span class="tm">19:36:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I'm not sure I follow, why aren't SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY and SCRIPT_VERIFY_CHECKSEQUENCEVERIFY in MANDATORY_SCRIPT_VERIFY_FLAGS ?
+<a name="l-164"></a><span class="tm">19:37:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> because pre-0.11.2 nodes could get banned by us if they'd send a CSV-violating transaction
+<a name="l-165"></a><span class="tm">19:37:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> for the same reason, probably, it would be harmful to DoS ban on them
+<a name="l-166"></a><span class="tm">19:37:45</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> if a 0.5.3 node sends you a transaction violating those rules, you don't want to ban them, just reject it; if you banned them, you partition such nodes off the network and they stop getting blocks
+<a name="l-167"></a><span class="tm">19:37:55</span><span class="nk"> &lt;wumpus&gt;</span> (to not accidentally partition the network)
+<a name="l-168"></a><span class="tm">19:38:01</span><span class="nk"> &lt;jtimon&gt;</span> ok, so it's all about the DoS score
+<a name="l-169"></a><span class="tm">19:38:06</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-170"></a><span class="tm">19:38:23</span><span class="nk"> &lt;instagibbs&gt;</span> so why is it ok to ban a misbehaving p2sh transaction (probably veering off the path here)
+<a name="l-171"></a><span class="tm">19:38:44</span><span class="nk"> &lt;jtimon&gt;</span> why SCRIPT_VERIFY_P2SH is different from other softforks for this again?
+<a name="l-172"></a><span class="tm">19:38:48</span><span class="nk"> &lt;wumpus&gt;</span> validation overhead?
+<a name="l-173"></a><span class="tm">19:39:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> it was very old at the time mandatory flags was introduced, so nobody cared, i guess
+<a name="l-174"></a><span class="tm">19:39:13</span><span class="nk"> &lt;gmaxwell&gt;</span> We can't reasonably support old versions forever; We're not testing them, and certantly not testing weirdo transactions with them.  perhaps we should have a program of making links to sufficiently old versions blocks-only after some point.
+<a name="l-175"></a><span class="tm">19:39:43</span><span class="nk"> &lt;wumpus&gt;</span> well people run them on their own risk
+<a name="l-176"></a><span class="tm">19:40:04</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well they risk being banned, no?
+<a name="l-177"></a><span class="tm">19:40:17</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, though if we blocks only them we won't risk partitioning them do to weirdness with txn handling. Much more likely to be reliable.
+<a name="l-178"></a><span class="tm">19:41:12</span><span class="nk"> &lt;sipa&gt;</span> i think it's more a philosophical issue... another implementation may have different policy, and it's not our place to trigger happy ban them
+<a name="l-179"></a><span class="tm">19:41:12</span><span class="nk"> &lt;sipa&gt;</span> i like the idea of reducing dos banning where possible
+<a name="l-180"></a><span class="tm">19:41:14</span><span class="nk"> &lt;wumpus&gt;</span> sure, but would be best to not DoS ban in the first place for non DoS offenses
+<a name="l-181"></a><span class="tm">19:41:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> for SCRIPT_VERIFY_P2SH too?
+<a name="l-182"></a><span class="tm">19:41:57</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> would blocks-only treatment break their wallet broadcasts, though?
+<a name="l-183"></a><span class="tm">19:42:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Sending a consensus invalid transaction is a prefectly reasonable thing to ban for ... ignoring that the consensus rules change over time.
+<a name="l-184"></a><span class="tm">19:42:09</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we should make the one-sided decision to make lower version nodes blocks-only
+<a name="l-185"></a><span class="tm">19:42:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> yes but nodes that old already have wallet broadcast problems because of high-S enforcement as standardness.
+<a name="l-186"></a><span class="tm">19:42:28</span><span class="nk"> &lt;wumpus&gt;</span> e.g. something may report a low network version but be perfectly able to handle new transactions
+<a name="l-187"></a><span class="tm">19:42:44</span><span class="nk"> &lt;wumpus&gt;</span> they're not really coupled the same way in other software than bitcoin core
+<a name="l-188"></a><span class="tm">19:42:50</span><span class="nk"> &lt;gmaxwell&gt;</span> probablity of their txn not relaying already is exponential in the number of signatures.
+<a name="l-189"></a><span class="tm">19:42:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> consider that there's a crowd who insist on using 0.5.3 :/
+<a name="l-190"></a><span class="tm">19:43:06</span><span class="nk"> &lt;wumpus&gt;</span> in any case I don't think this is a very urgent topic
+<a name="l-191"></a><span class="tm">19:43:08</span><span class="nk"> &lt;luke-jr&gt;</span> I guess they must have patched that
+<a name="l-192"></a><span class="tm">19:43:31</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> who insists in using 0.5.3 ?
+<a name="l-193"></a><span class="tm">19:43:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> therealbitcoin.org people
+<a name="l-194"></a><span class="tm">19:43:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> they have to apply a small pile of fixes in any case.
+<a name="l-195"></a><span class="tm">19:44:25</span><span class="nk"> &lt;gmaxwell&gt;</span> presumably they're fixed to produce high-S signatures (or not transacting at all... :P )
+<a name="l-196"></a><span class="tm">19:45:20</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose the BIP 66 patch is fairly trivial to add to that pile if they care; but sipa is right about the principle of not cutting them off IMO
+<a name="l-197"></a><span class="tm">19:45:27</span><span class="nk"> &lt;wumpus&gt;</span> they probably write raw transactions in their head instead of using the bitcoin core wallet
+<a name="l-198"></a><span class="tm">19:45:30</span><span class="nk"> &lt;jtimon&gt;</span> I guess I can ask after the meeting, but why don't they want to upgrade?
+<a name="l-199"></a><span class="tm">19:45:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> yes, let's discuss that after the meeting
+<a name="l-200"></a><span class="tm">19:45:58</span><span class="nk"> &lt;luke-jr&gt;</span> ^+1
+<a name="l-201"></a><span class="tm">19:46:02</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> sure, np
+<a name="l-202"></a><span class="tm">19:46:07</span><span class="nk"> &lt;sipa&gt;</span> i think this is getting too abstract
+<a name="l-203"></a><span class="tm">19:46:21</span><span class="nk"> &lt;sipa&gt;</span> i just wanted to raise attention to the neglected mandatory flags :)
+<a name="l-204"></a><span class="tm">19:46:29</span><span class="nk"> &lt;wumpus&gt;</span> in any case, not our problem, we should not do anything to sabotage use of old clients, but we're also not responsible for making sure all old versions still work, they'll have to do with a pile of patches on top
+<a name="l-205"></a><span class="tm">19:46:33</span><span class="nk"> &lt;wumpus&gt;</span> yes, next topic?
+<a name="l-206"></a><span class="tm">19:46:39</span><span class="nk"> &lt;btcdrak&gt;</span> I dont see any 0.5.3 useragents
+<a name="l-207"></a><span class="tm">19:46:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> you had rc3 as topic?
+<a name="l-208"></a><span class="tm">19:47:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">rc3 go-ahead</span>
+<a name="l-209"></a><span class="tm">19:47:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> are you sure there are 0.5.3 nodes on the network? https://bitnodes.21.co/nodes/?q=0.5.3
+<a name="l-210"></a><span class="tm">19:47:32</span><span class="nk"> &lt;wumpus&gt;</span> yes, quick question, anything that still needs to be merged/backported for 0.13.0 apart from release notes?
+<a name="l-211"></a><span class="tm">19:48:09</span><span class="nk"> &lt;wumpus&gt;</span> not seeing anything here https://github.com/bitcoin/bitcoin/milestone/20
+<a name="l-212"></a><span class="tm">19:48:11</span><span class="nk"> &lt;luke-jr&gt;</span> on the off-chance there's no objection, I'd like to PR https://github.com/bitcoin/bitcoin/commit/5a716a3bc6621e4d2e2c1de5b6b5596d6877d589 for 0.13.0 mostly just to make #8459 uncontroversial
+<a name="l-213"></a><span class="tm">19:48:28</span><span class="nk"> &lt;wumpus&gt;</span> so I'm going to tag rc3 in a very short while, after the usual translation updates and such
+<a name="l-214"></a><span class="tm">19:48:49</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">btcdrak:</span> 1) those are just listening nodes, 2) 7 nodes show as 99999 "/therealbitcoin.org:0.9.99.99/"
+<a name="l-215"></a><span class="tm">19:49:23</span><span class="nk"> &lt;wumpus&gt;</span> yes they don't report as 0.5.3
+<a name="l-216"></a><span class="tm">19:49:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> so should we get  SCRIPT_VERIFY_P2SH out of mandatory too?
+<a name="l-217"></a><span class="tm">19:49:57</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> ok so there are 5 nodes out of 5000, I really dont think we have to be concerned.
+<a name="l-218"></a><span class="tm">19:50:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> out of topic :)
+<a name="l-219"></a><span class="tm">19:50:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> ok, later too, whatever
+<a name="l-220"></a><span class="tm">19:50:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> it's not a concern
+<a name="l-221"></a><span class="tm">19:50:29</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> rc3 looks good to go.
+<a name="l-222"></a><span class="tm">19:50:59</span><span class="nk"> &lt;wumpus&gt;</span> foss gives that freedom to run your own stack of weird hacks if you want for whatever reason
+<a name="l-223"></a><span class="tm">19:51:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> ok!
+<a name="l-224"></a><span class="tm">19:51:37</span><span class="nk"> &lt;sipa&gt;</span> ack rc3
+<a name="l-225"></a><span class="tm">19:51:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> ready to build
+<a name="l-226"></a><span class="tm">19:51:52</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> as discussed yesterday, any need to try to get default_witness_commitment added to gbt with no witness data for 0.13.0? So miners can start easily adding commitments even before activation?
+<a name="l-227"></a><span class="tm">19:52:00</span><span class="nk"> &lt;btcdrak&gt;</span> There's also a blog post being written about 0.13.0 if some eyes could review and comment https://github.com/bitcoin-core/bitcoincore.org/pull/199
+<a name="l-228"></a><span class="tm">19:52:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> fine be me
+<a name="l-229"></a><span class="tm">19:53:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> great
+<a name="l-230"></a><span class="tm">19:53:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> eh, so that means holding up rc3?
+<a name="l-231"></a><span class="tm">19:53:32</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> opinion ^^? Not critical, we have testnet.
+<a name="l-232"></a><span class="tm">19:53:55</span><span class="nk"> &lt;wumpus&gt;</span> if it's not critical I'd say not do it, at this point
+<a name="l-233"></a><span class="tm">19:54:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> 0.13.0 has no activation, so it would not produce a default_witness_commitment?
+<a name="l-234"></a><span class="tm">19:54:10</span><span class="nk"> &lt;wumpus&gt;</span> unless you want to be that person holding up the release :)
+<a name="l-235"></a><span class="tm">19:54:13</span><span class="nk"> &lt;sipa&gt;</span> i think there is no need for that in 0.13.0
+<a name="l-236"></a><span class="tm">19:54:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> the subject was commitments pre-activation
+<a name="l-237"></a><span class="tm">19:54:40</span><span class="nk"> &lt;sipa&gt;</span> i'm confused about that
+<a name="l-238"></a><span class="tm">19:55:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">review blog post https://github.com/bitcoin-core/bitcoincore.org/pull/199</span>
+<a name="l-239"></a><span class="tm">19:55:13</span><span class="nk"> &lt;sipa&gt;</span> i think a miner on 0.13.0 should never produce a segwit commitment, and a 0.13.1 one (assuming it has a defined start date) should always (regardless of whether it is before or after the start time)
+<a name="l-240"></a><span class="tm">19:55:35</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ thats my expectation
+<a name="l-241"></a><span class="tm">19:55:38</span><span class="nk"> &lt;sipa&gt;</span> there is no problem if people choose to diverge from that
+<a name="l-242"></a><span class="tm">19:56:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> to be honest I'm not sure what the advantage or disadvantage of that is
+<a name="l-243"></a><span class="tm">19:56:56</span><span class="nk"> &lt;gmaxwell&gt;</span> The reason I believe we should do that is so that we don't hae sudden behavior changes at times which are far away from updating the software which might break downstream mining infrastructure.
+<a name="l-244"></a><span class="tm">19:56:57</span><span class="nk"> &lt;cfields&gt;</span> works for me. i was only considering it as a way to see that pools had begun adding valid structures. obviously it wouldn't be actually checked/used
+<a name="l-245"></a><span class="tm">19:57:32</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. if you update your bitcoin node and then days/weeks later it starts doing thing with segwit commitments that breaks your miners or pooling software, that is preferable. You would prefer the break to happen at upgrade time.
+<a name="l-246"></a><span class="tm">19:57:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> 0.13.0 for all intents and purposes behaves identical to older nodes wrt segwit behaviour
+<a name="l-247"></a><span class="tm">19:58:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> so i think there is no point in using witness commitments as a signalling mechanism for anything in 0.13.0 already
+<a name="l-248"></a><span class="tm">19:58:05</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> understood
+<a name="l-249"></a><span class="tm">19:58:44</span><span class="nk"> &lt;sipa&gt;</span> so, ack rc3?
+<a name="l-250"></a><span class="tm">19:58:50</span><span class="nk"> &lt;gmaxwell&gt;</span> as far as 0.13 vs 0.13.1 I think 0.13 should not change behavior, because it won't ever activate. so there is no problem of behavior suddenly changing with it.
+<a name="l-251"></a><span class="tm">19:58:55</span><span class="nk"> &lt;gmaxwell&gt;</span> rc3 sounds good to me.
+<a name="l-252"></a><span class="tm">19:59:19</span><span class="nk"> &lt;cfields&gt;</span> works for me
+<a name="l-253"></a><span class="tm">19:59:41</span><span class="nk"> &lt;jtimon&gt;</span> yay 0.13.0!
+<a name="l-254"></a><span class="tm">19:59:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> careful, you're going to trigger some confused reddit posts.
+<a name="l-255"></a><span class="tm">20:00:12</span><span class="nk"> &lt;wumpus&gt;</span> roughly one minute to go
+<a name="l-256"></a><span class="tm">20:00:20</span><span class="nk"> &lt;jtimon&gt;</span> oops, sorry, yay ack rc3
+<a name="l-257"></a><span class="tm">20:00:24</span><span class="nk"> &lt;gmaxwell&gt;</span> I think someone's clock is off.
+<a name="l-258"></a><span class="tm">20:00:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Time to die.
+<a name="l-259"></a><span class="tm">20:00:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes, let's not get ahead of ourselves
+<a name="l-260"></a><span class="tm">20:00:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
