@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:19</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 18 19:00:19 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:19</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic: core internal binary signing and verification tool
+<a name="l-5"></a><span class="tm">19:00:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> its twitter handle is therealping
+<a name="l-6"></a><span class="tm">19:00:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> it comes from gmaxwell, who the offical meeting-pinger, and he is authenticated with freenode
+<a name="l-7"></a><span class="tm">19:01:11</span><span class="nk"> &lt;btcdrak&gt;</span> how do we know freenode is still free?
+<a name="l-8"></a><span class="tm">19:01:30</span><span class="nk"> &lt;wumpus&gt;</span> because otherwise it would be renamed to restrictednode
+<a name="l-9"></a><span class="tm">19:01:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> a tool would be nice, but there is no reason for it to be internal
+<a name="l-10"></a><span class="tm">19:01:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> there are
+<a name="l-11"></a><span class="tm">19:01:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> (to be covered under gitian)
+<a name="l-12"></a><span class="tm">19:01:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">core internal binary signing and verification tool</span>
+<a name="l-13"></a><span class="tm">19:02:01</span><span class="nk"> &lt;luke-jr&gt;</span> you can gitian-build things besides Bitcoin
+<a name="l-14"></a><span class="tm">19:02:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> I propose to add to cli tools to the bitcoin-core package
+<a name="l-15"></a><span class="tm">19:02:34</span><span class="nk"> &lt;kanzure&gt;</span> off-topic, but does anyone know the status of deterministic debian efforts?
+<a name="l-16"></a><span class="tm">19:02:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> bitcoin-core-verify and bitcoin-core-sign
+<a name="l-17"></a><span class="tm">19:02:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> The later will not be shipped
+<a name="l-18"></a><span class="tm">19:02:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> bitcoin-core-verify &lt;folder-or-file&gt; -&gt; 1) hashes file(s) 2) download gitian assets files together with ECDSA sigs 3) verify hashed against downloaded assets files 4) verify assets ECDSA sigs against in-binary-pubkeys (dev-name/pubkey)
+<a name="l-19"></a><span class="tm">19:02:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> bitcoin-core-verify will list valid signatues of devs by listing devs name.
+<a name="l-20"></a><span class="tm">19:02:55</span><span class="nk"> &lt;wumpus&gt;</span> I suppose it will be a separate executable within the bitcoin core distribution, other software can also include it if they want, but that's not initially very important
+<a name="l-21"></a><span class="tm">19:02:57</span><span class="nk"> &lt;btcdrak&gt;</span> jonasschnelli I think it needs to be GUI for wider adoption.
+<a name="l-22"></a><span class="tm">19:03:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. It would be a Qt tool for one major reason
+<a name="l-23"></a><span class="tm">19:03:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Please don't do design in the meeting.
+<a name="l-24"></a><span class="tm">19:03:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> https downloads
+<a name="l-25"></a><span class="tm">19:03:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> okay. fair enought...
+<a name="l-26"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm planning on having someone work on that.
+<a name="l-27"></a><span class="tm">19:03:49</span><span class="nk"> &lt;btcdrak&gt;</span> jonas is already building something afaik
+<a name="l-28"></a><span class="tm">19:03:51</span><span class="nk"> &lt;wumpus&gt;</span> yes it needs https support to get at the signatures from github
+<a name="l-29"></a><span class="tm">19:03:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. But happy to pause.
+<a name="l-30"></a><span class="tm">19:04:06</span><span class="nk"> &lt;gmaxwell&gt;</span> If it does https I will nak it so hard keys will fall  of the keyboard.
+<a name="l-31"></a><span class="tm">19:04:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> Qt would have https support built in
+<a name="l-32"></a><span class="tm">19:04:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> the gitian sigs come over https
+<a name="l-33"></a><span class="tm">19:04:22</span><span class="nk"> &lt;gmaxwell&gt;</span> We _cannot_ ship some downloading tool that is going to require frequent CVEs itself.
+<a name="l-34"></a><span class="tm">19:04:27</span><span class="nk"> &lt;wumpus&gt;</span> it's not a downloading tool
+<a name="l-35"></a><span class="tm">19:04:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> either with git or with https
+<a name="l-36"></a><span class="tm">19:04:29</span><span class="nk"> &lt;MarcoFalke&gt;</span> So how do you verify bitcoin-core-verify?
+<a name="l-37"></a><span class="tm">19:04:30</span><span class="nk"> &lt;wumpus&gt;</span> just a verification tool
+<a name="l-38"></a><span class="tm">19:04:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> it'd be part of the distribution
+<a name="l-39"></a><span class="tm">19:04:45</span><span class="nk"> &lt;btcdrak&gt;</span> no need for https when you have cryptographic verification
+<a name="l-40"></a><span class="tm">19:04:51</span><span class="nk"> &lt;gmaxwell&gt;</span> What btcdrak said.
+<a name="l-41"></a><span class="tm">19:04:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess even if https is broken, nobody can upload valid EC sigs
+<a name="l-42"></a><span class="tm">19:05:05</span><span class="nk"> &lt;btcdrak&gt;</span> https _is_ broken
+<a name="l-43"></a><span class="tm">19:05:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> https is required to download from github I guess
+<a name="l-44"></a><span class="tm">19:05:16</span><span class="nk"> &lt;wumpus&gt;</span> well if you can get information from github through http that would work too
+<a name="l-45"></a><span class="tm">19:05:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. TLS is not required for security.
+<a name="l-46"></a><span class="tm">19:05:46</span><span class="nk"> &lt;luke-jr&gt;</span> the git protocol isn't encrypted I think
+<a name="l-47"></a><span class="tm">19:05:55</span><span class="nk"> &lt;btcdrak&gt;</span> actually I think it's impossible to fetch from github without https, you'd have to use the git:// ptrotocol
+<a name="l-48"></a><span class="tm">19:05:59</span><span class="nk"> &lt;wumpus&gt;</span> you seriously wouldn't want to implement the git protocol
+<a name="l-49"></a><span class="tm">19:06:02</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> distribution == our release? Or OS?
+<a name="l-50"></a><span class="tm">19:06:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> he. yes. no git:// please
+<a name="l-51"></a><span class="tm">19:06:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> yes, our releases
+<a name="l-52"></a><span class="tm">19:06:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> The only concern is – and this is why i borugh it up – the ec-pubkeys together with dev-name should be placed in bitcoin/bitcoin
+<a name="l-53"></a><span class="tm">19:06:55</span><span class="nk"> &lt;wumpus&gt;</span> otherwise you'd have to host the signatures somewhere else than github, which is possible of course, but is a change in the release process
+<a name="l-54"></a><span class="tm">19:06:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> somewhere where it could be used in cpp source code (probably in a header)
+<a name="l-55"></a><span class="tm">19:07:24</span><span class="nk"> &lt;wumpus&gt;</span> well the gpg keys are already in the respository
+<a name="l-56"></a><span class="tm">19:07:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> this would allow to build a "trusted-chain" of bitcoin-core binaries
+<a name="l-57"></a><span class="tm">19:07:27</span><span class="nk"> &lt;cfields&gt;</span> mm. Can we back up then and address what this is aiming to solve? What protects against someone re-packaging a malicious release along with a clone "verification tool" that always passes?
+<a name="l-58"></a><span class="tm">19:07:40</span><span class="nk"> &lt;kanzure&gt;</span> an email to the mailing list about verification procedures seems prudent at some point, as a general reminder. i'm sure there's existing content somewhere that can be copied for these purposes.
+<a name="l-59"></a><span class="tm">19:07:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> Sure. Thats always possible
+<a name="l-60"></a><span class="tm">19:07:54</span><span class="nk"> &lt;btcdrak&gt;</span> just confirmed github forces https redirection
+<a name="l-61"></a><span class="tm">19:07:58</span><span class="nk"> &lt;MarcoFalke&gt;</span> So bitcoin-core-verify checks the release, but is part of the release... Isn't this circular?
+<a name="l-62"></a><span class="tm">19:07:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> yes, it only works for chaining, if the first link in the chain is broken it solves nothing...
+<a name="l-63"></a><span class="tm">19:08:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> But not if you have verified the first download (assume with gitian verify), then verify with the new tool
+<a name="l-64"></a><span class="tm">19:08:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> well if something competent were being done, the setup would be the last version you got provides a tool to get/verify the next version.
+<a name="l-65"></a><span class="tm">19:08:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> it'd be used to check the *next* release downloaded
+<a name="l-66"></a><span class="tm">19:08:32</span><span class="nk"> &lt;kanzure&gt;</span> bikeshedding for a sec, but "next" seems important enough to be part of the name ;)
+<a name="l-67"></a><span class="tm">19:08:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> people could still gitian-verify our new verification tool
+<a name="l-68"></a><span class="tm">19:08:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> having it verify itself would be sillly
+<a name="l-69"></a><span class="tm">19:08:37</span><span class="nk"> &lt;cfields&gt;</span> right.
+<a name="l-70"></a><span class="tm">19:08:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> so if you previously got a good release, then you'll have good releases foreverafter (or at least until the signing keys were compromised :) )
+<a name="l-71"></a><span class="tm">19:08:47</span><span class="nk"> &lt;MarcoFalke&gt;</span> ok, I see
+<a name="l-72"></a><span class="tm">19:08:55</span><span class="nk"> &lt;kanzure&gt;</span> s/compromised/revoked?
+<a name="l-73"></a><span class="tm">19:09:00</span><span class="nk"> &lt;kanzure&gt;</span> +revoked, at least?
+<a name="l-74"></a><span class="tm">19:09:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">kanzure:</span> +1. that wasn't clear to me until now :)
+<a name="l-75"></a><span class="tm">19:09:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> key revoking is possible over our release-management
+<a name="l-76"></a><span class="tm">19:09:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> well it be N-out-of-M ,so could tolerate some revoked or compromised keys Iguess..
+<a name="l-77"></a><span class="tm">19:09:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> without an uncensorable communications medium or expiration there is no sense for revocation.
+<a name="l-78"></a><span class="tm">19:09:33</span><span class="nk"> &lt;kanzure&gt;</span> hm.
+<a name="l-79"></a><span class="tm">19:09:41</span><span class="nk"> &lt;wumpus&gt;</span> then they'd just be removed in the next release
+<a name="l-80"></a><span class="tm">19:09:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> I just wanted to hear if it's ackable to continue to work on this... if so, I'll come up with something for 0.14.
+<a name="l-81"></a><span class="tm">19:10:25</span><span class="nk"> &lt;gmaxwell&gt;</span> n of m is close to an uncensorable communicatoins medium subject to an honest threshold assumption.
+<a name="l-82"></a><span class="tm">19:10:29</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> well, if you're looking at the list of people/keys who *didn't* sign, it might help to know they revoked their key rater than simply didn't-sign
+<a name="l-83"></a><span class="tm">19:10:32</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> what if you got a good release, but were later infected with malware which changed the verifier tool?
+<a name="l-84"></a><span class="tm">19:10:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> oh well.
+<a name="l-85"></a><span class="tm">19:10:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> if you are infected, it's end of story really
+<a name="l-86"></a><span class="tm">19:10:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> it can already steal your coins
+<a name="l-87"></a><span class="tm">19:10:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> indeed
+<a name="l-88"></a><span class="tm">19:10:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> if you're infected with malware you're hosed at that point.
+<a name="l-89"></a><span class="tm">19:10:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> you are eaten by a frue
+<a name="l-90"></a><span class="tm">19:11:00</span><span class="nk"> &lt;sipa&gt;</span> *grue
+<a name="l-91"></a><span class="tm">19:11:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> you can't protect from malware on that layer
+<a name="l-92"></a><span class="tm">19:11:11</span><span class="nk"> &lt;kanzure&gt;</span> perhaps the malware would be kind enough to at least inform you of your infection
+<a name="l-93"></a><span class="tm">19:11:20</span><span class="nk"> &lt;wumpus&gt;</span> that's another story entirely (hardaware wallets / security modules)
+<a name="l-94"></a><span class="tm">19:11:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> impossible
+<a name="l-95"></a><span class="tm">19:11:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> At least, the EC binary sig tool would allow hardware wallets to sign the binaries
+<a name="l-96"></a><span class="tm">19:11:58</span><span class="nk"> &lt;wumpus&gt;</span> that's an interesting idea
+<a name="l-97"></a><span class="tm">19:12:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> (though you can do this with GPG smartcard)
+<a name="l-98"></a><span class="tm">19:12:13</span><span class="nk"> &lt;wumpus&gt;</span> there are smartcards running GPG?
+<a name="l-99"></a><span class="tm">19:12:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes.
+<a name="l-100"></a><span class="tm">19:12:22</span><span class="nk"> &lt;wumpus&gt;</span> is there some micro-gpg implementation?
+<a name="l-101"></a><span class="tm">19:12:22</span><span class="nk"> &lt;btcdrak&gt;</span> yes
+<a name="l-102"></a><span class="tm">19:12:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> but a big mess
+<a name="l-103"></a><span class="tm">19:12:39</span><span class="nk"> &lt;gmaxwell&gt;</span> A number of people around here use gpg via yubikey3.
+<a name="l-104"></a><span class="tm">19:12:39</span><span class="nk"> &lt;wumpus&gt;</span> yeah...
+<a name="l-105"></a><span class="tm">19:12:41</span><span class="nk"> &lt;btcdrak&gt;</span> petertodd has one with pin entry. sounds like he's at the cash register when sending emails
+<a name="l-106"></a><span class="tm">19:12:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it's not really gpg on the smartcard, it's a rsa signer on a stick. :)
+<a name="l-107"></a><span class="tm">19:13:20</span><span class="nk"> &lt;btcdrak&gt;</span> Ledger Nano S could be programmed to do signing. It also has a GPG module coming. It uses an ST31 secure element afaik
+<a name="l-108"></a><span class="tm">19:13:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> oh right, just the rsa signing, the ugly thing about gpg is all the packet parsing and interpretation etc
+<a name="l-109"></a><span class="tm">19:13:52</span><span class="nk"> &lt;instagibbs&gt;</span> btcdrak, I have a pgp key from mine
+<a name="l-110"></a><span class="tm">19:14:04</span><span class="nk"> &lt;instagibbs&gt;</span> (just playing around with it)
+<a name="l-111"></a><span class="tm">19:14:19</span><span class="nk"> &lt;gmaxwell&gt;</span> There is a terrible complex standard for supporting it. In any case, it's a good thing to have.
+<a name="l-112"></a><span class="tm">19:14:22</span><span class="nk"> &lt;wumpus&gt;</span> same problem as TLS really, the crypto algorithms themselves are reasonably elegant and bug-free, but all the parsing mess around it...
+<a name="l-113"></a><span class="tm">19:14:47</span><span class="nk"> &lt;kanzure&gt;</span> should we move on?
+<a name="l-114"></a><span class="tm">19:14:49</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, I think we agree that we'd want to use secp256k1 signatures
+<a name="l-115"></a><span class="tm">19:14:55</span><span class="nk"> &lt;wumpus&gt;</span> if we can agree on one thing
+<a name="l-116"></a><span class="tm">19:15:00</span><span class="nk"> &lt;btcdrak&gt;</span> Just a separate note, I think everyone here should be using some kind of smartcard/hardware device for GPG signing. There are plenty inexpensive options like Yubikeys and etc.
+<a name="l-117"></a><span class="tm">19:15:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I'll work on a short design and post it to bitcoin-core-dev ML
+<a name="l-118"></a><span class="tm">19:15:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> I just use old computers, but I agree that's the more practical option :-)
+<a name="l-119"></a><span class="tm">19:15:34</span><span class="nk"> &lt;kanzure&gt;</span> should we be complaining about hkp to the bitcoin.org people?
+<a name="l-120"></a><span class="tm">19:15:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> can you spend some time and talk to mr or sipa before you post?
+<a name="l-121"></a><span class="tm">19:16:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. Will do... thanks for offering that.
+<a name="l-122"></a><span class="tm">19:16:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> hkp?
+<a name="l-123"></a><span class="tm">19:17:19</span><span class="nk"> &lt;kanzure&gt;</span> HPKP
+<a name="l-124"></a><span class="tm">19:17:52</span><span class="nk"> &lt;kanzure&gt;</span> public key pinning
+<a name="l-125"></a><span class="tm">19:18:18</span><span class="nk"> &lt;btcdrak&gt;</span> they also dont enforce HSTS
+<a name="l-126"></a><span class="tm">19:18:29</span><span class="nk"> &lt;kanzure&gt;</span> does bitcoincore.org?
+<a name="l-127"></a><span class="tm">19:18:32</span><span class="nk"> &lt;btcdrak&gt;</span> yes
+<a name="l-128"></a><span class="tm">19:18:35</span><span class="nk"> &lt;kanzure&gt;</span> both?
+<a name="l-129"></a><span class="tm">19:18:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Another short topic proposal that is near to the signing: code-signing (OSX/WIN).
+<a name="l-130"></a><span class="tm">19:18:48</span><span class="nk"> &lt;wumpus&gt;</span> sure, why not, if anything can be done to improve site security we should encourag that
+<a name="l-131"></a><span class="tm">19:19:00</span><span class="nk"> &lt;btcdrak&gt;</span> no, just HSTS and certificate origin
+<a name="l-132"></a><span class="tm">19:19:37</span><span class="nk"> &lt;gmaxwell&gt;</span> HPKP is pretty easy to mess up. TBH it's a lot more useful for parties that are their own CA.
+<a name="l-133"></a><span class="tm">19:20:02</span><span class="nk"> &lt;btcdrak&gt;</span> sorry, i mean authenticated origin pulls
+<a name="l-134"></a><span class="tm">19:20:25</span><span class="nk"> &lt;btcdrak&gt;</span> HSTS is important to prevent https downgrade attacks imo
+<a name="l-135"></a><span class="tm">19:20:27</span><span class="nk"> &lt;kanzure&gt;</span> okay well i'm eagerly awaiting for the delivery of the complimentary ips containers
+<a name="l-136"></a><span class="tm">19:20:35</span><span class="nk"> &lt;wumpus&gt;</span> yes, HSTS is important, and trivial to implement
+<a name="l-137"></a><span class="tm">19:20:57</span><span class="nk"> &lt;wumpus&gt;</span> never even heard of HPKP before
+<a name="l-138"></a><span class="tm">19:21:09</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jonasschnelli:</span> iirc there was some detail about code signing and windows - something about a buggy state?
+<a name="l-139"></a><span class="tm">19:21:17</span><span class="nk"> &lt;kadoban&gt;</span> HPKP is key-pinning. It's to prevent attacks like rogue CAs
+<a name="l-140"></a><span class="tm">19:21:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">code-signing (OSX/WIN)</span>
+<a name="l-141"></a><span class="tm">19:21:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> We still sign with "Bitcoin Foundation"
+<a name="l-142"></a><span class="tm">19:21:32</span><span class="nk"> &lt;btcdrak&gt;</span> while we are on the topic of releases and so on, wumpus could you please start posting the hashes with the release announcement too. that will ensure wide distribution of the hashes.
+<a name="l-143"></a><span class="tm">19:21:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> On OSX, its not very visible... on Windows I guess a bit more.
+<a name="l-144"></a><span class="tm">19:21:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kadoban:</span> then gmaxwell's comment makes sense - sounds like a risky thing to do if you're depenent on someone else's CA
+<a name="l-145"></a><span class="tm">19:22:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Question:</span> we should try to get new certificates for OSX/Win in the name of "Bitcoin Core".
+<a name="l-146"></a><span class="tm">19:22:18</span><span class="nk"> &lt;gmaxwell&gt;</span> (I'm not saying that it shouldn't be done for that site, just that it's not a no brainer.)
+<a name="l-147"></a><span class="tm">19:22:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> The question is, if we should. :)
+<a name="l-148"></a><span class="tm">19:22:23</span><span class="nk"> &lt;instagibbs&gt;</span> jonasschnelli, that's a statement :P
+<a name="l-149"></a><span class="tm">19:22:27</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonaschnelli:</span> that would be great. do you have a company that can do it?
+<a name="l-150"></a><span class="tm">19:22:29</span><span class="nk"> &lt;kadoban&gt;</span> <span class="hi">wumpus:</span> It's a little risky. You can pin any piece of the chain, like you can pin *your* private key(s). But then if you do it and screw it up ... you're *really* screwed.
+<a name="l-151"></a><span class="tm">19:22:33</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">re:</span> posting hashes, i also suggest we consider posting hashes and maybe sigs on bitcoincore.org -- we can also ask bitcoin.org to do the same if they feel up to that
+<a name="l-152"></a><span class="tm">19:22:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> sure, I could paste sha256sums.asc into the announcement email
+<a name="l-153"></a><span class="tm">19:22:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> cfields was looking into this, but I am not sure his status
+<a name="l-154"></a><span class="tm">19:22:47</span><span class="nk"> &lt;kadoban&gt;</span> Like, your website is unusable for 6 months screwed.
+<a name="l-155"></a><span class="tm">19:22:47</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> thank you.
+<a name="l-156"></a><span class="tm">19:22:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kadoban:</span> right - what if you want to switch CAs for some reason
+<a name="l-157"></a><span class="tm">19:23:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">sha256sums in release email</span>
+<a name="l-158"></a><span class="tm">19:23:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">btcdrak:</span> I have serval code signing certificates.. but we don't want to use these company names...
+<a name="l-159"></a><span class="tm">19:23:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> I think thats not going in a useful direction. Posting hashes and stuff is fine, if people want to do it-- but its mostly security theater because virutally no one will check, and you can tell they don't check.
+<a name="l-160"></a><span class="tm">19:23:28</span><span class="nk"> &lt;kadoban&gt;</span> <span class="hi">wumpus:</span> You can, if you do it right. You can reuse the same private keys with a different CA (and you can set multiple possible pins, so you can have backups)
+<a name="l-161"></a><span class="tm">19:23:35</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> didn't get anywhere with it. My best suggestion was to see if MIT would be interested in helping with a cert
+<a name="l-162"></a><span class="tm">19:23:36</span><span class="nk"> &lt;wumpus&gt;</span> (do note that release emails are signed with *my* key, not the release signing key)
+<a name="l-163"></a><span class="tm">19:23:59</span><span class="nk"> &lt;sipa&gt;</span> sorry i fell asleep
+<a name="l-164"></a><span class="tm">19:24:47</span><span class="nk"> &lt;gmaxwell&gt;</span> Thats a sign to move on. :)
+<a name="l-165"></a><span class="tm">19:24:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> We should also publish the hashes on bitcoincore.org with the release announcements there. Tempted to suggest we aim at mirroring downloads somewhere as well, like the github repo which supports release binaries and maybe bitcoincore.org
+<a name="l-166"></a><span class="tm">19:25:06</span><span class="nk"> &lt;instagibbs&gt;</span> brainstorming can continue later imo
+<a name="l-167"></a><span class="tm">19:25:08</span><span class="nk"> &lt;kanzure&gt;</span> wasn't github sunsetting hosted release binaries?
+<a name="l-168"></a><span class="tm">19:25:16</span><span class="nk"> &lt;luke-jr&gt;</span> is there some organization name that people would be comfortable having sign both Core and Knots releases? would be nice to consolidate in that regard
+<a name="l-169"></a><span class="tm">19:25:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> we already provide torrents for people that don't want to download from bitcoin.org - it solves nothing of the verification problems ofc
+<a name="l-170"></a><span class="tm">19:25:29</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> I think they re-introduced them
+<a name="l-171"></a><span class="tm">19:25:42</span><span class="nk"> &lt;kanzure&gt;</span> yes it makes sense to not use "Bitcoin Foundation" -- perhaps chaincode would be a good org to blame instead? :D (kidding- let's be nice)
+<a name="l-172"></a><span class="tm">19:25:48</span><span class="nk"> &lt;wumpus&gt;</span> yes, github has the option to host release binaries
+<a name="l-173"></a><span class="tm">19:25:53</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> got it
+<a name="l-174"></a><span class="tm">19:26:04</span><span class="nk"> &lt;wumpus&gt;</span> but having the binaries in more places means more places to check wether they are compromised too
+<a name="l-175"></a><span class="tm">19:26:05</span><span class="nk"> &lt;anchow101&gt;</span> Why not host binaries on GitHub and move completely off of bitcoin.orgs system
+<a name="l-176"></a><span class="tm">19:26:16</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> we should do it there as a mirror at least.
+<a name="l-177"></a><span class="tm">19:26:25</span><span class="nk"> &lt;wumpus&gt;</span> also it gives another reason to want to compromise our github
+<a name="l-178"></a><span class="tm">19:26:59 </span><span class="nka">* jonasschnelli</span> <span class="ac">is not sure if we should place the binaries on the same host at the source code</span>
+<a name="l-179"></a><span class="tm">19:27:00</span><span class="nk"> &lt;wumpus&gt;</span> I'm not comfortable with everyting in one place
+<a name="l-180"></a><span class="tm">19:27:15</span><span class="nk"> &lt;sipa&gt;</span> let's use sourceforge *ducks*
+<a name="l-181"></a><span class="tm">19:27:16</span><span class="nk"> &lt;wumpus&gt;</span> yea, exactly, feels like putting a lot of eggs inone basket
+<a name="l-182"></a><span class="tm">19:27:20</span><span class="nk"> &lt;wumpus&gt;</span> hah
+<a name="l-183"></a><span class="tm">19:27:23 </span><span class="nka">* jonasschnelli</span> <span class="ac">stabs sipa</span>
+<a name="l-184"></a><span class="tm">19:27:27</span><span class="nk"> &lt;warren&gt;</span> The more mirrors, the better.  Although the value of mirroring for diversity is wiped out by automated rsync which is how most people demand to keep mirrors updated.
+<a name="l-185"></a><span class="tm">19:27:29</span><span class="nk"> &lt;gmaxwell&gt;</span> you don't think github isn't fully compromised already, come one? :)
+<a name="l-186"></a><span class="tm">19:27:34</span><span class="nk"> &lt;gmaxwell&gt;</span> er come on
+<a name="l-187"></a><span class="tm">19:27:46</span><span class="nk"> &lt;btcdrak&gt;</span> regarding bitcoincore.org I have a promising offer of sponsorship for around 5 years of hosting/infrastructure from Pindar, so we could setup a download server for example.
+<a name="l-188"></a><span class="tm">19:27:54</span><span class="nk"> &lt;wumpus&gt;</span> well at least sudden code changes are fairly detectable
+<a name="l-189"></a><span class="tm">19:28:07</span><span class="nk"> &lt;wumpus&gt;</span> (and we sign all top-level commits)
+<a name="l-190"></a><span class="tm">19:28:16</span><span class="nk"> &lt;gmaxwell&gt;</span> please can we move on?
+<a name="l-191"></a><span class="tm">19:28:18</span><span class="nk"> &lt;anchow101&gt;</span> What about Amazon s3 for binary hosting?
+<a name="l-192"></a><span class="tm">19:28:18</span><span class="nk"> &lt;wumpus&gt;</span> so there is very little gain in compromising our github right now
+<a name="l-193"></a><span class="tm">19:28:20</span><span class="nk"> &lt;btcdrak&gt;</span> The issue is less about being compromised and more about early warning.
+<a name="l-194"></a><span class="tm">19:28:30</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-195"></a><span class="tm">19:28:41</span><span class="nk"> &lt;instagibbs&gt;</span> 0.13.0 final?
+<a name="l-196"></a><span class="tm">19:28:42</span><span class="nk"> &lt;sipa&gt;</span> 0.13.0?
+<a name="l-197"></a><span class="tm">19:28:45</span><span class="nk"> &lt;btcdrak&gt;</span> having multiple places makes it more likely a compromise would be spotted earlier
+<a name="l-198"></a><span class="tm">19:29:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span>  I disagree; it doesn't solve the problem of peopel not verifying at all
+<a name="l-199"></a><span class="tm">19:29:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.13.0</span>
+<a name="l-200"></a><span class="tm">19:29:12</span><span class="nk"> &lt;kanzure&gt;</span> does anyone have details about the large quantity of revoked 'malicious' (fake) gpg short id matching keys from the other day? i saw this somewhere but didn't keep a reference.
+<a name="l-201"></a><span class="tm">19:29:31</span><span class="nk"> &lt;instagibbs&gt;</span> kanzure, greg told me it was some academic paper's work
+<a name="l-202"></a><span class="tm">19:29:32</span><span class="nk"> &lt;wumpus&gt;</span> I have only one thing to say on this topic: there have been no critical reported issues with rc3, in principle it could be tagged final at any time
+<a name="l-203"></a><span class="tm">19:29:35</span><span class="nk"> &lt;MarcoFalke&gt;</span> I think the last doc change was merged. We can start gitian after the meeting?
+<a name="l-204"></a><span class="tm">19:29:50</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">instagibbs:</span> well i didn't hear it from greg. i did hear somewhere that it was a 'researcher'. but i have no idea where i saw this.
+<a name="l-205"></a><span class="tm">19:29:54</span><span class="nk"> &lt;MarcoFalke&gt;</span> Or did anyone hear of critical problems?
+<a name="l-206"></a><span class="tm">19:30:09</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">MarcoFalke:</span> it's all good from what I can see.
+<a name="l-207"></a><span class="tm">19:30:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> I'll provide citations after the meeting.
+<a name="l-208"></a><span class="tm">19:30:18</span><span class="nk"> &lt;instagibbs&gt;</span> there was one report of stalled segwit ibd on testnet
+<a name="l-209"></a><span class="tm">19:30:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> https://twitter.com/bcrypt/status/765615853488316416
+<a name="l-210"></a><span class="tm">19:30:29</span><span class="nk"> &lt;wumpus&gt;</span> however the announcement of cobra this morning felt like someone dropped a bomb on the release process, and 'infected' 0.13.0 in people's minds before it is even released, so I feel really grumpy about this topic right now
+<a name="l-211"></a><span class="tm">19:30:30</span><span class="nk"> &lt;instagibbs&gt;</span> but not sure if that's one-off or what
+<a name="l-212"></a><span class="tm">19:30:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> I've been trying to reproduce marco's stalls with testnet. synced and caught up a few hosts.. so far nothing.
+<a name="l-213"></a><span class="tm">19:31:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> agree, that was a imprudent move..
+<a name="l-214"></a><span class="tm">19:31:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> do you have multiple header chains extending your active branch?
+<a name="l-215"></a><span class="tm">19:31:08</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> maybe tag on Friday evening, let the gitian builders process over the weekend and we can release on Monday/tues/
+<a name="l-216"></a><span class="tm">19:31:16</span><span class="nk"> &lt;MarcoFalke&gt;</span> I can upload my 8.5 gig datadir *ducks*
+<a name="l-217"></a><span class="tm">19:31:33</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> tag it as 0.13.0.1 :)
+<a name="l-218"></a><span class="tm">19:31:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> no I've just tried varrious things. I thought we already fixed the big with multiple header chains?
+<a name="l-219"></a><span class="tm">19:31:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> lol :)
+<a name="l-220"></a><span class="tm">19:31:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i thought so too
+<a name="l-221"></a><span class="tm">19:31:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">cfields:</span> lol
+<a name="l-222"></a><span class="tm">19:32:05</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, me neither *shrug*
+<a name="l-223"></a><span class="tm">19:32:05</span><span class="nk"> &lt;MarcoFalke&gt;</span> Able to reproduce consistently here, but this is something for 13.1
+<a name="l-224"></a><span class="tm">19:32:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> but that was something i noticed in MarcoFalke's roc output
+<a name="l-225"></a><span class="tm">19:32:16</span><span class="nk"> &lt;sipa&gt;</span> rpc
+<a name="l-226"></a><span class="tm">19:32:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span> if you have a sync failure that is reproducably consistently it may be a release blocker.
+<a name="l-227"></a><span class="tm">19:32:40</span><span class="nk"> &lt;btcdrak&gt;</span> you mean 0.13.1
+<a name="l-228"></a><span class="tm">19:32:43</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">wumpus:</span> yeah, there should be a peer review process for posts to bitcoincore.org -- and bitcoin.org would be wise to adopt a similar practice.
+<a name="l-229"></a><span class="tm">19:33:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Please can we stop with the prior topic?
+<a name="l-230"></a><span class="tm">19:33:05</span><span class="nk"> &lt;kanzure&gt;</span> okay.
+<a name="l-231"></a><span class="tm">19:33:18</span><span class="nk"> &lt;btcdrak&gt;</span> last calls for review of the 0.13.0 blog post https://github.com/bitcoin-core/bitcoincore.org/pull/199
+<a name="l-232"></a><span class="tm">19:33:32 </span><span class="nka">* btcdrak</span> <span class="ac">has been asking for two weeks....</span>
+<a name="l-233"></a><span class="tm">19:33:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> i reviewed!
+<a name="l-234"></a><span class="tm">19:33:45</span><span class="nk"> &lt;wumpus&gt;</span> yes we're slipping incredibly, for no really good reason, I know
+<a name="l-235"></a><span class="tm">19:33:48</span><span class="nk"> &lt;wumpus&gt;</span> I feel bad about it too
+<a name="l-236"></a><span class="tm">19:34:00 </span><span class="nka">* btcdrak</span> <span class="ac">gives sipa a gold star!</span>
+<a name="l-237"></a><span class="tm">19:34:10</span><span class="nk"> &lt;wumpus&gt;</span> oh you mean the blog post, I'll take a look at it
+<a name="l-238"></a><span class="tm">19:34:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> sorry, I missed that completely, will look.
+<a name="l-239"></a><span class="tm">19:34:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review https://github.com/bitcoin-core/bitcoincore.org/pull/199</span>
+<a name="l-240"></a><span class="tm">19:34:26</span><span class="nk"> &lt;instagibbs&gt;</span> I'll review today
+<a name="l-241"></a><span class="tm">19:35:01</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> so tag friday evening, and release ~monday?
+<a name="l-242"></a><span class="tm">19:35:11</span><span class="nk"> &lt;sipa&gt;</span> sounds fine be me
+<a name="l-243"></a><span class="tm">19:35:14</span><span class="nk"> &lt;wumpus&gt;</span> any rationale for friday evening, and not, right now?
+<a name="l-244"></a><span class="tm">19:35:21</span><span class="nk"> &lt;sipa&gt;</span> also fine by me
+<a name="l-245"></a><span class="tm">19:35:25</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> is marco's issue that the stalling detection doesn't make sense if there are some outbound NODE_NETWORK peers you don't download blocks from?
+<a name="l-246"></a><span class="tm">19:35:31</span><span class="nk"> &lt;gmaxwell&gt;</span> I am concerned that we have a reproducable candidate release blocker.
+<a name="l-247"></a><span class="tm">19:35:55</span><span class="nk"> &lt;gmaxwell&gt;</span> we should become confident that it's segwit only.
+<a name="l-248"></a><span class="tm">19:36:02</span><span class="nk"> &lt;wumpus&gt;</span> bah
+<a name="l-249"></a><span class="tm">19:36:08</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> to give time for the cobra announcement to fade
+<a name="l-250"></a><span class="tm">19:36:11</span><span class="nk"> &lt;gmaxwell&gt;</span> perhaps by having marco backup his state, and then disable segwit.
+<a name="l-251"></a><span class="tm">19:36:16</span><span class="nk"> &lt;wumpus&gt;</span> I'm about to give up on 0.13 completely :p
+<a name="l-252"></a><span class="tm">19:36:25</span><span class="nk"> &lt;wumpus&gt;</span> and focus on 0.14 from now on
+<a name="l-253"></a><span class="tm">19:36:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> what, and release 0
+<a name="l-254"></a><span class="tm">19:36:28</span><span class="nk"> &lt;btcdrak&gt;</span> 13 is unlucky number!
+<a name="l-255"></a><span class="tm">19:36:31</span><span class="nk"> &lt;sipa&gt;</span> qe.1 instead?
+<a name="l-256"></a><span class="tm">19:36:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">btcdrak:</span> yes. exactly.
+<a name="l-257"></a><span class="tm">19:36:38</span><span class="nk"> &lt;kanzure&gt;</span> one rationale for not right now is to give time for review on bitcoincore.org pull 199
+<a name="l-258"></a><span class="tm">19:36:46</span><span class="nk"> &lt;btcdrak&gt;</span> ^
+<a name="l-259"></a><span class="tm">19:36:47</span><span class="nk"> &lt;kanzure&gt;</span> so maybe like... whatever average review time is. heh.
+<a name="l-260"></a><span class="tm">19:36:59</span><span class="nk"> &lt;wumpus&gt;</span> gitian building takes time too
+<a name="l-261"></a><span class="tm">19:37:03</span><span class="nk"> &lt;gmaxwell&gt;</span> If the issue is segwit only-- and only rarely triggered, then I'm fine with it being 0.13.1, but I don't know if we know that.
+<a name="l-262"></a><span class="tm">19:37:10</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, skip 0.12.1, go straight to 1.0, come on
+<a name="l-263"></a><span class="tm">19:37:12</span><span class="nk"> &lt;wumpus&gt;</span> we can delay the uploading until your blog post is finished, sure
+<a name="l-264"></a><span class="tm">19:37:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> skipping numbers doesn't work if we don't feel confident about the code, though
+<a name="l-265"></a><span class="tm">19:37:38</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think there is a reason to hold off from what wumpus was suggesting, but we do need to make a determination on marco's sync bug.
+<a name="l-266"></a><span class="tm">19:37:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ok, i will prioritize reviewing marco's situation
+<a name="l-267"></a><span class="tm">19:38:09</span><span class="nk"> &lt;wumpus&gt;</span> no one else reported it though
+<a name="l-268"></a><span class="tm">19:38:21</span><span class="nk"> &lt;wumpus&gt;</span> I've done tons of syncs with this code
+<a name="l-269"></a><span class="tm">19:38:23</span><span class="nk"> &lt;gmaxwell&gt;</span> I reported a similar one in the past, but we thought we fixed it.
+<a name="l-270"></a><span class="tm">19:38:32</span><span class="nk"> &lt;kanzure&gt;</span> is it reproducible?
+<a name="l-271"></a><span class="tm">19:38:36</span><span class="nk"> &lt;MarcoFalke&gt;</span> locally
+<a name="l-272"></a><span class="tm">19:38:57</span><span class="nk"> &lt;gmaxwell&gt;</span> and at the time that was hit by a number of people. some of those reports might have been people actually hitting what marco is hitting now.
+<a name="l-273"></a><span class="tm">19:39:00</span><span class="nk"> &lt;wumpus&gt;</span> but ok,anyhow, I guess we'll talk about this topic again next week
+<a name="l-274"></a><span class="tm">19:39:12</span><span class="nk"> &lt;gmaxwell&gt;</span> pft.
+<a name="l-275"></a><span class="tm">19:39:13</span><span class="nk"> &lt;wumpus&gt;</span> I've given uptrying to push for a release soon
+<a name="l-276"></a><span class="tm">19:39:18</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">MarcoFalke:</span> are you able to reproduce it on other platforms?  what kind of build are you using (gitian vs local on fedora?)
+<a name="l-277"></a><span class="tm">19:39:22</span><span class="nk"> &lt;sipa&gt;</span> i hope 0.13.0 is released next week
+<a name="l-278"></a><span class="tm">19:39:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok, i'll push
+<a name="l-279"></a><span class="tm">19:39:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> local on fedora
+<a name="l-280"></a><span class="tm">19:39:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> don't be fatalistic, in the next day or so we'll determine if marco's issue is segwit only. If it is, then continue as you suggested.
+<a name="l-281"></a><span class="tm">19:39:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Do we delay then the final 0.13.0 only because of cobras post?
+<a name="l-282"></a><span class="tm">19:39:43</span><span class="nk"> &lt;MarcoFalke&gt;</span> Can we do this trouble shooting after the meeting?
+<a name="l-283"></a><span class="tm">19:39:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> thanks. I'm done being the person chasing people peonting at his watch for one
+<a name="l-284"></a><span class="tm">19:40:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok
+<a name="l-285"></a><span class="tm">19:40:17</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">gmaxwell:</span> I never saw it on main
+<a name="l-286"></a><span class="tm">19:40:27</span><span class="nk"> &lt;wumpus&gt;</span> so should this delay setting up the release schedule for 0.14?
+<a name="l-287"></a><span class="tm">19:40:53</span><span class="nk"> &lt;wumpus&gt;</span> that's kind of in limbo now, too
+<a name="l-288"></a><span class="tm">19:40:55</span><span class="nk"> &lt;MarcoFalke&gt;</span> imo no. 0.14 can be less features. less rcs
+<a name="l-289"></a><span class="tm">19:41:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span> yes, but in three tries so far on rc3 I have not been able to reproduce your condition. So just because you didn't hit it on mainnet doesn't mean it isn't an issue there.
+<a name="l-290"></a><span class="tm">19:41:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Keep in mind the behavior you're seeing would potentially cause a consensus divergence if it happened to miners. It is a high criticality issue unless we know conditions that reduce its risk.
+<a name="l-291"></a><span class="tm">19:41:54</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">wumpus:</span> There is some value in doing releases regular (c.f. firefox)
+<a name="l-292"></a><span class="tm">19:42:03</span><span class="nk"> &lt;anchow101&gt;</span> Can someone link me to the issue?
+<a name="l-293"></a><span class="tm">19:42:11</span><span class="nk"> &lt;wumpus&gt;</span> we have toruble doing the releases in the currently planne dschedule
+<a name="l-294"></a><span class="tm">19:42:18</span><span class="nk"> &lt;wumpus&gt;</span> I don't even want to think about more regular releases
+<a name="l-295"></a><span class="tm">19:42:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/issues/8518
+<a name="l-296"></a><span class="tm">19:42:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i disagree, your pushing to stick to a schedule was very valuable
+<a name="l-297"></a><span class="tm">19:42:49</span><span class="nk"> &lt;wumpus&gt;</span> firefox has a completely different situation
+<a name="l-298"></a><span class="tm">19:42:56</span><span class="nk"> &lt;gmaxwell&gt;</span> My impression is that we haven't really suffered any delay for 0.13 related to the general size. The rcs have not been horribly buggy or anything.
+<a name="l-299"></a><span class="tm">19:43:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i understand if you're worn out about it, but that does not make it a bad idea
+<a name="l-300"></a><span class="tm">19:43:12</span><span class="nk"> &lt;sipa&gt;</span> we are still very close to on schedule for 0.13
+<a name="l-301"></a><span class="tm">19:43:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Thanks to wumpus'es RC buffer
+<a name="l-302"></a><span class="tm">19:43:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> sure! I'm still okay with the current release schedule (try to do a release every 6 months), but not in releases more often
+<a name="l-303"></a><span class="tm">19:43:52</span><span class="nk"> &lt;sipa&gt;</span> so i would vote we schedule 0.14 as soon as 0.13.0 is out
+<a name="l-304"></a><span class="tm">19:43:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm normally used to delay of *1.5 in software projects
+<a name="l-305"></a><span class="tm">19:44:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> agree, it could be much worse :)
+<a name="l-306"></a><span class="tm">19:44:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> it *used to be* much worse
+<a name="l-307"></a><span class="tm">19:44:47</span><span class="nk"> &lt;sipa&gt;</span> for us.
+<a name="l-308"></a><span class="tm">19:44:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> 6 month seems to be perfectly fine. Just +6 month after the (possible) delayed last release
+<a name="l-309"></a><span class="tm">19:44:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> then again, we have time-based releases, we don't wait for any feature, just for bug fixes
+<a name="l-310"></a><span class="tm">19:45:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. This seems to follow most agile development practices.
+<a name="l-311"></a><span class="tm">19:45:38</span><span class="nk"> &lt;wumpus&gt;</span> in any case, any other topics?
+<a name="l-312"></a><span class="tm">19:46:16</span><span class="nk"> &lt;zooko&gt;</span> Do y'all know about "binary transparency"?
+<a name="l-313"></a><span class="tm">19:46:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> tell us
+<a name="l-314"></a><span class="tm">19:46:41</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">zooko:</span> please explain
+<a name="l-315"></a><span class="tm">19:46:42</span><span class="nk"> &lt;zooko&gt;</span> https://groups.google.com/forum/#!forum/binary-transparency
+<a name="l-316"></a><span class="tm">19:46:54</span><span class="nk"> &lt;zooko&gt;</span> It's a project from Ben Laurie, as a follow-on to "certificate transparency".
+<a name="l-317"></a><span class="tm">19:47:25</span><span class="nk"> &lt;zooko&gt;</span> There is a redundant set of servers which are claiming to do append-only logging of things published to them.
+<a name="l-318"></a><span class="tm">19:47:53</span><span class="nk"> &lt;zooko&gt;</span> When you publish a binary, you submit its hash to these servers.
+<a name="l-319"></a><span class="tm">19:48:16</span><span class="nk"> &lt;zooko&gt;</span> Clients should refrain from running a binary if the hash of that binary hasn't been broadcast by those servers.
+<a name="l-320"></a><span class="tm">19:48:24</span><span class="nk"> &lt;jl2012&gt;</span> proposed topic: BIP146.
+<a name="l-321"></a><span class="tm">19:48:40</span><span class="nk"> &lt;zooko&gt;</span> This is a detection technique, more than a prevention technique, for people distributing different binaries to different users.
+<a name="l-322"></a><span class="tm">19:49:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">example:</span> https://github.com/FreeBSDFoundation/binary-transparency-notes
+<a name="l-323"></a><span class="tm">19:49:13</span><span class="nk"> &lt;jl2012&gt;</span> It is proposed to do the LOW_S and NULLDUMMY softfork at the same time as segwit
+<a name="l-324"></a><span class="tm">19:50:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> thanks zooko! I think we should take a closer look at the binary-transparency project.
+<a name="l-325"></a><span class="tm">19:50:13</span><span class="nk"> &lt;wumpus&gt;</span> thanks zooko, it sounds interesting, although I'm not sure it is on topic for anything in the meeting. I don't think it can solve the concrete problem of people running binaries without verifying anything at all, unless OSes would build in support for that
+<a name="l-326"></a><span class="tm">19:50:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP146</span>
+<a name="l-327"></a><span class="tm">19:50:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki</span>
+<a name="l-328"></a><span class="tm">19:50:47</span><span class="nk"> &lt;warren&gt;</span> (OSX does prevent running unsigned binaries unless the user disables a default option.)
+<a name="l-329"></a><span class="tm">19:51:09</span><span class="nk"> &lt;zooko&gt;</span> <span class="hi">wumpus:</span> good point. I think of it as primarily for detecting if someone is replacing binaries with alternate binaries, thinking that nobody will notice.
+<a name="l-330"></a><span class="tm">19:51:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">warren:</span> yes, but that only checks whether the binary is signed, not by whom, and not whether it's the same file other people gt
+<a name="l-331"></a><span class="tm">19:51:17</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">warren:</span> but anyone can sign.
+<a name="l-332"></a><span class="tm">19:51:22</span><span class="nk"> &lt;zooko&gt;</span> But not for preventing people from running the alternate binaries so much, because like you say…
+<a name="l-333"></a><span class="tm">19:51:24</span><span class="nk"> &lt;wumpus&gt;</span> (the latter being the point of the binary transparency)
+<a name="l-334"></a><span class="tm">19:51:24</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jl2012:</span> speak up
+<a name="l-335"></a><span class="tm">19:51:25</span><span class="nk"> &lt;warren&gt;</span> <span class="hi">btcdrak:</span> true
+<a name="l-336"></a><span class="tm">19:51:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">warren:</span> In which case you fully have to trust apple
+<a name="l-337"></a><span class="tm">19:51:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">idea:</span> LOW_S and NULLDUMMY have been nonstandard on the network for a long time, and do not appear on the chain (did anyone check they really do not appear?)
+<a name="l-338"></a><span class="tm">19:52:10</span><span class="nk"> &lt;sipa&gt;</span> together they would make *normal* transactions free from known malleability in segwit
+<a name="l-339"></a><span class="tm">19:53:15</span><span class="nk"> &lt;jl2012&gt;</span> NULLDUMMY is a bigger problem than LOW_S, as an attacker may put anything as the dummy value
+<a name="l-340"></a><span class="tm">19:53:41</span><span class="nk"> &lt;sipa&gt;</span> and they are both trivial
+<a name="l-341"></a><span class="tm">19:54:00</span><span class="nk"> &lt;adam3us&gt;</span> zooko i was thinking another way to do this is by committing to a sequence of R=kG values.in the public key, so P=H(R1,R2,...,Q) and define a mapping from version numbers to R value. now signing two different binaries for the same version will likely leak your private key.
+<a name="l-342"></a><span class="tm">19:54:22</span><span class="nk"> &lt;sipa&gt;</span> adam3us, zooko: can you wait until the meeting is ove
+<a name="l-343"></a><span class="tm">19:54:32</span><span class="nk"> &lt;kanzure&gt;</span> is the request re: bip146 for more review?
+<a name="l-344"></a><span class="tm">19:54:34</span><span class="nk"> &lt;btcdrak&gt;</span> for the record there was some discussion on the ML https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-August/013006.html
+<a name="l-345"></a><span class="tm">19:54:43</span><span class="nk"> &lt;kanzure&gt;</span> what is the request about bip146 about?
+<a name="l-346"></a><span class="tm">19:54:54</span><span class="nk"> &lt;sipa&gt;</span> please discuss :)
+<a name="l-347"></a><span class="tm">19:55:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jl2012:</span> Would the NULLDUMMY affect current mainnet transaction
+<a name="l-348"></a><span class="tm">19:55:14</span><span class="nk"> &lt;jl2012&gt;</span> LOW_S was discussed in last meeting but not NULLDUMMY
+<a name="l-349"></a><span class="tm">19:55:18</span><span class="nk"> &lt;btcdrak&gt;</span> ha! I think we discussed LowS already, it's just the addition of NULLDUMMY that is new.
+<a name="l-350"></a><span class="tm">19:55:20</span><span class="nk"> &lt;sipa&gt;</span> do we think it is doable in 0.13.1 / together with segwit
+<a name="l-351"></a><span class="tm">19:55:48</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">jonasschnelli:</span> yes in the current BIP146
+<a name="l-352"></a><span class="tm">19:55:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I agree. it is a trivial addition.
+<a name="l-353"></a><span class="tm">19:56:45</span><span class="nk"> &lt;wumpus&gt;</span> yes, ack on LowS already, I don't know enough about NULLDUMMY to usefully comment
+<a name="l-354"></a><span class="tm">19:56:55</span><span class="nk"> &lt;btcdrak&gt;</span> 4 minute bell
+<a name="l-355"></a><span class="tm">19:57:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> NULLDUMMY is just "the ignored value popped by CHECKMULTISIG must be zero"
+<a name="l-356"></a><span class="tm">19:57:12</span><span class="nk"> &lt;sipa&gt;</span> nulldummy is liteeally: the ignored input to checkmultisig has to be the eempty vector
+<a name="l-357"></a><span class="tm">19:57:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> So, worst case, there are some non-NULLDUMMY producers/miners out there that would need to adjust to the new rule?
+<a name="l-358"></a><span class="tm">19:57:38</span><span class="nk"> &lt;sipa&gt;</span> we should check if they are being included in the chain
+<a name="l-359"></a><span class="tm">19:57:40</span><span class="nk"> &lt;wumpus&gt;</span> okay that seems harmless and easy to check
+<a name="l-360"></a><span class="tm">19:57:44</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> nobody sends these, so it's hard to know if anyone mines them
+<a name="l-361"></a><span class="tm">19:57:54</span><span class="nk"> &lt;btcdrak&gt;</span> it's already nonstandard
+<a name="l-362"></a><span class="tm">19:58:09</span><span class="nk"> &lt;wumpus&gt;</span> makes sense to include that with the LOWS cleanup then
+<a name="l-363"></a><span class="tm">19:58:12</span><span class="nk"> &lt;luke-jr&gt;</span> oh, and since all miners MUST be on 0.12.1 now, nobody should mine these
+<a name="l-364"></a><span class="tm">19:58:24</span><span class="nk"> &lt;sipa&gt;</span> why must they be on 0
+<a name="l-365"></a><span class="tm">19:58:29</span><span class="nk"> &lt;sipa&gt;</span> why must they be on 0.12.1?
+<a name="l-366"></a><span class="tm">19:58:29</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> CSV?
+<a name="l-367"></a><span class="tm">19:58:36</span><span class="nk"> &lt;btcdrak&gt;</span> last softfork
+<a name="l-368"></a><span class="tm">19:59:02</span><span class="nk"> &lt;sipa&gt;</span> ah.
+<a name="l-369"></a><span class="tm">19:59:03</span><span class="nk"> &lt;btcdrak&gt;</span> since we didnt release a 0.11.x they upgraded to 0.12.1
+<a name="l-370"></a><span class="tm">19:59:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> LOW_S &amp; NULLDUMMY seems to make sense to include in the SW SF.
+<a name="l-371"></a><span class="tm">19:59:30</span><span class="nk"> &lt;btcdrak&gt;</span> I think luke-jr's grammar has a bug or two :-p
+<a name="l-372"></a><span class="tm">19:59:41</span><span class="nk"> &lt;wumpus&gt;</span> let's not have a new thing creep into SW every week though :p
+<a name="l-373"></a><span class="tm">19:59:43</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm not a huge fan of bundling them :/
+<a name="l-374"></a><span class="tm">19:59:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">btcdrak:</span> ?
+<a name="l-375"></a><span class="tm">19:59:55</span><span class="nk"> &lt;BlueMatt&gt;</span> though not against a separate sf that is also in 0.13.1, though thats also gross
+<a name="l-376"></a><span class="tm">20:00:10</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> it's a trivial one liner (modulo tests)
+<a name="l-377"></a><span class="tm">20:00:10</span><span class="nk"> &lt;luke-jr&gt;</span> the only reason to bundle IMO is if we want to add new non-VERIFY opcodes to segwit.
+<a name="l-378"></a><span class="tm">20:00:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">btcdrak:</span> I'm aware, doesnt mean I like it
+<a name="l-379"></a><span class="tm">20:00:21</span><span class="nk"> &lt;wumpus&gt;</span> we discussed that last week BlueMatt, the disadvantage of not bundling is that no one would care about a separete softfork for them
+<a name="l-380"></a><span class="tm">20:00:23</span><span class="nk"> &lt;wumpus&gt;</span> they're just a cleanup
+<a name="l-381"></a><span class="tm">20:00:27</span><span class="nk"> &lt;luke-jr&gt;</span> but LOWS/NULLDUMMY are just softforks, so no need to bundle IMO
+<a name="l-382"></a><span class="tm">20:00:35</span><span class="nk"> &lt;luke-jr&gt;</span> (no harm either)
+<a name="l-383"></a><span class="tm">20:00:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ok, fair enough, though in same version...anyway, I'll hold my tounge
+<a name="l-384"></a><span class="tm">20:01:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
