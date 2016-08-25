@@ -1,0 +1,273 @@
+19:02:37 <wumpus> #startmeeting
+19:02:37 <lightningbot> Meeting started Thu Aug 25 19:02:37 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:37 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:51 <btcdrak> here
+19:02:57 <paveljanik> I'd like to ask for more ACKs on Wshadow PRs
+19:02:59 <paveljanik> ;-)
+19:03:12 <cfields_> seconded. Will ACK/re-ACK.
+19:03:18 <gmaxwell> paveljanik: as you wish.
+19:03:32 <instagibbs> paveljanik, pr #?
+19:03:34 <cfields_> (i caught a bug of my own with -Wshadow yesterday)
+19:03:36 <instagibbs> for those not initiated
+19:03:37 <MarcoFalke> paveljanik: I ACKed all. Anything I missed?
+19:03:40 <gmaxwell> Give the PP@.
+19:03:55 <gmaxwell> gr. PR#
+19:03:59 <MarcoFalke> https://github.com/bitcoin/bitcoin/pulls/paveljanik
+19:04:20 <paveljanik> 8449, 8472, 8191, 8163, 8109
+19:04:43 <paveljanik> but yes, Marco's link is even better
+19:05:00 <wumpus> anything that really needs to be discussed at the meetng?
+19:05:26 <CodeShark> no, we've already accomplished everything - there's nothing more to do ever
+19:05:32 <gmaxwell> woot.
+19:05:33 <sipa> i'd like to bring up the various proposals for segwit DoS protection
+19:05:38 <gmaxwell> ^
+19:05:39 <instagibbs> ack
+19:05:41 <petertodd> ack
+19:05:41 <btcdrak> ack
+19:05:47 <wumpus> well I'm very happy we finally managed to release 0.13.0, congrats everyone!
+19:05:51 <paveljanik> Do we have any numbers of 0.13.0 nodes?
+19:05:56 <cfields_> topic suggestion: codesigning update
+19:05:58 <paveljanik> congrats to wumpus!
+19:06:05 * jonasschnelli is checking the 0.13 nodes on his seeder
+19:06:07 <instagibbs> paveljanik, few hundred ones bitnodes has reached
+19:06:09 <btcdrak> beer for wumpus
+19:06:12 <sipa> wumpus: congrats to all, and thanks a lot wumpus
+19:06:13 <wumpus> #topic proposals for segwit DoS protection
+19:06:21 <gmaxwell> Some of this is more general than segwit. There as some existing minor vulnerablities that have been ignored, which were pointed out in segwit form. Good to resolve those too.
+19:06:35 <luke-jr> paveljanik: http://luke.dashjr.org/programs/bitcoin/files/charts/branches.html
+19:06:51 <murch> paveljanik: 322 (according to bitnodes)
+19:06:56 <gmaxwell> Congrats on 0.13. It looks like a great release.
+19:06:57 <jonasschnelli> cat dnsseed.dump | grep "0.13.0" | grep "    1   " | wc -l               ---> 62
+19:07:01 <sipa> so the main issue is #8279
+19:07:37 <jonasschnelli> 213 seeds in non-good state (probably just set up)
+19:07:43 <jonasschnelli> s/seeds/nodes
+19:08:09 <gmaxwell> there are a lot more parties running it than accepting inbound, as typical.
+19:08:11 <sipa> and there have been several proposed solutions, including: verify all inputs (even if the transaction is too big or below feerate), not entering failed witness txn into the reject table, making feefilter mandatory, ...
+19:08:30 <jonasschnelli> https://github.com/bitcoin/bitcoin/issues/8279
+19:08:51 <gmaxwell> sipa: I think all of these changes are beneficial.
+19:08:52 <kanzure> this is separate from the malleability confusion someone posted about the other day, ya?
+19:09:07 <luke-jr> sipa: making feefilter mandatory, or merely always using it?
+19:09:14 <instagibbs> kanzure, the linked github issue explains it
+19:09:31 <sipa> luke-jr: you need to be able to rely on it, and be able to ban peers who disregard it
+19:09:33 <gmaxwell> luke-jr: me means giving it an ack message and punting peers that violate it.
+19:10:00 <sipa> luke-jr: as you're moving the responsibility for filtering things you won't accept to the sender
+19:10:22 <luke-jr> ok, so <0.12 nodes wouldn't be kicked
+19:10:28 <gmaxwell> right.
+19:10:31 <petertodd> segwit is a good opportunity to make feefilter mandatory, given we're completely changing what nodes we connect too
+19:10:34 <kanzure> instagibbs: for example; someone was unaware that adding witness data to a non-segwit script was consensus-invalid.  but er, your link seems more productive anyway, so nevermind.
+19:11:05 <btcdrak> petertodd: i think that is the plan
+19:11:20 <sipa> yes, but it seems hasty to do that along with 0.13.1
+19:11:58 <gmaxwell> in any case, "verify all inputs" was a proposal from before segwit was even imagined.
+19:12:00 <petertodd> sipa: sure, but 0.13.1 also "hastily" has to stop fetching stuff from non-segwit nodes
+19:12:19 <sipa> petertodd: by hasty i mean we haven't implemented/tested/... a mandatory feefilter yet
+19:12:29 <sipa> we have tested the relay behaviour of segwit vs non-segwit peers
+19:13:21 <gmaxwell> I believe the primary reason we didn't just make the verify all inputs change is that it was proposed before feefilter, during spam attacks, and there was a lot of rejected stuff coming from even cooperative peers. That should be resolving now.
+19:13:23 <petertodd> sipa: but thats the thing, you can just make it mandatory if the peer is a segwit peer, and leave the current behavior the same otherwise - non-segwit peers can't send us segwit txs at all (other than ones stripped of their witnesses which is easy to detect)
+19:13:59 <sipa> petertodd: we still need a new network message etc
+19:14:13 <sipa> otherwise peers can just ignore your feefilter
+19:14:29 <petertodd> sipa: maybe I'm missing something, but why do we need a new network message?
+19:14:31 <luke-jr> sipa: I think petertodd is saying "segwit peers MUST NOT ignore feefilter"
+19:14:48 <gmaxwell> petertodd: because the protocol is async, we don't know if the far end has recieved our feefilter request yet.
+19:14:50 <sipa> petertodd: you don't know what the last feefilter message you sent is that your peer received
+19:15:15 <petertodd> sipa: ah right, duh...
+19:15:26 <gmaxwell> so you send a feefilter, remote sends an inv.. you get the data.. oops failed filter.. Was the far end bad or just too fast?
+19:15:56 <gmaxwell> so the suggestion there is to add a feefilterack, and punt peers that should send it but don't send it 'fast enough'
+19:15:59 <petertodd> sipa: I had it in my head that feefilter worked the other way around, and already had a new inv with fee info...
+19:15:59 <luke-jr> are there any possible nodes where implementing feefilter would be a burden? I think we already need fee info to relay transactions anyway, right?
+19:16:31 <gmaxwell> luke-jr: yes, thats part of the consideration.
+19:16:54 <sipa> i expect that most of the problems are solved with just having feefilter
+19:17:27 <sipa> and we can just do #8525 now
+19:17:34 <luke-jr> hm, what if we change feerate's definition and want to get rid of the current algo some day?
+19:17:36 <sipa> (don't store witness txn in the reject cache)
+19:17:54 <gmaxwell> I think we should be able to always validate now that feefilter is in place. The only argument I recall against always validating is that that a significant fraction of all recieved txn failed the fee check. That should be much less true now.
+19:17:59 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8525
+19:18:16 <petertodd> sipa: that could be a problem in the future if we have peers with different non-fee-related acceptance criteria than us
+19:18:25 <CodeShark> I kinda like the idea of an inv with fee data - slightly larger messages but no need for state
+19:18:30 <gmaxwell> reject cache was 90% implemented for lack of a fee filter.
+19:18:43 <sipa> gmaxwell: that would open up many attacks... i don't think those are impossible to fix, but it needs a lot of analysis
+19:18:54 <gmaxwell> I disagree.
+19:19:21 <sipa> i like the idea of always validating (as #8593 does), but it feels risky
+19:19:27 <gmaxwell> An uncached UTXO lookup eclipses the validation costs on most systems by orders of magnitude.
+19:19:51 <petertodd> gmaxwell: yeah, I don't see how an attacker who can DoS attack by sending specially crafted txs is ever stopped by the other validation rules, and yes, UTXO looking is expensive too
+19:20:12 <CodeShark> can't we consider extreme cases?
+19:20:31 <CodeShark> what's the maximum possible validation cost for a single transaction?
+19:21:01 <sipa> huge... remember we can't have any feerate or size based rejection criteria beforehand
+19:21:33 <gmaxwell> well you can have a stripped size limit.
+19:21:54 <sipa> yes, #8593 does that
+19:21:59 <sipa> but you can't use fee
+19:22:19 <sipa> or at least not actual feerate, only stripped-size-feerate
+19:22:53 <CodeShark> I'm not sure if this is what petertodd was referring to above - but I was imagining an inv that sends not just transaction hash - it also sends fee amount and tx size
+19:23:11 <petertodd> sipa: so, an attacker who was trying to DoS attack you would just pay enough fee, with a tx that triggered O(n^2) complexity
+19:23:31 <petertodd> sipa: so I don't see the value of feerate in preventing DoS attack there anyway
+19:23:41 <sipa> an attacker can now craft a very expensive valid transaction that has a feerate too low to be acceptable to you, but stripped-size-feerate high enough
+19:23:50 <sipa> and you'll validate it, but not relay
+19:24:43 <gmaxwell> CodeShark: improved invs are a fine thing, longer term (though we should be spending our time on reconcillation, IMO) -- but I think the focus of the discussion is on shorter term since we likely need some improvements for 0.13.
+19:24:47 <petertodd> right, but relaying is worse! we're then attacking others, and there's still no guarantee the tx will get mined, allowing the attacker to doublespend and repeat
+19:25:03 <sipa> petertodd: well in no case will any of this relay
+19:25:16 <gmaxwell> An alternative jl2012 suggested to validating all was to randomly validate some percentage. This will allow you to punt a peer sending you garbage, but you only take a fraction of the cost.
+19:26:11 <CodeShark> gmaxwell: it seems simpler to just create a new static inv structure than to have to manage session states and do feefilteracks and stuff like that
+19:26:41 <petertodd> sipa: sure, so then why not kick peers that send us DoS attack txs? IsStandard() has been around long enough that we could get away with that
+19:27:04 <sipa> CodeShark: i think mandatory feefilter is a better solution than adding 10 kB of data to each inv
+19:27:10 <gmaxwell> CodeShark: not so, right now inv bandwidth is already _greater_ than transaction bandwidth. You can't really escape the need to have people not send you things you're totally disinterested in.
+19:28:05 <CodeShark> 10kB of data?
+19:28:26 <CodeShark> the fee is uint64 and the tx size is varint
+19:28:35 <sipa> CodeShark: txid, wtxid, fee, feerate, stripped feerate, size, sigops, bytes hashed, ... anything else that may affect your policy
+19:28:48 <CodeShark> ok, fair enough
+19:28:56 <sipa> inv bandwidth is larger than tx bandwidth by a factor of 5 on my node
+19:29:05 <luke-jr> sipa: let's make it configurable! /s
+19:29:25 <sipa> and that's between feefilter nodes
+19:30:22 <sipa> so... do we think jl2012's approach of validating everything (or a fraction thereof) is the way to go for 0.13.1
+19:30:25 <sipa> ?
+19:30:36 <CodeShark> I haven't done the math
+19:30:36 <sipa> the code is simple at least
+19:30:48 <sipa> CodeShark: getpeerinfo
+19:30:54 <sipa> shows bytes per message
+19:30:56 <gmaxwell> This is why I think we need reconciliation for any inv improvement long term.
+19:31:04 <sipa> yes
+19:31:13 <sipa> but the meeting time is half, let's not stray too far
+19:31:21 <sipa> i'd like to know what we're going to do for 0.13.1
+19:31:26 <instagibbs> sipa, your guess is as ~~good as~~ better than mine
+19:31:28 <CodeShark> sipa: I mean, I haven't done the math for validation cost edge cases
+19:31:35 <gmaxwell> sipa: I jl2012's sampling suggestion is a pretty good idea, coupled with not reject filtering them.
+19:32:22 <sipa> gmaxwell: right... either fully validate, or don't store in reject
+19:32:41 <sipa> i like
+19:32:53 <sipa> ok, other topics?
+19:32:55 <petertodd> I suspect we'd be better off kicking peers who send us >100KB txs
+19:33:09 <petertodd> (rather than any kind of probabalistic thing)
+19:33:28 <afk11> hardware signing BIP?
+19:33:50 <sipa> there were a few other topic ideas before
+19:34:18 <wumpus> #topic code signing
+19:34:19 <petertodd> afk11: that's off-topic to Bitcoin Core development right now
+19:34:20 <gmaxwell> petertodd: yes, we can do that-- and I think we should--, but I think it's not sufficient.
+19:34:21 <wumpus> @cfields_
+19:34:37 <wumpus> petertodd: it's on topic for the future though
+19:34:39 <petertodd> gmaxwell: well, I mean in combination with fully validating
+19:34:49 <petertodd> wumpus: sure, why I said "right now" :)
+19:34:52 <gmaxwell> petertodd: okay. lets talk after meeting.
+19:35:02 <cfields_> so, i just wanted to bring this up before i finish the work, in case anyone has any suggestions for improvements
+19:35:04 <cfields_> https://github.com/theuni/osx-codesign
+19:35:21 <cfields_> I have a working codesigner for osx from linux, so an osx machine is no longer needed for the release process
+19:35:38 <gmaxwell> \O/
+19:35:47 <sipa> great
+19:35:48 <cfields_> but i'm curious to see if anyone has any suggstions for more complicated/distributed signing schemes, before just implementing it as it was before
+19:35:55 <CodeShark> cfields_: nice
+19:35:57 <btcdrak> cfields_ except for extracting the MacOS SDK...
+19:35:58 <jonasschnelli> cfields_: very nice. Lots of devs are looking for something!
+19:36:01 <jonasschnelli> like that
+19:36:05 <wumpus> cfields_: nice work!
+19:36:26 <sipa> cfields_: what cryptography does it use?
+19:36:28 <cfields_> (as of now it produces valid signed binaries given very specific constraints, it just needs to be tidied up and plugged into gitian)
+19:36:48 <luke-jr> cfields_: plugged into gitian?
+19:36:53 <petertodd> cfields_: nice license!
+19:37:10 <jonasschnelli> GNU AFFERO GENERAL PUBLIC LICENSE,... hell!
+19:37:25 <gmaxwell> :)
+19:37:41 * luke-jr agrees it's a good choice of license. ☺
+19:37:41 <cfields_> sipa: there's no choice in that, i haven't even looked into the signature type
+19:37:54 <gmaxwell> If it is RSA or schnorr we can secret share the key.
+19:38:14 <cfields_> sipa: it basically collects all of the files to be embedded, creates a custom wonky structure out of them, signs, and embeds the final hash in the binary
+19:38:21 <petertodd> jonasschnelli: I like AGPL because I'm not stinkin' commie
+19:38:39 <cfields_> along with a mostly redundant detached xml with the same hashes
+19:38:45 <gmaxwell> cfields_: how are you signing if you don't know how it's signing? :)
+19:39:01 <cfields_> sorry, not my license choice. 99% of the code is borrowed from an ios tool
+19:39:31 <jonasschnelli> I guess you need to update "sudo xcode-select --switch /Applications/Xcode-4.6.3.app"
+19:39:35 <cfields_> gmaxwell: PKCS7_sign(), openssl does the hard work :)
+19:39:37 <gmaxwell> nothing wrong with AGPL for a tool like this, licensing is a tool.
+19:39:38 <jonasschnelli> Hard to download older version of Xcode
+19:39:47 <gmaxwell> cfields_: how big is the signature? :P
+19:40:23 <cfields_> gmaxwell: i can dump you some samples after the meeting
+19:40:44 <gmaxwell> great, in any case, I'd like to talk about integrating multiparty signing into it. it might be easy to accomplish.
+19:40:47 <cfields_> but back to the point: is anyone interested in coming up with a signing scheme that deviates from what we have now?
+19:41:11 <cfields_> oh, i suppose that's why you want to know about sig type :)
+19:41:18 <gmaxwell> Yes.
+19:41:23 <sipa> yes.
+19:41:28 <jonasschnelli> gmaxwell: my OSX code signing certs are RSA 2048 Bit
+19:41:45 <michagogo> cfields_: your signer is missing a README
+19:41:50 <petertodd> cfields_: I'm already working on codesigning as my first application for dex
+19:42:01 <sipa> oh, let's just switch bitcoin to use prime factoring as PoW
+19:42:11 <cfields_> same here, what i'm not sure about is how much you're allowed to change around the sig format
+19:42:44 <cfields_> (for osx, the signing cert must be signed by apple)
+19:42:49 <wumpus> yes, IIRC PKCS7 is simply RSA wrapped in ASN.1 mess
+19:43:12 <cfields_> yes
+19:43:25 <cfields_> and apple adds a weird little scripting language around 'designated requirements'
+19:43:35 <wumpus> congrats on cracking that :)
+19:43:37 <sipa> cfields_: well there could be several signers, and we get a cert for the combined key?
+19:43:50 <jonasschnelli> The question is, does code-signing really increases the security of bitcoin-core...
+19:44:05 <cfields_> so you can add other restrictions, but again, i'm not sure how much apple lets you deviate from the default
+19:44:11 <luke-jr> jonasschnelli: imagine where common gitian builders all sign themselves and combine the sig
+19:44:12 <gmaxwell> the straightforward way of doing threshold RSA needs a trusted dealer. but at least its multiparty after setup.
+19:44:19 <petertodd> jonasschnelli: I suspect the code-signature-verification is what increases the security of bitcoin-core :)
+19:44:34 <jonasschnelli> petertodd: i rather say verifing of gitian signatures...
+19:44:44 <luke-jr> jonasschnelli: essentially we'd get the OS to verify the gitian builds in this case
+19:44:45 <cfields_> jonasschnelli: yes and no. the code-signing itself, not really. but code-signing does allow you to force-on the osx sandbox, which is interesting for security
+19:44:49 <jonasschnelli> OSX code signatures are from "Bitcoin Foundation"... anyone could hold the key
+19:45:03 <sipa> i'm sure we can get a new cert
+19:45:08 <petertodd> jonasschnelli: the gitian signatures aren't ever going to be much more secure than the code signatures
+19:45:11 <jonasschnelli> cfields_: Yes. But thats just a restrriction from apple...
+19:45:13 <cfields_> jonasschnelli:  (we haven't messed with the sandboxing yet, afaik)
+19:45:18 <jonasschnelli> and sandboxing is impossible for bitcoin core right now
+19:45:23 <petertodd> jonasschnelli: also, lots of people don't use the gitian builds (I've never personally run one)
+19:45:26 <gmaxwell> We can get a new cert and we should improve the maintaince of it so no one person needs to hold the key-- it's a good practice.
+19:45:45 <kanzure> someone should make sure to watch petertodd do a gitian build in milan :)
+19:45:48 <cfields_> jonasschnelli: ah ok, i've been meaning to look into it. if you already have, i'm very curious to hear your thoughts after the meeting
+19:46:28 <jonasschnelli> cfields_: sure. But nice work! Linux based OSX/iOS code signing is highly appriciated by lots of devs.
+19:46:33 <cfields_> just to reiterate though: osx-codesign is 99% ripped from a tool from Saurek. I just ported to osx and updated.
+19:46:39 <kanzure> saurik
+19:46:46 <cfields_> *Saurik. Thanks.
+19:47:04 <sipa> saurik?
+19:47:09 <cfields_> jonasschnelli: right, mostly I got tired of having to have my macbook for signing.
+19:47:16 <kanzure> /whois saurik
+19:47:23 <cfields_> and it limits the amount of people who can do the signing
+19:47:36 <jonasschnelli> Indeed
+19:47:46 <jonasschnelli> though you can run a OSX VM on a Linux machine. :)
+19:47:57 <cfields_> heh
+19:47:58 <jonasschnelli> (and violate apples TOC)
+19:48:02 * luke-jr peers at his common channels with saurik
+19:48:06 <gmaxwell> cfields_: so I think good job, continue on, and I (and sipa?) will look into threshold signing for 2048 bit RSA and see if we can't get it so that no single party holds that key.
+19:48:18 <kanzure> sipa: he is known for various ios reverse engineering things
+19:48:22 <CodeShark> is 4096 overkill?
+19:48:23 <sipa> ah, cool
+19:48:25 <cfields_> gmaxwell: perfect, thanks.
+19:48:31 <gmaxwell> (as an aside, this could also be done with wumpus' release key)
+19:48:37 <jeremyrubin> 4096 not overkill
+19:48:38 <kanzure> sipa: (pm)
+19:49:03 <sipa> CodeShark: 3000 bits RSA is approximately equivalent with 256 bit EC
+19:49:05 <jonasschnelli> CodeShark: 2048 gives use 118bit of security.. ECDSA 128 I guess... enought?
+19:49:09 <gmaxwell> CodeShark: I believe we don't get to choose the parameters of this key.
+19:49:18 <jonasschnelli> Yes. Apples does it.
+19:49:22 <CodeShark> oh, right
+19:49:29 <gmaxwell> Otherwise it would be 4096 bit. because duh.
+19:49:37 <cfields_> gmaxwell: i'll try to find out if other signature types are possible.
+19:49:45 * jonasschnelli is trying a 4096 key
+19:49:48 <gmaxwell> (the size and performance are basically irrelevant)
+19:51:00 <jeremyrubin> unrelated question while everyone is in meeting: having a lot of trouble getting my code to pass travis, but can pass locally on a few diff machines. If anyone has any ideas, ping me after meeting.
+19:51:21 <jonasschnelli> To shortly come back to afk11 topic: there has been a proposal for detached signing: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-August/013008.html
+19:51:25 <kanzure> jeremyrubin: got the core dumps yet?
+19:51:34 <jonasschnelli> Which would allow decoupling the keys from the wallet(system)
+19:51:50 <jeremyrubin> kanzure: nope; i tried changing the travis script to dump them but couldn't see anything.
+19:52:19 <kanzure> you can probably call gdb bt from inside the after_failure segment
+19:52:21 <jonasschnelli> to end the wild-west APIs/interfaces that are currently been implemented by wallets and hardware-wallet vendors
+19:52:26 <wumpus> I very much like the idea of standardizing detached signing
+19:52:32 <wumpus> yes, exactly
+19:52:54 <jonasschnelli> One of the main problems users have and will have with wallets is to keep private keys private.
+19:53:29 <wumpus> it makes no sense to try to support detached signing in bitcoin core until there is some kind of standard, if every hw vendor is going to hook in their own code in their own way it isgoing to be a mess
+19:53:42 <btcdrak> jonasschnelli: well you'd hope hardware signing devices will become more commonplace
+19:53:53 <CodeShark> they will
+19:54:04 <instagibbs> 7 minutes, any more topics?
+19:54:08 <CodeShark> it's not something we should hope for - it's something we should make happen
+19:54:08 <wumpus> no doubt about that, though it's two-sided, software also needs to support them
+19:54:09 <jonasschnelli> Yes. I proposed the URLScheme standard... even, I don't like it in the first place.. but its probably the only choice if we'd like to address all systems and platforms.
+19:54:21 <wumpus> CodeShark: jonasschnelli is helping make it happen
+19:54:28 <sipa> the topic is still codesigning :)
+19:54:45 <petertodd> btcdrak: also note that in systems like Qubes, detached signing in another VM is a significant security improvement even w/o special hardware
+19:54:47 <btcdrak> yes. detached signing is more for the bitcoin-dev ML
+19:54:58 <petertodd> btcdrak: Qubes does this for GPG already
+19:55:04 <gmaxwell> jonasschnelli: I think at this point the discussion should stop and some prototypes should be tried. You've seen there is some support and some opposition, and thats fine.
+19:55:04 <wumpus> do we still have anything to say about codesigning?
+19:55:07 <btcdrak> petertodd: interesting
+19:55:24 <jonasschnelli> gmaxwell: Yes. I'm working on a PoC with static data between Core and iOS.
+19:55:40 <sipa> wumpus: i believe not, i was only casually complaining about the random switch of topic :)
+19:55:58 <jonasschnelli> my fault. sry.
+19:56:10 <gmaxwell> jonasschnelli: okay, even simpler-- I think we should change our standard operation to have walletpassphrase and decrypt and sign done by a seperate mlocked process.
+19:56:22 <wumpus> petertodd: yes, it should be general enough to support that scenario as well, but I think that's handled if it works for hw signing, just expose a 'virtual' hw device
+19:56:31 <wumpus> sipa: agreed, it's a bit of a sudden switch
+19:56:54 <wumpus> time to end the meeting maybe
+19:57:10 <wumpus> #endmeeting
