@@ -1,0 +1,403 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:57</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Sep  1 19:01:57 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:57</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:21</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-5"></a><span class="tm">19:02:47</span><span class="nk"> &lt;sipa&gt;</span> remaining 0.13.1 issues
+<a name="l-6"></a><span class="tm">19:02:48</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:03:00</span><span class="nk"> &lt;instagibbs&gt;</span> present
+<a name="l-8"></a><span class="tm">19:03:03</span><span class="nk"> &lt;wumpus&gt;</span> there are lots of 0.13.1-tagged pull requests open, any that should be prioritized for review?
+<a name="l-9"></a><span class="tm">19:03:04</span><span class="nk"> &lt;jeremyrubin&gt;</span> present
+<a name="l-10"></a><span class="tm">19:03:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> in fact, some conflict
+<a name="l-11"></a><span class="tm">19:03:19</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. what should go in first)
+<a name="l-12"></a><span class="tm">19:03:24</span><span class="nk"> &lt;wumpus&gt;</span> yes, I thought so
+<a name="l-13"></a><span class="tm">19:03:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/milestones/0.13.1
+<a name="l-14"></a><span class="tm">19:03:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/milestones/0.13.1</span>
+<a name="l-15"></a><span class="tm">19:04:04</span><span class="nk"> &lt;sipa&gt;</span> 8393 (segwit + compact blocks) is a big blocker
+<a name="l-16"></a><span class="tm">19:04:07</span><span class="nk"> &lt;jeremyrubin&gt;</span> I'd like to mention that my Checkqueue Lockfree is passing tests, would like to hear what people need to see for it to merge (will be restructuing my commits later today.tomorrow)
+<a name="l-17"></a><span class="tm">19:04:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">remaining 0.13.1 issues</span>
+<a name="l-18"></a><span class="tm">19:04:32</span><span class="nk"> &lt;jeremyrubin&gt;</span> (also can't stick around meeting past 12:15 FYI)
+<a name="l-19"></a><span class="tm">19:04:38</span><span class="nk"> &lt;sipa&gt;</span> beyond that, we still need to choose a solution to the mempool dos issue around segwit
+<a name="l-20"></a><span class="tm">19:04:51</span><span class="nk"> &lt;instagibbs&gt;</span> yes cb and then dos issues are probably 2 biggest?
+<a name="l-21"></a><span class="tm">19:04:58</span><span class="nk"> &lt;sipa&gt;</span> this has been brought uo several times the past few meetings
+<a name="l-22"></a><span class="tm">19:05:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">#8393 (segwit + compact blocks) is a blocker, needs review testing and be merged</span>
+<a name="l-23"></a><span class="tm">19:05:10</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> do we think that the BIP for cb+segwit is basically in final substantive form?  i saw there were some language discussions
+<a name="l-24"></a><span class="tm">19:05:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> matt had more comments on the bip, but just on wording, not on semantics
+<a name="l-25"></a><span class="tm">19:05:40</span><span class="nk"> &lt;jtimon&gt;</span> sorry what was cb ?
+<a name="l-26"></a><span class="tm">19:05:45</span><span class="nk"> &lt;instagibbs&gt;</span> compact blocks
+<a name="l-27"></a><span class="tm">19:05:46</span><span class="nk"> &lt;sipa&gt;</span> compact blocks
+<a name="l-28"></a><span class="tm">19:05:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jeremyrubin:</span> great to hear it is passing the tests, we can talk about the topic later, but not if you have to leave that soon probably
+<a name="l-29"></a><span class="tm">19:05:50</span><span class="nk"> &lt;jtimon&gt;</span> compact blocks
+<a name="l-30"></a><span class="tm">19:05:54</span><span class="nk"> &lt;jtimon&gt;</span> sorry
+<a name="l-31"></a><span class="tm">19:05:56</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> ok, i intend to review/test 8393 soon
+<a name="l-32"></a><span class="tm">19:06:00</span><span class="nk"> &lt;sipa&gt;</span> thank you
+<a name="l-33"></a><span class="tm">19:06:05</span><span class="nk"> &lt;sipa&gt;</span> beyond that, the dos issue
+<a name="l-34"></a><span class="tm">19:06:24</span><span class="nk"> &lt;sipa&gt;</span> i'm not confortable with the previous suggestion of fully validating everything
+<a name="l-35"></a><span class="tm">19:06:35</span><span class="nk"> &lt;sipa&gt;</span> as a change for a minor point release
+<a name="l-36"></a><span class="tm">19:06:45</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">wumpus:</span> I'll try to swing back in the last few minutes of the meeting if possible?
+<a name="l-37"></a><span class="tm">19:07:18</span><span class="nk"> &lt;wumpus&gt;</span> it's a major change to how things have been done for the last few versions, that's for sure
+<a name="l-38"></a><span class="tm">19:07:37</span><span class="nk"> &lt;sdaftuar&gt;</span> so in a previous IRC meeting morcos had suggested mandatory feefilter + rejection cache only for non-witness tx, is that right?
+<a name="l-39"></a><span class="tm">19:07:50</span><span class="nk"> &lt;sipa&gt;</span> so that leaves us with not storing witness txn in the rejection cache, feefilter (possibly mandatory), and heuristics to detect invalid bloating before validation
+<a name="l-40"></a><span class="tm">19:07:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> shouldn't we tag https://github.com/bitcoin/bitcoin/issues/8279 for 0.13.1?
+<a name="l-41"></a><span class="tm">19:08:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes, there have been other suggestions in other talks to
+<a name="l-42"></a><span class="tm">19:09:01</span><span class="nk"> &lt;luke-jr&gt;</span> I feel like I don't fully understand the issue, but couldn't the rejection cache use the [witness] hash instead of txid?
+<a name="l-43"></a><span class="tm">19:09:19</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> that's the approach i prefer, but it requires redoing tx relay to use wtxid, which is probably a big change
+<a name="l-44"></a><span class="tm">19:10:03</span><span class="nk"> &lt;sdaftuar&gt;</span> (and i don't think anyone has started work on it)
+<a name="l-45"></a><span class="tm">19:10:07</span><span class="nk"> &lt;sipa&gt;</span> yes, that's a bigger change, and there are complications
+<a name="l-46"></a><span class="tm">19:10:13</span><span class="nk"> &lt;sipa&gt;</span> like duplicating several indexes
+<a name="l-47"></a><span class="tm">19:10:30</span><span class="nk"> &lt;sipa&gt;</span> and always risking downloading twice, because old nodes may announce using the txid
+<a name="l-48"></a><span class="tm">19:10:50</span><span class="nk"> &lt;sipa&gt;</span> twice is better than $CONNECTIONS times, but still
+<a name="l-49"></a><span class="tm">19:11:04</span><span class="nk"> &lt;luke-jr&gt;</span> old nodes won't relay witness transactions at all.. (or if they do, they'll be incomplete)
+<a name="l-50"></a><span class="tm">19:11:07</span><span class="nk"> &lt;gmaxwell&gt;</span> On CB, I'm due to test the latest version-- I had tested the earlier version.. just been testing other things recently. Those things are now merged.
+<a name="l-51"></a><span class="tm">19:11:42</span><span class="nk"> &lt;sipa&gt;</span> i very much like the idea of mandatory feefilter
+<a name="l-52"></a><span class="tm">19:11:47</span><span class="nk"> &lt;CodeShark&gt;</span> me too
+<a name="l-53"></a><span class="tm">19:11:57</span><span class="nk"> &lt;sipa&gt;</span> moving the responsibiloty of resource cost to the sender
+<a name="l-54"></a><span class="tm">19:12:19</span><span class="nk"> &lt;jtimon&gt;</span> can someone summarize the idea?
+<a name="l-55"></a><span class="tm">19:12:19</span><span class="nk"> &lt;CodeShark&gt;</span> it's the least hackish approach
+<a name="l-56"></a><span class="tm">19:12:20</span><span class="nk"> &lt;sdaftuar&gt;</span> would we get rid of free tx relay at the same time, or not necessarily?
+<a name="l-57"></a><span class="tm">19:12:45</span><span class="nk"> &lt;gmaxwell&gt;</span> I think mandatory feefilter should be done, though I think it is not as much of a silverbullet as some thing. Feerate is only one of several resource related limitations that get imposed.
+<a name="l-58"></a><span class="tm">19:12:47</span><span class="nk"> &lt;sipa&gt;</span> but are we fine for 0.13.1 with only rejection cache for non-witness, and heuristics for detecting invalid witness bloating for the most common transaction types
+<a name="l-59"></a><span class="tm">19:12:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> would be nice to get rid of that code
+<a name="l-60"></a><span class="tm">19:13:01</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> i don't object in theory, but it's a sudden change for a point release
+<a name="l-61"></a><span class="tm">19:13:03</span><span class="nk"> &lt;gmaxwell&gt;</span> s/thing/think/
+<a name="l-62"></a><span class="tm">19:13:08</span><span class="nk"> &lt;CodeShark&gt;</span> what sort of heuristics?
+<a name="l-63"></a><span class="tm">19:13:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> agree
+<a name="l-64"></a><span class="tm">19:13:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> sure, i wouldnt recommend it for that
+<a name="l-65"></a><span class="tm">19:13:16</span><span class="nk"> &lt;jtimon&gt;</span> just stop allowing free transactions?
+<a name="l-66"></a><span class="tm">19:13:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> in practice it's not enabled in any case.
+<a name="l-67"></a><span class="tm">19:13:28</span><span class="nk"> &lt;jtimon&gt;</span> s/allowing/relaying/
+<a name="l-68"></a><span class="tm">19:13:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> we effectively already do...
+<a name="l-69"></a><span class="tm">19:13:35</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, it's about particular feerate, not just free
+<a name="l-70"></a><span class="tm">19:13:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> check whether the witness program's embedded scriot hash matches the hash of the witness script, for example
+<a name="l-71"></a><span class="tm">19:13:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> they're already not relayed on nodes that are up for more than a few hours.
+<a name="l-72"></a><span class="tm">19:13:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jtimon:</span> because mempools are full
+<a name="l-73"></a><span class="tm">19:13:55</span><span class="nk"> &lt;jtimon&gt;</span> so what's the mandatory feefilter changing?
+<a name="l-74"></a><span class="tm">19:13:57</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, yes that would be an easy fix, early on
+<a name="l-75"></a><span class="tm">19:14:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> there is a PR for this
+<a name="l-76"></a><span class="tm">19:14:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">"mempoolminfee":</span> 0.00001812
+<a name="l-77"></a><span class="tm">19:14:19</span><span class="nk"> &lt;instagibbs&gt;</span> is that jls? I can't remember
+<a name="l-78"></a><span class="tm">19:14:24</span><span class="nk"> &lt;jtimon&gt;</span> if it's too long to summarize that's fine
+<a name="l-79"></a><span class="tm">19:14:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> yes, on a phonr, i can't seatch the pr number
+<a name="l-80"></a><span class="tm">19:14:49</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#8593</span><span class="cmdline"></span>
+<a name="l-81"></a><span class="tm">19:15:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> mandatory feefilter is that you can ban a node if it does not obey the feefilter you sent it
+<a name="l-82"></a><span class="tm">19:15:02</span><span class="nk"> &lt;sdaftuar&gt;</span> so mandatory fee filter would only apply to witness transactions?
+<a name="l-83"></a><span class="tm">19:15:11</span><span class="nk"> &lt;sdaftuar&gt;</span> er, NODE_WITNESS peers?
+<a name="l-84"></a><span class="tm">19:15:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> that's a possibility
+<a name="l-85"></a><span class="tm">19:15:23</span><span class="nk"> &lt;instagibbs&gt;</span> he moves full input validation up front in #8539
+<a name="l-86"></a><span class="tm">19:15:30</span><span class="nk"> &lt;sdaftuar&gt;</span> it doesn't make sense otherwise, we can't stop relaying transactions from older clients right
+<a name="l-87"></a><span class="tm">19:15:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> oh, no, not that one
+<a name="l-88"></a><span class="tm">19:15:43</span><span class="nk"> &lt;instagibbs&gt;</span> would be abusive to disconnect older nodes imo
+<a name="l-89"></a><span class="tm">19:15:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> It has to be negoiated somehow, node witness would be one way.. though a bit disruptive on testnet.
+<a name="l-90"></a><span class="tm">19:16:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> no one is going to do that.
+<a name="l-91"></a><span class="tm">19:16:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> full validation has some kinks to work out; something for 0.14 imho
+<a name="l-92"></a><span class="tm">19:16:11</span><span class="nk"> &lt;luke-jr&gt;</span> mandatory feefilter seems liable to cause issues with 1) diverging fee policies; 2) ancestor feerate (CPFP) relay stuff
+<a name="l-93"></a><span class="tm">19:16:14</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I see, thanks, like an additional filter per peer
+<a name="l-94"></a><span class="tm">19:16:16</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> well you could gate it on something else (protocol version/message/whatever), but I'm not against fucking up testnet to do it for NODE_WITNESS
+<a name="l-95"></a><span class="tm">19:16:31</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, I don't see the PR you are talking about then
+<a name="l-96"></a><span class="tm">19:17:12</span><span class="nk"> &lt;sdaftuar&gt;</span> conceptually though: the idea is that we only download witness transactions from peers with whom we've negotiated mandatory feefilter semantics?
+<a name="l-97"></a><span class="tm">19:17:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">instagibbs:</span> i think there is no PR right now for that proposal
+<a name="l-98"></a><span class="tm">19:17:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> that would be fine too.
+<a name="l-99"></a><span class="tm">19:17:37</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> yes
+<a name="l-100"></a><span class="tm">19:17:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> 8499
+<a name="l-101"></a><span class="tm">19:17:47</span><span class="nk"> &lt;sipa&gt;</span> yes there is
+<a name="l-102"></a><span class="tm">19:17:49</span><span class="nk"> &lt;instagibbs&gt;</span> oh that one
+<a name="l-103"></a><span class="tm">19:18:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Indeed:</span> https://github.com/bitcoin/bitcoin/pull/8499/files
+<a name="l-104"></a><span class="tm">19:18:20</span><span class="nk"> &lt;sipa&gt;</span> so, i would like to request review on 8499 and 8525
+<a name="l-105"></a><span class="tm">19:18:34</span><span class="nk"> &lt;sipa&gt;</span> neither of those is a policy change
+<a name="l-106"></a><span class="tm">19:18:35</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, can you tag that PR please #8499
+<a name="l-107"></a><span class="tm">19:18:47</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> will do
+<a name="l-108"></a><span class="tm">19:19:07</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-109"></a><span class="tm">19:19:15</span><span class="nk"> &lt;instagibbs&gt;</span> I will review 8499
+<a name="l-110"></a><span class="tm">19:19:38</span><span class="nk"> &lt;sipa&gt;</span> and untag 8593
+<a name="l-111"></a><span class="tm">19:20:15</span><span class="nk"> &lt;wumpus&gt;</span> done
+<a name="l-112"></a><span class="tm">19:20:38</span><span class="nk"> &lt;sipa&gt;</span> so the only remaining thing is enforcing feefilter stronger as sdaftuar suggests only for witness peers
+<a name="l-113"></a><span class="tm">19:20:53</span><span class="nk"> &lt;BlueMatt&gt;</span> I'd ACK that
+<a name="l-114"></a><span class="tm">19:20:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> CPFP relay is already inhibited to the maximum extent that it could be by feefilter in the current non-mandatory form. Improving that will require some kind of package relay. Mandatory fee filter won't make it worse.
+<a name="l-115"></a><span class="tm">19:20:57</span><span class="nk"> &lt;sipa&gt;</span> does that sound reasonable for 0.13.1?
+<a name="l-116"></a><span class="tm">19:21:07</span><span class="nk"> &lt;gmaxwell&gt;</span> FWIW, mandatory fee filter would couple well with 8525, rejection cache mostly exists due to a lack of feefilter.
+<a name="l-117"></a><span class="tm">19:21:22</span><span class="nk"> &lt;sipa&gt;</span> besides fixing known bugs, obviously
+<a name="l-118"></a><span class="tm">19:21:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> yup
+<a name="l-119"></a><span class="tm">19:21:29</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-120"></a><span class="tm">19:21:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> sure
+<a name="l-121"></a><span class="tm">19:21:45</span><span class="nk"> &lt;sipa&gt;</span> great
+<a name="l-122"></a><span class="tm">19:21:55</span><span class="nk"> &lt;sdaftuar&gt;</span> you started a PR that did that, yes?
+<a name="l-123"></a><span class="tm">19:22:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> not yet, i will
+<a name="l-124"></a><span class="tm">19:22:12</span><span class="nk"> &lt;sdaftuar&gt;</span> ok
+<a name="l-125"></a><span class="tm">19:22:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd like feelers (and my addrman insert fix) to get backported. (I'm happy to do the 'backport')  I think it will be important to have feelers to compensate for any loss of network density for witness enabled nodes.
+<a name="l-126"></a><span class="tm">19:22:29</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, ack
+<a name="l-127"></a><span class="tm">19:22:34</span><span class="nk"> &lt;sdaftuar&gt;</span> sounds reasonable
+<a name="l-128"></a><span class="tm">19:22:51</span><span class="nk"> &lt;sipa&gt;</span> ack on backporting feelers
+<a name="l-129"></a><span class="tm">19:22:59</span><span class="nk"> &lt;sdaftuar&gt;</span> curious to know if anyone has experimented with that on testnet and has any results?
+<a name="l-130"></a><span class="tm">19:23:17</span><span class="nk"> &lt;sipa&gt;</span> i think it will take a while for network wide effects of feelers to become visible
+<a name="l-131"></a><span class="tm">19:23:41</span><span class="nk"> &lt;sdaftuar&gt;</span> oh maybe i misunderstood, i thought your own node would benefit from that by itself?
+<a name="l-132"></a><span class="tm">19:23:43</span><span class="nk"> &lt;sipa&gt;</span> and testnet is not particularly in a sane p2p state
+<a name="l-133"></a><span class="tm">19:23:49</span><span class="nk"> &lt;CodeShark&gt;</span> if a node with low feefilter connects to peers that all have a higher feefilter the higher filters would dominate. is that a problem?
+<a name="l-134"></a><span class="tm">19:23:53</span><span class="nk"> &lt;gmaxwell&gt;</span> we had repeated minor problems with isoloation on testnet early on when we deployed segwit there. I expect less of those on mainnet, and more proactive efforts to avoid them (eg spinning up nodes), but belt and suspenders is good.
+<a name="l-135"></a><span class="tm">19:24:01</span><span class="nk"> &lt;sipa&gt;</span> right, but indirectly the results of addr messages will get better too from feelers
+<a name="l-136"></a><span class="tm">19:24:12</span><span class="nk"> &lt;sipa&gt;</span> if the overall quality of addrmans improves
+<a name="l-137"></a><span class="tm">19:24:13</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> ah, yes
+<a name="l-138"></a><span class="tm">19:24:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> the filters are one way.  "Here is what you can send me"
+<a name="l-139"></a><span class="tm">19:24:21</span><span class="nk"> &lt;instagibbs&gt;</span> https://github.com/bitcoin/bitcoin/pull/8282
+<a name="l-140"></a><span class="tm">19:25:00</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">gmaxwell:</span> sure...but your peers would filter stuff you wanted to see
+<a name="l-141"></a><span class="tm">19:25:10</span><span class="nk"> &lt;sipa&gt;</span> next topic?
+<a name="l-142"></a><span class="tm">19:25:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> has nothing to do with fee filter.
+<a name="l-143"></a><span class="tm">19:25:14</span><span class="nk"> &lt;sipa&gt;</span> i'm in a mildly unconfortable position here (irl meetup in milan, where BlueMatt spoke)
+<a name="l-144"></a><span class="tm">19:25:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> peers already filter anything they won't relay.
+<a name="l-145"></a><span class="tm">19:26:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> you can irc from my laptop if you prefer
+<a name="l-146"></a><span class="tm">19:26:06</span><span class="nk"> &lt;jtimon&gt;</span> its kind of "please, don't bother sending me things below X or I'll disconnect from you"
+<a name="l-147"></a><span class="tm">19:26:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> no particular p2p protocol changes would be needed right now afaik (would just need to send the children first, and then teach the receiver to use the feerate including orphan txs)
+<a name="l-148"></a><span class="tm">19:27:40</span><span class="nk"> &lt;luke-jr&gt;</span> if we're not careful, mandatory feefilter could in practice make fee policy code as sensitive as consensus code
+<a name="l-149"></a><span class="tm">19:27:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> how?
+<a name="l-150"></a><span class="tm">19:28:08</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> I'm not following, how does the peer know your rate X
+<a name="l-151"></a><span class="tm">19:28:10</span><span class="nk"> &lt;jtimon&gt;</span> ?
+<a name="l-152"></a><span class="tm">19:28:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> if you change your fee policy code, you could be partitioned off from the other peers, no?
+<a name="l-153"></a><span class="tm">19:28:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> no
+<a name="l-154"></a><span class="tm">19:28:49</span><span class="nk"> &lt;instagibbs&gt;</span> suggested topic: "Extra" softforks low_s and nulldummy
+<a name="l-155"></a><span class="tm">19:28:59</span><span class="nk"> &lt;luke-jr&gt;</span> what am I missing?
+<a name="l-156"></a><span class="tm">19:29:06</span><span class="nk"> &lt;sdaftuar&gt;</span> only if you lie about it to your peers
+<a name="l-157"></a><span class="tm">19:29:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> ack topic
+<a name="l-158"></a><span class="tm">19:29:26</span><span class="nk"> &lt;jtimon&gt;</span> I believe low_s was discussed already?
+<a name="l-159"></a><span class="tm">19:29:30</span><span class="nk"> &lt;BlueMatt&gt;</span> am I missing something? isnt the feefilter potentially rather deanonymizing? we should probably round/randomize the amount somewhat, no? (or do we, I probably wouldnt know)
+<a name="l-160"></a><span class="tm">19:29:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> e.g. later we can add a package fee filter and nodes would signal a package fee filter of X, and a fee filter of 0.
+<a name="l-161"></a><span class="tm">19:29:42</span><span class="nk"> &lt;sipa&gt;</span> i believe it needs rediscussing (low_s)
+<a name="l-162"></a><span class="tm">19:29:46</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> good point
+<a name="l-163"></a><span class="tm">19:29:47</span><span class="nk"> &lt;instagibbs&gt;</span> BlueMatt, that's a good point
+<a name="l-164"></a><span class="tm">19:29:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> we do, but worht looking at again
+<a name="l-165"></a><span class="tm">19:29:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> we do.
+<a name="l-166"></a><span class="tm">19:30:08</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, nvm, ignore my ramblings
+<a name="l-167"></a><span class="tm">19:30:43</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> please keep rumbling out loud, I hadn't even thought about it, now seems obvious
+<a name="l-168"></a><span class="tm">19:30:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> but also, we really can make no guarentees that a single node with multiple interfaces can't be distinguished as the same node. There are several ways to do this. (obviously I'm happy to reduce them, but it's not a property we currently provide)
+<a name="l-169"></a><span class="tm">19:30:56</span><span class="nk"> &lt;sipa&gt;</span> (can we move on to next topic?)
+<a name="l-170"></a><span class="tm">19:31:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> it was specfically addressed in the original feefilter PR.
+<a name="l-171"></a><span class="tm">19:31:01</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> indeed, shame we dont
+<a name="l-172"></a><span class="tm">19:31:04</span><span class="nk"> &lt;jtimon&gt;</span> ack next topic
+<a name="l-173"></a><span class="tm">19:31:04</span><span class="nk"> &lt;BlueMatt&gt;</span> also, what sipa said
+<a name="l-174"></a><span class="tm">19:31:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ring topic bell? :)
+<a name="l-175"></a><span class="tm">19:31:25</span><span class="nk"> &lt;gmaxwell&gt;</span> we put wumpus to sleep.
+<a name="l-176"></a><span class="tm">19:31:41</span><span class="nk"> &lt;paveljanik&gt;</span> ;-)
+<a name="l-177"></a><span class="tm">19:31:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ring wumpus bell?
+<a name="l-178"></a><span class="tm">19:31:48 </span><span class="nka">* sdaftuar</span> <span class="ac">rings the wumpus bell</span>
+<a name="l-179"></a><span class="tm">19:31:51</span><span class="nk"> &lt;sipa&gt;</span> ok, i'll go on anyway
+<a name="l-180"></a><span class="tm">19:32:02</span><span class="nk"> &lt;paveljanik&gt;</span> I think that wumpus never sleeps
+<a name="l-181"></a><span class="tm">19:32:03</span><span class="nk"> &lt;jtimon&gt;</span> go sipa go
+<a name="l-182"></a><span class="tm">19:32:07</span><span class="nk"> &lt;sipa&gt;</span> so, the nulldummy and low_s softfork proposals
+<a name="l-183"></a><span class="tm">19:32:30</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="topic">#topic </span><span class="topicline">nulldummy and low_s softfork proposals</span>
+<a name="l-184"></a><span class="tm">19:32:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">nulldummy and low_s softfork proposals</span>
+<a name="l-185"></a><span class="tm">19:32:39</span><span class="nk"> &lt;sipa&gt;</span> it was discovered by jl that low_ has a really strange implementation issue leaked into the semantics
+<a name="l-186"></a><span class="tm">19:32:44</span><span class="nk"> &lt;jtimon&gt;</span> I don't remember any objections on low_s last time we discussed it?
+<a name="l-187"></a><span class="tm">19:32:56</span><span class="nk"> &lt;sipa&gt;</span> which is not an issue for standardness, but for consensus i think we prefer clean sema tics
+<a name="l-188"></a><span class="tm">19:33:01</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, https://github.com/bitcoin/bitcoin/pull/8533#issuecomment-243973512
+<a name="l-189"></a><span class="tm">19:33:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> are clean semantics even possible?
+<a name="l-190"></a><span class="tm">19:33:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">instagibbs:</span> thanks
+<a name="l-191"></a><span class="tm">19:33:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yes, if we also do the only-empty-signature-in-invalid-checksig sf
+<a name="l-192"></a><span class="tm">19:33:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> oh indeed okay, yes that would be clean
+<a name="l-193"></a><span class="tm">19:33:58</span><span class="nk"> &lt;sipa&gt;</span> which is why i'd propose that we do low_s later, together with that empty sigs rule
+<a name="l-194"></a><span class="tm">19:34:07</span><span class="nk"> &lt;sipa&gt;</span> and only bundle nulldummy with 0.13.1
+<a name="l-195"></a><span class="tm">19:34:19</span><span class="nk"> &lt;sipa&gt;</span> s/0.13.1/segwit/
+<a name="l-196"></a><span class="tm">19:34:23</span><span class="nk"> &lt;gmaxwell&gt;</span> The clenlyness issue is that lowS test fails for some encodings of invalid encodings.
+<a name="l-197"></a><span class="tm">19:34:37</span><span class="nk"> &lt;gmaxwell&gt;</span> er encodings of invalid signatures.
+<a name="l-198"></a><span class="tm">19:34:44</span><span class="nk"> &lt;sipa&gt;</span> yes, some illegal signatures are exempt from low_s
+<a name="l-199"></a><span class="tm">19:34:50</span><span class="nk"> &lt;BlueMatt&gt;</span> would be a shame, but seems like a reasonable approach...has anyone checked for the #/frequency of invalid sigs in the chain?
+<a name="l-200"></a><span class="tm">19:34:59</span><span class="nk"> &lt;BlueMatt&gt;</span> that are non-0-length, at least
+<a name="l-201"></a><span class="tm">19:35:04</span><span class="nk"> &lt;sipa&gt;</span> such signatures are NOT valid
+<a name="l-202"></a><span class="tm">19:35:15</span><span class="nk"> &lt;BlueMatt&gt;</span> but can bt OP_NOT'd, no?
+<a name="l-203"></a><span class="tm">19:35:23</span><span class="nk"> &lt;sipa&gt;</span> yes, but nobody sane does that
+<a name="l-204"></a><span class="tm">19:35:30</span><span class="nk"> &lt;sdaftuar&gt;</span> has NULLDUMMY been discussed on the mailing list yet?  i see one mention of it in passing about the LOW_S BIP.
+<a name="l-205"></a><span class="tm">19:35:32</span><span class="nk"> &lt;BlueMatt&gt;</span> sure, but /has/ anyone ever done so?
+<a name="l-206"></a><span class="tm">19:35:39</span><span class="nk"> &lt;sipa&gt;</span> "yes, this output can be spent UNLESS BlueMatt likes it"
+<a name="l-207"></a><span class="tm">19:35:46</span><span class="nk"> &lt;jtimon&gt;</span> no objections on delaying low_s enforcement
+<a name="l-208"></a><span class="tm">19:35:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> with the exception of intentional insanity, any invalid signature could be malleated to a zero length one, in any case.  I had looked previously and seen no ongoing checksig-not activity, obvious.
+<a name="l-209"></a><span class="tm">19:35:58</span><span class="nk"> &lt;BlueMatt&gt;</span> I might suggest that it is not crazy to propose doing it in 0.13.1 if it has never happened
+<a name="l-210"></a><span class="tm">19:36:29</span><span class="nk"> &lt;BlueMatt&gt;</span> indeed, I'm asking with the assumption that someone might have done intentional insantiy as a test-case or so
+<a name="l-211"></a><span class="tm">19:36:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> the only opractical difference is that the BIP to specify LOW_S would contain a rule that is pointless and complicating
+<a name="l-212"></a><span class="tm">19:36:40</span><span class="nk"> &lt;sipa&gt;</span> i think we should aboid that
+<a name="l-213"></a><span class="tm">19:36:43</span><span class="nk"> &lt;BlueMatt&gt;</span> (wait, it is non-stad to do non-0-length, correct?)
+<a name="l-214"></a><span class="tm">19:36:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> a checksig not has been done at least once in the chain history.
+<a name="l-215"></a><span class="tm">19:36:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> good question, petertodd has anybody done that? :p
+<a name="l-216"></a><span class="tm">19:36:57</span><span class="nk"> &lt;gmaxwell&gt;</span> By someone triggering a fork off of bitcoin ruby.
+<a name="l-217"></a><span class="tm">19:37:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> have you done that?
+<a name="l-218"></a><span class="tm">19:37:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> sure, but with 0-length, or with a non-emtpy sig
+<a name="l-219"></a><span class="tm">19:37:20</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, don't recall, we could check.
+<a name="l-220"></a><span class="tm">19:37:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> me personally, probably not - I'm a fine arts grad :P
+<a name="l-221"></a><span class="tm">19:37:38</span><span class="nk"> &lt;gmaxwell&gt;</span> But I don't think the test here should be none at all. If there was an obvious test someplace in the past, who cares?
+<a name="l-222"></a><span class="tm">19:37:46</span><span class="nk"> &lt;BlueMatt&gt;</span> (this would be immaterial if it is not already nonstd...which I do not recall)
+<a name="l-223"></a><span class="tm">19:37:48</span><span class="nk"> &lt;sipa&gt;</span> jl also pointed out that the benefit of low_s is lower, as it can only be used.for mutating, but not for bloating
+<a name="l-224"></a><span class="tm">19:38:26</span><span class="nk"> &lt;BlueMatt&gt;</span> I was informed that non-0-length invalid sigs is not nonstd
+<a name="l-225"></a><span class="tm">19:38:30</span><span class="nk"> &lt;BlueMatt&gt;</span> I would propose we do so in 0.13.1
+<a name="l-226"></a><span class="tm">19:38:45</span><span class="nk"> &lt;gmaxwell&gt;</span> It is non-standard for segwit. (unless I am on drugs.)
+<a name="l-227"></a><span class="tm">19:38:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you're on drugs
+<a name="l-228"></a><span class="tm">19:38:57</span><span class="nk"> &lt;gmaxwell&gt;</span> I am on drugs then. Okay. Good to know.
+<a name="l-229"></a><span class="tm">19:38:59</span><span class="nk"> &lt;jtimon&gt;</span> are we still talking low_S ?
+<a name="l-230"></a><span class="tm">19:39:02</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-231"></a><span class="tm">19:39:03</span><span class="nk"> &lt;BlueMatt&gt;</span> I was assuming it was nonstd, and thus thought it might be reasonable for a softfork, but withdraw my insanity
+<a name="l-232"></a><span class="tm">19:39:08</span><span class="nk"> &lt;gmaxwell&gt;</span> wlel thats insane, we should fix that at least.
+<a name="l-233"></a><span class="tm">19:39:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-234"></a><span class="tm">19:39:21</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, it needs to be non-standard first. pronto.
+<a name="l-235"></a><span class="tm">19:39:24</span><span class="nk"> &lt;BlueMatt&gt;</span> 0.13.1 should make invalid sigs which are non-0-length nonstd
+<a name="l-236"></a><span class="tm">19:39:25</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-237"></a><span class="tm">19:39:29</span><span class="nk"> &lt;sdaftuar&gt;</span> agree
+<a name="l-238"></a><span class="tm">19:39:35</span><span class="nk"> &lt;wumpus&gt;</span> yes, absolutely
+<a name="l-239"></a><span class="tm">19:39:42</span><span class="nk"> &lt;CodeShark&gt;</span> +1
+<a name="l-240"></a><span class="tm">19:39:51</span><span class="nk"> &lt;sipa&gt;</span> great
+<a name="l-241"></a><span class="tm">19:40:02</span><span class="nk"> &lt;jtimon&gt;</span> this needs a bip, no?
+<a name="l-242"></a><span class="tm">19:40:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> yes, but we just suggest it as nonstd now
+<a name="l-243"></a><span class="tm">19:40:22</span><span class="nk"> &lt;jtimon&gt;</span> sure
+<a name="l-244"></a><span class="tm">19:40:25</span><span class="nk"> &lt;sipa&gt;</span> (which certainly needs ML discussion too)
+<a name="l-245"></a><span class="tm">19:40:31</span><span class="nk"> &lt;gmaxwell&gt;</span> there is copy for null dummy as part of the old malleability bip, no?
+<a name="l-246"></a><span class="tm">19:40:51</span><span class="nk"> &lt;gmaxwell&gt;</span> nulldummy and fixed invalid?
+<a name="l-247"></a><span class="tm">19:40:54</span><span class="nk"> &lt;sipa&gt;</span> null dummy is about the ignored arg for CMS
+<a name="l-248"></a><span class="tm">19:41:02</span><span class="nk"> &lt;gmaxwell&gt;</span> thus my follow up.
+<a name="l-249"></a><span class="tm">19:41:12</span><span class="nk"> &lt;sipa&gt;</span> empty invalid was not part of bip62
+<a name="l-250"></a><span class="tm">19:41:19</span><span class="nk"> &lt;gmaxwell&gt;</span> okay.
+<a name="l-251"></a><span class="tm">19:41:41</span><span class="nk"> &lt;sipa&gt;</span> because it wasn't needed fir standard txn at the time
+<a name="l-252"></a><span class="tm">19:41:54</span><span class="nk"> &lt;sipa&gt;</span> ok, next topic?
+<a name="l-253"></a><span class="tm">19:42:00</span><span class="nk"> &lt;kanzure&gt;</span> jeremyrubin's stuff see above
+<a name="l-254"></a><span class="tm">19:42:14</span><span class="nk"> &lt;kanzure&gt;</span> 12:04 &lt; jeremyrubin&gt; I'd like to mention that my Checkqueue Lockfree is passing tests, would like to hear what people need to see for it to merge (will be restructuing my commits later today.tomorrow)
+<a name="l-255"></a><span class="tm">19:42:23</span><span class="nk"> &lt;gmaxwell&gt;</span> jeremyrubin is busy making validation great again. I'm super excited about this.
+<a name="l-256"></a><span class="tm">19:42:29</span><span class="nk"> &lt;sdaftuar&gt;</span> sorry before we move topics -- we should repropose NULLDUMMY by itself on the mailing list, yes?
+<a name="l-257"></a><span class="tm">19:42:37</span><span class="nk"> &lt;wumpus&gt;</span> if he's here, at least
+<a name="l-258"></a><span class="tm">19:42:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> ack
+<a name="l-259"></a><span class="tm">19:42:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ACK
+<a name="l-260"></a><span class="tm">19:42:59</span><span class="nk"> &lt;petertodd&gt;</span> so, one mitigation to this malleability stuff I think we should also consider doing, is having transaction replacement trigger if the tx has a higher fee rate than the old tx (over a certain ratio)
+<a name="l-261"></a><span class="tm">19:43:03</span><span class="nk"> &lt;instagibbs&gt;</span> link to jeremyrubin's stuff?
+<a name="l-262"></a><span class="tm">19:43:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> that would be a side effect of switching to wtzid based indexing, actually
+<a name="l-263"></a><span class="tm">19:43:30</span><span class="nk"> &lt;sdaftuar&gt;</span> https://github.com/bitcoin/bitcoin/pull/8464
+<a name="l-264"></a><span class="tm">19:43:31</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">instagibbs:</span> https://github.com/bitcoin/bitcoin/pull/8464
+<a name="l-265"></a><span class="tm">19:44:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's a very invasive change...
+<a name="l-266"></a><span class="tm">19:44:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> though, I like the concept
+<a name="l-267"></a><span class="tm">19:44:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> its worth it, by a lot
+<a name="l-268"></a><span class="tm">19:44:27</span><span class="nk"> &lt;btcdrak&gt;</span> sdaftuar there is a NULLDUMMY only PR as well https://github.com/bitcoin/bitcoin/pull/8636
+<a name="l-269"></a><span class="tm">19:44:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> not quite - I'm proposing we re-broadcast such replacements to our peers
+<a name="l-270"></a><span class="tm">19:45:06</span><span class="nk"> &lt;BlueMatt&gt;</span> (for those interested, when it was first posted I went and reimplemented it as lockfree but with a single atomic which was contested between threads a decent amount.....my reimplementation might not have been ideal, but was only marginally better than master...jeremy's work is something like 10-20%)
+<a name="l-271"></a><span class="tm">19:45:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> need to pick a reasonable ratio, geometric series, so something like 75% would be absolute worst case a 4x bandwidth increase, while allowing no more than 25% bloat by a malleability attacker
+<a name="l-272"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">petertodd:</span> you're suggesting different replacement semantics than we have under BIP 125?
+<a name="l-273"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sipa&gt;</span> ah, i see
+<a name="l-274"></a><span class="tm">19:46:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> yeah, obvious one would be to just do replacements if vout #1 == vout #2 regardless of BIP125, which handles malleability just fine
+<a name="l-275"></a><span class="tm">19:47:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdaftuar:</span> mainly proposing this as a belt and suspenders to limit the damage of malleability attacks
+<a name="l-276"></a><span class="tm">19:47:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> may just be better for mempool reconcillation to handle that.
+<a name="l-277"></a><span class="tm">19:47:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> sure - when's that coming? :)
+<a name="l-278"></a><span class="tm">19:47:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> interested in helping define it? :P
+<a name="l-279"></a><span class="tm">19:48:08</span><span class="nk"> &lt;sipa&gt;</span> i believe we're drifting off topic
+<a name="l-280"></a><span class="tm">19:48:17</span><span class="nk"> &lt;gmaxwell&gt;</span> Who was phone?
+<a name="l-281"></a><span class="tm">19:48:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> heh, seems like I should do a pull-req of this ratio thing for now - that's just a few lines of code
+<a name="l-282"></a><span class="tm">19:48:36</span><span class="nk"> &lt;gmaxwell&gt;</span> fair
+<a name="l-283"></a><span class="tm">19:49:01</span><span class="nk"> &lt;sipa&gt;</span> other topics?
+<a name="l-284"></a><span class="tm">19:49:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> if you do it right, it will interact well with mempool batching, and the batching will eliminate a lot of the bandwidth overhead.
+<a name="l-285"></a><span class="tm">19:49:27</span><span class="nk"> &lt;wumpus&gt;</span> yes, any other topic proposals?
+<a name="l-286"></a><span class="tm">19:49:32</span><span class="nk"> &lt;gmaxwell&gt;</span> s/mempool batching/relay batching/
+<a name="l-287"></a><span class="tm">19:49:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> oh, batching? I'm unfamilar with that idea
+<a name="l-288"></a><span class="tm">19:50:02</span><span class="nk"> &lt;BlueMatt&gt;</span> 10 min bell
+<a name="l-289"></a><span class="tm">19:50:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> relay behavior changed in 0.13, I think you're aware.
+<a name="l-290"></a><span class="tm">19:50:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> will talk after meeting.
+<a name="l-291"></a><span class="tm">19:50:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-292"></a><span class="tm">19:50:42</span><span class="nk"> &lt;sdaftuar&gt;</span> quick travis discussion?
+<a name="l-293"></a><span class="tm">19:50:47</span><span class="nk"> &lt;wumpus&gt;</span> seems that there are no other meeting topics proposals, so we can close
+<a name="l-294"></a><span class="tm">19:51:06</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-295"></a><span class="tm">19:51:07</span><span class="nk"> &lt;GitHub133&gt;</span> [13bitcoin] 15jonasschnelli opened pull request #8643: [0.13 backport] Added feeler connections increasing good addrs in the tried table. (060.13...062016/08/feeler_013) 02https://github.com/bitcoin/bitcoin/pull/8643
+<a name="l-296"></a><span class="tm">19:51:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Non-discussion:</span> 0.13 deployment seems to be trouble free &lt;knock on wood&gt;, congrats everyone.
+<a name="l-297"></a><span class="tm">19:51:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">travis discussion</span>
+<a name="l-298"></a><span class="tm">19:51:14</span><span class="nk"> &lt;sdaftuar&gt;</span> i've been away for the last couple weeks, can anyone summarize the state of our testsuite these days?
+<a name="l-299"></a><span class="tm">19:51:19</span><span class="nk"> &lt;jeremyrubin&gt;</span> Yes
+<a name="l-300"></a><span class="tm">19:51:24</span><span class="nk"> &lt;sdaftuar&gt;</span> i feel like i've seen lots of people complaining
+<a name="l-301"></a><span class="tm">19:51:32</span><span class="nk"> &lt;wumpus&gt;</span> yes, congrats everyone on the 0.13.0 release
+<a name="l-302"></a><span class="tm">19:51:34</span><span class="nk"> &lt;jeremyrubin&gt;</span> Basically theres some failing rpctests
+<a name="l-303"></a><span class="tm">19:51:40</span><span class="nk"> &lt;sdaftuar&gt;</span> and my own local runs are failing a lot too, but i havent figured out why yet
+<a name="l-304"></a><span class="tm">19:51:45</span><span class="nk"> &lt;jeremyrubin&gt;</span> and the make check code is slow
+<a name="l-305"></a><span class="tm">19:51:45</span><span class="nk"> &lt;gmaxwell&gt;</span> what is this backupwallet test thing that keeps failing?
+<a name="l-306"></a><span class="tm">19:51:48</span><span class="nk"> &lt;wumpus&gt;</span> there are randomly failing RPC tests, and also some random timeouts
+<a name="l-307"></a><span class="tm">19:51:51</span><span class="nk"> &lt;cfields&gt;</span> yes, there are a few racy conditions
+<a name="l-308"></a><span class="tm">19:51:56</span><span class="nk"> &lt;sipa&gt;</span> segwit.py also fails sometimes
+<a name="l-309"></a><span class="tm">19:52:09</span><span class="nk"> &lt;jeremyrubin&gt;</span> I've also seen an abandonconflict failure once
+<a name="l-310"></a><span class="tm">19:52:30</span><span class="nk"> &lt;cfields&gt;</span> i believe i tracked down the segwit issue, which may be the root cause of some other issues
+<a name="l-311"></a><span class="tm">19:52:36</span><span class="nk"> &lt;sdaftuar&gt;</span> oh!  good to know
+<a name="l-312"></a><span class="tm">19:52:39</span><span class="nk"> &lt;gmaxwell&gt;</span> I saw some indication before that this was actually misbehavior on the part of the travis infra, that it was occassionally running too slow and timing out.
+<a name="l-313"></a><span class="tm">19:52:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> elobarate?
+<a name="l-314"></a><span class="tm">19:52:43</span><span class="nk"> &lt;cfields&gt;</span> (if that's the same as the one that was worsened by the timing change)
+<a name="l-315"></a><span class="tm">19:53:12</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> need to check if it's the same thing and gather my notes, take it up after meeting?
+<a name="l-316"></a><span class="tm">19:53:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> can we not just move the segwith test to the end/last item?
+<a name="l-317"></a><span class="tm">19:53:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> ok
+<a name="l-318"></a><span class="tm">19:53:26</span><span class="nk"> &lt;sdaftuar&gt;</span> sounds good
+<a name="l-319"></a><span class="tm">19:53:27</span><span class="nk"> &lt;wumpus&gt;</span> there's an issue open about txn_doublespend and segwit.py, it was worse and made batter by reverting a timeout change, but not solved (as MarcoFalke says)
+<a name="l-320"></a><span class="tm">19:53:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> s/segwith/segwit
+<a name="l-321"></a><span class="tm">19:53:37</span><span class="nk"> &lt;wumpus&gt;</span> the thing is, the tests never fail locally at least here
+<a name="l-322"></a><span class="tm">19:53:52</span><span class="nk"> &lt;wumpus&gt;</span> so yes I also suspect the travis infrastructure for some failiures
+<a name="l-323"></a><span class="tm">19:54:09</span><span class="nk"> &lt;jeremyrubin&gt;</span> There's also an open issue with travis race conditions internally
+<a name="l-324"></a><span class="tm">19:54:10</span><span class="nk"> &lt;wumpus&gt;</span> anyhow the issue is https://github.com/bitcoin/bitcoin/issues/8532
+<a name="l-325"></a><span class="tm">19:54:10</span><span class="nk"> &lt;jtimon&gt;</span> I suspect some tests fail in a non-reproducible way, I don't have local travis, but when the tests doesn't fail locally I just change the last commit id and force push, it works most times
+<a name="l-326"></a><span class="tm">19:54:13</span><span class="nk"> &lt;sipa&gt;</span> sdaftuar says he sometimes sees the failures locally?
+<a name="l-327"></a><span class="tm">19:54:25</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> yes, with an error condition i don't understand at all, let me find it
+<a name="l-328"></a><span class="tm">19:54:26</span><span class="nk"> &lt;jeremyrubin&gt;</span> e.g. if you push a commit before the last push finished testing
+<a name="l-329"></a><span class="tm">19:54:35</span><span class="nk"> &lt;cfields&gt;</span> ok, same one then. the issue there is that the node heights are in sync, but the wallet hasn't necessarily updated with their txs. So sync_all() followed by a balance check is racy.
+<a name="l-330"></a><span class="tm">19:55:03</span><span class="nk"> &lt;wumpus&gt;</span> so we need a better sync call
+<a name="l-331"></a><span class="tm">19:55:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> so switch to a while loop until balances are an equal/expected value, with a certain timeout?
+<a name="l-332"></a><span class="tm">19:55:17</span><span class="nk"> &lt;wumpus&gt;</span> a kind of fence
+<a name="l-333"></a><span class="tm">19:55:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> that would imply updating all the balance checks to loops
+<a name="l-334"></a><span class="tm">19:55:53</span><span class="nk"> &lt;gmaxwell&gt;</span> run a ping and check the ping time on all the node.s
+<a name="l-335"></a><span class="tm">19:56:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> from the RPC API?
+<a name="l-336"></a><span class="tm">19:56:22</span><span class="nk"> &lt;sipa&gt;</span> getpeerinfo, i oresume
+<a name="l-337"></a><span class="tm">19:56:26</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, the ping will act as a barrier in the current p2p protocol, though perhaps cfields is about to kill me
+<a name="l-338"></a><span class="tm">19:56:41</span><span class="nk"> &lt;sipa&gt;</span> i hope cfields isn't changing that barrier effect
+<a name="l-339"></a><span class="tm">19:56:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> iirc breaking that breaks things
+<a name="l-340"></a><span class="tm">19:56:46</span><span class="nk"> &lt;wumpus&gt;</span> yes, ping will work for that, but it's unclear how to use that in RPC tests
+<a name="l-341"></a><span class="tm">19:56:51</span><span class="nk"> &lt;cfields&gt;</span> i was thinking about some rpc call like "wait_for_[height|block]" that would block until reached and finished processing everywhere. then we wouldn't need to loop
+<a name="l-342"></a><span class="tm">19:56:56</span><span class="nk"> &lt;gmaxwell&gt;</span> we had that discussion with cfields before, which is why I mention it. :P
+<a name="l-343"></a><span class="tm">19:56:58</span><span class="nk"> &lt;cfields&gt;</span> i suppose that just introduces its own issues, though
+<a name="l-344"></a><span class="tm">19:57:03</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-345"></a><span class="tm">19:57:14</span><span class="nk"> &lt;wumpus&gt;</span> no, the barrier effect certainly shouldn't be removed, unless a better mechanism is introduced
+<a name="l-346"></a><span class="tm">19:57:34</span><span class="nk"> &lt;BlueMatt&gt;</span> (I'd actually kinda like a test which relies on pings being barriers, since some software assumes that for the p2p network, and, in fact, for some things you have to)
+<a name="l-347"></a><span class="tm">19:57:39</span><span class="nk"> &lt;gmaxwell&gt;</span> (I actually like ping being head of line blocked for the reason that it lets you measure processing delays of your remote peers)
+<a name="l-348"></a><span class="tm">19:57:40</span><span class="nk"> &lt;wumpus&gt;</span> and that's a huge protocol change, so probably not worth it right now
+<a name="l-349"></a><span class="tm">19:57:55</span><span class="nk"> &lt;sipa&gt;</span> yes, that's out of scope
+<a name="l-350"></a><span class="tm">19:57:58</span><span class="nk"> &lt;gmaxwell&gt;</span> sorry, I started a tangent.
+<a name="l-351"></a><span class="tm">19:58:01</span><span class="nk"> &lt;cfields&gt;</span> well, as a nasty short-term fix, we can just throw some sleeps in after sync. that should at least shut travis up while we work on a fix
+<a name="l-352"></a><span class="tm">19:58:08</span><span class="nk"> &lt;sipa&gt;</span> for a "get the damn unit tests to work again", at least
+<a name="l-353"></a><span class="tm">19:58:10</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, maybe ping can be used to sync for these tests.
+<a name="l-354"></a><span class="tm">19:58:14</span><span class="nk"> &lt;BlueMatt&gt;</span> 2 min bell
+<a name="l-355"></a><span class="tm">19:58:30</span><span class="nk"> &lt;wumpus&gt;</span> sleeps are pretty terrible, it's easy to get those wrong and travis has a very unpredictable load pattern
+<a name="l-356"></a><span class="tm">19:58:32</span><span class="nk"> &lt;gmaxwell&gt;</span> sleeps for now sound fine to me. We could all use more sleep.
+<a name="l-357"></a><span class="tm">19:58:37</span><span class="nk"> &lt;wumpus&gt;</span> hah
+<a name="l-358"></a><span class="tm">19:58:49</span><span class="nk"> &lt;sdaftuar&gt;</span> i was seeing this a bunch, but i haven't looked at the latest fails yet to confirm if they're the same: https://0bin.net/paste/nvDO+4yPU0w5332j#Y4BWnYpKcTTIW6ePHglWpEwpE4XtfA+I-NP2M3ObMkp
+<a name="l-359"></a><span class="tm">19:58:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> sleeps will just kick the problem a bit further down...
+<a name="l-360"></a><span class="tm">19:58:55</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> if we commit to reverting it within X days, ACK
+<a name="l-361"></a><span class="tm">19:58:55</span><span class="nk"> &lt;wumpus&gt;</span> but indeed this started when the timeouts were lowered all over the place
+<a name="l-362"></a><span class="tm">19:58:58</span><span class="nk"> &lt;gmaxwell&gt;</span> tests randomly faily though is ... not good.
+<a name="l-363"></a><span class="tm">19:59:07</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">cfields:</span> go with the sleeps, better solutions later
+<a name="l-364"></a><span class="tm">19:59:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I'm not suggesting delting fixing things at all.
+<a name="l-365"></a><span class="tm">19:59:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> and a sleep in sync_all will have a performance impact on the test-duration-tim
+<a name="l-366"></a><span class="tm">19:59:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> though, ack on the sleep for now
+<a name="l-367"></a><span class="tm">19:59:36</span><span class="nk"> &lt;sipa&gt;</span> sgtm
+<a name="l-368"></a><span class="tm">19:59:38</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-369"></a><span class="tm">19:59:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> +1 for that. Sleeps are ripped out at next meeting if they're still there, and the tests fails again
+<a name="l-370"></a><span class="tm">19:59:48</span><span class="nk"> &lt;gmaxwell&gt;</span> we must not habituate ourselves to test failures being orinary, already that we weren't responding to failures as a potential emergency indicates we're in a bad state.
+<a name="l-371"></a><span class="tm">19:59:49</span><span class="nk"> &lt;BlueMatt&gt;</span> ACK
+<a name="l-372"></a><span class="tm">19:59:55</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yep
+<a name="l-373"></a><span class="tm">20:00:03</span><span class="nk"> &lt;BlueMatt&gt;</span> ACK to gmaxwell and cfields
+<a name="l-374"></a><span class="tm">20:00:08</span><span class="nk"> &lt;BlueMatt&gt;</span> also, dingdingding
+<a name="l-375"></a><span class="tm">20:00:09</span><span class="nk"> &lt;sipa&gt;</span> POING
+<a name="l-376"></a><span class="tm">20:00:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

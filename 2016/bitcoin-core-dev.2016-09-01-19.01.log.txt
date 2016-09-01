@@ -1,0 +1,376 @@
+19:01:57 <wumpus> #startmeeting
+19:01:57 <lightningbot> Meeting started Thu Sep  1 19:01:57 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:57 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:21 <wumpus> proposed topics?
+19:02:47 <sipa> remaining 0.13.1 issues
+19:02:48 <jtimon> hi
+19:03:00 <instagibbs> present
+19:03:03 <wumpus> there are lots of 0.13.1-tagged pull requests open, any that should be prioritized for review?
+19:03:04 <jeremyrubin> present
+19:03:16 <sipa> wumpus: in fact, some conflict
+19:03:19 <wumpus> (e.g. what should go in first)
+19:03:24 <wumpus> yes, I thought so
+19:03:26 <jonasschnelli> https://github.com/bitcoin/bitcoin/milestones/0.13.1
+19:03:56 <wumpus> #link https://github.com/bitcoin/bitcoin/milestones/0.13.1
+19:04:04 <sipa> 8393 (segwit + compact blocks) is a big blocker
+19:04:07 <jeremyrubin> I'd like to mention that my Checkqueue Lockfree is passing tests, would like to hear what people need to see for it to merge (will be restructuing my commits later today.tomorrow)
+19:04:09 <wumpus> #topic remaining 0.13.1 issues
+19:04:32 <jeremyrubin> (also can't stick around meeting past 12:15 FYI)
+19:04:38 <sipa> beyond that, we still need to choose a solution to the mempool dos issue around segwit
+19:04:51 <instagibbs> yes cb and then dos issues are probably 2 biggest?
+19:04:58 <sipa> this has been brought uo several times the past few meetings
+19:05:10 <wumpus> #action #8393 (segwit + compact blocks) is a blocker, needs review testing and be merged
+19:05:10 <sdaftuar> sipa: do we think that the BIP for cb+segwit is basically in final substantive form?  i saw there were some language discussions
+19:05:35 <sipa> sdaftuar: matt had more comments on the bip, but just on wording, not on semantics
+19:05:40 <jtimon> sorry what was cb ?
+19:05:45 <instagibbs> compact blocks
+19:05:46 <sipa> compact blocks
+19:05:47 <wumpus> jeremyrubin: great to hear it is passing the tests, we can talk about the topic later, but not if you have to leave that soon probably
+19:05:50 <jtimon> compact blocks
+19:05:54 <jtimon> sorry
+19:05:56 <sdaftuar> sipa: ok, i intend to review/test 8393 soon
+19:06:00 <sipa> thank you
+19:06:05 <sipa> beyond that, the dos issue
+19:06:24 <sipa> i'm not confortable with the previous suggestion of fully validating everything
+19:06:35 <sipa> as a change for a minor point release
+19:06:45 <jeremyrubin> wumpus: I'll try to swing back in the last few minutes of the meeting if possible?
+19:07:18 <wumpus> it's a major change to how things have been done for the last few versions, that's for sure
+19:07:37 <sdaftuar> so in a previous IRC meeting morcos had suggested mandatory feefilter + rejection cache only for non-witness tx, is that right?
+19:07:50 <sipa> so that leaves us with not storing witness txn in the rejection cache, feefilter (possibly mandatory), and heuristics to detect invalid bloating before validation
+19:07:54 <jonasschnelli> shouldn't we tag https://github.com/bitcoin/bitcoin/issues/8279 for 0.13.1?
+19:08:14 <sipa> sdaftuar: yes, there have been other suggestions in other talks to
+19:09:01 <luke-jr> I feel like I don't fully understand the issue, but couldn't the rejection cache use the [witness] hash instead of txid?
+19:09:19 <sdaftuar> luke-jr: that's the approach i prefer, but it requires redoing tx relay to use wtxid, which is probably a big change
+19:10:03 <sdaftuar> (and i don't think anyone has started work on it)
+19:10:07 <sipa> yes, that's a bigger change, and there are complications
+19:10:13 <sipa> like duplicating several indexes
+19:10:30 <sipa> and always risking downloading twice, because old nodes may announce using the txid
+19:10:50 <sipa> twice is better than $CONNECTIONS times, but still
+19:11:04 <luke-jr> old nodes won't relay witness transactions at all.. (or if they do, they'll be incomplete)
+19:11:07 <gmaxwell> On CB, I'm due to test the latest version-- I had tested the earlier version.. just been testing other things recently. Those things are now merged.
+19:11:42 <sipa> i very much like the idea of mandatory feefilter
+19:11:47 <CodeShark> me too
+19:11:57 <sipa> moving the responsibiloty of resource cost to the sender
+19:12:19 <jtimon> can someone summarize the idea?
+19:12:19 <CodeShark> it's the least hackish approach
+19:12:20 <sdaftuar> would we get rid of free tx relay at the same time, or not necessarily?
+19:12:45 <gmaxwell> I think mandatory feefilter should be done, though I think it is not as much of a silverbullet as some thing. Feerate is only one of several resource related limitations that get imposed.
+19:12:47 <sipa> but are we fine for 0.13.1 with only rejection cache for non-witness, and heuristics for detecting invalid witness bloating for the most common transaction types
+19:12:50 <BlueMatt> sdaftuar: would be nice to get rid of that code
+19:13:01 <sdaftuar> BlueMatt: i don't object in theory, but it's a sudden change for a point release
+19:13:03 <gmaxwell> s/thing/think/
+19:13:08 <CodeShark> what sort of heuristics?
+19:13:09 <sipa> sdaftuar: agree
+19:13:10 <BlueMatt> sdaftuar: sure, i wouldnt recommend it for that
+19:13:16 <jtimon> just stop allowing free transactions?
+19:13:24 <gmaxwell> sdaftuar: in practice it's not enabled in any case.
+19:13:28 <jtimon> s/allowing/relaying/
+19:13:30 <BlueMatt> jtimon: we effectively already do...
+19:13:35 <instagibbs> jtimon, it's about particular feerate, not just free
+19:13:37 <sipa> CodeShark: check whether the witness program's embedded scriot hash matches the hash of the witness script, for example
+19:13:39 <gmaxwell> jtimon: they're already not relayed on nodes that are up for more than a few hours.
+19:13:48 <sdaftuar> jtimon: because mempools are full
+19:13:55 <jtimon> so what's the mandatory feefilter changing?
+19:13:57 <instagibbs> sipa, yes that would be an easy fix, early on
+19:14:07 <sipa> instagibbs: there is a PR for this
+19:14:19 <gmaxwell> "mempoolminfee": 0.00001812
+19:14:19 <instagibbs> is that jls? I can't remember
+19:14:24 <jtimon> if it's too long to summarize that's fine
+19:14:40 <sipa> instagibbs: yes, on a phonr, i can't seatch the pr number
+19:14:49 <instagibbs> #8593
+19:15:01 <sipa> jtimon: mandatory feefilter is that you can ban a node if it does not obey the feefilter you sent it
+19:15:02 <sdaftuar> so mandatory fee filter would only apply to witness transactions?
+19:15:11 <sdaftuar> er, NODE_WITNESS peers?
+19:15:18 <sipa> sdaftuar: that's a possibility
+19:15:23 <instagibbs> he moves full input validation up front in #8539
+19:15:30 <sdaftuar> it doesn't make sense otherwise, we can't stop relaying transactions from older clients right
+19:15:33 <sipa> instagibbs: oh, no, not that one
+19:15:43 <instagibbs> would be abusive to disconnect older nodes imo
+19:15:52 <gmaxwell> sdaftuar: It has to be negoiated somehow, node witness would be one way.. though a bit disruptive on testnet.
+19:16:03 <gmaxwell> instagibbs: no one is going to do that.
+19:16:04 <sipa> instagibbs: full validation has some kinks to work out; something for 0.14 imho
+19:16:11 <luke-jr> mandatory feefilter seems liable to cause issues with 1) diverging fee policies; 2) ancestor feerate (CPFP) relay stuff
+19:16:14 <jtimon> sipa: I see, thanks, like an additional filter per peer
+19:16:16 <BlueMatt> sdaftuar: well you could gate it on something else (protocol version/message/whatever), but I'm not against fucking up testnet to do it for NODE_WITNESS
+19:16:31 <instagibbs> sipa, I don't see the PR you are talking about then
+19:17:12 <sdaftuar> conceptually though: the idea is that we only download witness transactions from peers with whom we've negotiated mandatory feefilter semantics?
+19:17:24 <jonasschnelli> instagibbs: i think there is no PR right now for that proposal
+19:17:30 <gmaxwell> sdaftuar: that would be fine too.
+19:17:37 <petertodd> sdaftuar: yes
+19:17:38 <sipa> instagibbs: 8499
+19:17:47 <sipa> yes there is
+19:17:49 <instagibbs> oh that one
+19:18:02 <jonasschnelli> Indeed: https://github.com/bitcoin/bitcoin/pull/8499/files
+19:18:20 <sipa> so, i would like to request review on 8499 and 8525
+19:18:34 <sipa> neither of those is a policy change
+19:18:35 <instagibbs> wumpus, can you tag that PR please #8499
+19:18:47 <sdaftuar> sipa: will do
+19:19:07 <wumpus> sure
+19:19:15 <instagibbs> I will review 8499
+19:19:38 <sipa> and untag 8593
+19:20:15 <wumpus> done
+19:20:38 <sipa> so the only remaining thing is enforcing feefilter stronger as sdaftuar suggests only for witness peers
+19:20:53 <BlueMatt> I'd ACK that
+19:20:54 <gmaxwell> luke-jr: CPFP relay is already inhibited to the maximum extent that it could be by feefilter in the current non-mandatory form. Improving that will require some kind of package relay. Mandatory fee filter won't make it worse.
+19:20:57 <sipa> does that sound reasonable for 0.13.1?
+19:21:07 <gmaxwell> FWIW, mandatory fee filter would couple well with 8525, rejection cache mostly exists due to a lack of feefilter.
+19:21:22 <sipa> besides fixing known bugs, obviously
+19:21:24 <petertodd> gmaxwell: yup
+19:21:29 <sdaftuar> sipa: yes
+19:21:36 <petertodd> sipa: sure
+19:21:45 <sipa> great
+19:21:55 <sdaftuar> you started a PR that did that, yes?
+19:22:05 <sipa> sdaftuar: not yet, i will
+19:22:12 <sdaftuar> ok
+19:22:19 <gmaxwell> I'd like feelers (and my addrman insert fix) to get backported. (I'm happy to do the 'backport')  I think it will be important to have feelers to compensate for any loss of network density for witness enabled nodes.
+19:22:29 <instagibbs> gmaxwell, ack
+19:22:34 <sdaftuar> sounds reasonable
+19:22:51 <sipa> ack on backporting feelers
+19:22:59 <sdaftuar> curious to know if anyone has experimented with that on testnet and has any results?
+19:23:17 <sipa> i think it will take a while for network wide effects of feelers to become visible
+19:23:41 <sdaftuar> oh maybe i misunderstood, i thought your own node would benefit from that by itself?
+19:23:43 <sipa> and testnet is not particularly in a sane p2p state
+19:23:49 <CodeShark> if a node with low feefilter connects to peers that all have a higher feefilter the higher filters would dominate. is that a problem?
+19:23:53 <gmaxwell> we had repeated minor problems with isoloation on testnet early on when we deployed segwit there. I expect less of those on mainnet, and more proactive efforts to avoid them (eg spinning up nodes), but belt and suspenders is good.
+19:24:01 <sipa> right, but indirectly the results of addr messages will get better too from feelers
+19:24:12 <sipa> if the overall quality of addrmans improves
+19:24:13 <sdaftuar> sipa: ah, yes
+19:24:14 <gmaxwell> CodeShark: the filters are one way.  "Here is what you can send me"
+19:24:21 <instagibbs> https://github.com/bitcoin/bitcoin/pull/8282
+19:25:00 <CodeShark> gmaxwell: sure...but your peers would filter stuff you wanted to see
+19:25:10 <sipa> next topic?
+19:25:12 <gmaxwell> CodeShark: has nothing to do with fee filter.
+19:25:14 <sipa> i'm in a mildly unconfortable position here (irl meetup in milan, where BlueMatt spoke)
+19:25:21 <gmaxwell> CodeShark: peers already filter anything they won't relay.
+19:26:04 <BlueMatt> sipa: you can irc from my laptop if you prefer
+19:26:06 <jtimon> its kind of "please, don't bother sending me things below X or I'll disconnect from you"
+19:26:39 <luke-jr> gmaxwell: no particular p2p protocol changes would be needed right now afaik (would just need to send the children first, and then teach the receiver to use the feerate including orphan txs)
+19:27:40 <luke-jr> if we're not careful, mandatory feefilter could in practice make fee policy code as sensitive as consensus code
+19:27:58 <petertodd> luke-jr: how?
+19:28:08 <jtimon> luke-jr: I'm not following, how does the peer know your rate X
+19:28:10 <jtimon> ?
+19:28:43 <luke-jr> petertodd: if you change your fee policy code, you could be partitioned off from the other peers, no?
+19:28:48 <sdaftuar> luke-jr: no
+19:28:49 <instagibbs> suggested topic: "Extra" softforks low_s and nulldummy
+19:28:59 <luke-jr> what am I missing?
+19:29:06 <sdaftuar> only if you lie about it to your peers
+19:29:14 <sipa> instagibbs: ack topic
+19:29:26 <jtimon> I believe low_s was discussed already?
+19:29:30 <BlueMatt> am I missing something? isnt the feefilter potentially rather deanonymizing? we should probably round/randomize the amount somewhat, no? (or do we, I probably wouldnt know)
+19:29:33 <gmaxwell> luke-jr: e.g. later we can add a package fee filter and nodes would signal a package fee filter of X, and a fee filter of 0.
+19:29:42 <sipa> i believe it needs rediscussing (low_s)
+19:29:46 <jtimon> BlueMatt: good point
+19:29:47 <instagibbs> BlueMatt, that's a good point
+19:29:48 <sdaftuar> BlueMatt: we do, but worht looking at again
+19:29:49 <gmaxwell> BlueMatt: we do.
+19:30:08 <BlueMatt> ok, nvm, ignore my ramblings
+19:30:43 <jtimon> BlueMatt: please keep rumbling out loud, I hadn't even thought about it, now seems obvious
+19:30:46 <gmaxwell> BlueMatt: but also, we really can make no guarentees that a single node with multiple interfaces can't be distinguished as the same node. There are several ways to do this. (obviously I'm happy to reduce them, but it's not a property we currently provide)
+19:30:56 <sipa> (can we move on to next topic?)
+19:31:01 <gmaxwell> jtimon: it was specfically addressed in the original feefilter PR.
+19:31:01 <BlueMatt> gmaxwell: indeed, shame we dont
+19:31:04 <jtimon> ack next topic
+19:31:04 <BlueMatt> also, what sipa said
+19:31:17 <sipa> wumpus: ring topic bell? :)
+19:31:25 <gmaxwell> we put wumpus to sleep.
+19:31:41 <paveljanik> ;-)
+19:31:48 <petertodd> gmaxwell: ring wumpus bell?
+19:31:48 * sdaftuar rings the wumpus bell
+19:31:51 <sipa> ok, i'll go on anyway
+19:32:02 <paveljanik> I think that wumpus never sleeps
+19:32:03 <jtimon> go sipa go
+19:32:07 <sipa> so, the nulldummy and low_s softfork proposals
+19:32:30 <btcdrak> #topic nulldummy and low_s softfork proposals
+19:32:36 <wumpus> #topic nulldummy and low_s softfork proposals
+19:32:39 <sipa> it was discovered by jl that low_ has a really strange implementation issue leaked into the semantics
+19:32:44 <jtimon> I don't remember any objections on low_s last time we discussed it?
+19:32:56 <sipa> which is not an issue for standardness, but for consensus i think we prefer clean sema tics
+19:33:01 <instagibbs> jtimon, https://github.com/bitcoin/bitcoin/pull/8533#issuecomment-243973512
+19:33:17 <gmaxwell> sipa: are clean semantics even possible?
+19:33:25 <jtimon> instagibbs: thanks
+19:33:38 <sipa> gmaxwell: yes, if we also do the only-empty-signature-in-invalid-checksig sf
+19:33:53 <gmaxwell> sipa: oh indeed okay, yes that would be clean
+19:33:58 <sipa> which is why i'd propose that we do low_s later, together with that empty sigs rule
+19:34:07 <sipa> and only bundle nulldummy with 0.13.1
+19:34:19 <sipa> s/0.13.1/segwit/
+19:34:23 <gmaxwell> The clenlyness issue is that lowS test fails for some encodings of invalid encodings.
+19:34:37 <gmaxwell> er encodings of invalid signatures.
+19:34:44 <sipa> yes, some illegal signatures are exempt from low_s
+19:34:50 <BlueMatt> would be a shame, but seems like a reasonable approach...has anyone checked for the #/frequency of invalid sigs in the chain?
+19:34:59 <BlueMatt> that are non-0-length, at least
+19:35:04 <sipa> such signatures are NOT valid
+19:35:15 <BlueMatt> but can bt OP_NOT'd, no?
+19:35:23 <sipa> yes, but nobody sane does that
+19:35:30 <sdaftuar> has NULLDUMMY been discussed on the mailing list yet?  i see one mention of it in passing about the LOW_S BIP.
+19:35:32 <BlueMatt> sure, but /has/ anyone ever done so?
+19:35:39 <sipa> "yes, this output can be spent UNLESS BlueMatt likes it"
+19:35:46 <jtimon> no objections on delaying low_s enforcement
+19:35:54 <gmaxwell> BlueMatt: with the exception of intentional insanity, any invalid signature could be malleated to a zero length one, in any case.  I had looked previously and seen no ongoing checksig-not activity, obvious.
+19:35:58 <BlueMatt> I might suggest that it is not crazy to propose doing it in 0.13.1 if it has never happened
+19:36:29 <BlueMatt> indeed, I'm asking with the assumption that someone might have done intentional insantiy as a test-case or so
+19:36:35 <sipa> BlueMatt: the only opractical difference is that the BIP to specify LOW_S would contain a rule that is pointless and complicating
+19:36:40 <sipa> i think we should aboid that
+19:36:43 <BlueMatt> (wait, it is non-stad to do non-0-length, correct?)
+19:36:46 <gmaxwell> BlueMatt: a checksig not has been done at least once in the chain history.
+19:36:53 <jtimon> BlueMatt: good question, petertodd has anybody done that? :p
+19:36:57 <gmaxwell> By someone triggering a fork off of bitcoin ruby.
+19:37:03 <sipa> petertodd: have you done that?
+19:37:11 <BlueMatt> gmaxwell: sure, but with 0-length, or with a non-emtpy sig
+19:37:20 <gmaxwell> yea, don't recall, we could check.
+19:37:35 <petertodd> sipa: me personally, probably not - I'm a fine arts grad :P
+19:37:38 <gmaxwell> But I don't think the test here should be none at all. If there was an obvious test someplace in the past, who cares?
+19:37:46 <BlueMatt> (this would be immaterial if it is not already nonstd...which I do not recall)
+19:37:48 <sipa> jl also pointed out that the benefit of low_s is lower, as it can only be used.for mutating, but not for bloating
+19:38:26 <BlueMatt> I was informed that non-0-length invalid sigs is not nonstd
+19:38:30 <BlueMatt> I would propose we do so in 0.13.1
+19:38:45 <gmaxwell> It is non-standard for segwit. (unless I am on drugs.)
+19:38:55 <sipa> gmaxwell: you're on drugs
+19:38:57 <gmaxwell> I am on drugs then. Okay. Good to know.
+19:38:59 <jtimon> are we still talking low_S ?
+19:39:02 <sipa> yes
+19:39:03 <BlueMatt> I was assuming it was nonstd, and thus thought it might be reasonable for a softfork, but withdraw my insanity
+19:39:08 <gmaxwell> wlel thats insane, we should fix that at least.
+19:39:14 <BlueMatt> gmaxwell: ack
+19:39:21 <gmaxwell> yes, it needs to be non-standard first. pronto.
+19:39:24 <BlueMatt> 0.13.1 should make invalid sigs which are non-0-length nonstd
+19:39:25 <sipa> agree
+19:39:29 <sdaftuar> agree
+19:39:35 <wumpus> yes, absolutely
+19:39:42 <CodeShark> +1
+19:39:51 <sipa> great
+19:40:02 <jtimon> this needs a bip, no?
+19:40:16 <sipa> jtimon: yes, but we just suggest it as nonstd now
+19:40:22 <jtimon> sure
+19:40:25 <sipa> (which certainly needs ML discussion too)
+19:40:31 <gmaxwell> there is copy for null dummy as part of the old malleability bip, no?
+19:40:51 <gmaxwell> nulldummy and fixed invalid?
+19:40:54 <sipa> null dummy is about the ignored arg for CMS
+19:41:02 <gmaxwell> thus my follow up.
+19:41:12 <sipa> empty invalid was not part of bip62
+19:41:19 <gmaxwell> okay.
+19:41:41 <sipa> because it wasn't needed fir standard txn at the time
+19:41:54 <sipa> ok, next topic?
+19:42:00 <kanzure> jeremyrubin's stuff see above
+19:42:14 <kanzure> 12:04 < jeremyrubin> I'd like to mention that my Checkqueue Lockfree is passing tests, would like to hear what people need to see for it to merge (will be restructuing my commits later today.tomorrow)
+19:42:23 <gmaxwell> jeremyrubin is busy making validation great again. I'm super excited about this.
+19:42:29 <sdaftuar> sorry before we move topics -- we should repropose NULLDUMMY by itself on the mailing list, yes?
+19:42:37 <wumpus> if he's here, at least
+19:42:37 <sipa> sdaftuar: ack
+19:42:58 <BlueMatt> gmaxwell: ACK
+19:42:59 <petertodd> so, one mitigation to this malleability stuff I think we should also consider doing, is having transaction replacement trigger if the tx has a higher fee rate than the old tx (over a certain ratio)
+19:43:03 <instagibbs> link to jeremyrubin's stuff?
+19:43:25 <sipa> petertodd: that would be a side effect of switching to wtzid based indexing, actually
+19:43:30 <sdaftuar> https://github.com/bitcoin/bitcoin/pull/8464
+19:43:31 <kanzure> instagibbs: https://github.com/bitcoin/bitcoin/pull/8464
+19:44:08 <jonasschnelli> It's a very invasive change...
+19:44:18 <jonasschnelli> though, I like the concept
+19:44:18 <BlueMatt> jonasschnelli: its worth it, by a lot
+19:44:27 <btcdrak> sdaftuar there is a NULLDUMMY only PR as well https://github.com/bitcoin/bitcoin/pull/8636
+19:44:28 <petertodd> sipa: not quite - I'm proposing we re-broadcast such replacements to our peers
+19:45:06 <BlueMatt> (for those interested, when it was first posted I went and reimplemented it as lockfree but with a single atomic which was contested between threads a decent amount.....my reimplementation might not have been ideal, but was only marginally better than master...jeremy's work is something like 10-20%)
+19:45:16 <petertodd> sipa: need to pick a reasonable ratio, geometric series, so something like 75% would be absolute worst case a 4x bandwidth increase, while allowing no more than 25% bloat by a malleability attacker
+19:45:31 <sdaftuar> petertodd: you're suggesting different replacement semantics than we have under BIP 125?
+19:45:31 <sipa> ah, i see
+19:46:07 <petertodd> sdaftuar: yeah, obvious one would be to just do replacements if vout #1 == vout #2 regardless of BIP125, which handles malleability just fine
+19:47:07 <petertodd> sdaftuar: mainly proposing this as a belt and suspenders to limit the damage of malleability attacks
+19:47:13 <gmaxwell> petertodd: may just be better for mempool reconcillation to handle that.
+19:47:27 <petertodd> gmaxwell: sure - when's that coming? :)
+19:47:54 <gmaxwell> petertodd: interested in helping define it? :P
+19:48:08 <sipa> i believe we're drifting off topic
+19:48:17 <gmaxwell> Who was phone?
+19:48:25 <petertodd> gmaxwell: heh, seems like I should do a pull-req of this ratio thing for now - that's just a few lines of code
+19:48:36 <gmaxwell> fair
+19:49:01 <sipa> other topics?
+19:49:11 <gmaxwell> petertodd: if you do it right, it will interact well with mempool batching, and the batching will eliminate a lot of the bandwidth overhead.
+19:49:27 <wumpus> yes, any other topic proposals?
+19:49:32 <gmaxwell> s/mempool batching/relay batching/
+19:49:44 <petertodd> gmaxwell: oh, batching? I'm unfamilar with that idea
+19:50:02 <BlueMatt> 10 min bell
+19:50:04 <gmaxwell> petertodd: relay behavior changed in 0.13, I think you're aware.
+19:50:13 <gmaxwell> petertodd: will talk after meeting.
+19:50:16 <petertodd> gmaxwell: ack
+19:50:42 <sdaftuar> quick travis discussion?
+19:50:47 <wumpus> seems that there are no other meeting topics proposals, so we can close
+19:51:06 <wumpus> sure
+19:51:07 <GitHub133> [13bitcoin] 15jonasschnelli opened pull request #8643: [0.13 backport] Added feeler connections increasing good addrs in the tried table. (060.13...062016/08/feeler_013) 02https://github.com/bitcoin/bitcoin/pull/8643
+19:51:09 <gmaxwell> Non-discussion: 0.13 deployment seems to be trouble free <knock on wood>, congrats everyone.
+19:51:10 <wumpus> #topic travis discussion
+19:51:14 <sdaftuar> i've been away for the last couple weeks, can anyone summarize the state of our testsuite these days?
+19:51:19 <jeremyrubin> Yes
+19:51:24 <sdaftuar> i feel like i've seen lots of people complaining
+19:51:32 <wumpus> yes, congrats everyone on the 0.13.0 release
+19:51:34 <jeremyrubin> Basically theres some failing rpctests
+19:51:40 <sdaftuar> and my own local runs are failing a lot too, but i havent figured out why yet
+19:51:45 <jeremyrubin> and the make check code is slow
+19:51:45 <gmaxwell> what is this backupwallet test thing that keeps failing?
+19:51:48 <wumpus> there are randomly failing RPC tests, and also some random timeouts
+19:51:51 <cfields> yes, there are a few racy conditions
+19:51:56 <sipa> segwit.py also fails sometimes
+19:52:09 <jeremyrubin> I've also seen an abandonconflict failure once
+19:52:30 <cfields> i believe i tracked down the segwit issue, which may be the root cause of some other issues
+19:52:36 <sdaftuar> oh!  good to know
+19:52:39 <gmaxwell> I saw some indication before that this was actually misbehavior on the part of the travis infra, that it was occassionally running too slow and timing out.
+19:52:41 <sipa> cfields: elobarate?
+19:52:43 <cfields> (if that's the same as the one that was worsened by the timing change)
+19:53:12 <cfields> sipa: need to check if it's the same thing and gather my notes, take it up after meeting?
+19:53:13 <jonasschnelli> can we not just move the segwith test to the end/last item?
+19:53:20 <sipa> cfields: ok
+19:53:26 <sdaftuar> sounds good
+19:53:27 <wumpus> there's an issue open about txn_doublespend and segwit.py, it was worse and made batter by reverting a timeout change, but not solved (as MarcoFalke says)
+19:53:29 <jonasschnelli> s/segwith/segwit
+19:53:37 <wumpus> the thing is, the tests never fail locally at least here
+19:53:52 <wumpus> so yes I also suspect the travis infrastructure for some failiures
+19:54:09 <jeremyrubin> There's also an open issue with travis race conditions internally
+19:54:10 <wumpus> anyhow the issue is https://github.com/bitcoin/bitcoin/issues/8532
+19:54:10 <jtimon> I suspect some tests fail in a non-reproducible way, I don't have local travis, but when the tests doesn't fail locally I just change the last commit id and force push, it works most times
+19:54:13 <sipa> sdaftuar says he sometimes sees the failures locally?
+19:54:25 <sdaftuar> sipa: yes, with an error condition i don't understand at all, let me find it
+19:54:26 <jeremyrubin> e.g. if you push a commit before the last push finished testing
+19:54:35 <cfields> ok, same one then. the issue there is that the node heights are in sync, but the wallet hasn't necessarily updated with their txs. So sync_all() followed by a balance check is racy.
+19:55:03 <wumpus> so we need a better sync call
+19:55:15 <sipa> cfields: so switch to a while loop until balances are an equal/expected value, with a certain timeout?
+19:55:17 <wumpus> a kind of fence
+19:55:46 <wumpus> sipa: that would imply updating all the balance checks to loops
+19:55:53 <gmaxwell> run a ping and check the ping time on all the node.s
+19:56:09 <jonasschnelli> gmaxwell: from the RPC API?
+19:56:22 <sipa> getpeerinfo, i oresume
+19:56:26 <gmaxwell> yes, the ping will act as a barrier in the current p2p protocol, though perhaps cfields is about to kill me
+19:56:41 <sipa> i hope cfields isn't changing that barrier effect
+19:56:45 <BlueMatt> gmaxwell: iirc breaking that breaks things
+19:56:46 <wumpus> yes, ping will work for that, but it's unclear how to use that in RPC tests
+19:56:51 <cfields> i was thinking about some rpc call like "wait_for_[height|block]" that would block until reached and finished processing everywhere. then we wouldn't need to loop
+19:56:56 <gmaxwell> we had that discussion with cfields before, which is why I mention it. :P
+19:56:58 <cfields> i suppose that just introduces its own issues, though
+19:57:03 <cfields> heh
+19:57:14 <wumpus> no, the barrier effect certainly shouldn't be removed, unless a better mechanism is introduced
+19:57:34 <BlueMatt> (I'd actually kinda like a test which relies on pings being barriers, since some software assumes that for the p2p network, and, in fact, for some things you have to)
+19:57:39 <gmaxwell> (I actually like ping being head of line blocked for the reason that it lets you measure processing delays of your remote peers)
+19:57:40 <wumpus> and that's a huge protocol change, so probably not worth it right now
+19:57:55 <sipa> yes, that's out of scope
+19:57:58 <gmaxwell> sorry, I started a tangent.
+19:58:01 <cfields> well, as a nasty short-term fix, we can just throw some sleeps in after sync. that should at least shut travis up while we work on a fix
+19:58:08 <sipa> for a "get the damn unit tests to work again", at least
+19:58:10 <gmaxwell> in any case, maybe ping can be used to sync for these tests.
+19:58:14 <BlueMatt> 2 min bell
+19:58:30 <wumpus> sleeps are pretty terrible, it's easy to get those wrong and travis has a very unpredictable load pattern
+19:58:32 <gmaxwell> sleeps for now sound fine to me. We could all use more sleep.
+19:58:37 <wumpus> hah
+19:58:49 <sdaftuar> i was seeing this a bunch, but i haven't looked at the latest fails yet to confirm if they're the same: https://0bin.net/paste/nvDO+4yPU0w5332j#Y4BWnYpKcTTIW6ePHglWpEwpE4XtfA+I-NP2M3ObMkp
+19:58:53 <jonasschnelli> sleeps will just kick the problem a bit further down...
+19:58:55 <BlueMatt> cfields: if we commit to reverting it within X days, ACK
+19:58:55 <wumpus> but indeed this started when the timeouts were lowered all over the place
+19:58:58 <gmaxwell> tests randomly faily though is ... not good.
+19:59:07 <jtimon> cfields: go with the sleeps, better solutions later
+19:59:08 <gmaxwell> jonasschnelli: I'm not suggesting delting fixing things at all.
+19:59:08 <jonasschnelli> and a sleep in sync_all will have a performance impact on the test-duration-tim
+19:59:28 <jonasschnelli> though, ack on the sleep for now
+19:59:36 <sipa> sgtm
+19:59:38 <wumpus> right
+19:59:39 <cfields> BlueMatt: +1 for that. Sleeps are ripped out at next meeting if they're still there, and the tests fails again
+19:59:48 <gmaxwell> we must not habituate ourselves to test failures being orinary, already that we weren't responding to failures as a potential emergency indicates we're in a bad state.
+19:59:49 <BlueMatt> ACK
+19:59:55 <sdaftuar> gmaxwell: yep
+20:00:03 <BlueMatt> ACK to gmaxwell and cfields
+20:00:08 <BlueMatt> also, dingdingding
+20:00:09 <sipa> POING
+20:00:10 <wumpus> #endmeeting
