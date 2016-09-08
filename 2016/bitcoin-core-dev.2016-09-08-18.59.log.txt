@@ -1,0 +1,371 @@
+18:59:58 <wumpus> #startmeeting
+18:59:58 <lightningbot> Meeting started Thu Sep  8 18:59:58 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+18:59:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:09 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:14 <morcos> here
+19:00:19 <CodeShark> here
+19:00:24 <jeremyrubin> here
+19:00:28 <BlueMatt> topic: sing morcos happy birthday
+19:00:29 <petertodd> here
+19:00:30 <btcdrak> here
+19:00:31 <cfields> thanks, here
+19:00:33 <kanzure> here
+19:00:35 <petertodd> BlueMatt: ack!
+19:00:40 <wumpus> happy birthday morcos
+19:00:41 <jeremyrubin> leaked PII
+19:00:46 <btcdrak> gmaxwell you missed jl2012
+19:00:47 <kanzure> wumpus: no doxxing :)
+19:00:51 <jeremyrubin> Alex sing your ssn!
+19:00:52 <petertodd> kanzure: lol
+19:01:01 <michagogo> Happy birthday!
+19:01:02 <luke-jr> morcos: happy birthday https://www.youtube.com/watch?v=dQw4w9WgXcQ
+19:01:02 <morcos> thanks
+19:01:12 <sipa> morcos: congrats
+19:01:14 <jcorgan> here in spirit only
+19:01:24 <btcdrak> saved by DCMA filters "The uploader has not made this video available in your country."
+19:01:25 <jonasschnelli> morcos: hey! happy birthday.
+19:01:27 <petertodd> kanzure: happy birthday to anyone who considers themselves born on this date
+19:01:39 <kanzure> much better.
+19:01:43 <petertodd> btcdrak: the copyright on happy birthday got overturned :)
+19:01:53 <btcdrak> petertodd: click the link
+19:02:07 <wumpus> anyone with proposed topics?
+19:02:08 <petertodd> btcdrak: oh, that's a great song
+19:02:27 <sipa> wumpus: just one: we have quite a queue of things for 0.13.1, and i'd like to encourage people to review
+19:02:31 <BlueMatt> real topic: segwit-cb bip
+19:02:32 <btcdrak> wumpus: birthday cake
+19:02:35 <kanzure> not a topic proposal, but i would like to eventually get a resolution on the after_failure weirdness
+19:03:01 <jonasschnelli> I just wanted to let you know that there will be two hack days on monday and tuesday 10th and 11th of October after the SB conference in Milan.
+19:03:17 <petertodd> jonasschnelli: I'll be there
+19:03:30 <gmaxwell> btcdrak: the list was just based the top participants in the past.
+19:03:30 <jonasschnelli> More info and registration will follow...
+19:03:33 <wumpus> yes last week there was an ACTION for "Support for compact blocks together with segwit" (#8393), there has been a bit of review activity in last days, what's the status there?
+19:04:05 <gmaxwell> wumpus: I've been doing some testing. There aren't many segwit transactions on testnet currently. I was going to call for people to create more once I got more testing setup.
+19:04:06 <sipa> BlueMatt: i haven't reviewed the changes for the bip you suggested - does it require any code changes to the bitcoin core pr?
+19:04:32 <wumpus> #info jonasschnelli: I just wanted to let you know that there will be two hack days on monday and tuesday 10th and 11th of October after the SB conference in Milan. More info and registration will follow...
+19:04:40 <BlueMatt> sipa: possibly, two options, though, one minor, one slightly more
+19:04:45 <btcdrak> maybe we can ask roasbeef to help tx generation there
+19:04:57 <wumpus> gmaxwell: more segwit transactions would help, yes :)
+19:05:30 <sipa> can we pick a topic?
+19:05:45 <wumpus> #link re: queue of things for 0.13.1, link is https://github.com/bitcoin/bitcoin/milestones/0.13.1
+19:06:15 <wumpus> #topic segwit-cb bip
+19:06:18 <btcdrak> jl2012: is everything you are working correctly tagged (or not) for 0.13.1?
+19:06:44 <BlueMatt> so, to quote github issue "The last commit changes the protocol entirely, adding a cmpctack message. This has the advantage that you could implement receiving of some version of compactlocks without implementing sending that encoding, as well as simplifying the protocol slightly (instead of having to check if the current protocol version is higher-priority according to your probably-compile-time list of supported version you know
+19:06:44 <BlueMatt> which version you're using directly from the ack message) at the expensee of complicating the implementation somewhat (now you have to add support for another message type and special-case version 1). The last commit is definitely not worth it if we dont anticipate adding more than one or so more versions, but might be worth it if we anticipate compact blocks version 4, 5, 6 at some point. I'll bring this up in the IRC meeting later
+19:06:50 <BlueMatt> today."
+19:07:11 <BlueMatt> essentially, the current proposal is that you annoucne the set of compact block versions you want at startup (BIP text says before you send any pong or other compact block messages)
+19:07:22 <BlueMatt> and each sendcmpct announce implies that you are willing to encode to those
+19:07:33 <jl2012> btcdrak: including those already tagged, I think 8685, 8654 and 8635 are also for 0.13.1
+19:07:41 <BlueMatt> and you send them in the priority of what you want to receive
+19:07:58 <BlueMatt> and the version you use to send is the first one you receive from the other side that you also sent
+19:08:01 <jl2012> at least we may consider to include in 0.13.1
+19:08:17 <BlueMatt> and you use the highest-priority one the other side also announced to decode
+19:08:33 <BlueMatt> (comment text from above link https://github.com/bitcoin/bips/pull/423#issuecomment-245629813 )
+19:08:53 <sipa> i'm not a fan of changing the code again after all testing, but i do agree it's a cleaner solution, and will make things easier for future extensions
+19:08:55 <BlueMatt> so this is obviously somewhat complicated
+19:09:16 <BlueMatt> and the solution would be to introduce a cmpctack which you use to pick the one you want to encode to
+19:09:34 <sipa> cmpctack containing the version you picked?
+19:09:40 <wumpus> jl2012: (tagged. number of pulls for 0.13.1 does seem to be getting a bit out of hand)
+19:09:57 <gmaxwell> can we have some discussion about this outside of the meeting, I want to ask some questions but I think it'll be a design rathole right now. :)
+19:10:02 <BlueMatt> simplifying the which-do-i-use-to-decode code from "for each sendcmpct msg received, is this higher priority than the previously-highest-prirotiy one" to "the one I saw in a sendcmpct"
+19:10:14 <BlueMatt> in practice the proposed cmpctack is way more code, but a bit simpler
+19:10:21 <sipa> BlueMatt: ok, i'll review and adapt the pr
+19:10:32 <BlueMatt> s/""the one I saw in a sendcmpct"/""the one I saw in a cmpctack"/g
+19:10:32 <sipa> gmaxwell: ok
+19:10:38 <BlueMatt> I, personally, dont really like the cmpctack idea
+19:10:52 <sipa> so what alternative do you propose?
+19:10:52 <sdaftuar> i do like the cmpctack idea!
+19:10:52 <BlueMatt> certainly if we plan on having lots of versions, it is simpler protocol-wise
+19:10:56 <jl2012> wumpus: most of mine are pretty trivial. I am no able to do more than that anyway
+19:11:15 <BlueMatt> if we only ever have version 1 and 2 and maybe like a 3, then the previous proposal seems perfectly ok to me
+19:11:27 <morcos> My viewpoint is that we suffer a history of technical debt, and we have a chance now while compact blocks are new to kind of clean up the protocol messages with a bit less fuss
+19:11:36 <sipa> morcos: agree
+19:11:38 <BlueMatt> sipa: either way I'm proposing to switch the priority order to first-is-highest from last-is-highest
+19:11:39 <wumpus> jl2012: agreed
+19:11:42 <morcos> so we shoudl take the added changes now to be happier later with a better design
+19:11:51 <luke-jr> would it ever make sense to support a per-block encoding? for example, if nodes at some point want to pass blocks along as-is from peer A to other peers when possible
+19:12:01 <BlueMatt> note that we have to introduce a backwards compatibility hack if we do cmpctack
+19:12:17 <gmaxwell> I think it's fine to clean things up. But at some point the correct 'upgrade' is to just introduce a seperate mechenism sendcmpt2 and drop the old one, rather than extending.
+19:12:25 <sipa> BlueMatt: just say that if no ack is ever sent, it is implicitly for v1
+19:12:25 <luke-jr> BlueMatt: do we? old CBs will die with segwit anyway..
+19:13:38 <BlueMatt> sipa: this implies you have to announce sendcmpct version 1
+19:13:39 <gmaxwell> past some point trying to create a forever design just guarentees technical debt of a different kind. :)
+19:13:48 <BlueMatt> which the proposal for creating a cmpctack would not do
+19:14:03 <morcos> we should maybe do as gmaxwell said and discuss after meeting, but i don't think we actually need a hack, you just need to still tell 0.13 nodes that you support v1 and they only understand that by sending them a sendcmpct 1
+19:14:08 <morcos> but it doesn't hurt to send that to everyone
+19:14:12 <BlueMatt> alternatively: compact block version 3 can be called something other than compact blocks
+19:14:15 <BlueMatt> then you can do whatever :P
+19:14:19 <sipa> BlueMatt: hahaha
+19:14:27 <sipa> i could live with that too.
+19:14:29 <gmaxwell> BlueMatt: yea, thats what I was saying, effectively.
+19:14:59 <gmaxwell> besides the general framework here has limitations, further latency optinization should basically be a non-goal, because the fiber approach is vastly better in that respect.
+19:15:12 <BlueMatt> anyway, its taken 15 minutes to explain what the issues are, so maybe decide later, or let other topics go ahead first
+19:15:39 <wumpus> I don't think any other topics have been (seriously) proposed
+19:16:15 <wumpus> so go ahead
+19:16:29 <jl2012> I got to go. See you
+19:16:38 <morcos> proposed topic: picking a segwit rollout date and announcing this in a wider format
+19:16:38 <wumpus> see you later jl2012
+19:16:47 <sipa> jl2012: good night
+19:16:52 <sipa> BlueMatt: how about just sending sendcmpct2 for v2 :)
+19:17:00 * sipa hides
+19:17:16 <gmaxwell> morcos: I think the blocker there was basically having all the things merged in 0.13 branch that we believe would be needed on our end.
+19:17:18 <BlueMatt> alternatively: version negotiation protocol examples are at https://github.com/bitcoin/bips/blob/833dea41c4c757087ef4c35e3b19259ba2f80128/bip-0152.mediawiki#Sample_Version_Implementation and https://github.com/bitcoin/bips/blob/0d9b12cf285762e8ff661fe17e3261d014af1581/bip-0152.mediawiki#Sample_Version_Implementation
+19:17:19 <cfields> topic suggestion: rpc sync assumptions
+19:17:36 <btcdrak> need review of these backport #8679, should be simple enough
+19:18:07 <BlueMatt> though I think the second misses the fact that you have to use sendcmpct instead of cmpctack if its version 1
+19:18:21 <instagibbs_> oh hi. znc bouncer is broke or something.
+19:18:34 <morcos> gmaxwell: yeah i've been a bit out of touch, and i can see that makes sense..   but i also think it would be nice to give as much warning to the community as possible as to when we are proposing to actually release this
+19:19:08 <gmaxwell> morcos: yes, a message that says "This will happen soon, our side waiting for X" to give people a chance to raise any concerns would be reasonable, I think.
+19:19:12 <instagibbs_> /release/activate/ ?
+19:19:21 <morcos> instagibbs_: yes, both
+19:19:25 <CodeShark> we've been giving that message for several weeks already ;)
+19:19:30 <wumpus> #topic picking a segwit rollout date and announcing this in a wider format
+19:19:56 <instagibbs_> I've been pointing out the remaining milestone list, but it's a bit opaque for people who aren't actively reviewing stuff
+19:19:58 <gmaxwell> I went around to soem forks and asked for what their scheduling looked like and the response I got was basically 'after it's deployed in the network'
+19:20:05 <sipa> we can't propose a rollout date before knowing when we can have 0.13.1 out, and there are quite a few things to work out for that
+19:20:24 <morcos> sipa: yeah i suppose i agree
+19:20:26 <CodeShark> I'd rather not pile on additional scheduling issues externally unless we're confident
+19:20:56 <achow101> is a 0.12.2 backport still happening?
+19:21:01 <instagibbs_> Would the amount of lead time differ once we've merged all remaining issuess?
+19:21:07 <wumpus> yes it seems 0.13.1 is a lot more work than expected
+19:21:17 <wumpus> achow101: I don't think so
+19:21:51 <btcdrak> achow101: segwit needs compact block relay, so very unlikely.
+19:22:15 <achow101> ok
+19:22:17 <luke-jr> "needs"?
+19:22:22 <wumpus> achow101: getting this into 0.13 in the first place and assuring it is correct is a lot of work, I doubt anyone can pile up the extra work for 0.12
+19:22:51 <BlueMatt> luke-jr: yea, what? segwit doesnt NEED it
+19:23:00 <instagibbs_> And no one seems to be demanding it, more importantly
+19:23:05 <BlueMatt> just might be painful if you dont have it
+19:23:15 <btcdrak> unless you are happy with bigger blocks being relayed without it...
+19:23:24 <btcdrak> anyway. weeds.
+19:23:33 <sipa> yes, weeds
+19:24:07 <instagibbs_> Which PRs need the most attention at this point
+19:24:07 <gmaxwell> achow101: no we pretty much decided to not do a 0.12. backport over a month ago.
+19:24:10 <wumpus> weeds?
+19:24:18 <sipa> wumpus: "we're getting into the weeds"
+19:24:24 <wumpus> ohh
+19:24:34 <gmaxwell> achow101: not worth the risk and resource investment, and no one was jumping to do it. From measurements and feedback we've found that virtually no one uses backport releases.
+19:24:35 <instagibbs_> mfw pieter is explaining English idioms
+19:24:42 <CodeShark> in the netherlands that might have a different meaning ;)
+19:24:45 <jonasschnelli> heh
+19:24:50 <wumpus> yes, 0.12 just isn't a very important topic right now, let's focus on moving forward
+19:24:56 <wumpus> CodeShark: yes :)
+19:25:20 <luke-jr> also, if someone really needs 0.12, they can put it behind a 0.13.1 node
+19:25:21 <wumpus> next topic?
+19:25:47 <wumpus> #topic rpc sync assumptions
+19:25:57 <gmaxwell> luke-jr: precisely, and any sw backport would create the disruption people were trying to avoid in staying with an older version.
+19:26:29 <gmaxwell> wumpus: I don't understand why people thought it was a problem that getbalance could return a "mid block" response.
+19:26:32 <morcos> just to be clear, the change to reduce cs_main locks is only for 0.14, so we don't have to worry about rpc sync assumptions for 0.13.1 right?
+19:26:35 <cfields> so, marcos pointed out that the reason that the rpc tests are failing and fix is needed is that we broke some timing assumptions by optimizing some stuff
+19:27:10 <cfields> so the question is: are those assumptions ok to break (just fix the tests), or are they part of the api?
+19:27:28 <cfields> wow, re-reading that, that's incredibly vague :)
+19:27:33 <sipa> morcos: yes
+19:27:36 <jonasschnelli> Can you make a clear example?
+19:27:46 <gmaxwell> I think the question should be what do we think the best behavior is. And if the best behavior changes the API, we should do it and document the change.
+19:27:57 <jeremyrubin> WalletSync expected to occur in test
+19:28:02 <jonasschnelli> Do we assume the wallet has processed a transaction after getting informed of a blockupdate?
+19:28:04 <jeremyrubin> *under the lock
+19:28:08 <luke-jr> does "mid block" include "numbers are being changed, so the value is unlike either the previous OR the next correct value"?
+19:28:09 <wumpus> gmaxwell: I don't know either, there's no guarantee that blocks are atomically processed by the wallet
+19:28:25 <sipa> we can make it atomic, as pointed out by morcos earlier
+19:28:26 <jonasschnelli> s/blockupdate/tipupdate
+19:28:32 <wumpus> but is it necessary?
+19:28:32 <morcos> luke-jr: it reflects the full effect of some of the txs in the block but not all
+19:28:48 <gmaxwell> my understanding is that the tests are doing things like handing a node a block, then instantly checking the wallet, and expecting it to be fully consistent with the block right away. Is this understanding correct?
+19:28:55 <sipa> my alternative is that we make the wallet aware of the current tip it knows about, and we let confirmations be computed based on that
+19:29:07 <sipa> that means that mid-block update you can see unconfirmed transactions
+19:29:12 <BlueMatt> jonasschnelli: ex: you do a getblockheight rpc call - under previous versions if you then do a getbalance that balance is up to date to that block, this is no longer true
+19:29:19 <wumpus> the tests need proper synchronization commands, some of those need to be implemented, I don't think we need to change the whole API for that
+19:29:24 <morcos> wumpus: well before we get to the atomic block question, there is the question of whether if you wait for the blockchain to be synced to some height, and then query the wallet whether you are getting wallet values of at least that height (mid-block or not)
+19:29:25 <cfields> gmaxwell: correct. as soon as the height/hash is reflected, they assume the wallet is synced with that height/hash
+19:29:32 <wumpus> (besides adding those syncronization commands)
+19:29:54 <jonasschnelli> Can we not just have the wallets bestblock in getwalletinfo and use it for sync with getchaintips?
+19:29:54 <BlueMatt> sipa: I think mid-block updates is a blatant violation of the "principal of least surprise"
+19:30:00 <gmaxwell> morcos: okay, I think sipa's suggestion would address that esp with coupled with a way of asking for the wallet's tip.
+19:30:10 <wumpus> morcos: well it would make sense for the wallet to track where it is, synchronization-wise, absolutely
+19:30:22 <gmaxwell> BlueMatt: uh then we need to remove unconfirmed transactions too?!
+19:30:24 <wumpus> morcos:  and for thtat info to be available externally
+19:30:41 <luke-jr> showing a best-wallet-block would make the whole mid-block state even more broken IMO (what best-block will it show mid-state?)
+19:30:44 <sipa> BlueMatt: there can always be unconfirmed transactions in the wallet
+19:30:47 <BlueMatt> and, further, if wallet is allowed to return something that is not up to date with the start of the call, this changes literally our entire api....so now anyone using the rpc has to go re-audit all of their uses of it???
+19:30:53 <sipa> luke-jr: the previous one
+19:30:56 <BlueMatt> sipa: huh? I mean things mid-block...am I missing what you said?
+19:31:01 <gmaxwell> luke-jr: it will update its state when its done processing updates, of course.
+19:31:03 <morcos> fixing the mid-block thing seems pretty trivial to me, why wouldnt' we just do that
+19:31:07 <jonasschnelli> luke-jr: the bestblock should only be updated after fully processing? Right?
+19:31:23 <BlueMatt> sipa: i was under the impression you indicated that you would see txn which come later in that block as unconfirmed, while txn earlier in the block are marked confirmed
+19:31:28 <gmaxwell> Why are people regarding mid block as a bug?!?
+19:31:31 <sipa> BlueMatt: no
+19:31:44 <gmaxwell> at _any_ time a transaction can show up and appear in the wallet, unrelated to any blocks.
+19:31:51 <morcos> gmaxwell: b/c its not a feature?
+19:31:57 <sipa> BlueMatt: mid-update you would see the transactions of the new block as unconfirmed
+19:32:00 <luke-jr> that seems the most obvious behaviour, but if you look at bestblock+balance, I would think them a pair, yet balance might be bestblock+partOfNextBlock in reality?
+19:32:02 <morcos> i mean does anyone want that
+19:32:03 <BlueMatt> ahh, yes, ok, so i was just confused....txn which appear in wallet before the block has processed seems reasonable
+19:32:07 <gmaxwell> Unless you want to remove unconfirmed transactions that will always happen.
+19:32:27 <sipa> i also don't think there is any problem with grabbing a wallet lock during the update
+19:32:36 <wumpus> so if changing the balance mid-block is regarded as a bug, that should apply to all other state too: the transaction list, for example. It should hold all updates until it processed the entire block
+19:32:36 <sipa> which would prevent seeing a mid-update state
+19:32:42 <sipa> i'm just questioning if it is necessary
+19:32:56 <gmaxwell> it seems strange to me to hurt concurrency to protect a property that we don't actually have (due to unconfirmed transactions)
+19:33:01 <wumpus> I don't think using the lock for that is a good thing
+19:33:21 <wumpus> agree with gmaxwell
+19:33:23 <jonasschnelli> From the wallet perspective processing doesn't matter, you just want to see confirmations... can slowly appear on a tx list IMO
+19:33:23 <cfields> wumpus: right, that made me cringe. That seems like a major layer violation
+19:33:36 <morcos> wumpus: gmaxwell: but can you explain what concurrency we are hurting?
+19:33:44 <morcos> i'm not suggesting we put cs_main covering those again
+19:33:49 <wumpus> morcos: you have to hold the lock *all* the time while processing the block
+19:33:53 <BlueMatt> gmaxwell: if it were listing your *confirmed* balance as mid-block, then it would be an issue
+19:33:54 <sipa> wumpus: no
+19:34:00 <gmaxwell> Wallet processing shouldn't stall when the node is processing a block, at least not any more than strictly necessary.
+19:34:01 <BlueMatt> which I believe is what people are worried about
+19:34:07 <sipa> wumpus: the proposal is to grab cs_wallet during the wallet updating for the block
+19:34:10 * luke-jr wonders if there's a good way to use listsinceblock
+19:34:17 <sipa> wumpus: which happens in its entirety after main processes the block
+19:34:19 <morcos> i'm just suggesting we use cs_wallet or some other lock that prevents a wallet specific call from returning until you are no longer in the middle of a loop that calls SyncWithWallets (on a given block)
+19:34:36 <sipa> wumpus: cs_main isn't even held at the point
+19:34:36 <wumpus> sipa: I know, but you'd still be holding the wallet lock longer than necessary
+19:34:45 <BlueMatt> to be fair, all of this should move onto a background thread in the future anyway
+19:34:50 <gmaxwell> morcos: so now wallet calls will stall block processing? (when the block processing waits to take that lock?)
+19:34:50 <wumpus> BlueMatt: agreed on that
+19:34:59 <sipa> yes, and it may be harder to maining if we parallellize/asynchronize things more
+19:35:02 <wumpus> wallet block processing should be async at some point
+19:35:16 <BlueMatt> so this would be a temporary fix that we should consider something which will happen on a background thread...lets not get too focused on blocking block processing with it
+19:35:22 <sipa> morcos: do you think there is a problem with showing the transactions from the being-processed-block as unconfirmed during the update?
+19:35:24 <morcos> gmaxwell: hmmm, yes i suppose while thats in the main thread thats a bad idea
+19:35:36 <jonasschnelli> IMO the wallet should process a copy of the block on its own, own thread
+19:35:43 <sipa> jonasschnelli: yes yes
+19:35:47 <CodeShark> ^]
+19:35:49 <wumpus> sipa: probably it will already be in the wallet as unconfirmed anyhow
+19:35:50 <sipa> jonasschnelli: i think everyone agrees on that
+19:35:52 <gmaxwell> BlueMatt: I'm fine with temporary fixes, I'm just confused as to why anything needs to be fixed here except some unrealistic expectations in the tests.
+19:36:05 <sipa> gmaxwell: i believe the current situation is broken
+19:36:20 <gmaxwell> sipa: great. I'd like to understand why.
+19:36:25 <sipa> mid-update you can see half of the block reflected as confirmed transactions, and miss other transactions from that same block
+19:36:32 <BlueMatt> gmaxwell: two issues: getbalance, by default, shows your *confirmed* balance, so you expect that to be consistent...right now it is not clear (I maybe wrong) that it might not show *half* of your actually confirmed balance
+19:36:51 <morcos> sipa: i think i need to go look more carefully at what SyncWithWallets does with txs from the block, but for instance, coudl you end up removing a conflicted tx, then showing a balance, without having addd the replacement tx yet.  i think yes, and i think thats would be confusing
+19:36:53 <gmaxwell> okay, I agree showing confirmed for some and not others is odd. Showing some and not others, however I think is fine, and consistent with the normal behavior.
+19:37:05 <cfields> let's not focus on the details here. The question at hand (mine, anyway), is whether the blocking behavior from 0.13 is considered part of the api, or if it's ok to deviate. If the answer is the latter, we can just fix the tests and move on.
+19:37:19 <sipa> cfields: blocking what behaviour?
+19:37:27 <sipa> 0.13 does not have this change
+19:37:52 <sipa> cfields: i think there is something that needs to be fixed in master, that is deeper than fixing up tests
+19:37:56 <sipa> cfields: but it may not be much
+19:38:11 <cfields> sipa: right, 0.13 doesn't give up the lock
+19:38:21 <sipa> indeed, 0.13 is totally fine
+19:38:27 <BlueMatt> gmaxwell: second, we are making an API change here, which it seems to me is probably going to break clients: previously if you called getblockheigh, and then getbalance, getbalance will be up-to-date at least as of that block...this is no longer true. I can absolutely see clients having assumed this
+19:38:29 <wumpus> "okay, I agree showing confirmed for some and not others is odd" absolutely. This would break the assumption that curtip-block which tx was confirmed in is the number of confirmations
+19:38:37 <gmaxwell> cfields: That the wallet blocks shouldn't be part of the api. Certian consistency properties might reasonably be.  I'm actually dubious that seeing confirmations incrementally is actually a problem.
+19:38:57 <gmaxwell> BlueMatt: no, thats not really true either, since the chain can reorg between those two calls.
+19:39:07 <cfields> sipa: right. and now master has changed that behavior. So if the behavior is considered to be part of the api, we need to revert it
+19:39:10 <jonasschnelli> Why can't we not just use SyncWithWallets or mempool and add a SyncBlockWithWallet(blockcopy) for added and removed tips? Process it in a wallet-thread (similar to periodic flushes) and use cs_wallet there?
+19:39:11 <morcos> ok, how about i write up an issue
+19:39:20 <cfields> (I don't believe that and I'd -1 it. Just clarifying)
+19:39:43 <morcos> i don't think we should revert the change
+19:39:58 <wumpus> we shouldn't revert anything that prevents future paralellization/concurrency
+19:40:12 <sipa> i think the step was a step in the right direction, and we should continue it
+19:40:22 <sipa> but we have time in 0.14 to figure out exactly how
+19:40:23 <wumpus> if there is a need to 'force everything to wait for thewallet' that's a big -1 from me too
+19:40:25 <morcos> i think we should make it so that the existing rpc calls returns omething that make sense.  two issues 1) once you've waited for a certain height, that once you ask for balance you get a balance of at least that height 2) whether mid-block updates are ok
+19:40:29 <gmaxwell> how does this concurrency interact with the wallet's mempool interaction. The wallet cares if tx are in mempool or not, will a wallet look unconfirmed and fallen out of the mempool briefly while it's confirming?
+19:40:32 <morcos> 1) needs fixing, 2) needs more investigation
+19:40:55 <cfields> agreed. ok, that answers my question.
+19:41:03 <morcos> 1) can be fixed with cfields existing code from 8680 without harming any concurrency
+19:41:04 <sipa> morcos: 1) is easily fixed by reporting the wallet height rather than the core height
+19:41:10 <jonasschnelli> morcos: isn't 1) and 2) solvable from the wallet side?
+19:41:17 <wumpus> wallet height and core height are different things
+19:41:25 <sdaftuar> sipa: yes, but that would be api-breaking right?
+19:41:29 <wumpus> it has always been possible to confound these, but that has to change
+19:41:32 <sipa> sdaftuar: i believe not
+19:41:34 <sdaftuar> i think that's the right idea though
+19:41:57 <gmaxwell> Well it means that someone might need to look in a different place for the wallet height, no?
+19:42:04 <sipa> sdaftuar: if we make 0.14 report the wallet height,  i believe it will look equivalent to 0.13
+19:42:09 <wumpus> gmaxwell: yes, it'd need to be a wallet RPC
+19:42:24 <morcos> sipa: the issue is people probably already use getblockcount and then ask for balances
+19:42:32 <wumpus> either on getwalletinfo or getwalletblockcount
+19:42:37 <morcos> but they do that in their code
+19:42:38 <sipa> morcos: so, make getblockcount by default report the wallet height
+19:42:46 <wumpus> bah
+19:42:48 <morcos> that seems like a crazy change
+19:42:53 <gmaxwell> morcos: thats okay, we would release note that in 0.14. If it's the right behavior to change we shouldn't hesitate to do so here.
+19:42:58 <sipa> why? it's exactly what we've been doing all the time
+19:43:02 <wumpus> change getblockcount to a wallet call?!
+19:43:10 <jonasschnelli> no
+19:43:13 <sdaftuar> that means you need wallet support to use that rpc?
+19:43:15 <CodeShark> bad idea
+19:43:15 <morcos> i think we're getting a bit too worked up
+19:43:16 <sdaftuar> blech
+19:43:16 <wumpus> what if there is no wallet built in?
+19:43:25 <sipa> sigh
+19:43:26 <jonasschnelli> no blockcount!
+19:43:26 <gmaxwell> that woudl be kind of odd, but it's 99% of the time used as a wallet call, ... and we have getblockchaininfo....
+19:43:29 <wumpus> what if there are multiple wallets? ask them all, return the max value?
+19:43:38 <BlueMatt> gmaxwell: certain people have reorg handling code, this api change will not trigger their reorg handling code and will still break clients!
+19:43:42 <sipa> so deprepcate the RPC
+19:43:49 <jonasschnelli> Just give out the bestblockhash in getwalletinfo
+19:43:49 <BlueMatt> it is absolutely not unreasonable for this change to break rpc clients
+19:43:50 <sipa> and introduce a wallet-specific one and main-specific one
+19:43:53 <morcos> its easy enough to make wallet balance calls wait on their own until either the wallet reports a height that matches chainactive height or using cfields mechanism, that slows nothing other than that wallet call and solves 1
+19:44:00 <cfields> why not just have getblockcount block until the block is finished processing (all signals, not wallet specific)? New apis can be async
+19:44:08 <wumpus> yes, there needs to be a wallet-specific one
+19:44:12 <sipa> cfields: that's just delaying the problem
+19:44:20 <BlueMatt> what morcos said
+19:44:22 <gmaxwell> BlueMatt: look, the API is not, should not, and cannot be a suicide pact. We're talking about an change in a major version, and one that would only require minor changes. _WE CAN CHANGE THE API_.
+19:44:23 <sipa> cfields: because that's no longer possible if the wallet works asynchronously
+19:44:25 <BlueMatt> just block wallet calls until they are caught up
+19:44:44 <gmaxwell> Especially in a minor way like "get your height for purpose X this way instead of that"
+19:44:54 <wumpus> wallet processing blocking wallet calls is OK
+19:44:55 <BlueMatt> there is a simple solution to this that doesnt require all the users audit their codebase
+19:44:58 <BlueMatt> that isnt even a big deal
+19:44:58 <wumpus> wallet processing blocking core calls is not
+19:45:06 <BlueMatt> but you're arguing we change the api because its simpler?
+19:45:22 <BlueMatt> just block wallet rpc calls until its caught up at the start of the cs_wallet lock
+19:45:35 <BlueMatt> yes, wumpus, dont think anyone is arguing for that
+19:45:36 <gmaxwell> I haven't heard anything suggested that doesn't require having the wallet and block processing block each other.
+19:45:43 <BlueMatt> noooo
+19:45:45 <BlueMatt> wait, wut?
+19:45:45 <morcos> wumpus: yes, see cory's code in 8680, can easily adopt all wallet calls to use that (or ask the wallet for its height but then they might have to poll) and weight until it hits what chainactive was at the start of the call
+19:46:00 <BlueMatt> the proposal is that rpc calls might block until the wallet has caught up to where main chainstate is
+19:46:03 <morcos> gmaxwell: yeah i think you're misunderstanding
+19:46:10 <sipa> morcos: yup... but at some point we'd want to get rid of that too, i think
+19:46:13 <BlueMatt> the wallet processing can still be in a background thread, or on the main thread, or whatever
+19:46:17 <wumpus> morcos: yes, that makes sense
+19:46:19 <gmaxwell> and I think it's insane to degrade concurrency for an obscure property that anyone who wants can retain by using an appropritate call to ask where the wallet is vs where the blockchain is.
+19:46:20 <BlueMatt> it just has to catch up before the rpc will return
+19:46:37 <BlueMatt> gmaxwell: we arent degregading concurrency except that rpc calls might block, afaict
+19:46:46 <BlueMatt> and then we're returning more up-to-date info anyway
+19:46:50 <BlueMatt> so thats not even so bad
+19:46:57 <morcos> might block but would still return before they would have in 0.13!!!
+19:47:01 <cfields> BlueMatt: and it only blocks as long sa it would've before
+19:47:08 <BlueMatt> true
+19:47:38 <gmaxwell> what was suggested above was the block processing taking the wallet lock; which would bidirectionally block each other.
+19:47:48 <sipa> gmaxwell: no
+19:47:52 <morcos> gmaxwell: that was a proposal to solve problem 2 (the mid block)
+19:47:54 <BlueMatt> that was to a different issue
+19:47:57 <BlueMatt> there are two issues
+19:48:01 <BlueMatt> well, potential issues
+19:48:12 <sipa> the proposal was that _the wallet_ would grab _the wallet lock_ while it was updating its state for a new block
+19:48:25 <morcos> that problem needs more investigation to determine a) whether it needs solving and b) whether there is a simple solution.  i agree with your objection to my first suggested solution
+19:49:15 <morcos> sipa: yes but thats only a good idea when thats not running in teh same thread as block processing in the middle of block processing, otherwise some other independent wallet call holds up block processing
+19:49:17 <sipa> are there other topics? i don't think we need to figure this out completely right now
+19:49:20 <gmaxwell> morcos: Sounds fine to me.
+19:49:21 <wumpus> I think it's better to take this outside the meeting. Any other topics?
+19:49:28 <morcos> wumpus: ha , too late!
+19:49:48 <wumpus> morcos: heh same idea
+19:50:00 <cfields> this can be handled with signals btw, no need to grab actual locks. StartProcessing() -> block rpc -> FinishedProcessing() unblock
+19:50:36 <cfields> yes, later is fine. That got more heated than I expected :)
+19:50:59 <cfields> though, we still have the question of what to do about the tests.
+19:51:13 <sipa> morcos: yes, i'm not saying that's what we should or shouldn't do... just clarifying what the idea was
+19:51:14 <morcos> does 8680 fix the tests or not really?
+19:51:26 <wumpus> cfields: I think your pull is fine for that, as a temp fix at least
+19:51:28 <morcos> i think 8680 seems reasonable to me
+19:51:33 <wumpus> right
+19:51:39 <sipa> let's merge 8680 to fix the annoyance with the test
+19:51:42 <cfields> morcos: i believe so, but not 100% because of the nature
+19:51:47 <sipa> but open a tracker issue to reconsider
+19:51:52 <cfields> (i'm not 100%, sorry)
+19:51:53 <wumpus> #action merge  8680 to fix the annoyance with the test
+19:51:54 <michagogo> <i>8m warning</i>
+19:52:14 <wumpus> michagogo: looks like we're out of topics sooner than out of time
+19:52:19 <cfields> ok, I can slim that down to only the rpc used by the tests then
+19:52:25 <wumpus> cfields: ack
+19:52:33 <sipa> cfields: thanks
+19:52:49 <wumpus> #endmeeting
