@@ -1,0 +1,386 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:19</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Sep 15 19:01:19 2016 UTC.  The chair is jonasschnelli. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:19</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> topic proposals?
+<a name="l-5"></a><span class="tm">19:01:46</span><span class="nk"> &lt;MarcoFalke&gt;</span> proposed short topic: EOL 0.11
+<a name="l-6"></a><span class="tm">19:02:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="topic">#topic </span><span class="topicline">EOL 0.11</span>
+<a name="l-7"></a><span class="tm">19:02:18</span><span class="nk"> &lt;cfields_&gt;</span> I'll only be around for ~30 min before I have to head out.
+<a name="l-8"></a><span class="tm">19:02:29</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin-core/bitcoincore.org/pull/211</span>
+<a name="l-9"></a><span class="tm">19:02:37</span><span class="nk"> &lt;wumpus&gt;</span> if we're following the same schedule as usual, 0.11 was EOL at the moment 0.13 was released
+<a name="l-10"></a><span class="tm">19:02:47</span><span class="nk"> &lt;sipa&gt;</span> except critical fixes?
+<a name="l-11"></a><span class="tm">19:02:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree with wumpus
+<a name="l-12"></a><span class="tm">19:03:02</span><span class="nk"> &lt;MarcoFalke&gt;</span> it is about critical fixes
+<a name="l-13"></a><span class="tm">19:03:03</span><span class="nk"> &lt;wumpus&gt;</span> security problems may be an exception
+<a name="l-14"></a><span class="tm">19:03:22</span><span class="nk"> &lt;MarcoFalke&gt;</span> We should set a date when we no longer fix critial issues
+<a name="l-15"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I thought 0.11 was EOL when 0.13 was released, except for whatever exceptions we decide...
+<a name="l-16"></a><span class="tm">19:03:33</span><span class="nk"> &lt;jeremyrubin&gt;</span> nheren
+<a name="l-17"></a><span class="tm">19:03:33</span><span class="nk"> &lt;wumpus&gt;</span> but usually no new executables will be built, just simple backports
+<a name="l-18"></a><span class="tm">19:03:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> agree
+<a name="l-19"></a><span class="tm">19:03:53</span><span class="nk"> &lt;petertodd&gt;</span> ack EOL; you can always run 0.11 behind a 0.13 node if you need too
+<a name="l-20"></a><span class="tm">19:03:59</span><span class="nk"> &lt;sipa&gt;</span> so we need to get https://bitcoincore.org/en/lifecycle/ updated?
+<a name="l-21"></a><span class="tm">19:04:07</span><span class="nk"> &lt;kanzure&gt;</span> i think the concern was that 0.11 was not marked as EOL, not that it wasn't considered EOL.
+<a name="l-22"></a><span class="tm">19:04:09</span><span class="nk"> &lt;MarcoFalke&gt;</span> Jup, note that I already changed maintenance end to 2016-08-23
+<a name="l-23"></a><span class="tm">19:04:18</span><span class="nk"> &lt;wumpus&gt;</span> yes the bitcoin.org page needs to be updated
+<a name="l-24"></a><span class="tm">19:04:31</span><span class="nk"> &lt;wumpus&gt;</span> +Core
+<a name="l-25"></a><span class="tm">19:04:38</span><span class="nk"> &lt;achow101&gt;</span> If 0.11 is EOL, then what about 0.10?
+<a name="l-26"></a><span class="tm">19:04:48</span><span class="nk"> &lt;sipa&gt;</span> ah, so 0.11 is not EOL but maintenance end
+<a name="l-27"></a><span class="tm">19:04:59</span><span class="nk"> &lt;sipa&gt;</span> EOL means not even security critical backports
+<a name="l-28"></a><span class="tm">19:05:04</span><span class="nk"> &lt;sipa&gt;</span> according to that website
+<a name="l-29"></a><span class="tm">19:05:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> it was unmaintained as of january or so.
+<a name="l-30"></a><span class="tm">19:05:28</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> but it is still marked as receiving critical updates on bitcoincore.org
+<a name="l-31"></a><span class="tm">19:05:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> According to bitcoincore.org 0.10 has EOL in 2017
+<a name="l-32"></a><span class="tm">19:05:35</span><span class="nk"> &lt;sipa&gt;</span> but 0.10 should be EOL at 2016-08-23
+<a name="l-33"></a><span class="tm">19:05:40</span><span class="nk"> &lt;morcos&gt;</span> it seems to me that ending security critical backports depends not just on how old the release is but on how many people are still using it
+<a name="l-34"></a><span class="tm">19:05:50</span><span class="nk"> &lt;gmaxwell&gt;</span> what morcos says.
+<a name="l-35"></a><span class="tm">19:05:54</span><span class="nk"> &lt;wumpus&gt;</span> and how difficult it is to backport/test
+<a name="l-36"></a><span class="tm">19:06:00</span><span class="nk"> &lt;morcos&gt;</span> ha ha, of course!
+<a name="l-37"></a><span class="tm">19:06:08</span><span class="nk"> &lt;wumpus&gt;</span> I mean if it's just updating a dependency library like upnp...
+<a name="l-38"></a><span class="tm">19:06:17</span><span class="nk"> &lt;gmaxwell&gt;</span> the reality is that it has nothing to do with dates. We're not actively seeking to maintain these versions but will do what it takes to protect the ecosystem.
+<a name="l-39"></a><span class="tm">19:06:19</span><span class="nk"> &lt;sipa&gt;</span> sure, but the reason for having a clearly stated policy is so that people can make informed decisions about what to run
+<a name="l-40"></a><span class="tm">19:06:26</span><span class="nk"> &lt;MarcoFalke&gt;</span> ^
+<a name="l-41"></a><span class="tm">19:06:47</span><span class="nk"> &lt;wumpus&gt;</span> I think this will always be a discussion people can't really agree on
+<a name="l-42"></a><span class="tm">19:06:48</span><span class="nk"> &lt;MarcoFalke&gt;</span> We should communicate the EOL in advance
+<a name="l-43"></a><span class="tm">19:06:51</span><span class="nk"> &lt;luke-jr&gt;</span> frankly 0.12 seems like EOL before 0.14 at this rate
+<a name="l-44"></a><span class="tm">19:06:56</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> setting expectations also can help protect the ecosystem
+<a name="l-45"></a><span class="tm">19:07:07</span><span class="nk"> &lt;gmaxwell&gt;</span> We also continue to see no feedback from parties that would prefer to use a 0.old.next over a 0.new.hottness. :)
+<a name="l-46"></a><span class="tm">19:07:16 </span><span class="nka">* jonasschnelli</span> <span class="ac">still count 569 0.10.x peers with status "good" on his seeder</span>
+<a name="l-47"></a><span class="tm">19:07:19</span><span class="nk"> &lt;morcos&gt;</span> agreed with all, but i'm saying we should be supplementing our discussion with #'s of nodes running 0.10, 0.11
+<a name="l-48"></a><span class="tm">19:07:23</span><span class="nk"> &lt;sipa&gt;</span> i wish we had more insight in users' needs... that there would be requests of the form "wait! no! i can't upgrade to 0.12 yet for reason X, but we really need updated for now"
+<a name="l-49"></a><span class="tm">19:07:24</span><span class="nk"> &lt;wumpus&gt;</span> in practice it's indeed not about dates, but if someone cares about using/maintainging it
+<a name="l-50"></a><span class="tm">19:07:27</span><span class="nk"> &lt;BlueMatt&gt;</span> am I the only one who wasnt aware of that page? I mean I dont think a strict N-monghts schedule really works, so we'd need to all be thinking about it/aware of it, at least, to make it reasonable
+<a name="l-51"></a><span class="tm">19:07:28</span><span class="nk"> &lt;wumpus&gt;</span> it seems to be 0 people
+<a name="l-52"></a><span class="tm">19:07:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Which supports the view that effort spent supporting older versions is of negative value.
+<a name="l-53"></a><span class="tm">19:07:45</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> maintaining it is not practical without testing/usage
+<a name="l-54"></a><span class="tm">19:07:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">morcos:</span> so many nodes are run because users "want to contribute" - I wouldn't read too much into that number. Equally, a lot of nodes are likely spy-nodes...
+<a name="l-55"></a><span class="tm">19:07:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> right it's a chicken egg problem
+<a name="l-56"></a><span class="tm">19:08:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> that's a fair characterization of reality, but perhaps that page should reflect that
+<a name="l-57"></a><span class="tm">19:08:02</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">BlueMatt:</span> i think it's something like "people should be following the mailing lists and announcement mailing lists and the webpage, although apparently the webpage is out of sync with reality for the moment"
+<a name="l-58"></a><span class="tm">19:08:45</span><span class="nk"> &lt;wumpus&gt;</span> yes, updating the webpage to reflect reality would make sense
+<a name="l-59"></a><span class="tm">19:08:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">kanzure:</span> hmm? people shouldnt have to follow the ml to find out if their node is EOL...we should have some kind of information for users, but devs have to be aware that it exists for it to be accurate :p
+<a name="l-60"></a><span class="tm">19:08:50</span><span class="nk"> &lt;gmaxwell&gt;</span> If we were being completely pragmatic we would probably say that we only support the very latest thing put out at all.-- this is all that I can tell people are upgrading to. But I think that is a bad principle and the fact that the only thing people upgrade to is the latest thing is an aspect of industry immaturity which will hopefully go away.
+<a name="l-61"></a><span class="tm">19:08:56</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I maintained old versions back to 0.4 for years with no indication of real usage or feedback - the first few got some testing, but after a while it never made it past RC
+<a name="l-62"></a><span class="tm">19:09:43</span><span class="nk"> &lt;petertodd&gt;</span> fwiw I've never gotten any feedback from python-bitcoinlib users complaining about non-backwards-compatible changes
+<a name="l-63"></a><span class="tm">19:09:43</span><span class="nk"> &lt;luke-jr&gt;</span> IMO we *should* have longer support, but it just doesn't seem feasible with softforks
+<a name="l-64"></a><span class="tm">19:09:47</span><span class="nk"> &lt;wumpus&gt;</span> the point of creating that webpage was to have an easier available place where release maintenance status was available, but yes if it runs out of date with reality then at some point it's only confusing
+<a name="l-65"></a><span class="tm">19:09:50 </span><span class="nka">* BlueMatt</span> <span class="ac">wishes there was an "ask the community" button for this kind of thing....</span>
+<a name="l-66"></a><span class="tm">19:10:06</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> too bad we got rid of the alert system... /ducks
+<a name="l-67"></a><span class="tm">19:10:19</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">wumpus:</span> probably a good fix would be to have a checklist for releases, and add EOL webpage updates to that checklist.
+<a name="l-68"></a><span class="tm">19:10:21</span><span class="nk"> &lt;wumpus&gt;</span> and it should reflect how things are, not how we think ideally they should be
+<a name="l-69"></a><span class="tm">19:10:28</span><span class="nk"> &lt;sipa&gt;</span> we could make node software automatically show a warning X months after being released...
+<a name="l-70"></a><span class="tm">19:10:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> we do have release-process.md
+<a name="l-71"></a><span class="tm">19:10:43</span><span class="nk"> &lt;kanzure&gt;</span> well is it in there?
+<a name="l-72"></a><span class="tm">19:10:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-73"></a><span class="tm">19:10:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> there's one in the release process, but there is already so much stuff there. I don't thin kthe assumption should be that the same person does all that
+<a name="l-74"></a><span class="tm">19:11:06</span><span class="nk"> &lt;kanzure&gt;</span> "EOL" not found in that doc, nor variations of it.
+<a name="l-75"></a><span class="tm">19:11:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> signal does that actually - they forgot the timer expired once and scared a bunch of people
+<a name="l-76"></a><span class="tm">19:11:26</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">wumpus:</span> sure, sure, perhaps it's multiple people. but a checklist can still be helpful regardless of number of people that use it.
+<a name="l-77"></a><span class="tm">19:11:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">petertodd:</span> is that automated? heh, yea, maybe
+<a name="l-78"></a><span class="tm">19:11:48</span><span class="nk"> &lt;achow101&gt;</span> has anyone actually tried asking the community? like posting on reddit, bitcointalk, etc.
+<a name="l-79"></a><span class="tm">19:12:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> if we stagnate for 12 months, something else is wrong
+<a name="l-80"></a><span class="tm">19:12:19</span><span class="nk"> &lt;wumpus&gt;</span> I think we should first document how things are clearly on the site, and only then worry about maybe changing it
+<a name="l-81"></a><span class="tm">19:12:25</span><span class="nk"> &lt;btcdrak&gt;</span> oh sorry I am late
+<a name="l-82"></a><span class="tm">19:12:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> The problem is probably not what the community want, its more what the team is capable of delivering
+<a name="l-83"></a><span class="tm">19:12:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> we've posted asking for feedback on older versions many times in the past, and also called for testing on old support backups.
+<a name="l-84"></a><span class="tm">19:12:37</span><span class="nk"> &lt;wumpus&gt;</span> exactly jonasschnelli
+<a name="l-85"></a><span class="tm">19:12:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Its an OSS, if people want longer EOL, they should contribute
+<a name="l-86"></a><span class="tm">19:13:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I've also gone 1:1 to several companies. Mostly we've recieved complete silence. scanning the network (and watching inbounds) also shows that adoption of point releases after a new major is out is basically non-existant.
+<a name="l-87"></a><span class="tm">19:13:20</span><span class="nk"> &lt;wumpus&gt;</span> as I've said before I have nothing against maintaining old releases if someone really commits to that
+<a name="l-88"></a><span class="tm">19:13:24</span><span class="nk"> &lt;sipa&gt;</span> that's fair... we're only so many people, and review for backports is a significant burden
+<a name="l-89"></a><span class="tm">19:13:25</span><span class="nk"> &lt;luke-jr&gt;</span> I'm happy to go back to maintaining stable versions longer if people will actually use it (and can't upgrade)
+<a name="l-90"></a><span class="tm">19:13:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> or at least speak up.
+<a name="l-91"></a><span class="tm">19:13:31</span><span class="nk"> &lt;wumpus&gt;</span> but I've never seen much interest, so reality is, it doesn't
+<a name="l-92"></a><span class="tm">19:13:38</span><span class="nk"> &lt;kanzure&gt;</span> i don't know what to think about re: automatic warnings after timelapse.   as long a there's some good reason to think it' dissimilar from automatic updates, i suppose..
+<a name="l-93"></a><span class="tm">19:13:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> right.
+<a name="l-94"></a><span class="tm">19:13:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> I don't know what to think about it either
+<a name="l-95"></a><span class="tm">19:13:58</span><span class="nk"> &lt;kanzure&gt;</span> didn't mean to impose on wumpus with the checklist suggestion
+<a name="l-96"></a><span class="tm">19:14:09</span><span class="nk"> &lt;luke-jr&gt;</span> maybe update EOL page, and mention the lack of usage as the reason, suggesting if people want it, they should get in touch
+<a name="l-97"></a><span class="tm">19:14:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Luke-Jr:</span> +1
+<a name="l-98"></a><span class="tm">19:14:20</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so lets post something on the ml or so that says "We're gonna stop doing this, but would very much love to hear if anyone actually wants it" and then link to that from reddit/emails/twitter/whatever
+<a name="l-99"></a><span class="tm">19:14:27</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, that
+<a name="l-100"></a><span class="tm">19:14:29</span><span class="nk"> &lt;gmaxwell&gt;</span> stop doing what?
+<a name="l-101"></a><span class="tm">19:14:32</span><span class="nk"> &lt;gmaxwell&gt;</span> I am really confused.
+<a name="l-102"></a><span class="tm">19:14:37</span><span class="nk"> &lt;BlueMatt&gt;</span> stop supporting backports
+<a name="l-103"></a><span class="tm">19:14:42</span><span class="nk"> &lt;BlueMatt&gt;</span> beyond like one or two versions, maybe
+<a name="l-104"></a><span class="tm">19:14:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> I really don't like time-locks in programs. Though this would just be a warning I guess... but it could be intimidating
+<a name="l-105"></a><span class="tm">19:14:46</span><span class="nk"> &lt;gmaxwell&gt;</span> We have a stated policy, we maintain one major version behind.
+<a name="l-106"></a><span class="tm">19:14:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> stop promising backports we aren't really doing anyway
+<a name="l-107"></a><span class="tm">19:14:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> we already did that, like, a yea ago.
+<a name="l-108"></a><span class="tm">19:14:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> stop doing sound negative... something more like "...we are concentrating ressources on X"
+<a name="l-109"></a><span class="tm">19:15:01</span><span class="nk"> &lt;gmaxwell&gt;</span> year*
+<a name="l-110"></a><span class="tm">19:15:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> "beyond one version" is exactly what the page says
+<a name="l-111"></a><span class="tm">19:15:07</span><span class="nk"> &lt;BlueMatt&gt;</span> s/one or two versions/one or so point releases/
+<a name="l-112"></a><span class="tm">19:15:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> might be good to make the time limit fuzzy, so not everyone gets hit at the same time
+<a name="l-113"></a><span class="tm">19:15:17</span><span class="nk"> &lt;btcdrak&gt;</span> Seems there's a lot of discussion here which was _already)_ covered in previous meetings and is detailed in the Lifecycle document https://bitcoincore.org/en/lifecycle/ tldr maintenance and EOL are two different things.
+<a name="l-114"></a><span class="tm">19:15:22</span><span class="nk"> &lt;luke-jr&gt;</span> perhaps 1 year from when it was installed?
+<a name="l-115"></a><span class="tm">19:15:25</span><span class="nk"> &lt;gmaxwell&gt;</span> what btcdrak says
+<a name="l-116"></a><span class="tm">19:15:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> gmaxwell to be fair, the website doesnt say that
+<a name="l-117"></a><span class="tm">19:15:36</span><span class="nk"> &lt;wumpus&gt;</span> well then add it to the website!
+<a name="l-118"></a><span class="tm">19:15:42</span><span class="nk"> &lt;wumpus&gt;</span> everyone can submit pulls there you know
+<a name="l-119"></a><span class="tm">19:15:45</span><span class="nk"> &lt;btcdrak&gt;</span> I suggest people re-read the Lifecycle page after the meeting :)
+<a name="l-120"></a><span class="tm">19:15:57</span><span class="nk"> &lt;wumpus&gt;</span> we can spend an hour discussing what should be added to the website, or just add it
+<a name="l-121"></a><span class="tm">19:16:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#action </span><span class="cmdline">update Lifecycle page on bitcoincore.org</span>
+<a name="l-122"></a><span class="tm">19:16:04</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> ^
+<a name="l-123"></a><span class="tm">19:16:08</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> cool idea. fuzzy random noise time-delay notifications.  (hopefully nobody proposes "intentionally low performance over time until someone thinks to get a new version")
+<a name="l-124"></a><span class="tm">19:16:10</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, next topic
+<a name="l-125"></a><span class="tm">19:16:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> read the "Maintance period" section on the site, I think it's completely clear.
+<a name="l-126"></a><span class="tm">19:16:32</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-127"></a><span class="tm">19:16:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#into </span><span class="cmdline">hackdays in milan: http://coredev.tech/nextmeeting_tmp.html</span>
+<a name="l-128"></a><span class="tm">19:16:56</span><span class="nk"> &lt;wumpus&gt;</span> 0.14 release schedule maybe
+<a name="l-129"></a><span class="tm">19:17:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Its a temporary page.. not public yet. But feel free to register
+<a name="l-130"></a><span class="tm">19:17:19</span><span class="nk"> &lt;wumpus&gt;</span> I've posted a proposal for the 0.14 release schedule here: https://github.com/bitcoin/bitcoin/issues/8719
+<a name="l-131"></a><span class="tm">19:17:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="topic">#topic </span><span class="topicline">0.14 release schedule</span>
+<a name="l-132"></a><span class="tm">19:17:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> sounds fine
+<a name="l-133"></a><span class="tm">19:17:44</span><span class="nk"> &lt;sipa&gt;</span> yes, sounds good
+<a name="l-134"></a><span class="tm">19:17:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes. fine for me
+<a name="l-135"></a><span class="tm">19:18:00</span><span class="nk"> &lt;btcdrak&gt;</span> looks good to me
+<a name="l-136"></a><span class="tm">19:18:06</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, looks good now
+<a name="l-137"></a><span class="tm">19:18:06</span><span class="nk"> &lt;wumpus&gt;</span> I'll mail it around on the mailing lists if there are no issues with it
+<a name="l-138"></a><span class="tm">19:18:08</span><span class="nk"> &lt;CodeShark&gt;</span> +1
+<a name="l-139"></a><span class="tm">19:18:12</span><span class="nk"> &lt;wumpus&gt;</span> ok great!
+<a name="l-140"></a><span class="tm">19:18:15</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jonasschnelli:</span> you have a typo in your form ("your are")
+<a name="l-141"></a><span class="tm">19:18:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> my only thought is 0.13.1 release is a bit of a heavy lift, and depending on when that happens, it may seem like 0.14.0 is coming up quite quickly...  but i don't feel strongly about it
+<a name="l-142"></a><span class="tm">19:18:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">kanzure:</span> ill give you edit right. :)
+<a name="l-143"></a><span class="tm">19:18:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> it's already a month later compared to 0.12 was this year
+<a name="l-144"></a><span class="tm">19:19:13</span><span class="nk"> &lt;MarcoFalke&gt;</span> No worries. I am sure the will be last-minute blockers for 0.14.0
+<a name="l-145"></a><span class="tm">19:19:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> postponsing major releases for minor releases makes very little sense I think
+<a name="l-146"></a><span class="tm">19:19:51</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yeah i was only pointing out that 0.13.1 is not minor in a lot of ways..  but if others are fine with it, i don't object
+<a name="l-147"></a><span class="tm">19:19:51</span><span class="nk"> &lt;wumpus&gt;</span> 0.14 will have lots of new features, 0.13.1 will not
+<a name="l-148"></a><span class="tm">19:20:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I agree with that
+<a name="l-149"></a><span class="tm">19:20:26</span><span class="nk"> &lt;luke-jr&gt;</span> ? 0.13.1 should only be fixes + softfork
+<a name="l-150"></a><span class="tm">19:20:33</span><span class="nk"> &lt;btcdrak&gt;</span> yes.
+<a name="l-151"></a><span class="tm">19:20:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it is
+<a name="l-152"></a><span class="tm">19:20:38</span><span class="nk"> &lt;morcos&gt;</span> anyway, seems not its a widely shared concern, so lets stick with the schedule
+<a name="l-153"></a><span class="tm">19:20:45</span><span class="nk"> &lt;gmaxwell&gt;</span> having a short gap between releases would be a good problem to have. :)
+<a name="l-154"></a><span class="tm">19:20:53</span><span class="nk"> &lt;BlueMatt&gt;</span> yup
+<a name="l-155"></a><span class="tm">19:20:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="topic">#topic </span><span class="topicline">0.13.1 release</span>
+<a name="l-156"></a><span class="tm">19:21:00</span><span class="nk"> &lt;wumpus&gt;</span> it's a minor release strictly, just a lot of code changes, so you can jokingly call it 'major'
+<a name="l-157"></a><span class="tm">19:21:14</span><span class="nk"> &lt;btcdrak&gt;</span> Here are the remaining PRs and issues for 0.13.1 https://github.com/bitcoin/bitcoin/milestone/22
+<a name="l-158"></a><span class="tm">19:21:22</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/milestone/22</span>
+<a name="l-159"></a><span class="tm">19:21:42</span><span class="nk"> &lt;sdaftuar&gt;</span> i wanted to suggest that we consider dropping some of those PRs from the 0.13.1 milestone
+<a name="l-160"></a><span class="tm">19:21:54</span><span class="nk"> &lt;btcdrak&gt;</span> sdaftuar which in particular?
+<a name="l-161"></a><span class="tm">19:21:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> specific suggestions?
+<a name="l-162"></a><span class="tm">19:22:15</span><span class="nk"> &lt;BlueMatt&gt;</span> nulldummy as softfork?
+<a name="l-163"></a><span class="tm">19:22:16</span><span class="nk"> &lt;sdaftuar&gt;</span> 8654 is one
+<a name="l-164"></a><span class="tm">19:22:20</span><span class="nk"> &lt;kanzure&gt;</span> was there a mempool issue still open for 0.13.1.. don't see it listed there.
+<a name="l-165"></a><span class="tm">19:22:24</span><span class="nk"> &lt;BlueMatt&gt;</span> I figure I'd get yelled at, but I'm not convinced
+<a name="l-166"></a><span class="tm">19:22:25</span><span class="nk"> &lt;CodeShark&gt;</span> Is the mempool dos thing still urgent?
+<a name="l-167"></a><span class="tm">19:22:27</span><span class="nk"> &lt;kanzure&gt;</span> ah there it is.
+<a name="l-168"></a><span class="tm">19:22:27</span><span class="nk"> &lt;sdaftuar&gt;</span> that's a performance optimization that i think is not urgent
+<a name="l-169"></a><span class="tm">19:22:35</span><span class="nk"> &lt;kanzure&gt;</span> (8279)
+<a name="l-170"></a><span class="tm">19:22:39</span><span class="nk"> &lt;btcdrak&gt;</span> I recall sipa saying #8635 may not be essential for 0.13.1
+<a name="l-171"></a><span class="tm">19:22:46</span><span class="nk"> &lt;luke-jr&gt;</span> I reviewed a few merged fixes and commented on a few that they should be backported. Did someone with tagging access get to tag those?
+<a name="l-172"></a><span class="tm">19:23:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Luke-Jr:</span> I'll have a look
+<a name="l-173"></a><span class="tm">19:23:16</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">luke-jr:</span> I think I did
+<a name="l-174"></a><span class="tm">19:23:22</span><span class="nk"> &lt;jl2012&gt;</span> i think #8635 may be dropped for 0.13.1
+<a name="l-175"></a><span class="tm">19:23:36</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-176"></a><span class="tm">19:23:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jl2012:</span> what do you think about https://github.com/bitcoin/bitcoin/pull/8654?
+<a name="l-177"></a><span class="tm">19:23:46</span><span class="nk"> &lt;btcdrak&gt;</span> ok let's untag it
+<a name="l-178"></a><span class="tm">19:23:56</span><span class="nk"> &lt;sipa&gt;</span> i'd like to see 8654 in
+<a name="l-179"></a><span class="tm">19:23:57</span><span class="nk"> &lt;btcdrak&gt;</span> *untag 8635
+<a name="l-180"></a><span class="tm">19:24:09</span><span class="nk"> &lt;luke-jr&gt;</span> ACK dropping 8635 for 0.13.1
+<a name="l-181"></a><span class="tm">19:24:20</span><span class="nk"> &lt;btcdrak&gt;</span> I guess the big blocker is #8393 compact blocks.
+<a name="l-182"></a><span class="tm">19:24:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> untagged
+<a name="l-183"></a><span class="tm">19:24:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#decision </span><span class="cmdline">dropped #8635 for 0.13.1</span>
+<a name="l-184"></a><span class="tm">19:24:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> if that's strictly an optimisation, it should wait for 0.14
+<a name="l-185"></a><span class="tm">19:25:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> why did you want to see 8654 in 0.13.1?
+<a name="l-186"></a><span class="tm">19:25:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> depends on whether it's an optimisation or an 'optimisation' (e.g. - DoS fix)
+<a name="l-187"></a><span class="tm">19:25:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> thats ... working fine for me, but we probably need to do a bit more organized testing. sdaftuar was updating some tests for it.
+<a name="l-188"></a><span class="tm">19:25:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> right, hence "if" ☺
+<a name="l-189"></a><span class="tm">19:25:49</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> well it's fine to merge afaik, but there was some discussion about the BIP text which is blocking it afaik
+<a name="l-190"></a><span class="tm">19:26:06</span><span class="nk"> &lt;btcdrak&gt;</span> I think #8636 is ok to merge.
+<a name="l-191"></a><span class="tm">19:26:37</span><span class="nk"> &lt;wumpus&gt;</span> that has a lot of ACKs
+<a name="l-192"></a><span class="tm">19:26:40</span><span class="nk"> &lt;michagogo&gt;</span> Hi
+<a name="l-193"></a><span class="tm">19:26:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">merge #8636</span>
+<a name="l-194"></a><span class="tm">19:26:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">michagogo:</span> hey!
+<a name="l-195"></a><span class="tm">19:27:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Can someone make a list of all PR's merged for master that are not in 0.13 so we can check to make sure we haven't missed any that need backport?
+<a name="l-196"></a><span class="tm">19:27:10 </span><span class="nka">* BlueMatt</span> <span class="ac">isnt a huge fan of 8636 in 0.13.1</span>
+<a name="l-197"></a><span class="tm">19:27:11</span><span class="nk"> &lt;morcos&gt;</span> oh i was going to vote against 8636 as well
+<a name="l-198"></a><span class="tm">19:27:25</span><span class="nk"> &lt;morcos&gt;</span> i haven't reviewed it and don't necessarily have any concrete concerns
+<a name="l-199"></a><span class="tm">19:27:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> all that still need backport should have the 'needs backport' tag
+<a name="l-200"></a><span class="tm">19:27:35</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/labels/Needs%20backport
+<a name="l-201"></a><span class="tm">19:27:42</span><span class="nk"> &lt;BlueMatt&gt;</span> its just more stuff for segwit that could easily fit in another softfork
+<a name="l-202"></a><span class="tm">19:27:46</span><span class="nk"> &lt;michagogo&gt;</span> Sorry, not too around -- was with my grandmother (my grandfather passed away on Sunday), and now shopping with the family.
+<a name="l-203"></a><span class="tm">19:27:48</span><span class="nk"> &lt;gmaxwell&gt;</span> assuming they got tagged.
+<a name="l-204"></a><span class="tm">19:27:53</span><span class="nk"> &lt;BlueMatt&gt;</span> better to push any more complication further
+<a name="l-205"></a><span class="tm">19:27:54</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I did, but I may have missed some. (minor ones I didn't comment on, and have a local list I can backport myself)
+<a name="l-206"></a><span class="tm">19:27:55</span><span class="nk"> &lt;wumpus&gt;</span> (including what is already merged)
+<a name="l-207"></a><span class="tm">19:27:56</span><span class="nk"> &lt;morcos&gt;</span> but just seems it possibly hasn't been thought about enough to know there isn't a hidden risk like jl2012 found low-s
+<a name="l-208"></a><span class="tm">19:28:08</span><span class="nk"> &lt;gmaxwell&gt;</span> it's an istandardness rule
+<a name="l-209"></a><span class="tm">19:28:11 </span><span class="nka">* michagogo</span> <span class="ac">wonders if zu will become the new 11</span>
+<a name="l-210"></a><span class="tm">19:28:20</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> it's already a standard rule
+<a name="l-211"></a><span class="tm">19:28:21</span><span class="nk"> &lt;gmaxwell&gt;</span> oh you're talkign about nulldummy sorry.
+<a name="l-212"></a><span class="tm">19:28:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yea, sorry, nulldummy...I'm more ok with adding standard rules for things we want to softfork out soon
+<a name="l-213"></a><span class="tm">19:28:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">michagogo:</span>  hah, luckily the C parser doesn't accept it as number
+<a name="l-214"></a><span class="tm">19:29:20</span><span class="nk"> &lt;wumpus&gt;</span> otherwise some magic constants should be defined as zuzuzuzu, especially on windows
+<a name="l-215"></a><span class="tm">19:29:56</span><span class="nk"> &lt;jl2012&gt;</span> <span class="cmd">#8499 </span><span class="cmdline">actually somehow depends on nulldummy softfork</span>
+<a name="l-216"></a><span class="tm">19:29:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="cmd">#define </span><span class="cmdline">zu 11</span>
+<a name="l-217"></a><span class="tm">19:30:08</span><span class="nk"> &lt;luke-jr&gt;</span> fixed C parser
+<a name="l-218"></a><span class="tm">19:30:20</span><span class="nk"> &lt;jl2012&gt;</span> it still works, just can't protect CHECKMULTISIG
+<a name="l-219"></a><span class="tm">19:30:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">re:</span> nulldummy, ok so if we think its got sufficient technical review, and we also think its technical enough it doesn't need more community discussion (for instance never appears in chain?) then ok wiht me
+<a name="l-220"></a><span class="tm">19:30:41</span><span class="nk"> &lt;sipa&gt;</span> i think the risk for nulldummy is very low
+<a name="l-221"></a><span class="tm">19:30:46</span><span class="nk"> &lt;petertodd&gt;</span> nulldummy is very, very simple
+<a name="l-222"></a><span class="tm">19:30:51</span><span class="nk"> &lt;jl2012&gt;</span> since without a softfork, we can't DoS ban a peer sending us a violating transaction
+<a name="l-223"></a><span class="tm">19:31:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> well we can't generally do that anyway
+<a name="l-224"></a><span class="tm">19:31:32</span><span class="nk"> &lt;sipa&gt;</span> an attacker node can always pretend to be an old version
+<a name="l-225"></a><span class="tm">19:31:37</span><span class="nk"> &lt;jl2012&gt;</span> for segwit tx we could
+<a name="l-226"></a><span class="tm">19:31:39</span><span class="nk"> &lt;gmaxwell&gt;</span> we could for Sw things however, as it doesn't have transisiton issue.
+<a name="l-227"></a><span class="tm">19:31:39</span><span class="nk"> &lt;cfields_&gt;</span> crap, gtg. wumpus: not a meeting topic, but I noticed that the libevent unit tests fail for the zu case. We should consider running unit tests for deps somewhere.
+<a name="l-228"></a><span class="tm">19:31:44</span><span class="nk"> &lt;cfields_&gt;</span> bbl
+<a name="l-229"></a><span class="tm">19:31:44</span><span class="nk"> &lt;jl2012&gt;</span> 8499 is for segwit only
+<a name="l-230"></a><span class="tm">19:31:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> if it's bundled with segwit I think we can?
+<a name="l-231"></a><span class="tm">19:31:56</span><span class="nk"> &lt;gmaxwell&gt;</span> But we could ban without the softfork in such a case too.
+<a name="l-232"></a><span class="tm">19:32:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> an old node can always pretend to be pre-segwit
+<a name="l-233"></a><span class="tm">19:32:11</span><span class="nk"> &lt;gmaxwell&gt;</span> There is no need to link those behaviors though we have previously.
+<a name="l-234"></a><span class="tm">19:32:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> yes did you see https://github.com/bitcoin/bitcoin/pull/8730?
+<a name="l-235"></a><span class="tm">19:32:22</span><span class="nk"> &lt;luke-jr&gt;</span> but then it won't have witness data at all
+<a name="l-236"></a><span class="tm">19:32:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> running libevent tests would make some sense, yes, although we'd first need a travis run on ubuntu 16.04
+<a name="l-237"></a><span class="tm">19:32:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> so? it's an attacker node. it just won't send segwit txn
+<a name="l-238"></a><span class="tm">19:32:54</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> yes, I'm still making my way through that problem.
+<a name="l-239"></a><span class="tm">19:32:55</span><span class="nk"> &lt;sipa&gt;</span> it can make up all its transactions
+<a name="l-240"></a><span class="tm">19:33:00</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, I only think that its urgent to at least have these behaviors non-standard.
+<a name="l-241"></a><span class="tm">19:33:01</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> indeed, it was just a general thought
+<a name="l-242"></a><span class="tm">19:33:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> afaik the proposal is to ban Nulldummy-violating sw txns
+<a name="l-243"></a><span class="tm">19:33:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> to ban nulldummy-violation sw *peers*
+<a name="l-244"></a><span class="tm">19:33:50</span><span class="nk"> &lt;sipa&gt;</span> so an attacker will just not be an sw peer
+<a name="l-245"></a><span class="tm">19:33:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> at least that one's easy to fix, the -stack-protector-all problem is more worrying
+<a name="l-246"></a><span class="tm">19:34:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> anyhw better to speak of this outside the meeting some time
+<a name="l-247"></a><span class="tm">19:34:24</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">sipa:</span> I think it's to ban segwit-nulldummy-violation peers
+<a name="l-248"></a><span class="tm">19:34:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jl2012:</span> ok
+<a name="l-249"></a><span class="tm">19:34:39</span><span class="nk"> &lt;morcos&gt;</span> too many conversations
+<a name="l-250"></a><span class="tm">19:34:41</span><span class="nk"> &lt;sipa&gt;</span> same thing
+<a name="l-251"></a><span class="tm">19:34:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> agree
+<a name="l-252"></a><span class="tm">19:34:47</span><span class="nk"> &lt;luke-jr&gt;</span> well, whether it's useful or not is another matter - maybe it isn't
+<a name="l-253"></a><span class="tm">19:34:49</span><span class="nk"> &lt;sipa&gt;</span> what is the topic?
+<a name="l-254"></a><span class="tm">19:34:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.13.1
+<a name="l-255"></a><span class="tm">19:34:57</span><span class="nk"> &lt;morcos&gt;</span> in summary i'm happy to let you guys decide what should go into 0.13.1 and what shouldn't, as i have been a bit out of the loop
+<a name="l-256"></a><span class="tm">19:34:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> (nulldummy)
+<a name="l-257"></a><span class="tm">19:35:03</span><span class="nk"> &lt;wumpus&gt;</span> 0.13.1 still
+<a name="l-258"></a><span class="tm">19:35:13</span><span class="nk"> &lt;morcos&gt;</span> however i just want to raise the concern that maybe we're putting a lot of things in very quickly at the end
+<a name="l-259"></a><span class="tm">19:35:18</span><span class="nk"> &lt;gmaxwell&gt;</span> welcome back
+<a name="l-260"></a><span class="tm">19:35:18</span><span class="nk"> &lt;morcos&gt;</span> and that should cause us to be nervous
+<a name="l-261"></a><span class="tm">19:35:22</span><span class="nk"> &lt;sipa&gt;</span> i think nulldummy is very low risk, but also not very useful
+<a name="l-262"></a><span class="tm">19:35:23</span><span class="nk"> &lt;gmaxwell&gt;</span> :)
+<a name="l-263"></a><span class="tm">19:35:39</span><span class="nk"> &lt;morcos&gt;</span> when already the segwit activation is going to be a lot to pay attention to
+<a name="l-264"></a><span class="tm">19:35:42</span><span class="nk"> &lt;BlueMatt&gt;</span> 0.13.1 - various things...I think morcos, sdaftuar and I generally arent a fan of all these policy and various things coming in last minute before 0.13.1, but, I think we've all been out of the loop so maybe they have more review than we think
+<a name="l-265"></a><span class="tm">19:35:44</span><span class="nk"> &lt;sipa&gt;</span> it should happen at some point, and perhaps doing it together with segwit is easier
+<a name="l-266"></a><span class="tm">19:35:51</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">morcos:</span> in all fairness, these PRs have been worked on over quite a long time.. they arent out of the blue.
+<a name="l-267"></a><span class="tm">19:36:01</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe nulldummy is ok, but still, so many things happening at the same time is a review burden and complicates things further
+<a name="l-268"></a><span class="tm">19:36:02</span><span class="nk"> &lt;btcdrak&gt;</span> you need to sync up on the conversations / background of them
+<a name="l-269"></a><span class="tm">19:36:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, i don't like that either, but i think we just discovered many things to improve
+<a name="l-270"></a><span class="tm">19:36:06</span><span class="nk"> &lt;BlueMatt&gt;</span> when segwit is already complicated
+<a name="l-271"></a><span class="tm">19:36:13</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ok, lets do it in a later sf
+<a name="l-272"></a><span class="tm">19:36:13</span><span class="nk"> &lt;BlueMatt&gt;</span> ?
+<a name="l-273"></a><span class="tm">19:36:26</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean sf-able things, that is
+<a name="l-274"></a><span class="tm">19:36:38</span><span class="nk"> &lt;gmaxwell&gt;</span> it's unclear whats being discussed now.
+<a name="l-275"></a><span class="tm">19:36:39</span><span class="nk"> &lt;BlueMatt&gt;</span> and maybe if policy isnt as restrictive as we'd like in 0.13.1, thats ok
+<a name="l-276"></a><span class="tm">19:36:42</span><span class="nk"> &lt;sipa&gt;</span> nulldummy sf
+<a name="l-277"></a><span class="tm">19:37:29</span><span class="nk"> &lt;btcdrak&gt;</span> the only sf is nulldummy, the rest is just policy standardness.
+<a name="l-278"></a><span class="tm">19:37:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Didn't we had this discussion already and where mostly for including nulldummy sf together with SW in 0.13.1?
+<a name="l-279"></a><span class="tm">19:37:40</span><span class="nk"> &lt;gmaxwell&gt;</span> bluematt is talking about many, if the discussion is limited to nulldummy whatever.
+<a name="l-280"></a><span class="tm">19:38:01</span><span class="nk"> &lt;gmaxwell&gt;</span> But the policy changes are more important.
+<a name="l-281"></a><span class="tm">19:38:03</span><span class="nk"> &lt;wumpus&gt;</span> yes I think trying to stash a lot of changes into 0.13.1 has caused some delays already, at the least we shouldn't be adding anything else now and focus on what is there getting in
+<a name="l-282"></a><span class="tm">19:38:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> yes, we did.
+<a name="l-283"></a><span class="tm">19:38:30</span><span class="nk"> &lt;luke-jr&gt;</span> IMO nulldummy isn't worth all the time we're spending disucssing it now.
+<a name="l-284"></a><span class="tm">19:38:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://bitcoincore.org/en/meetings/2016/09/01/#nulldummy-and-lows-softfork-proposals
+<a name="l-285"></a><span class="tm">19:38:47</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> Do we have a tentative release date for 0.13.1 or feature freeze?
+<a name="l-286"></a><span class="tm">19:38:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> that isn't what happened. We had specific necessary to fix issues related to SW specific moderate risk denial of service attacks, and the path to fixing them spun off a number of sub isues along the way.
+<a name="l-287"></a><span class="tm">19:38:55</span><span class="nk"> &lt;wumpus&gt;</span> if you discover any other nice improvements they can wait until next version, unless it's critical to deployment of segwit
+<a name="l-288"></a><span class="tm">19:38:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields_:</span> no
+<a name="l-289"></a><span class="tm">19:39:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Chris_Stewart_5:</span> no
+<a name="l-290"></a><span class="tm">19:39:15</span><span class="nk"> &lt;gmaxwell&gt;</span> It's a little frustrating to loop rediscussing the same things over again. Makes the meetings feel like a waste of time, FWIW.
+<a name="l-291"></a><span class="tm">19:39:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> agreed
+<a name="l-292"></a><span class="tm">19:39:30</span><span class="nk"> &lt;wumpus&gt;</span> there are a lot of repeated topics lately
+<a name="l-293"></a><span class="tm">19:39:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree with gmaxwell
+<a name="l-294"></a><span class="tm">19:39:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> (which is mostly a sign of not made decistions)
+<a name="l-295"></a><span class="tm">19:39:50</span><span class="nk"> &lt;wumpus&gt;</span> e.g. people that have been out of the loop then bring up something that was discussed a meeting or a few meetings ago
+<a name="l-296"></a><span class="tm">19:39:56</span><span class="nk"> &lt;wumpus&gt;</span> meetings are not there to bring you up to speed
+<a name="l-297"></a><span class="tm">19:40:18</span><span class="nk"> &lt;btcdrak&gt;</span> we publish meeting summaries, people should be reading them :-p
+<a name="l-298"></a><span class="tm">19:40:26</span><span class="nk"> &lt;wumpus&gt;</span> the logs and minutes are available, and summaries are made and published on the site
+<a name="l-299"></a><span class="tm">19:40:41</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, thats enough probably. :) people get the point.
+<a name="l-300"></a><span class="tm">19:40:44</span><span class="nk"> &lt;wumpus&gt;</span> and you can always ask about things outside the meeting
+<a name="l-301"></a><span class="tm">19:40:57</span><span class="nk"> &lt;gmaxwell&gt;</span> (I am glad to not be alone!)
+<a name="l-302"></a><span class="tm">19:40:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> IIRC there are folks complaining now who were in favor of it, as there are now 5 related issues that are coming up.....8634, eg, was not previously discussed and is in the same veign
+<a name="l-303"></a><span class="tm">19:41:03</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe that should be the next topic
+<a name="l-304"></a><span class="tm">19:41:41</span><span class="nk"> &lt;BlueMatt&gt;</span> otherwise, someone can propose a different topic :)
+<a name="l-305"></a><span class="tm">19:41:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes, I'm not saying it should be impossible to reconsider things discussed in previous meetings if convinng new reasons come up! just that repeating the same discussions with the same outcomes is not constructive
+<a name="l-306"></a><span class="tm">19:41:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> thats fine, things can be rediscussed again, but instead of repeating the discussion we should focus on whats changed or whats disagreed with.. a diff rather than a redo.
+<a name="l-307"></a><span class="tm">19:41:58</span><span class="nk"> &lt;btcdrak&gt;</span> We need some more ACKs on #8634 and #8499 and #8526
+<a name="l-308"></a><span class="tm">19:42:04</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-309"></a><span class="tm">19:42:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #8634 and #8499 and #8526</span>
+<a name="l-310"></a><span class="tm">19:42:42</span><span class="nk"> &lt;sipa&gt;</span> it's not clear what is being discussed. if we're talking about nulldummy sf, i think there is little risk, but little benefit. it was discussed before however, and unless people strongly feel that everything being done is too much, then this is something that can be reconsidered. please don't start reconsidering everything. there are good reasons and they were discussed before
+<a name="l-311"></a><span class="tm">19:42:43</span><span class="nk"> &lt;btcdrak&gt;</span> then the compact block/BIP thing needs to be finalised so we can merge the compact block pull #8393
+<a name="l-312"></a><span class="tm">19:43:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> eg, btcdrak just pointed out three prs...two of which i think are optional in 0.13.1
+<a name="l-313"></a><span class="tm">19:43:06</span><span class="nk"> &lt;BlueMatt&gt;</span> as is nulldummy
+<a name="l-314"></a><span class="tm">19:43:24</span><span class="nk"> &lt;BlueMatt&gt;</span> now we're in a position where we have a at least 3 prs that are "optional", at least one or two has been previously agreed upon
+<a name="l-315"></a><span class="tm">19:43:33</span><span class="nk"> &lt;wumpus&gt;</span> nulldummy softwork has been discussed zillions of times in the meeting, everytime the sentiment was slightly in favor of doing it because it has very little risk
+<a name="l-316"></a><span class="tm">19:43:34</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> it's been well reviewed, and run on testnet for 4 weeks already.
+<a name="l-317"></a><span class="tm">19:43:41</span><span class="nk"> &lt;BlueMatt&gt;</span> but we want to get this thing out the door without spreading ourselves thin over too much review
+<a name="l-318"></a><span class="tm">19:43:49</span><span class="nk"> &lt;wumpus&gt;</span> and by now it has lots of testing and review too
+<a name="l-319"></a><span class="tm">19:43:51</span><span class="nk"> &lt;btcdrak&gt;</span> can we move on?
+<a name="l-320"></a><span class="tm">19:43:51</span><span class="nk"> &lt;sipa&gt;</span> so let's just stick to it
+<a name="l-321"></a><span class="tm">19:43:58</span><span class="nk"> &lt;wumpus&gt;</span> so if you want to reconsider it have a very good reason
+<a name="l-322"></a><span class="tm">19:44:04</span><span class="nk"> &lt;wumpus&gt;</span> not just 'I personally don't like it very much'
+<a name="l-323"></a><span class="tm">19:44:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">btcdrak:</span> "run on testnet for 4 weeks" is the opposite of "good testing"
+<a name="l-324"></a><span class="tm">19:44:08</span><span class="nk"> &lt;gmaxwell&gt;</span> fwiw, all of my testing lately has been with most of this stack applied.
+<a name="l-325"></a><span class="tm">19:44:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> it's completely trivial, come on.
+<a name="l-326"></a><span class="tm">19:44:47</span><span class="nk"> &lt;wumpus&gt;</span> topc nulldummy is over now
+<a name="l-327"></a><span class="tm">19:44:50</span><span class="nk"> &lt;btcdrak&gt;</span> Is there any thing I can do regarding CB, I'm sort of confused about what is holding it up?
+<a name="l-328"></a><span class="tm">19:44:55</span><span class="nk"> &lt;wumpus&gt;</span> other topic proposals?
+<a name="l-329"></a><span class="tm">19:45:00</span><span class="nk"> &lt;sipa&gt;</span> segwit cb?
+<a name="l-330"></a><span class="tm">19:45:05</span><span class="nk"> &lt;btcdrak&gt;</span> yes please
+<a name="l-331"></a><span class="tm">19:45:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit cb</span>
+<a name="l-332"></a><span class="tm">19:45:18</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, I'm also unsure what else is required. I have been testing.
+<a name="l-333"></a><span class="tm">19:45:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> the latest version?
+<a name="l-334"></a><span class="tm">19:45:30</span><span class="nk"> &lt;sdaftuar&gt;</span> i'm working on testing.  i foudn a bunch of problems with the test unfortunately :(
+<a name="l-335"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sipa&gt;</span> (as of a few days ago)
+<a name="l-336"></a><span class="tm">19:45:47</span><span class="nk"> &lt;BlueMatt&gt;</span> it was updated a few days ago, afaik only sdaftuar has looked at it since
+<a name="l-337"></a><span class="tm">19:45:54</span><span class="nk"> &lt;sipa&gt;</span> i did
+<a name="l-338"></a><span class="tm">19:45:57</span><span class="nk"> &lt;morcos&gt;</span> i like the concept of the latest version, and looked at the code.  but unfortunately i have to review CB in the first place before i can review the pull, so thats what i'm doing
+<a name="l-339"></a><span class="tm">19:46:04</span><span class="nk"> &lt;BlueMatt&gt;</span> and sdaftuar is now rewriting the testers for it, so not much to talk about aside from people should look at it?
+<a name="l-340"></a><span class="tm">19:46:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> as of a week ago? I could check.
+<a name="l-341"></a><span class="tm">19:46:34</span><span class="nk"> &lt;morcos&gt;</span> not to say you need to wait for my review of course
+<a name="l-342"></a><span class="tm">19:46:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> 2 days ago
+<a name="l-343"></a><span class="tm">19:47:55</span><span class="nk"> &lt;BlueMatt&gt;</span> next topic?
+<a name="l-344"></a><span class="tm">19:48:12</span><span class="nk"> &lt;gmaxwell&gt;</span> (Fwiw, more segwit traffic on testnet would make live testing of that PR more useful)
+<a name="l-345"></a><span class="tm">19:48:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> where did you guys go btw?
+<a name="l-346"></a><span class="tm">19:48:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> to the photo room.
+<a name="l-347"></a><span class="tm">19:48:37</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> roasbeef is preparing to produce some load in the next day
+<a name="l-348"></a><span class="tm">19:48:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> okay, I'll try to get things updated to the latest first.
+<a name="l-349"></a><span class="tm">19:49:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> any other topics?
+<a name="l-350"></a><span class="tm">19:50:10</span><span class="nk"> &lt;sipa&gt;</span> specifically it would be useful to test connections between 0.13-with-segwit-activation-removed testnet nodes with #8393
+<a name="l-351"></a><span class="tm">19:50:24</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i'm also working on doing that in regtest, fyi
+<a name="l-352"></a><span class="tm">19:50:32</span><span class="nk"> &lt;sipa&gt;</span> awesome
+<a name="l-353"></a><span class="tm">19:50:34</span><span class="nk"> &lt;btcdrak&gt;</span> great
+<a name="l-354"></a><span class="tm">19:50:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> okay, I'll make sure that I run with that too.
+<a name="l-355"></a><span class="tm">19:50:52</span><span class="nk"> &lt;sipa&gt;</span> thanks
+<a name="l-356"></a><span class="tm">19:51:37</span><span class="nk"> &lt;luke-jr&gt;</span> would be handy to have some regular segwit spam on testnet in general IMO
+<a name="l-357"></a><span class="tm">19:51:56</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">luke-jr:</span> it's coming, roasbeef is setting something up
+<a name="l-358"></a><span class="tm">19:53:02</span><span class="nk"> &lt;btcdrak&gt;</span> *silence*
+<a name="l-359"></a><span class="tm">19:53:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

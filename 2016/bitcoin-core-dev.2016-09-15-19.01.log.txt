@@ -1,0 +1,359 @@
+19:01:19 <jonasschnelli> #startmeeting
+19:01:19 <lightningbot> Meeting started Thu Sep 15 19:01:19 2016 UTC.  The chair is jonasschnelli. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:19 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:28 <jonasschnelli> topic proposals?
+19:01:46 <MarcoFalke> proposed short topic: EOL 0.11
+19:02:11 <jonasschnelli> #topic EOL 0.11
+19:02:18 <cfields_> I'll only be around for ~30 min before I have to head out.
+19:02:29 <MarcoFalke> #link https://github.com/bitcoin-core/bitcoincore.org/pull/211
+19:02:37 <wumpus> if we're following the same schedule as usual, 0.11 was EOL at the moment 0.13 was released
+19:02:47 <sipa> except critical fixes?
+19:02:50 <jonasschnelli> agree with wumpus
+19:03:02 <MarcoFalke> it is about critical fixes
+19:03:03 <wumpus> security problems may be an exception
+19:03:22 <MarcoFalke> We should set a date when we no longer fix critial issues
+19:03:29 <gmaxwell> I thought 0.11 was EOL when 0.13 was released, except for whatever exceptions we decide...
+19:03:33 <jeremyrubin> nheren
+19:03:33 <wumpus> but usually no new executables will be built, just simple backports
+19:03:35 <sipa> gmaxwell: agree
+19:03:53 <petertodd> ack EOL; you can always run 0.11 behind a 0.13 node if you need too
+19:03:59 <sipa> so we need to get https://bitcoincore.org/en/lifecycle/ updated?
+19:04:07 <kanzure> i think the concern was that 0.11 was not marked as EOL, not that it wasn't considered EOL.
+19:04:09 <MarcoFalke> Jup, note that I already changed maintenance end to 2016-08-23
+19:04:18 <wumpus> yes the bitcoin.org page needs to be updated
+19:04:31 <wumpus> +Core
+19:04:38 <achow101> If 0.11 is EOL, then what about 0.10?
+19:04:48 <sipa> ah, so 0.11 is not EOL but maintenance end
+19:04:59 <sipa> EOL means not even security critical backports
+19:05:04 <sipa> according to that website
+19:05:07 <gmaxwell> achow101: it was unmaintained as of january or so.
+19:05:28 <achow101> gmaxwell: but it is still marked as receiving critical updates on bitcoincore.org
+19:05:33 <jonasschnelli> According to bitcoincore.org 0.10 has EOL in 2017
+19:05:35 <sipa> but 0.10 should be EOL at 2016-08-23
+19:05:40 <morcos> it seems to me that ending security critical backports depends not just on how old the release is but on how many people are still using it
+19:05:50 <gmaxwell> what morcos says.
+19:05:54 <wumpus> and how difficult it is to backport/test
+19:06:00 <morcos> ha ha, of course!
+19:06:08 <wumpus> I mean if it's just updating a dependency library like upnp...
+19:06:17 <gmaxwell> the reality is that it has nothing to do with dates. We're not actively seeking to maintain these versions but will do what it takes to protect the ecosystem.
+19:06:19 <sipa> sure, but the reason for having a clearly stated policy is so that people can make informed decisions about what to run
+19:06:26 <MarcoFalke> ^
+19:06:47 <wumpus> I think this will always be a discussion people can't really agree on
+19:06:48 <MarcoFalke> We should communicate the EOL in advance
+19:06:51 <luke-jr> frankly 0.12 seems like EOL before 0.14 at this rate
+19:06:56 <petertodd> gmaxwell: setting expectations also can help protect the ecosystem
+19:07:07 <gmaxwell> We also continue to see no feedback from parties that would prefer to use a 0.old.next over a 0.new.hottness. :)
+19:07:16 * jonasschnelli still count 569 0.10.x peers with status "good" on his seeder
+19:07:19 <morcos> agreed with all, but i'm saying we should be supplementing our discussion with #'s of nodes running 0.10, 0.11
+19:07:23 <sipa> i wish we had more insight in users' needs... that there would be requests of the form "wait! no! i can't upgrade to 0.12 yet for reason X, but we really need updated for now"
+19:07:24 <wumpus> in practice it's indeed not about dates, but if someone cares about using/maintainging it
+19:07:27 <BlueMatt> am I the only one who wasnt aware of that page? I mean I dont think a strict N-monghts schedule really works, so we'd need to all be thinking about it/aware of it, at least, to make it reasonable
+19:07:28 <wumpus> it seems to be 0 people
+19:07:29 <gmaxwell> Which supports the view that effort spent supporting older versions is of negative value.
+19:07:45 <luke-jr> wumpus: maintaining it is not practical without testing/usage
+19:07:51 <petertodd> morcos: so many nodes are run because users "want to contribute" - I wouldn't read too much into that number. Equally, a lot of nodes are likely spy-nodes...
+19:07:57 <wumpus> luke-jr: right it's a chicken egg problem
+19:08:00 <sipa> wumpus: that's a fair characterization of reality, but perhaps that page should reflect that
+19:08:02 <kanzure> BlueMatt: i think it's something like "people should be following the mailing lists and announcement mailing lists and the webpage, although apparently the webpage is out of sync with reality for the moment"
+19:08:45 <wumpus> yes, updating the webpage to reflect reality would make sense
+19:08:46 <BlueMatt> kanzure: hmm? people shouldnt have to follow the ml to find out if their node is EOL...we should have some kind of information for users, but devs have to be aware that it exists for it to be accurate :p
+19:08:50 <gmaxwell> If we were being completely pragmatic we would probably say that we only support the very latest thing put out at all.-- this is all that I can tell people are upgrading to. But I think that is a bad principle and the fact that the only thing people upgrade to is the latest thing is an aspect of industry immaturity which will hopefully go away.
+19:08:56 <luke-jr> wumpus: I maintained old versions back to 0.4 for years with no indication of real usage or feedback - the first few got some testing, but after a while it never made it past RC
+19:09:43 <petertodd> fwiw I've never gotten any feedback from python-bitcoinlib users complaining about non-backwards-compatible changes
+19:09:43 <luke-jr> IMO we *should* have longer support, but it just doesn't seem feasible with softforks
+19:09:47 <wumpus> the point of creating that webpage was to have an easier available place where release maintenance status was available, but yes if it runs out of date with reality then at some point it's only confusing
+19:09:50 * BlueMatt wishes there was an "ask the community" button for this kind of thing....
+19:10:06 <petertodd> BlueMatt: too bad we got rid of the alert system... /ducks
+19:10:19 <kanzure> wumpus: probably a good fix would be to have a checklist for releases, and add EOL webpage updates to that checklist.
+19:10:21 <wumpus> and it should reflect how things are, not how we think ideally they should be
+19:10:28 <sipa> we could make node software automatically show a warning X months after being released...
+19:10:37 <luke-jr> kanzure: we do have release-process.md
+19:10:43 <kanzure> well is it in there?
+19:10:50 <luke-jr> sipa: +1
+19:10:54 <wumpus> kanzure: there's one in the release process, but there is already so much stuff there. I don't thin kthe assumption should be that the same person does all that
+19:11:06 <kanzure> "EOL" not found in that doc, nor variations of it.
+19:11:07 <petertodd> sipa: signal does that actually - they forgot the timer expired once and scared a bunch of people
+19:11:26 <kanzure> wumpus: sure, sure, perhaps it's multiple people. but a checklist can still be helpful regardless of number of people that use it.
+19:11:29 <BlueMatt> petertodd: is that automated? heh, yea, maybe
+19:11:48 <achow101> has anyone actually tried asking the community? like posting on reddit, bitcointalk, etc.
+19:12:08 <luke-jr> petertodd: if we stagnate for 12 months, something else is wrong
+19:12:19 <wumpus> I think we should first document how things are clearly on the site, and only then worry about maybe changing it
+19:12:25 <btcdrak> oh sorry I am late
+19:12:31 <jonasschnelli> The problem is probably not what the community want, its more what the team is capable of delivering
+19:12:36 <gmaxwell> achow101: we've posted asking for feedback on older versions many times in the past, and also called for testing on old support backups.
+19:12:37 <wumpus> exactly jonasschnelli
+19:12:58 <jonasschnelli> Its an OSS, if people want longer EOL, they should contribute
+19:13:19 <gmaxwell> I've also gone 1:1 to several companies. Mostly we've recieved complete silence. scanning the network (and watching inbounds) also shows that adoption of point releases after a new major is out is basically non-existant.
+19:13:20 <wumpus> as I've said before I have nothing against maintaining old releases if someone really commits to that
+19:13:24 <sipa> that's fair... we're only so many people, and review for backports is a significant burden
+19:13:25 <luke-jr> I'm happy to go back to maintaining stable versions longer if people will actually use it (and can't upgrade)
+19:13:31 <gmaxwell> jonasschnelli: or at least speak up.
+19:13:31 <wumpus> but I've never seen much interest, so reality is, it doesn't
+19:13:38 <kanzure> i don't know what to think about re: automatic warnings after timelapse.   as long a there's some good reason to think it' dissimilar from automatic updates, i suppose..
+19:13:54 <jonasschnelli> gmaxwell: right.
+19:13:55 <wumpus> kanzure: I don't know what to think about it either
+19:13:58 <kanzure> didn't mean to impose on wumpus with the checklist suggestion
+19:14:09 <luke-jr> maybe update EOL page, and mention the lack of usage as the reason, suggesting if people want it, they should get in touch
+19:14:17 <jonasschnelli> Luke-Jr: +1
+19:14:20 <BlueMatt> ok, so lets post something on the ml or so that says "We're gonna stop doing this, but would very much love to hear if anyone actually wants it" and then link to that from reddit/emails/twitter/whatever
+19:14:27 <BlueMatt> yea, that
+19:14:29 <gmaxwell> stop doing what?
+19:14:32 <gmaxwell> I am really confused.
+19:14:37 <BlueMatt> stop supporting backports
+19:14:42 <BlueMatt> beyond like one or two versions, maybe
+19:14:46 <wumpus> kanzure: I really don't like time-locks in programs. Though this would just be a warning I guess... but it could be intimidating
+19:14:46 <gmaxwell> We have a stated policy, we maintain one major version behind.
+19:14:47 <luke-jr> gmaxwell: stop promising backports we aren't really doing anyway
+19:14:55 <gmaxwell> BlueMatt: we already did that, like, a yea ago.
+19:14:58 <jonasschnelli> stop doing sound negative... something more like "...we are concentrating ressources on X"
+19:15:01 <gmaxwell> year*
+19:15:06 <sipa> BlueMatt: "beyond one version" is exactly what the page says
+19:15:07 <BlueMatt> s/one or two versions/one or so point releases/
+19:15:15 <luke-jr> wumpus: might be good to make the time limit fuzzy, so not everyone gets hit at the same time
+19:15:17 <btcdrak> Seems there's a lot of discussion here which was _already)_ covered in previous meetings and is detailed in the Lifecycle document https://bitcoincore.org/en/lifecycle/ tldr maintenance and EOL are two different things.
+19:15:22 <luke-jr> perhaps 1 year from when it was installed?
+19:15:25 <gmaxwell> what btcdrak says
+19:15:28 <BlueMatt> sipa: gmaxwell to be fair, the website doesnt say that
+19:15:36 <wumpus> well then add it to the website!
+19:15:42 <wumpus> everyone can submit pulls there you know
+19:15:45 <btcdrak> I suggest people re-read the Lifecycle page after the meeting :)
+19:15:57 <wumpus> we can spend an hour discussing what should be added to the website, or just add it
+19:16:03 <jonasschnelli> #action update Lifecycle page on bitcoincore.org
+19:16:04 <Chris_Stewart_5> ^
+19:16:08 <kanzure> luke-jr: cool idea. fuzzy random noise time-delay notifications.  (hopefully nobody proposes "intentionally low performance over time until someone thinks to get a new version")
+19:16:10 <BlueMatt> ok, next topic
+19:16:30 <gmaxwell> BlueMatt: read the "Maintance period" section on the site, I think it's completely clear.
+19:16:32 <wumpus> any other topics?
+19:16:48 <jonasschnelli> #into hackdays in milan: http://coredev.tech/nextmeeting_tmp.html
+19:16:56 <wumpus> 0.14 release schedule maybe
+19:17:00 <jonasschnelli> Its a temporary page.. not public yet. But feel free to register
+19:17:19 <wumpus> I've posted a proposal for the 0.14 release schedule here: https://github.com/bitcoin/bitcoin/issues/8719
+19:17:29 <jonasschnelli> #topic 0.14 release schedule
+19:17:34 <MarcoFalke> sounds fine
+19:17:44 <sipa> yes, sounds good
+19:17:49 <jonasschnelli> yes. fine for me
+19:18:00 <btcdrak> looks good to me
+19:18:06 <BlueMatt> yea, looks good now
+19:18:06 <wumpus> I'll mail it around on the mailing lists if there are no issues with it
+19:18:08 <CodeShark> +1
+19:18:12 <wumpus> ok great!
+19:18:15 <kanzure> jonasschnelli: you have a typo in your form ("your are")
+19:18:33 <morcos> wumpus: my only thought is 0.13.1 release is a bit of a heavy lift, and depending on when that happens, it may seem like 0.14.0 is coming up quite quickly...  but i don't feel strongly about it
+19:18:34 <jonasschnelli> kanzure: ill give you edit right. :)
+19:18:56 <wumpus> morcos: it's already a month later compared to 0.12 was this year
+19:19:13 <MarcoFalke> No worries. I am sure the will be last-minute blockers for 0.14.0
+19:19:14 <wumpus> morcos: postponsing major releases for minor releases makes very little sense I think
+19:19:51 <morcos> wumpus: yeah i was only pointing out that 0.13.1 is not minor in a lot of ways..  but if others are fine with it, i don't object
+19:19:51 <wumpus> 0.14 will have lots of new features, 0.13.1 will not
+19:20:09 <wumpus> morcos: I agree with that
+19:20:26 <luke-jr> ? 0.13.1 should only be fixes + softfork
+19:20:33 <btcdrak> yes.
+19:20:33 <wumpus> luke-jr: it is
+19:20:38 <morcos> anyway, seems not its a widely shared concern, so lets stick with the schedule
+19:20:45 <gmaxwell> having a short gap between releases would be a good problem to have. :)
+19:20:53 <BlueMatt> yup
+19:20:55 <jonasschnelli> #topic 0.13.1 release
+19:21:00 <wumpus> it's a minor release strictly, just a lot of code changes, so you can jokingly call it 'major'
+19:21:14 <btcdrak> Here are the remaining PRs and issues for 0.13.1 https://github.com/bitcoin/bitcoin/milestone/22
+19:21:22 <btcdrak> #link https://github.com/bitcoin/bitcoin/milestone/22
+19:21:42 <sdaftuar> i wanted to suggest that we consider dropping some of those PRs from the 0.13.1 milestone
+19:21:54 <btcdrak> sdaftuar which in particular?
+19:21:55 <wumpus> sdaftuar: specific suggestions?
+19:22:15 <BlueMatt> nulldummy as softfork?
+19:22:16 <sdaftuar> 8654 is one
+19:22:20 <kanzure> was there a mempool issue still open for 0.13.1.. don't see it listed there.
+19:22:24 <BlueMatt> I figure I'd get yelled at, but I'm not convinced
+19:22:25 <CodeShark> Is the mempool dos thing still urgent?
+19:22:27 <kanzure> ah there it is.
+19:22:27 <sdaftuar> that's a performance optimization that i think is not urgent
+19:22:35 <kanzure> (8279)
+19:22:39 <btcdrak> I recall sipa saying #8635 may not be essential for 0.13.1
+19:22:46 <luke-jr> I reviewed a few merged fixes and commented on a few that they should be backported. Did someone with tagging access get to tag those?
+19:23:13 <jonasschnelli> Luke-Jr: I'll have a look
+19:23:16 <MarcoFalke> luke-jr: I think I did
+19:23:22 <jl2012> i think #8635 may be dropped for 0.13.1
+19:23:36 <sipa> agree
+19:23:44 <jonasschnelli> jl2012: what do you think about https://github.com/bitcoin/bitcoin/pull/8654?
+19:23:46 <btcdrak> ok let's untag it
+19:23:56 <sipa> i'd like to see 8654 in
+19:23:57 <btcdrak> *untag 8635
+19:24:09 <luke-jr> ACK dropping 8635 for 0.13.1
+19:24:20 <btcdrak> I guess the big blocker is #8393 compact blocks.
+19:24:21 <jonasschnelli> untagged
+19:24:45 <wumpus> #decision dropped #8635 for 0.13.1
+19:24:51 <luke-jr> jonasschnelli: if that's strictly an optimisation, it should wait for 0.14
+19:25:12 <jonasschnelli> sipa: why did you want to see 8654 in 0.13.1?
+19:25:15 <wumpus> luke-jr: depends on whether it's an optimisation or an 'optimisation' (e.g. - DoS fix)
+19:25:22 <gmaxwell> btcdrak: thats ... working fine for me, but we probably need to do a bit more organized testing. sdaftuar was updating some tests for it.
+19:25:27 <luke-jr> wumpus: right, hence "if" ☺
+19:25:49 <btcdrak> gmaxwell: well it's fine to merge afaik, but there was some discussion about the BIP text which is blocking it afaik
+19:26:06 <btcdrak> I think #8636 is ok to merge.
+19:26:37 <wumpus> that has a lot of ACKs
+19:26:40 <michagogo> Hi
+19:26:48 <wumpus> #action merge #8636
+19:26:53 <wumpus> michagogo: hey!
+19:27:00 <gmaxwell> Can someone make a list of all PR's merged for master that are not in 0.13 so we can check to make sure we haven't missed any that need backport?
+19:27:10 * BlueMatt isnt a huge fan of 8636 in 0.13.1
+19:27:11 <morcos> oh i was going to vote against 8636 as well
+19:27:25 <morcos> i haven't reviewed it and don't necessarily have any concrete concerns
+19:27:29 <wumpus> gmaxwell: all that still need backport should have the 'needs backport' tag
+19:27:35 <wumpus> https://github.com/bitcoin/bitcoin/labels/Needs%20backport
+19:27:42 <BlueMatt> its just more stuff for segwit that could easily fit in another softfork
+19:27:46 <michagogo> Sorry, not too around -- was with my grandmother (my grandfather passed away on Sunday), and now shopping with the family.
+19:27:48 <gmaxwell> assuming they got tagged.
+19:27:53 <BlueMatt> better to push any more complication further
+19:27:54 <luke-jr> gmaxwell: I did, but I may have missed some. (minor ones I didn't comment on, and have a local list I can backport myself)
+19:27:55 <wumpus> (including what is already merged)
+19:27:56 <morcos> but just seems it possibly hasn't been thought about enough to know there isn't a hidden risk like jl2012 found low-s
+19:28:08 <gmaxwell> it's an istandardness rule
+19:28:11 * michagogo wonders if zu will become the new 11
+19:28:20 <btcdrak> morcos: it's already a standard rule
+19:28:21 <gmaxwell> oh you're talkign about nulldummy sorry.
+19:28:47 <BlueMatt> gmaxwell: yea, sorry, nulldummy...I'm more ok with adding standard rules for things we want to softfork out soon
+19:28:53 <wumpus> michagogo:  hah, luckily the C parser doesn't accept it as number
+19:29:20 <wumpus> otherwise some magic constants should be defined as zuzuzuzu, especially on windows
+19:29:56 <jl2012> #8499 actually somehow depends on nulldummy softfork
+19:29:58 <luke-jr> #define zu 11
+19:30:08 <luke-jr> fixed C parser
+19:30:20 <jl2012> it still works, just can't protect CHECKMULTISIG
+19:30:20 <morcos> re: nulldummy, ok so if we think its got sufficient technical review, and we also think its technical enough it doesn't need more community discussion (for instance never appears in chain?) then ok wiht me
+19:30:41 <sipa> i think the risk for nulldummy is very low
+19:30:46 <petertodd> nulldummy is very, very simple
+19:30:51 <jl2012> since without a softfork, we can't DoS ban a peer sending us a violating transaction
+19:31:16 <sipa> jl2012: well we can't generally do that anyway
+19:31:32 <sipa> an attacker node can always pretend to be an old version
+19:31:37 <jl2012> for segwit tx we could
+19:31:39 <gmaxwell> we could for Sw things however, as it doesn't have transisiton issue.
+19:31:39 <cfields_> crap, gtg. wumpus: not a meeting topic, but I noticed that the libevent unit tests fail for the zu case. We should consider running unit tests for deps somewhere.
+19:31:44 <cfields_> bbl
+19:31:44 <jl2012> 8499 is for segwit only
+19:31:48 <luke-jr> sipa: if it's bundled with segwit I think we can?
+19:31:56 <gmaxwell> But we could ban without the softfork in such a case too.
+19:32:02 <sipa> luke-jr: an old node can always pretend to be pre-segwit
+19:32:11 <gmaxwell> There is no need to link those behaviors though we have previously.
+19:32:13 <wumpus> cfields_: yes did you see https://github.com/bitcoin/bitcoin/pull/8730?
+19:32:22 <luke-jr> but then it won't have witness data at all
+19:32:40 <wumpus> cfields_: running libevent tests would make some sense, yes, although we'd first need a travis run on ubuntu 16.04
+19:32:46 <sipa> luke-jr: so? it's an attacker node. it just won't send segwit txn
+19:32:54 <cfields_> wumpus: yes, I'm still making my way through that problem.
+19:32:55 <sipa> it can make up all its transactions
+19:33:00 <gmaxwell> in any case, I only think that its urgent to at least have these behaviors non-standard.
+19:33:01 <cfields_> wumpus: indeed, it was just a general thought
+19:33:21 <luke-jr> sipa: afaik the proposal is to ban Nulldummy-violating sw txns
+19:33:37 <sipa> luke-jr: to ban nulldummy-violation sw *peers*
+19:33:50 <sipa> so an attacker will just not be an sw peer
+19:33:53 <wumpus> cfields_: at least that one's easy to fix, the -stack-protector-all problem is more worrying
+19:34:21 <wumpus> cfields_: anyhw better to speak of this outside the meeting some time
+19:34:24 <jl2012> sipa: I think it's to ban segwit-nulldummy-violation peers
+19:34:37 <sipa> jl2012: ok
+19:34:39 <morcos> too many conversations
+19:34:41 <sipa> same thing
+19:34:43 <sipa> morcos: agree
+19:34:47 <luke-jr> well, whether it's useful or not is another matter - maybe it isn't
+19:34:49 <sipa> what is the topic?
+19:34:55 <jonasschnelli> 0.13.1
+19:34:57 <morcos> in summary i'm happy to let you guys decide what should go into 0.13.1 and what shouldn't, as i have been a bit out of the loop
+19:34:59 <jonasschnelli> (nulldummy)
+19:35:03 <wumpus> 0.13.1 still
+19:35:13 <morcos> however i just want to raise the concern that maybe we're putting a lot of things in very quickly at the end
+19:35:18 <gmaxwell> welcome back
+19:35:18 <morcos> and that should cause us to be nervous
+19:35:22 <sipa> i think nulldummy is very low risk, but also not very useful
+19:35:23 <gmaxwell> :)
+19:35:39 <morcos> when already the segwit activation is going to be a lot to pay attention to
+19:35:42 <BlueMatt> 0.13.1 - various things...I think morcos, sdaftuar and I generally arent a fan of all these policy and various things coming in last minute before 0.13.1, but, I think we've all been out of the loop so maybe they have more review than we think
+19:35:44 <sipa> it should happen at some point, and perhaps doing it together with segwit is easier
+19:35:51 <btcdrak> morcos: in all fairness, these PRs have been worked on over quite a long time.. they arent out of the blue.
+19:36:01 <BlueMatt> maybe nulldummy is ok, but still, so many things happening at the same time is a review burden and complicates things further
+19:36:02 <btcdrak> you need to sync up on the conversations / background of them
+19:36:03 <sipa> BlueMatt: yes, i don't like that either, but i think we just discovered many things to improve
+19:36:06 <BlueMatt> when segwit is already complicated
+19:36:13 <BlueMatt> sipa: ok, lets do it in a later sf
+19:36:13 <BlueMatt> ?
+19:36:26 <BlueMatt> i mean sf-able things, that is
+19:36:38 <gmaxwell> it's unclear whats being discussed now.
+19:36:39 <BlueMatt> and maybe if policy isnt as restrictive as we'd like in 0.13.1, thats ok
+19:36:42 <sipa> nulldummy sf
+19:37:29 <btcdrak> the only sf is nulldummy, the rest is just policy standardness.
+19:37:36 <jonasschnelli> Didn't we had this discussion already and where mostly for including nulldummy sf together with SW in 0.13.1?
+19:37:40 <gmaxwell> bluematt is talking about many, if the discussion is limited to nulldummy whatever.
+19:38:01 <gmaxwell> But the policy changes are more important.
+19:38:03 <wumpus> yes I think trying to stash a lot of changes into 0.13.1 has caused some delays already, at the least we shouldn't be adding anything else now and focus on what is there getting in
+19:38:10 <gmaxwell> jonasschnelli: yes, we did.
+19:38:30 <luke-jr> IMO nulldummy isn't worth all the time we're spending disucssing it now.
+19:38:41 <jonasschnelli> https://bitcoincore.org/en/meetings/2016/09/01/#nulldummy-and-lows-softfork-proposals
+19:38:47 <Chris_Stewart_5> Do we have a tentative release date for 0.13.1 or feature freeze?
+19:38:53 <gmaxwell> wumpus: that isn't what happened. We had specific necessary to fix issues related to SW specific moderate risk denial of service attacks, and the path to fixing them spun off a number of sub isues along the way.
+19:38:55 <wumpus> if you discover any other nice improvements they can wait until next version, unless it's critical to deployment of segwit
+19:38:57 <jonasschnelli> cfields_: no
+19:39:01 <jonasschnelli> Chris_Stewart_5: no
+19:39:15 <gmaxwell> It's a little frustrating to loop rediscussing the same things over again. Makes the meetings feel like a waste of time, FWIW.
+19:39:21 <wumpus> gmaxwell: agreed
+19:39:30 <wumpus> there are a lot of repeated topics lately
+19:39:31 <jonasschnelli> agree with gmaxwell
+19:39:50 <jonasschnelli> (which is mostly a sign of not made decistions)
+19:39:50 <wumpus> e.g. people that have been out of the loop then bring up something that was discussed a meeting or a few meetings ago
+19:39:56 <wumpus> meetings are not there to bring you up to speed
+19:40:18 <btcdrak> we publish meeting summaries, people should be reading them :-p
+19:40:26 <wumpus> the logs and minutes are available, and summaries are made and published on the site
+19:40:41 <gmaxwell> okay, thats enough probably. :) people get the point.
+19:40:44 <wumpus> and you can always ask about things outside the meeting
+19:40:57 <gmaxwell> (I am glad to not be alone!)
+19:40:58 <BlueMatt> wumpus: IIRC there are folks complaining now who were in favor of it, as there are now 5 related issues that are coming up.....8634, eg, was not previously discussed and is in the same veign
+19:41:03 <BlueMatt> maybe that should be the next topic
+19:41:41 <BlueMatt> otherwise, someone can propose a different topic :)
+19:41:47 <wumpus> BlueMatt: yes, I'm not saying it should be impossible to reconsider things discussed in previous meetings if convinng new reasons come up! just that repeating the same discussions with the same outcomes is not constructive
+19:41:49 <gmaxwell> BlueMatt: thats fine, things can be rediscussed again, but instead of repeating the discussion we should focus on whats changed or whats disagreed with.. a diff rather than a redo.
+19:41:58 <btcdrak> We need some more ACKs on #8634 and #8499 and #8526
+19:42:04 <wumpus> yes
+19:42:12 <wumpus> #action review #8634 and #8499 and #8526
+19:42:42 <sipa> it's not clear what is being discussed. if we're talking about nulldummy sf, i think there is little risk, but little benefit. it was discussed before however, and unless people strongly feel that everything being done is too much, then this is something that can be reconsidered. please don't start reconsidering everything. there are good reasons and they were discussed before
+19:42:43 <btcdrak> then the compact block/BIP thing needs to be finalised so we can merge the compact block pull #8393
+19:43:04 <BlueMatt> sipa: eg, btcdrak just pointed out three prs...two of which i think are optional in 0.13.1
+19:43:06 <BlueMatt> as is nulldummy
+19:43:24 <BlueMatt> now we're in a position where we have a at least 3 prs that are "optional", at least one or two has been previously agreed upon
+19:43:33 <wumpus> nulldummy softwork has been discussed zillions of times in the meeting, everytime the sentiment was slightly in favor of doing it because it has very little risk
+19:43:34 <btcdrak> sipa: it's been well reviewed, and run on testnet for 4 weeks already.
+19:43:41 <BlueMatt> but we want to get this thing out the door without spreading ourselves thin over too much review
+19:43:49 <wumpus> and by now it has lots of testing and review too
+19:43:51 <btcdrak> can we move on?
+19:43:51 <sipa> so let's just stick to it
+19:43:58 <wumpus> so if you want to reconsider it have a very good reason
+19:44:04 <wumpus> not just 'I personally don't like it very much'
+19:44:07 <BlueMatt> btcdrak: "run on testnet for 4 weeks" is the opposite of "good testing"
+19:44:08 <gmaxwell> fwiw, all of my testing lately has been with most of this stack applied.
+19:44:26 <btcdrak> BlueMatt: it's completely trivial, come on.
+19:44:47 <wumpus> topc nulldummy is over now
+19:44:50 <btcdrak> Is there any thing I can do regarding CB, I'm sort of confused about what is holding it up?
+19:44:55 <wumpus> other topic proposals?
+19:45:00 <sipa> segwit cb?
+19:45:05 <btcdrak> yes please
+19:45:14 <wumpus> #topic segwit cb
+19:45:18 <gmaxwell> yes, I'm also unsure what else is required. I have been testing.
+19:45:24 <sipa> gmaxwell: the latest version?
+19:45:30 <sdaftuar> i'm working on testing.  i foudn a bunch of problems with the test unfortunately :(
+19:45:31 <sipa> (as of a few days ago)
+19:45:47 <BlueMatt> it was updated a few days ago, afaik only sdaftuar has looked at it since
+19:45:54 <sipa> i did
+19:45:57 <morcos> i like the concept of the latest version, and looked at the code.  but unfortunately i have to review CB in the first place before i can review the pull, so thats what i'm doing
+19:46:04 <BlueMatt> and sdaftuar is now rewriting the testers for it, so not much to talk about aside from people should look at it?
+19:46:09 <gmaxwell> sipa: as of a week ago? I could check.
+19:46:34 <morcos> not to say you need to wait for my review of course
+19:46:35 <sipa> gmaxwell: 2 days ago
+19:47:55 <BlueMatt> next topic?
+19:48:12 <gmaxwell> (Fwiw, more segwit traffic on testnet would make live testing of that PR more useful)
+19:48:27 <luke-jr> gmaxwell: where did you guys go btw?
+19:48:35 <gmaxwell> luke-jr: to the photo room.
+19:48:37 <btcdrak> gmaxwell: roasbeef is preparing to produce some load in the next day
+19:48:56 <gmaxwell> btcdrak: okay, I'll try to get things updated to the latest first.
+19:49:58 <jonasschnelli> any other topics?
+19:50:10 <sipa> specifically it would be useful to test connections between 0.13-with-segwit-activation-removed testnet nodes with #8393
+19:50:24 <sdaftuar> sipa: i'm also working on doing that in regtest, fyi
+19:50:32 <sipa> awesome
+19:50:34 <btcdrak> great
+19:50:40 <gmaxwell> sipa: okay, I'll make sure that I run with that too.
+19:50:52 <sipa> thanks
+19:51:37 <luke-jr> would be handy to have some regular segwit spam on testnet in general IMO
+19:51:56 <btcdrak> luke-jr: it's coming, roasbeef is setting something up
+19:53:02 <btcdrak> *silence*
+19:53:41 <jonasschnelli> #endmeeting
