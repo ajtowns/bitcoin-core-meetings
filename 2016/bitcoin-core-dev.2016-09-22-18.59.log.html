@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">18:59:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">18:59:48</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Sep 22 18:59:48 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">18:59:48</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">18:59:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-5"></a><span class="tm">18:59:55</span><span class="nk"> &lt;CodeShark&gt;</span> Here
+<a name="l-6"></a><span class="tm">18:59:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> here
+<a name="l-7"></a><span class="tm">19:00:04</span><span class="nk"> &lt;btcdrak&gt;</span> jl2012 ping
+<a name="l-8"></a><span class="tm">19:00:11</span><span class="nk"> &lt;murch&gt;</span> hello
+<a name="l-9"></a><span class="tm">19:00:15</span><span class="nk"> &lt;sipa&gt;</span> pyng
+<a name="l-10"></a><span class="tm">19:00:17</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-11"></a><span class="tm">19:00:21</span><span class="nk"> &lt;sdaftuar&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:00:22</span><span class="nk"> &lt;wumpus&gt;</span> jl2012 probably won't be here this meeting
+<a name="l-13"></a><span class="tm">19:00:22</span><span class="nk"> &lt;paveljanik&gt;</span> peng
+<a name="l-14"></a><span class="tm">19:00:53</span><span class="nk"> &lt;michagogo&gt;</span> May show up in a bit - at dinner with my grandmother atm
+<a name="l-15"></a><span class="tm">19:00:54</span><span class="nk"> &lt;btcdrak&gt;</span> 01110000 01101001 01101110 01100111
+<a name="l-16"></a><span class="tm">19:01:06</span><span class="nk"> &lt;gmaxwell&gt;</span> our meeting is at an unfriendly time for our contributors in asia/au/nz/etc. Alas.
+<a name="l-17"></a><span class="tm">19:01:10</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; I may not join the meeting today but I suggest not to do https://github.com/bitcoin/bitcoin/pull/8654 in 0.13.1
+<a name="l-18"></a><span class="tm">19:01:10</span><span class="nk"> &lt;wumpus&gt;</span> &lt;jl2012&gt; It seems the risks is too much comparing with the benefit
+<a name="l-19"></a><span class="tm">19:01:52</span><span class="nk"> &lt;wumpus&gt;</span> yes what ever time you pick it's always unfriendly to someone
+<a name="l-20"></a><span class="tm">19:01:54</span><span class="nk"> &lt;btcdrak&gt;</span> I was discussing this with him yesterday. I also think it should be dropped.
+<a name="l-21"></a><span class="tm">19:02:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> we should find a time that is unfriendly to everyone :)
+<a name="l-22"></a><span class="tm">19:02:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Drop reuse sighash computations across evaluation  #8654 from 0.13.1?</span>
+<a name="l-23"></a><span class="tm">19:02:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> wasn't a complaint, just reminding people of it. :) (and we can all make an effort to stand in for people who can't make it)
+<a name="l-24"></a><span class="tm">19:03:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> something else we could do is have e.g. alternating times every week
+<a name="l-25"></a><span class="tm">19:03:48</span><span class="nk"> &lt;sipa&gt;</span> yes, i'm in favor of dropping it. i believed the advantages were larger first
+<a name="l-26"></a><span class="tm">19:03:49</span><span class="nk"> &lt;wumpus&gt;</span> but given that people already have a hard time being there intime for a meeting with a fixed time... :-)
+<a name="l-27"></a><span class="tm">19:04:03</span><span class="nk"> &lt;sipa&gt;</span> but it seems we'll need more changes anyway than we can tolerate for 0.13.1
+<a name="l-28"></a><span class="tm">19:04:07</span><span class="nk"> &lt;gmaxwell&gt;</span> So re: that PR. We can do it later. We've survived thus far without it.
+<a name="l-29"></a><span class="tm">19:04:13</span><span class="nk"> &lt;btcdrak&gt;</span> yes.
+<a name="l-30"></a><span class="tm">19:04:16</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-31"></a><span class="tm">19:04:38</span><span class="nk"> &lt;wumpus&gt;</span> removing 0.13.1 milestone from it
+<a name="l-32"></a><span class="tm">19:04:55</span><span class="nk"> &lt;petertodd&gt;</span> how much worse is the maximum O(n^2) time for segwit? my understanding is that w/o segwit in theory even dozens of minutes are possible anyway
+<a name="l-33"></a><span class="tm">19:05:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> the same
+<a name="l-34"></a><span class="tm">19:05:43</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> but can't you get more checksig ops w/ segwit?
+<a name="l-35"></a><span class="tm">19:05:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> as segwit inputs only hash the entire transaction at most once
+<a name="l-36"></a><span class="tm">19:05:57</span><span class="nk"> &lt;sipa&gt;</span> see bip143
+<a name="l-37"></a><span class="tm">19:06:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> IIRC. this change is primarily fixing the non-segwit case. The plain hashcache in segwit already optimizes segwit so its basically solved under segwit.
+<a name="l-38"></a><span class="tm">19:06:23</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-39"></a><span class="tm">19:06:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> the worst case for a pure segwit-inputs transaction is around 6 ms per block
+<a name="l-40"></a><span class="tm">19:07:04</span><span class="nk"> &lt;gmaxwell&gt;</span> so the non-segwit cases are the worst case, but we have determined that exploiting some additional caching oppturnities radically reduces that worst case when coupled with a few inconsequential additional limits.
+<a name="l-41"></a><span class="tm">19:07:06</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ah right, because of how we changed SIGHASH_SINGLE behavior
+<a name="l-42"></a><span class="tm">19:07:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> all sighashing is changed in segwit
+<a name="l-43"></a><span class="tm">19:07:24</span><span class="nk"> &lt;petertodd&gt;</span> alright, I'm ACK to remove that for 0.13.1
+<a name="l-44"></a><span class="tm">19:07:33</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-45"></a><span class="tm">19:07:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> well sure, but SIGHASH_SINGLE is changed in substance significantly :)
+<a name="l-46"></a><span class="tm">19:08:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> right but the reason segwit doesn't have the n^2 blowup anymore is the general change so that the hashing work across inputs can be shared.
+<a name="l-47"></a><span class="tm">19:08:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> hmm? they're all changed in a very similar way, with the whole-transaction parts precomputed rather than inlined
+<a name="l-48"></a><span class="tm">19:09:15</span><span class="nk"> &lt;achow101&gt;</span> are #8634 and #8499 and #8526 ready for merge?
+<a name="l-49"></a><span class="tm">19:09:34</span><span class="nk"> &lt;wumpus&gt;</span> that's a new topic proposal achow101?
+<a name="l-50"></a><span class="tm">19:09:58</span><span class="nk"> &lt;achow101&gt;</span> just a question
+<a name="l-51"></a><span class="tm">19:10:00</span><span class="nk"> &lt;gmaxwell&gt;</span> related topic at least.
+<a name="l-52"></a><span class="tm">19:10:28</span><span class="nk"> &lt;btcdrak&gt;</span> well they were part of last week's homework
+<a name="l-53"></a><span class="tm">19:10:34</span><span class="nk"> &lt;wumpus&gt;</span> Add policy: null signature for failed CHECK(MULTI)SIG https://github.com/bitcoin/bitcoin/pull/8634
+<a name="l-54"></a><span class="tm">19:10:54</span><span class="nk"> &lt;wumpus&gt;</span> Check bad witness and implement several policy limits for segwit scripts https://github.com/bitcoin/bitcoin/pull/8499
+<a name="l-55"></a><span class="tm">19:11:19</span><span class="nk"> &lt;wumpus&gt;</span> Make non-minimal OP_IF/NOTIF argument non-standard for P2WSH https://github.com/bitcoin/bitcoin/pull/8526
+<a name="l-56"></a><span class="tm">19:11:43</span><span class="nk"> &lt;CodeShark&gt;</span> The first and last commits for 8634 should be squashed together, have only done limited testing, but the code changes look good
+<a name="l-57"></a><span class="tm">19:12:20</span><span class="nk"> &lt;CodeShark&gt;</span> Still reviewing 8499
+<a name="l-58"></a><span class="tm">19:13:28</span><span class="nk"> &lt;wumpus&gt;</span> ok, anyone else with opinion about those pulls?
+<a name="l-59"></a><span class="tm">19:14:47</span><span class="nk"> &lt;gmaxwell&gt;</span> 8634 needs a squash. LGTM.
+<a name="l-60"></a><span class="tm">19:14:56</span><span class="nk"> &lt;sipa&gt;</span> 8499 is a blocker for 0.13.1 for sure
+<a name="l-61"></a><span class="tm">19:15:02</span><span class="nk"> &lt;achow101&gt;</span> wasn't it decided that 8393 was ready, or just about ready
+<a name="l-62"></a><span class="tm">19:15:04</span><span class="nk"> &lt;sdaftuar&gt;</span> fyi i'm just starting my review of 8499 now
+<a name="l-63"></a><span class="tm">19:15:06</span><span class="nk"> &lt;wumpus&gt;</span> looks like #8634 has quite a lot of (u)tACKs
+<a name="l-64"></a><span class="tm">19:15:30</span><span class="nk"> &lt;sdaftuar&gt;</span> (but don't let me hold thigns up!)
+<a name="l-65"></a><span class="tm">19:16:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">merge #8634 after squashing</span>
+<a name="l-66"></a><span class="tm">19:16:35</span><span class="nk"> &lt;wumpus&gt;</span> 8499 is still very much in progress
+<a name="l-67"></a><span class="tm">19:17:18</span><span class="nk"> &lt;instagibbs&gt;</span> 8393 isn't that hard to review but only a couple people have given acks
+<a name="l-68"></a><span class="tm">19:17:44</span><span class="nk"> &lt;gmaxwell&gt;</span> reminder on milestone 22, https://github.com/bitcoin/bitcoin/milestone/22  (and if there are 0.13 things in that, which aren't tagged, make sure they get tagged)
+<a name="l-69"></a><span class="tm">19:19:56</span><span class="nk"> &lt;sipa&gt;</span> i'll address the latest nits in 8393
+<a name="l-70"></a><span class="tm">19:20:00</span><span class="nk"> &lt;wumpus&gt;</span> so anything between those that is ready for merge?
+<a name="l-71"></a><span class="tm">19:20:43</span><span class="nk"> &lt;btcdrak&gt;</span> We need a few more acks on 8526 but it looks harmless enough as is.
+<a name="l-72"></a><span class="tm">19:21:23</span><span class="nk"> &lt;wumpus&gt;</span> there seems to be disagreement on the RPC behavior change in Fix issue with conflicted mempool tx in listsinceblock https://github.com/bitcoin/bitcoin/pull/8757
+<a name="l-73"></a><span class="tm">19:21:35</span><span class="nk"> &lt;wumpus&gt;</span> this probably means it should be untagged for 0.13.1
+<a name="l-74"></a><span class="tm">19:21:38</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> I think there are a couple of niggles on the BIP also https://github.com/bitcoin/bips/pull/423
+<a name="l-75"></a><span class="tm">19:21:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. No need for 0.13.1
+<a name="l-76"></a><span class="tm">19:21:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> yes, i'm aware
+<a name="l-77"></a><span class="tm">19:22:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> right, if we do that it should be something documented in the release notes of a major release
+<a name="l-78"></a><span class="tm">19:22:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-79"></a><span class="tm">19:22:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> People probably built apps on the "strange" listsinceblock behavior.
+<a name="l-80"></a><span class="tm">19:22:48</span><span class="nk"> &lt;wumpus&gt;</span> exactly
+<a name="l-81"></a><span class="tm">19:23:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> remved the 0.13.1 ms from 8757
+<a name="l-82"></a><span class="tm">19:23:17</span><span class="nk"> &lt;wumpus&gt;</span> okay that leaves four to go
+<a name="l-83"></a><span class="tm">19:23:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> wait, we're unmarking compact blocks for 0.13.1?
+<a name="l-84"></a><span class="tm">19:23:32</span><span class="nk"> &lt;BlueMatt&gt;</span> (you just did)
+<a name="l-85"></a><span class="tm">19:23:32</span><span class="nk"> &lt;gmaxwell&gt;</span> re the listsince blocks The complaint is that conflicts are always shown and the proposed change made them never shown?
+<a name="l-86"></a><span class="tm">19:23:34</span><span class="nk"> &lt;btcdrak&gt;</span> regarding segwitcb, roasbeef's scripts are running spamming testnet. If there are any miners pointing hash at testnet, can they set "-blockmaxweight=4000000", leaving off any other related params so we get more bigger blocks.
+<a name="l-87"></a><span class="tm">19:23:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> uh
+<a name="l-88"></a><span class="tm">19:23:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> wat?
+<a name="l-89"></a><span class="tm">19:23:54</span><span class="nk"> &lt;BlueMatt&gt;</span> @laanwj laanwj removed this from the 0.13.1 milestone a minute ago
+<a name="l-90"></a><span class="tm">19:23:55</span><span class="nk"> &lt;instagibbs&gt;</span> er did someone remove the segwit cb?
+<a name="l-91"></a><span class="tm">19:23:56</span><span class="nk"> &lt;wumpus&gt;</span> that was a mistake
+<a name="l-92"></a><span class="tm">19:23:57</span><span class="nk"> &lt;BlueMatt&gt;</span> I assume that was accidental
+<a name="l-93"></a><span class="tm">19:24:00</span><span class="nk"> &lt;wumpus&gt;</span> please readd
+<a name="l-94"></a><span class="tm">19:24:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#8393</span><span class="cmdline"></span>
+<a name="l-95"></a><span class="tm">19:24:15</span><span class="nk"> &lt;gmaxwell&gt;</span> unclick
+<a name="l-96"></a><span class="tm">19:24:27</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so 5 to go
+<a name="l-97"></a><span class="tm">19:24:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> readded
+<a name="l-98"></a><span class="tm">19:24:47</span><span class="nk"> &lt;instagibbs&gt;</span> 4 PRs, one related issue
+<a name="l-99"></a><span class="tm">19:24:52</span><span class="nk"> &lt;sipa&gt;</span> you take one down, pass it around, 5 PR to g
+<a name="l-100"></a><span class="tm">19:25:19 </span><span class="nka">* BlueMatt</span> <span class="ac">is not sure how to feel about #8526...it'll surely end up merged onto master before segwit activates...agree its nice to have things "clean from the start", but do we define clean as policy in 0.13.1 or policy on master/0.14?</span>
+<a name="l-101"></a><span class="tm">19:25:20</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> exponential PR blow up
+<a name="l-102"></a><span class="tm">19:25:22</span><span class="nk"> &lt;btcdrak&gt;</span> There is also this nice project https://github.com/bitcoin/bitcoin/projects/5
+<a name="l-103"></a><span class="tm">19:25:26</span><span class="nk"> &lt;gmaxwell&gt;</span> if you just want the percentage to go up, feel free to add tags to closed prs that got backported but were never tagged 0.13.1... There are many. :P
+<a name="l-104"></a><span class="tm">19:26:13</span><span class="nk"> &lt;wumpus&gt;</span> yes good point btcdrak PSA: I've started using the new feature of github projects for tracking a few longer-running projects: https://github.com/bitcoin/bitcoin/projects
+<a name="l-105"></a><span class="tm">19:26:14</span><span class="nk"> &lt;BlueMatt&gt;</span> same with 8634
+<a name="l-106"></a><span class="tm">19:26:55</span><span class="nk"> &lt;paveljanik&gt;</span> wumpus, nice!
+<a name="l-107"></a><span class="tm">19:27:08</span><span class="nk"> &lt;BlueMatt&gt;</span> or, really, what about ignoring #8634 and #8526 and going to solicit feedback for segwit dates after the other ones are in, and then if they make it in before we get date consensus, then they go in, otherwise no
+<a name="l-108"></a><span class="tm">19:27:13</span><span class="nk"> &lt;gmaxwell&gt;</span> minor meta aside, is there any facility for backing up and retaining all this new github stuff?
+<a name="l-109"></a><span class="tm">19:27:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> havent looked, but the github api has historically been very, very complete
+<a name="l-110"></a><span class="tm">19:27:39</span><span class="nk"> &lt;BlueMatt&gt;</span> so i ass-u-me so?
+<a name="l-111"></a><span class="tm">19:27:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that's iwilcox's department (but he's not here)
+<a name="l-112"></a><span class="tm">19:28:17</span><span class="nk"> &lt;wumpus&gt;</span> but yes I guess it's available on the API if you know where to look, or it will become available, as BlueMatt says
+<a name="l-113"></a><span class="tm">19:28:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> 8526 when it goes SF could plausably conficate coins, so it's more important to have it non-standard from the getgo.
+<a name="l-114"></a><span class="tm">19:28:53</span><span class="nk"> &lt;gmaxwell&gt;</span> and 8634 is done but for a squash as far as I can tell.
+<a name="l-115"></a><span class="tm">19:29:24</span><span class="nk"> &lt;wumpus&gt;</span> already created an action for #8634, we're repeating ourselves
+<a name="l-116"></a><span class="tm">19:29:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm not sold on it needing to be in anything but master before release, but, ok, in any case, i'd propose we start looking for date-consensus after #8279 and #8499 are in
+<a name="l-117"></a><span class="tm">19:29:26</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">gmaxwell:</span> the github API supports all this new stuff https://developer.github.com/v3/repos/projects/
+<a name="l-118"></a><span class="tm">19:29:45</span><span class="nk"> &lt;BlueMatt&gt;</span> (ie lets start looking for date consensus like...soon)
+<a name="l-119"></a><span class="tm">19:29:55</span><span class="nk"> &lt;achow101&gt;</span> like.. now?
+<a name="l-120"></a><span class="tm">19:30:01</span><span class="nk"> &lt;sipa&gt;</span> no, not now
+<a name="l-121"></a><span class="tm">19:30:05</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="hi">achow101:</span> no, after critical updates are merged
+<a name="l-122"></a><span class="tm">19:30:11</span><span class="nk"> &lt;sipa&gt;</span> first know when we can possibly have a release
+<a name="l-123"></a><span class="tm">19:30:14</span><span class="nk"> &lt;BlueMatt&gt;</span> like...in a few days after the non-critical ones are merged
+<a name="l-124"></a><span class="tm">19:30:14</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">BlueMatt:</span> well we need #8393 merged too before we can be sure to set dates
+<a name="l-125"></a><span class="tm">19:30:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">btcdrak:</span> sure, fine, #8393, #8279, and #8499, then dates?
+<a name="l-126"></a><span class="tm">19:30:50</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-127"></a><span class="tm">19:30:55</span><span class="nk"> &lt;sdaftuar&gt;</span> i believe 8279 is sufficiently resolved for 0.13.1
+<a name="l-128"></a><span class="tm">19:31:11</span><span class="nk"> &lt;wumpus&gt;</span> let's try to finish those pulls this week then we can talk about the release next meeting
+<a name="l-129"></a><span class="tm">19:31:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> do we know what the status of btcd's SW support is?
+<a name="l-130"></a><span class="tm">19:31:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> thats part of soliciting consensus on dates :p
+<a name="l-131"></a><span class="tm">19:31:24</span><span class="nk"> &lt;btcdrak&gt;</span> ping roasbeef
+<a name="l-132"></a><span class="tm">19:31:30</span><span class="nk"> &lt;BlueMatt&gt;</span> (ie reaching out to non-bitcoin core people)
+<a name="l-133"></a><span class="tm">19:31:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> well I've been doing that for a while. that doesn't have any binding on pending PRs.
+<a name="l-134"></a><span class="tm">19:31:46</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-135"></a><span class="tm">19:32:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> ok, so let's remove that issue from the 0.13.1 milestone, but not close it
+<a name="l-136"></a><span class="tm">19:32:12</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> sounds good to me
+<a name="l-137"></a><span class="tm">19:32:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> sounds good
+<a name="l-138"></a><span class="tm">19:32:55</span><span class="nk"> &lt;gmaxwell&gt;</span> btcd is the only active alt implementation that I'm aware of that didn't respond to my "when do you think you'll work on this" with a "only after it's locked in on the network".
+<a name="l-139"></a><span class="tm">19:34:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> in any case, out of meeting lets try to work on a list of required actions for the activation.
+<a name="l-140"></a><span class="tm">19:35:13</span><span class="nk"> &lt;wumpus&gt;</span> makes sense to reach out to them then
+<a name="l-141"></a><span class="tm">19:35:21</span><span class="nk"> &lt;btcdrak&gt;</span> well in terms of wallet code and supporting libraries, there are many which are SW ready, or have it almost ready to go.
+<a name="l-142"></a><span class="tm">19:35:33</span><span class="nk"> &lt;gmaxwell&gt;</span> yes.
+<a name="l-143"></a><span class="tm">19:35:34</span><span class="nk"> &lt;petertodd&gt;</span> python-bitcoinlib has a fairly good pull-req for segwit
+<a name="l-144"></a><span class="tm">19:35:45</span><span class="nk"> &lt;wumpus&gt;</span> awesome
+<a name="l-145"></a><span class="tm">19:36:08</span><span class="nk"> &lt;gmaxwell&gt;</span> mining software was in a sad state last time I checked, but I know things have improved a lot.
+<a name="l-146"></a><span class="tm">19:37:03</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, many things to discuss there that don't need everyone. :)
+<a name="l-147"></a><span class="tm">19:37:07</span><span class="nk"> &lt;roasbeef&gt;</span> will be starting to finalize my segwit stuff for btcd starting tomorrow, have been busy with lightning stuff and getting btcd up-to-date with past recent soft-forks (CSV, etc)
+<a name="l-148"></a><span class="tm">19:37:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">roasbeef:</span> +1
+<a name="l-149"></a><span class="tm">19:37:34</span><span class="nk"> &lt;roasbeef&gt;</span> primarily need to improve the test coverage, and make changes like cost-&gt;weight and the nulldummy stuff
+<a name="l-150"></a><span class="tm">19:37:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">roasbeef:</span> fantastic.
+<a name="l-151"></a><span class="tm">19:38:00</span><span class="nk"> &lt;cfields&gt;</span> i keep meaning to return to patching miners but getting distracted. Feel free to ponk me if there's some mining software that actually gets used that needs to be updated.
+<a name="l-152"></a><span class="tm">19:39:15</span><span class="nk"> &lt;achow101&gt;</span> armory is.. getting there. We're aiming for the release after the next to have full segwit support
+<a name="l-153"></a><span class="tm">19:39:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">achow101:</span> thanks!
+<a name="l-154"></a><span class="tm">19:39:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> thats a good timeframe, really no one should be using it the instant it activates, except for testing.
+<a name="l-155"></a><span class="tm">19:40:03</span><span class="nk"> &lt;btcdrak&gt;</span> oh I didnt know you work on Armory achow101 +1
+<a name="l-156"></a><span class="tm">19:40:22</span><span class="nk"> &lt;CodeShark&gt;</span> my stuff is almost 100% segwit ready, just need merkle proofs for witnesses in filtered blocks or some better SPV solution
+<a name="l-157"></a><span class="tm">19:40:47</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> I'll probably switch opentimestamps to use segwit, but that's a maximum loss of something like $20 :)
+<a name="l-158"></a><span class="tm">19:40:57</span><span class="nk"> &lt;gmaxwell&gt;</span> It's just good to hear that more things are almost read, as it's another angle of testing.
+<a name="l-159"></a><span class="tm">19:41:25</span><span class="nk"> &lt;Chris_St1&gt;</span> <span class="hi">CodeShark:</span> What BIP is that related to?
+<a name="l-160"></a><span class="tm">19:41:50</span><span class="nk"> &lt;CodeShark&gt;</span> We don't have a BIP yet, I don't think
+<a name="l-161"></a><span class="tm">19:41:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Chris_St1:</span> that will need a new bip
+<a name="l-162"></a><span class="tm">19:42:26</span><span class="nk"> &lt;sipa&gt;</span> it's trivial (just combine bip37 with bip141 wtxids)
+<a name="l-163"></a><span class="tm">19:42:32</span><span class="nk"> &lt;Chris_St1&gt;</span> ok, gotcha.
+<a name="l-164"></a><span class="tm">19:42:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_St1:</span> he wants something like the filtered block messages that provide witnesses too. (the opposite of what most SPV wallets do, but codeshark extracts participant data from witnesses)
+<a name="l-165"></a><span class="tm">19:42:49</span><span class="nk"> &lt;sipa&gt;</span> but it needs to be fleshed out... and i don't know how keen people are on extending bip37 further
+<a name="l-166"></a><span class="tm">19:43:12</span><span class="nk"> &lt;CodeShark&gt;</span> I'd prefer a replacement to bip37, but that's more involved
+<a name="l-167"></a><span class="tm">19:43:14</span><span class="nk"> &lt;Chris_St1&gt;</span> BIP37 is definitely a monster in terms of implementation... or atleast it was for me
+<a name="l-168"></a><span class="tm">19:43:14</span><span class="nk"> &lt;gmaxwell&gt;</span> We could probably do better.
+<a name="l-169"></a><span class="tm">19:43:55</span><span class="nk"> &lt;sipa&gt;</span> at least we could propose to drop some of the auto-inserting that causes false positive rate blowup
+<a name="l-170"></a><span class="tm">19:43:56</span><span class="nk"> &lt;petertodd&gt;</span> note that it's reasonable to ask for a full block even if you are a lite-client in many cases
+<a name="l-171"></a><span class="tm">19:44:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">CodeShark:</span> uhhhhhhhhh, that sounds like a blocker
+<a name="l-172"></a><span class="tm">19:44:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> Satoshi's vision.
+<a name="l-173"></a><span class="tm">19:44:34</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">petertodd:</span> such as?
+<a name="l-174"></a><span class="tm">19:44:49</span><span class="nk"> &lt;jtimon&gt;</span> I guess he means as a way to get more privacy?
+<a name="l-175"></a><span class="tm">19:44:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> how so?
+<a name="l-176"></a><span class="tm">19:45:05</span><span class="nk"> &lt;BlueMatt&gt;</span> it seems to me it is impossible to use the bloom-filtered connection stuff in segwit....I mean we can decide to not support it because its bad, but we need to actively decide that
+<a name="l-177"></a><span class="tm">19:45:06</span><span class="nk"> &lt;petertodd&gt;</span> no, I just mean that the data increase is relatively low
+<a name="l-178"></a><span class="tm">19:45:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> wut? hell no. I am aware of no other SPV client than codeshark's that does _anything_ with the witness data right now.
+<a name="l-179"></a><span class="tm">19:45:07</span><span class="nk"> &lt;jtimon&gt;</span> no tevealing which txs you care about? just thinking out loud...
+<a name="l-180"></a><span class="tm">19:45:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> spv wallets shouldn't care about the witness data
+<a name="l-181"></a><span class="tm">19:45:55</span><span class="nk"> &lt;sipa&gt;</span> hell, it's an advantage that their bandwidth will drop
+<a name="l-182"></a><span class="tm">19:45:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> indeed, they can't verify that the witness is valid
+<a name="l-183"></a><span class="tm">19:46:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> it works fine, you just don't get witnesses, which is an intentional and desirable outcome thats actually listed on the segwit advantage sheets. For the most part they can't do anything with the data.
+<a name="l-184"></a><span class="tm">19:46:09</span><span class="nk"> &lt;CodeShark&gt;</span> wallets that don't tell you who signed a multisig are incomplete ;)
+<a name="l-185"></a><span class="tm">19:46:34</span><span class="nk"> &lt;gmaxwell&gt;</span> There should be some option for those who want it, sure. Though they can also fetch the whole block, so its not a big deal even there.
+<a name="l-186"></a><span class="tm">19:46:37</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> well, that's an example where you can request a full block - not many wallets need to actually know that
+<a name="l-187"></a><span class="tm">19:46:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> as an example, I don't think GreenAddress will tell you who actually signed txs in a GA wallet
+<a name="l-188"></a><span class="tm">19:47:12</span><span class="nk"> &lt;CodeShark&gt;</span> it's critical for enterprise applications
+<a name="l-189"></a><span class="tm">19:47:20</span><span class="nk"> &lt;CodeShark&gt;</span> Accountability is important
+<a name="l-190"></a><span class="tm">19:47:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> enterprise can afford some extra bandwidth I'm sure :)
+<a name="l-191"></a><span class="tm">19:47:29</span><span class="nk"> &lt;achow101&gt;</span> I think we're getting OT
+<a name="l-192"></a><span class="tm">19:47:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> this isn't a blocker is all I'm saying
+<a name="l-193"></a><span class="tm">19:47:45</span><span class="nk"> &lt;CodeShark&gt;</span> we can revisit this after 0.13.1
+<a name="l-194"></a><span class="tm">19:47:48</span><span class="nk"> &lt;gmaxwell&gt;</span> It's also not news or an accident.
+<a name="l-195"></a><span class="tm">19:48:00</span><span class="nk"> &lt;wumpus&gt;</span> no one is considering it is a blocker except for BlueMatt
+<a name="l-196"></a><span class="tm">19:48:03</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> ack
+<a name="l-197"></a><span class="tm">19:48:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> sure, I'm saying that you cant use segwit as an spv client
+<a name="l-198"></a><span class="tm">19:48:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> of course you can?
+<a name="l-199"></a><span class="tm">19:48:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> thats not true.
+<a name="l-200"></a><span class="tm">19:49:00</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> note how with segwit, your txids aren't malleable, therefore you can add the txids of outputs in your wallet to your bloom filter and be sure you'll know if they get spent
+<a name="l-201"></a><span class="tm">19:49:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> however, in cases like a scripthash, you previously are able to see things that were to your public, or partially to your pubkey
+<a name="l-202"></a><span class="tm">19:49:08</span><span class="nk"> &lt;BlueMatt&gt;</span> which you might want to
+<a name="l-203"></a><span class="tm">19:49:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">petertodd:</span> you already do that, the malleability doesnt help
+<a name="l-204"></a><span class="tm">19:49:31</span><span class="nk"> &lt;Chris_St1&gt;</span> May be a stupid question, but are we refering to 'blocker' in the context of blocking 0.13.1 or downloading a full block?
+<a name="l-205"></a><span class="tm">19:49:36 </span><span class="nka">* BlueMatt</span> <span class="ac">isnt recalling exactly what the use-case was for scriptSig matching, but you now can no longer do that</span>
+<a name="l-206"></a><span class="tm">19:49:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> true, once confirmed
+<a name="l-207"></a><span class="tm">19:49:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_St1:</span> I think it would be really ill-advices to add a blocker for 0.13.1
+<a name="l-208"></a><span class="tm">19:49:52</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Chris_St1:</span> the former
+<a name="l-209"></a><span class="tm">19:49:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">BlueMatt:</span> I take back that comment
+<a name="l-210"></a><span class="tm">19:50:21</span><span class="nk"> &lt;petertodd&gt;</span> anyway, we can agree that anything fixing this is non-consensus, right? therefore it's not relevant for 0.13.1
+<a name="l-211"></a><span class="tm">19:50:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I carefully went through the code base of some three different wallets to confirm there were no complications there.  Of course, it also does nothing to _existing_ software.
+<a name="l-212"></a><span class="tm">19:50:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> i take back my comment, i no longer recall why we needed to match scriptSigs...maybe we didnt need to
+<a name="l-213"></a><span class="tm">19:51:03</span><span class="nk"> &lt;sipa&gt;</span> i think there was no reason for that, indeed
+<a name="l-214"></a><span class="tm">19:51:07</span><span class="nk"> &lt;BlueMatt&gt;</span> but it is the case that you lose this property of matching pubkeys which were used
+<a name="l-215"></a><span class="tm">19:51:10</span><span class="nk"> &lt;sipa&gt;</span> and if there is, we can still add it back
+<a name="l-216"></a><span class="tm">19:51:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> well, you might want it, but not a ton
+<a name="l-217"></a><span class="tm">19:51:19</span><span class="nk"> &lt;gmaxwell&gt;</span> which all works fine. And so even where there are things that want that data (which appear to be almost none of them), they can be accomidated later. The most common case (of not needing it) is already accomidated. And all existing things are unchanged as well.
+<a name="l-218"></a><span class="tm">19:51:21</span><span class="nk"> &lt;petertodd&gt;</span> I can imagine silly embedded consensus applications where it'd be useful... but supporting that is definitely not a priority
+<a name="l-219"></a><span class="tm">19:51:23</span><span class="nk"> &lt;wumpus&gt;</span> at this point we should be careful to only let critical problems block 0.13.1, not everything that would be nice for some applications
+<a name="l-220"></a><span class="tm">19:51:36</span><span class="nk"> &lt;Chris_St1&gt;</span> <span class="hi">BlueMatt:</span> Matching scriptSig constants in BIP37 right?
+<a name="l-221"></a><span class="tm">19:52:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> well, if it were the case that you couldnt match properly in segwit it would be bad, but it seems that you're fine
+<a name="l-222"></a><span class="tm">19:52:01</span><span class="nk"> &lt;wumpus&gt;</span> BIP37 can be extended, sure
+<a name="l-223"></a><span class="tm">19:52:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Chris_St1:</span> bip37 only ever matches constants
+<a name="l-224"></a><span class="tm">19:52:17</span><span class="nk"> &lt;wumpus&gt;</span> but that's not yet another reason to move forward the release
+<a name="l-225"></a><span class="tm">19:52:28</span><span class="nk"> &lt;BlueMatt&gt;</span> agreed
+<a name="l-226"></a><span class="tm">19:52:33</span><span class="nk"> &lt;achow101&gt;</span> topic proposal: alert system retirement
+<a name="l-227"></a><span class="tm">19:52:43</span><span class="nk"> &lt;gmaxwell&gt;</span> AFAICT the only 'utility' of that matching was degrading privacy by tainting the filter with FPs on extrainous data. :P
+<a name="l-228"></a><span class="tm">19:52:44</span><span class="nk"> &lt;instagibbs&gt;</span> 8 minutes left
+<a name="l-229"></a><span class="tm">19:52:47</span><span class="nk"> &lt;BlueMatt&gt;</span> we might fix this by throwing out bip37 and doing something not-batshit-insane, but thats an aside from the meeting
+<a name="l-230"></a><span class="tm">19:53:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yup
+<a name="l-231"></a><span class="tm">19:53:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> yup.
+<a name="l-232"></a><span class="tm">19:53:12</span><span class="nk"> &lt;CodeShark&gt;</span> I want a good fairly secure quick sync solution. BIP37 sucks :p
+<a name="l-233"></a><span class="tm">19:53:25</span><span class="nk"> &lt;gmaxwell&gt;</span> second on achow101's topic.
+<a name="l-234"></a><span class="tm">19:53:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> sure, fiber-to-the-home :)
+<a name="l-235"></a><span class="tm">19:53:33</span><span class="nk"> &lt;CodeShark&gt;</span> But we'll do that after 0.13.1
+<a name="l-236"></a><span class="tm">19:53:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic  </span><span class="topicline">alert system retirement</span>
+<a name="l-237"></a><span class="tm">19:53:34</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-238"></a><span class="tm">19:54:11</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay I sent out an email on this. Mostly well recieved (at least in public). I went and bludgenoned alt implementations into removing the alert key and only got mildly bloodied in the process.
+<a name="l-239"></a><span class="tm">19:54:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> sounds like it's time to set dates
+<a name="l-240"></a><span class="tm">19:54:41</span><span class="nk"> &lt;gmaxwell&gt;</span> My view on the next steps:
+<a name="l-241"></a><span class="tm">19:54:54</span><span class="nk"> &lt;gmaxwell&gt;</span> (1) Create a bitcoincore.org or bitcoin.org announcement message.
+<a name="l-242"></a><span class="tm">19:55:16</span><span class="nk"> &lt;gmaxwell&gt;</span> (2) send a penulitmate alert with more polite text than the COMPROMISED message that directs people to it.
+<a name="l-243"></a><span class="tm">19:55:26</span><span class="nk"> &lt;gmaxwell&gt;</span> (3) much later, send final alert.
+<a name="l-244"></a><span class="tm">19:55:46</span><span class="nk"> &lt;wumpus&gt;</span> I'd say we send the final alert with the 0.14 release
+<a name="l-245"></a><span class="tm">19:55:57</span><span class="nk"> &lt;gmaxwell&gt;</span> (4) hardcode nodes to send the final alert to peers to overcome the lack of propagation. (just using the one or two lines of code needed to send a static message, not pulling back any alert code)
+<a name="l-246"></a><span class="tm">19:56:09</span><span class="nk"> &lt;wumpus&gt;</span> then include code in there to send it to old peers that connect, as gmaxwell says
+<a name="l-247"></a><span class="tm">19:56:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ACK
+<a name="l-248"></a><span class="tm">19:56:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> ACK final alert with 0.14
+<a name="l-249"></a><span class="tm">19:56:48</span><span class="nk"> &lt;jtimon&gt;</span> ack
+<a name="l-250"></a><span class="tm">19:56:49</span><span class="nk"> &lt;achow101&gt;</span> ack
+<a name="l-251"></a><span class="tm">19:56:51</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> and release the privkey for the alert key w/ the final alert?
+<a name="l-252"></a><span class="tm">19:56:54</span><span class="nk"> &lt;btcdrak&gt;</span> ack
+<a name="l-253"></a><span class="tm">19:57:03</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we can do 1/2 in the next week. I'm not aware of any reason to delay, and there are propagation advantages to doing it earlier rather than later.
+<a name="l-254"></a><span class="tm">19:57:08</span><span class="nk"> &lt;sipa&gt;</span> i'd release the key later even
+<a name="l-255"></a><span class="tm">19:57:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-256"></a><span class="tm">19:57:16</span><span class="nk"> &lt;instagibbs&gt;</span> make sure to sweep the funds people have sent to the key :P
+<a name="l-257"></a><span class="tm">19:57:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">instagibbs:</span> ha
+<a name="l-258"></a><span class="tm">19:57:28</span><span class="nk"> &lt;roasbeef&gt;</span> btcd still has the code in place to parse the alert messages, but we simply drop-it-like-its-hot once recv of the message without any further processing (and have since early last year)
+<a name="l-259"></a><span class="tm">19:57:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-260"></a><span class="tm">19:57:52</span><span class="nk"> &lt;sipa&gt;</span> there may be alternate codebases that use the key who want to do something similar to (3) and (4)
+<a name="l-261"></a><span class="tm">19:58:10</span><span class="nk"> &lt;sipa&gt;</span> oh, wait
+<a name="l-262"></a><span class="tm">19:58:16</span><span class="nk"> &lt;sipa&gt;</span> they need the key for that
+<a name="l-263"></a><span class="tm">19:58:24</span><span class="nk"> &lt;BlueMatt&gt;</span> 2 min
+<a name="l-264"></a><span class="tm">19:58:31</span><span class="nk"> &lt;instagibbs&gt;</span> any pressing topics
+<a name="l-265"></a><span class="tm">19:58:36</span><span class="nk"> &lt;wumpus&gt;</span> well after the final alert is sent, the key is only historical curiosity
+<a name="l-266"></a><span class="tm">19:58:42</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, I'll send a message to the list.
+<a name="l-267"></a><span class="tm">19:58:47</span><span class="nk"> &lt;luke-jr&gt;</span> can the final alert match all clients?
+<a name="l-268"></a><span class="tm">19:59:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> you mean the pre-final alert, and yes
+<a name="l-269"></a><span class="tm">19:59:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> yeah, once that final alert is sent, I doubt releasing the key will do any harm
+<a name="l-270"></a><span class="tm">19:59:14</span><span class="nk"> &lt;gmaxwell&gt;</span> It cann't not match all clients.
+<a name="l-271"></a><span class="tm">19:59:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I think he means the penultimate alert
+<a name="l-272"></a><span class="tm">19:59:44</span><span class="nk"> &lt;wumpus&gt;</span> obviously the final alert matches all clients, at least those that still parse alerts
+<a name="l-273"></a><span class="tm">20:00:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> if I can parition your network I can make your client show "Your bitcoin is outdated and vulnerable. You MUST download an update to continue. http://bitcoinscam.eu/"
+<a name="l-274"></a><span class="tm">20:00:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> wasn't that the point in adding it to the client?
+<a name="l-275"></a><span class="tm">20:00:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I was thinking of limiting the applicability of the penultimate alert to users of Bitcoin Core, open to suggestions.
+<a name="l-276"></a><span class="tm">20:00:40</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> sure, but that'll have been after months of alert - I'm not worried there
+<a name="l-277"></a><span class="tm">20:00:51</span><span class="nk"> &lt;wumpus&gt;</span> it applies to everyone using the key, not just users of bitcoin core
+<a name="l-278"></a><span class="tm">20:00:53</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, can continue after, we should wrap the meeting. :)
+<a name="l-279"></a><span class="tm">20:00:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> I'd be inclined to provide it to everyone - it's a warning that everyone will soon have a final alert
+<a name="l-280"></a><span class="tm">20:00:59</span><span class="nk"> &lt;instagibbs&gt;</span> ding ding
+<a name="l-281"></a><span class="tm">20:01:01</span><span class="nk"> &lt;btcdrak&gt;</span> ding ding ding
+<a name="l-282"></a><span class="tm">20:01:02</span><span class="nk"> &lt;wumpus&gt;</span> yes it's time
+<a name="l-283"></a><span class="tm">20:01:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
