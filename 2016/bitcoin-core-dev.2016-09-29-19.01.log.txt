@@ -1,0 +1,373 @@
+19:01:19 <wumpus> #startmeeting
+19:01:19 <lightningbot> Meeting started Thu Sep 29 19:01:19 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:19 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:26 <BakSAj> hi
+19:01:36 <CodeShark> meeting time!
+19:01:46 <MarcoFalke> meeting!
+19:01:56 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:04 <MarcoFalke> (oh already started)
+19:02:07 <btcdrak> here
+19:02:07 <cfields_> hi
+19:02:12 <kanzure> hi
+19:02:20 <wumpus> any proposed topics?
+19:02:24 <jonasschnelli> topic proposal: pruning and blockrelay
+19:02:56 <petertodd> hi
+19:03:11 <sipa> policy against uncompressed keys or not
+19:03:11 <wumpus> #topic pruning and blockrelay
+19:03:38 <jonasschnelli> I think we should add a service flag for block relay with a min-height
+19:03:52 <jonasschnelli> NODE_PRUNENETWORK or something
+19:03:57 <sipa> there have been multiple ideas around that
+19:04:35 <petertodd> IMO whatever we do, we should recognise that w/ segwit's larger blocks we can expect a lot of full nodes to run out of disk space quite soon
+19:04:35 <sipa> the easiest is just to add a flag that says you relay valid blocks and transactions, but not historical blocks more than a few deep
+19:04:35 <jonasschnelli> I guess people slowly start to prune the blockchain to a max of 80GB or similar... but I guess not everyone is aware of the fact that you don't relay then
+19:04:36 <wumpus> it would be nice to support more than one range, e.g. also archive nodes that host part of the old blocks
+19:04:49 <sipa> it becomes harder when you want multiple ranger
+19:04:57 <petertodd> do we have a reason for more than one range?
+19:05:00 <jonasschnelli> We could introduce another message type... blockrange  or so
+19:05:01 <sipa> it becomes even harder when you want to support sharding in an efficient way
+19:05:08 <wumpus> I'm not sure why itb ecomes hard, just add a query message that returns what ranges are supported
+19:05:11 <petertodd> sipa: what do you mean by sharding exactly?
+19:05:25 <sipa> petertodd: you'd configure your node to maintain a certain % of blocks
+19:05:45 <jonasschnelli> wumpus: query, yes, why not, or just inform like we do with sendheaders
+19:05:47 <petertodd> sipa: see, given that the bitcoin protocol can't be safely sharded right now, I think we can safely say that we don't need to support sharding in block relay yet
+19:05:55 <petertodd> sipa: doing so might even be dangerous if people start using it
+19:06:04 <sipa> petertodd: not in block relay
+19:06:08 <sipa> petertodd: for block archival
+19:06:16 <petertodd> sipa: but why shard vs. keep ranges?
+19:06:23 <petertodd> sipa: (ranges of full blocks)
+19:06:25 <luke-jr> BitTorrent already does this. Surely we can learn from that?
+19:06:38 <petertodd> luke-jr: I don't think so - bittorrent is a very different problem than bitcoin
+19:06:38 <wumpus> this is for letting other peers know what ranges of blocks are hosted, I don't think this should affect releay
+19:06:41 <sipa> so, i've been running statistics on what block depths are being requested from nodes
+19:06:47 <luke-jr> petertodd: learn from it, not use it directly
+19:07:01 <luke-jr> petertodd: BitTorrent's problem isn't very different from IBD
+19:07:08 <jonasschnelli> sipa: interesting.. do you have the stats public available somewhere
+19:07:16 <jonasschnelli> I wanted to do this a long time
+19:07:20 <petertodd> luke-jr: so, the thing is bittorrent has the problem of a diverse set of files, we just don't have that problem and can optimise differently because everyone needs access t othe same set of data
+19:08:03 <sipa> there are something like 4 meaningful 'ranges' 1) the top 2 blocks (just relay) 2) up to ~2500 blocks deep... requested very often 3) up to ~10000 deep... requested a few times more than the next range 4) the rest
+19:08:15 <wumpus> otoh bittorrent has a fixed block size :)
+19:08:22 <sipa> wumpus: so do we *ducks*
+19:08:38 <petertodd> sipa: that probably corresponds to how long people leave their nodes offline :)
+19:08:51 <btcdrak> inb4 Bittorrent XT
+19:09:04 <sipa> jonasschnelli: they're not available, and the ranges i gave above are just from me quickly glancing over the result
+19:09:04 <petertodd> btcdrak: I use Bittorrent Unlimited myself
+19:09:05 <jonasschnelli> What about fingerprinting issued in conjunction with available ranges?
+19:09:16 <jonasschnelli> *issues
+19:09:20 <petertodd> jonasschnelli: make them powers of two?
+19:09:33 <sipa> well 4 ranges can be done with 2 service bit flags
+19:09:45 <sipa> gmaxwell: you've worked on these ideas before, comments?
+19:09:47 <jonasschnelli> But would that work with the flexible pruning option based on MB?
+19:10:05 <petertodd> jonasschnelli: sure, just find the biggest range less than the pruning amount
+19:10:12 <sipa> jonasschnelli: you'd change your service bits on the fly
+19:10:20 <wumpus> why would the ranges need to be in the flags?
+19:10:30 <gmaxwell> sorry, I missed that the meeting started.
+19:10:32 <jonasschnelli> Yes. Why? Better add an explicit message for the range
+19:10:34 <sipa> how would you otherwise discover what nodes to connect to?
+19:10:45 <sipa> just randomly try?
+19:10:45 <petertodd> jonasschnelli: oh right, you mean if MB != blocks... sorry.
+19:10:49 <wumpus> I think you'll need a service flag to show support for the protocol, but not what ranges you have
+19:10:52 <jonasschnelli> query or inform the other node if proto-ver > NODE_PRUNENETWORK
+19:11:00 <wumpus> well that can be negotiated later, like bittorrent does I guess
+19:11:08 <sipa> wumpus: well you do want addr messages to contain this information
+19:11:18 <wumpus> I doubt bitcoin has 'service flags' in its tracker what blocks nodes have
+19:11:18 <petertodd> sipa: so the nice thing about bitcoin, is just randomly try will probably work fairly often due to the low number of ranges out there
+19:11:26 <wumpus> as that changes all the time anyhow
+19:11:29 <gmaxwell> I was strongly of the view that we needed to signal at least two ranges. Sipa's latest measurements make me think at least three are needed.
+19:11:31 <wumpus> s/bitcoin/bittorrent/
+19:11:37 <jonasschnelli> I think informing other nodes ranges over addr is another thing...
+19:11:46 <jonasschnelli> A first step would be a information after connect
+19:11:55 <wumpus> yes, addr is another thing
+19:12:22 <gmaxwell> I think ranges in service bits are no big deal, the harder question is what to do about the history. having nodes with 150GB of history in order to serve the last range is not very viable.
+19:12:23 <wumpus> could be done later if an efficient way is needed to *locate* peers with certain ranges
+19:12:31 <wumpus> but that seems premature optimization
+19:12:36 <gmaxwell> We will need to redo addr sometime relatively soon in any case, as our messages are not compatible with HS-NG.
+19:12:52 <petertodd> gmaxwell: oh, you mean Tor's new hidden services standard right?
+19:12:56 <gmaxwell> petertodd: yes.
+19:13:02 <gmaxwell> (also I2P though thats not new)
+19:13:18 <wumpus> I think the number of ranges should be variable
+19:13:24 <wumpus> redesigning addr is a different topic
+19:13:35 <wumpus> also necessary, but again, doesn't need to be on one heap
+19:13:45 <gmaxwell> wumpus: when I'm saying ranges I am specifically referring to the top-N zomes.
+19:14:14 <petertodd> well, so if we add service bits for recent history ranges, that should be possible to implement as a separate feature to archival history ranges, and it'd be a big first step
+19:14:22 <wumpus> I think it should be possible to, say, only host the first 20GB of blocks
+19:14:37 <jonasschnelli> historic only nodes
+19:14:37 <wumpus> I don't see why it should be restricted to only recent history
+19:14:38 <petertodd> I don't think it's likely we'll see the two different features collide, so maybe implement recent history ranges first
+19:14:55 <wumpus> or I mean first 20GB + last 144 blocks
+19:15:07 <gmaxwell> For history storage, I was previously working on a proposal where nodes could signal a small (32 bit) seed and a size and from that everyone would know what parts of the history they would store.  I was so far unable to unify two different schemes, one which was computationally efficient to figure out who had what, and one which never required a peer to fetch a block it had previously deleted.
+19:15:15 <sipa> so very quick breakdown: out of 7M requested blocks, 100k were for the tip, range 2-2500 has around 200-2000 requests per block, and from 10000 to genesis deep there are around 20 per block
+19:16:19 <gmaxwell> I think for now we should not worry about the old history part and only worry about Top-n vs everything, as that fits into the pruning we already have and can be accomplished purely with service bits.
+19:16:22 <wumpus> the bittorrent problem is different in that there the goal of each node is to have everything
+19:16:25 <petertodd> so a social consideration here, is we can think in terms of recent history as "if there's a flaw, how much would we ever reorg w/o just saying bitcoin has failed?"
+19:16:44 <gmaxwell> petertodd: thats partly why we have the 288 block maximum amount of pruning.
+19:17:13 <petertodd> gmaxwell: indeed, and that's only two days...
+19:17:36 <jonasschnelli> Using multiple service bits for 4 ranges seems to be a hackish-design IMO
+19:17:49 <gmaxwell> at 100 blocks any reorg will _necessarily_ cause unrecoverable losses. So 288 basically gives a day plus an extra day for overhead.
+19:17:50 <petertodd> there's also a natural time criteria from how the difficulty adjustments reduce your resistance to 51% attack - if your node is offline longer, the minimum attacker size to fool you goes down
+19:17:52 <sipa> strangely enough: i see much more requests around 1000 deep than around 100 deep
+19:18:04 <gmaxwell> jonasschnelli: I don't see anything hackish.
+19:18:05 <wumpus> jonasschnelli: I also think it's a strange use of service bits
+19:18:07 <jonasschnelli> I'd prefere using a single service bit to state pruned blockchain and then a new message (or append something to version?)
+19:18:24 <petertodd> sipa: probably because people don't turn their nodes on and off every day
+19:18:25 <gmaxwell> sipa: you probably want to filter out the bitnodes spider, as I believe it requests a block to check the node is working.
+19:18:35 <sipa> gmaxwell: ah.
+19:18:53 <gmaxwell> petertodd: someone who hasn't turned their node on will request all of 0 to -1000. so it will not make 1000 greater.
+19:19:07 <gmaxwell> jonasschnelli: NAK.
+19:19:07 <petertodd> gmaxwell: oh! I didn't know we did that
+19:19:09 <sipa> i'm a bit surprised people think there is no need to have the available block ranges indicated in addr messages
+19:19:30 <sipa> (whether through service bits, or some extension)
+19:19:30 <jonasschnelli> I think there is a need... but it could be a second step
+19:19:38 <wumpus> jonasschnelli: appending to version should be unnecessary, that's also a hack :)
+19:19:50 <sipa> jonasschnelli: if it's a second step, we need to extend addr, and the whole management of addresses
+19:19:51 <jonasschnelli> Okay. Agree. What about a new message type?
+19:19:55 <jonasschnelli> blockrange
+19:19:58 <sipa> jonasschnelli: you don't understand.
+19:20:18 <gmaxwell> jonasschnelli: look at pieter's request figures, if nodes are effectively forced to go to peers that have everything whenever they connect becuase if they don't know they'll be able to fetch any blocks at all, then it will put lots more load on them.. causing people to stop offering blocks... causing more pressure on what remains.
+19:20:56 <sipa> jonasschnelli: the point of having it in service bits is so nodes can find peers that have the range they need
+19:20:58 <wumpus> but addr information gets old really fast
+19:21:17 <sipa> wumpus: much less so with feeler connections
+19:21:26 <wumpus> nodes may dynamically change what blocks they have, so there will always be cases of nodes connecting and realizing they have nothing to offer each other
+19:21:27 <jonasschnelli> Okay. I see the point.
+19:21:29 <sipa> (presumably, i don't have numbers)
+19:21:54 <wumpus> just like currently nodes will try to connect into black holes that no longer host a node
+19:22:24 <petertodd> so another interesting thing here is that ranges are queried linearly - you download blocks in a roughly linear fashion - so we could take advantage of that by making sure that nodes with one range keep track of nodes with adjacent ranges
+19:22:29 <wumpus> sipa: sure, feeler connections make it somewhat better
+19:22:35 <gmaxwell> wumpus: yes, sometimes the data is wrong. But there is a big difference between having 80% of the nodes on the network giving you no idea if they'll be useful at all until after you connect, vs a suggestion that might sometimes be wrong.
+19:22:41 <wumpus> but I don't think addr is a very up-to-date information source
+19:22:46 <petertodd> thus, as you sync the first time, ask nodes with the range you're syncing at this moment for the next range you need
+19:23:08 <luke-jr> wumpus: if ranges are deterministic, they don't need to be up to date
+19:23:15 <sipa> petertodd: yes, any sharding plan wouldn't randomly distribute the kept blocks, but keep randomly distributed ranges
+19:23:32 <gmaxwell> wumpus: I don't know if you realize that sipa and I are not thinking in terms of absolute ranges here. but nodes saying "I keep the last 288" or "I keep the last 2016" or "I have all of history".
+19:23:38 <wumpus> gmaxwell: but indeed this is a different problem from the bittorrent problem where everyone's goal is to have everything
+19:23:56 <sipa> gmaxwell: well that's sharding... maybe that is something to postpone for later
+19:24:01 <petertodd> sipa: sure, I'm more talking about how the linearity affects the network p2p design - prefentially peering with peers with the adjacent range may even be a reasonable design
+19:24:03 <luke-jr> wumpus: eh, everyone needs to get everything
+19:24:03 <wumpus> there, nodes can just connect randomly and have a high change the other nodes has something to offer them
+19:24:04 <gmaxwell> wumpus: and I wouldn't expect that data to go out of date fast.. pretty much only when nodes go up and down.
+19:24:04 <sipa> oh, nvm, i'm misreading
+19:24:20 <wumpus> luke-jr: only initially
+19:24:28 <luke-jr> oh, I see the distinction
+19:24:41 <wumpus> luke-jr: bittorrent nodes don't throw away blocks, generally
+19:24:53 <luke-jr> f(best-height, seed-in-addr) -> ranges
+19:25:12 <gmaxwell> for the spreading the history around, as mentioned I came up with concrete schemes (based on consistent hashes) that have nice properties.
+19:25:30 <sipa> i wonder whether we need to have that in the first go at this
+19:26:04 <jonasschnelli> I think a first simple solution that allow to extend it further would be appriciated.
+19:26:10 <sipa> even just having serve-everything and server-the-last-288-and-relay-at-tip would be a good addition
+19:26:15 <wumpus> making the ranges deterministic makes some sense, on the other hand, it does restrict the flexibilty of nodes to choose what ranges they host, it means everything has to be got right in first try
+19:26:23 <gmaxwell> sipa: thats what I am saying.
+19:26:27 <jonasschnelli> sipa: agree
+19:26:30 <gmaxwell> I do not think we can do better immediately anyways.
+19:26:45 <sipa> 21:18:07 < jonasschnelli> I'd prefere using a single service bit to state pruned blockchain and then a new message (or append something to version?)
+19:26:47 <gmaxwell> sipa: though your latest figures suggest that the 2016 depth is important too.
+19:26:48 <sipa> 21:19:07 < gmaxwell> jonasschnelli: NAK.
+19:27:10 <petertodd> if nodes attempt to maintain a few connections to peers that have the next range after they have, maybe it doesn't matter exactly what the ranges actually are? any given node would have a few connections to the next range, and anyone syncing from them could ask for those connections
+19:27:15 <gmaxwell> sipa: my understanding of jonasschnelli comment was there should be a bit that says "I relay blocks but don't have history" I am NAK on that.
+19:27:36 <wumpus> as there is no scope for later optimization, because all nodes have to agree what ranges are implied
+19:27:40 <jonasschnelli> We could add a service bit that says "I relay only the last 288 blocks"
+19:27:50 <wumpus> jannes: yes that would be the initial idea
+19:27:54 <wumpus> jonasschnelli*
+19:28:08 <sipa> gmaxwell: how is that different from what i suggested?
+19:28:11 <sipa> 21:26:10 < sipa> even just having serve-everything and server-the-last-288-and-relay-at-tip would be a good addition
+19:28:21 <jonasschnelli> I think my initial idea with the general pruning sevice bit and a new message type is to complex and inflexible
+19:28:28 <gmaxwell> jonasschnelli: yes, that would be better, though pieter's data suggests that there are a LOT of requests at 1000. I think if I had that data I would have been suggesting the maximum pruning should be 2016, and then had the bit at that dep.
+19:28:50 <gmaxwell> sipa: the ability to relay blocks at depth -10.
+19:29:04 <sipa> gmaxwell: less than 2% of blocks requested from my node are at the tip
+19:29:22 <sipa> (but the tip is still 100x more frequent than any other individual depth)
+19:29:50 <sipa> gmaxwell: "a service bit to indicate pruned blockchain" implies you can serve 288 deep :)
+19:30:08 <petertodd> gmaxwell: re: maximum pruning depth, it's reasonable for that to be a similar % of the total data that storing the UTXO set takes - if you have 10GB of UTXO, 2GB of block data isn't a big change
+19:30:11 <wumpus> yes, you could define it as that
+19:30:15 <gmaxwell> I don't think there is any remaining disagreement on using bit(s) to signal I have a top-n.  But I have some doubt on N. it needs to capture the largest amount of the block realy bandwidth without being unduely pruning incompatible.
+19:30:37 <wumpus> 288 is the minimum pruning amount in bitcoin core already so it'd be a valid choice
+19:30:44 <morcos> as a first pass, i wonder if you preferentially downloaded from pruned peers whenever you were behind by less than 288 blocks, that would take enough load of peers serving full history?
+19:30:50 <gmaxwell> morcos: absolutely.
+19:31:01 <jonasschnelli> Good idea
+19:31:09 <wumpus> yes, that would make sense
+19:31:23 <gmaxwell> unfortunately, sipa's data suggests that 288 sheds less traffic than measurements years ago suggested.
+19:31:43 <sipa> maybe i should compute statistics in bytes rather than blocks
+19:31:45 <morcos> gmaxwell: it wasn't clear to me what the integral from 1 to 288 was compared to 288 to inf
+19:31:46 <wumpus> well it is a compromise
+19:31:53 <wumpus> putting the threshold higher makes some peers completely useless
+19:31:57 <sipa> to see what percentage of bandwidth is needed in 1-288
+19:31:58 <wumpus> which reduces morcos 's argument
+19:32:04 <jonasschnelli> Yes. I guess you convinced me to use two service bits then. -288 and -2016
+19:32:16 <gmaxwell> which is why it might be useful to use two bits and be able to signal 1-288, 1-2016... and perhaps start encouraging people to not prune shorter than 2016.
+19:32:37 <sipa> i think we're getting into a design discussion here
+19:32:47 <sipa> my number are very premature and not well analysed
+19:32:50 <wumpus> it'd also be possible to add a 288-flag now, and then consider a 2016 flag later
+19:32:54 <gmaxwell> sipa: indeed, thought that was the input you requested from me.
+19:32:57 <morcos> wumpus: yes, thats what i'm saying
+19:32:59 <gmaxwell> wumpus: yes! indeed.
+19:33:03 <jonasschnelli> Agree with wumpus
+19:33:04 <wumpus> if it turns out to be necessary
+19:33:10 <petertodd> wumpus: ACK
+19:33:15 <sipa> yes, i think just a 1-288 one seems useful
+19:33:16 <wumpus> good :)
+19:33:16 <jonasschnelli> Start with a simple tip-288 relay, and get some experience
+19:33:23 <gmaxwell> wumpus: it looks pretty clearly necessary but no need to do everything at once.
+19:33:30 <petertodd> wumpus: basically advice is, turn your node on at least once every two days
+19:33:54 <wumpus> petertodd: yes
+19:33:55 <gmaxwell> petertodd: we really should have cron mode for the daemon where it just syncs up and shuts off. :P
+19:34:06 <gmaxwell> bitcoind -oneshot
+19:34:08 <gmaxwell> :P
+19:34:17 <petertodd> gmaxwell: heh, that's not a crazy idea - I'd use it on my laptop
+19:34:18 <jonasschnelli> didn't we once had a proposal for the pause option?
+19:34:24 <wumpus> right, there's a flag that quits after reindex, but none that exits after sync
+19:34:31 <wumpus> would be easy to add tho
+19:34:41 <morcos> we could just ask for the utxo set, shoudl we discuss ideas how to do that
+19:34:51 <CodeShark> ^ yes :)
+19:34:58 <petertodd> make -oneshot run in the foreground with a progress bar :)
+19:34:59 <wumpus> without utxo commitment that's a no-go
+19:35:05 <morcos> thanks codeshark
+19:35:20 <petertodd> wumpus: +1
+19:35:42 <gmaxwell> morcos: pointless when we were unable to get past the discussion for the security model change to not validate the past history based on proof of work.
+19:35:48 <petertodd> and lets not underestimate how dangerous UTXO commitments can be - I'm very dubious about committing to the (U)TXO set more recently than maybe a month or two
+19:35:51 <CodeShark> would be great to query utxo for quick sync, then go backwards in time fetching blocks to increase security...but yes, this is a design discussion
+19:35:53 <morcos> i was making a joke, sorry
+19:36:18 <CodeShark> alas, quick sync doesn't look feasible in the nearterm
+19:36:20 <wumpus> ok, next topic?
+19:36:36 <gmaxwell> but since that was brought up... Can we talk about removing checkpoints?
+19:36:55 <wumpus> #topic removing checkpoints
+19:36:59 <sipa> what % of transactions are before the last checkpoint
+19:37:01 <sipa> does anyone know?
+19:37:03 <morcos> someone should write up a design proposal for that to be evaluated
+19:37:18 <gmaxwell> Right now they're used for two things, preventing header flooding with low difficulty headers; and skipping signatures in earlier blocks.
+19:37:21 <petertodd> gmaxwell: just removing checkpoints, or assuming sigs are valid if buried deep enough?
+19:37:27 <sipa> gmaxwell: and 3) estimating progress
+19:37:45 <wumpus> keeping something for estimating progress would make sense
+19:37:47 <sipa> i think 1) remains needed and 3) remains useful
+19:37:50 <wumpus> that doesn't need to be checkpoints
+19:38:06 <gmaxwell> because very few percentage of the transactions are below the checkpoint .. since libsecp256k1 (and I expect the checkqueue)-- my point two is basically pointless, and I think it could just be removed
+19:38:29 <gmaxwell> I think on a desktop it only adds 15-20 minutes to the sync.
+19:38:29 <petertodd> gmaxwell: I'd ACK simply removing checkpoints entirely; I'm not happy to see them replaced with another scheme to skip sig checking
+19:38:33 <wumpus> a block-height-to-relative-difficulty map would have much less of a stigma
+19:38:46 <wumpus> eh, verification difficulty that is
+19:38:52 <sipa> gmaxwell: really?
+19:38:54 <gmaxwell> petertodd: I think we could remove CP from reason two without implementing the replcement.
+19:39:06 <gmaxwell> petertodd: morcos is right that needs a design proposal outside of the meeting.
+19:39:12 <sdaftuar> i'm a bit confused about how to think about checkpoints for signature skipping
+19:39:22 <gmaxwell> sipa: I benchmarked before but I'm going off of memory, I could be wildly wrong. I will test again if there is interest.
+19:39:52 <jonasschnelli> Removing checkpoints would slow down (maybe insignificant) a scan in a possible SPV hybrid mode?
+19:39:54 <gmaxwell> For reason (1) the only answer I have is that I think we should proposal a bit to perpetually increase the minimum difficulty from 1 to something else.
+19:40:00 <sdaftuar> for instance the recent ISM change caused us to do less validation for certain blocks in our history (blocks in a softfork between the 75% and 95% thresholds)
+19:40:10 <sipa> jonasschnelli: SPV mode won't validate *anything* at all
+19:40:28 <gmaxwell> (with a checkpoint like bypass of that new rule, for existing blocks that break it) As little as 100,000 would eliminate the header flooding vulenrablity.
+19:40:33 <jonasschnelli> Yes. But assume we would add an SPV hibrid mode in oder to received payment during IBD
+19:40:50 <jonasschnelli> One would need to download 400k headers without a checkpoint at h400k
+19:40:53 <luke-jr> maybe checkpoints should just be disabled by default before complete removal?
+19:41:00 <sipa> jonasschnelli: i think you're confused
+19:41:07 <gmaxwell> for Sipa's (3) reason for 'checkpoints' I don't give a darn, use chicken bones for progress estimation for all I care. :P it's historical accident that checkpoints and progress use the same data structure.
+19:41:24 <morcos> gmaxwell: :) +1
+19:41:28 <wumpus> gmaxwell: yes, my point too
+19:41:34 <sipa> gmaxwell: agree, those could be completely separated
+19:41:36 <petertodd> gmaxwell: ACK checken bones
+19:41:36 <gmaxwell> Might as well fit a cubic spline to the height vs txn count... and store the parameters.
+19:41:53 <wumpus> right
+19:42:09 <petertodd> gmaxwell: heh, if we do that with floating point math that has the advantage that it _can't_ be used for consensus :)
+19:42:18 * sipa now remembers a song our student organization wrote to the melody of staying alive, called 'cubic spline'
+19:42:21 <gmaxwell> so my proposal, if there is interest, is that I'll measure the performance impact of removing the signature skippingentirely (esp post checkqueue). And if it's not awful, we'll remove.
+19:42:37 <wumpus> +1
+19:42:44 <sipa> gmaxwell: i'm unconvinced
+19:42:52 <wumpus> it doesn't hurt to benchmark
+19:43:00 <gmaxwell> and maybe I'll tender a proposal to up the minimum difficulty, but I'd like to know what people think about that.
+19:43:04 <wumpus> measuring is always better than making assumptions
+19:43:11 <sipa> with a replacement for sig skipping that isn't based on checkpoints we could significantly improve things
+19:43:39 <petertodd> sipa: I don't think such a replacement can exist without changing the security assumptions; I'd *rather* have checkpoints than trusting hashing power for that
+19:43:44 <sipa> the last checkpoint currently is very old for the very reason that we've been planning to replace it
+19:43:47 <gmaxwell> sipa: would you like to help work on a proposal for that? it has been controversial in the past. I'd like to do something good, because otherwise imprudent attempts will be adopted instead.
+19:44:15 <sipa> so it's unfair to use the "the last checkpoint is old" as a given; it's something we've affected indirectly
+19:44:19 <petertodd> sipa: though what checkpoints should do is say "Something big has changed; you can disable checkpoints with --no-checkpoints, but you should find out what this means before doing so."
+19:44:29 <gmaxwell> (for example Bitcoin Classic's current behavior simply looks at block header timestamps and ignores signatures when they're more than 24 hours (*par) old by the local clock. It's easily exploited and makes me sad.
+19:44:40 <sipa> petertodd: it's my opinion that on a timescale of months, it doesn't matter
+19:44:53 <sipa> IF you can guarantee it's actually a timescale of months
+19:44:55 <wumpus> yes that makes me sad too
+19:44:58 <petertodd> sipa: on a timescale of months, checkpoints shouldn't matter either...
+19:45:06 <wumpus> anything based on time seems very brittle
+19:45:27 <sipa> petertodd: look at the current hashrate; what's 3 months worth of chain work at that hashrate
+19:45:31 <petertodd> wumpus: and anything based on work isn't much better if you're running an old client, and mining has advanced significantly
+19:45:37 <jonasschnelli> sipa: I (hope) I'm not confused. If we would add a SPV hybrid mode directly fetch blocks at the tip (in order to received payments), no available checkpoint would result in downloading all headers *losing* maybe 3-4mins before you can start using SPV... minor issue though, I agree
+19:45:38 <petertodd> sipa: that assumes you know what the current hashrate is
+19:45:41 <gmaxwell> wumpus: the prior proposals were based on work,  e.g. skip if the best chain you see dominates the next conflicted chain at that hight by N months of work.
+19:45:44 <Chris_Stewart_5> gmaxwell: How have we solved the problem that checkpoints were originally created for? You have an excerpt in here: https://en.bitcoin.it/wiki/Bitcoin_Core_0.11_(ch_5):_Initial_Block_Download#Checkpoints
+19:45:45 <petertodd> sipa: your node might be surrounded by sybils
+19:45:52 <gmaxwell> wumpus: with a 'minimum total work' coded in as part of the release proces.
+19:46:00 <sipa> Chris_Stewart_5: headers first sync
+19:46:08 <sipa> Chris_Stewart_5: 0.10
+19:46:08 <gmaxwell> Chris_Stewart_5: headers first sync.
+19:46:09 <wumpus> gmaxwell: right. Well, at the least it should be measured whether such a change is really worth it.
+19:46:16 <sipa> petertodd: yes, i know...
+19:46:21 <sipa> so, let's measure.
+19:46:25 <sipa> and discuss later
+19:46:37 <gmaxwell> Chris_Stewart_5: and the signature skipping behavior in checkpoints was actually a result of a bug fixed years ago.. mlock being used on all allocations making script validation INSANELY slow.
+19:46:41 <wumpus> so much of the verification overhead is looking up UTXOs
+19:46:44 <gmaxwell> sipa: okay.
+19:46:47 <wumpus> something you'll not avoid
+19:47:20 <gmaxwell> Chris_Stewart_5: but then with chain growth we became dependant on it to keep sync times reasonable. but libsecp256k1 made signature validation >5x faster.
+19:47:21 <wumpus> especially for recent blocks
+19:47:38 <wumpus> if you do any benchmarking please look at the recent blocks, not the first N
+19:48:04 <gmaxwell> wumpus: it's still a major speed up on existing blocks.
+19:48:07 <sipa> in a side node: i've already updated my logging to measure bandwidth vs blockdepth instead of just count.
+19:48:11 <Chris_Stewart_5> So header sync solves the attack of flooding disk space, but not having your entire network hijacked, correct?
+19:48:32 <wumpus> Chris_Stewart_5: huh?
+19:48:41 <wumpus> gmaxwell: sure, could be
+19:48:42 <gmaxwell> Chris_Stewart_5: isolation can be resolved by simply knowing what the total work of the best chain was at release.
+19:49:00 <gmaxwell> Chris_Stewart_5: sorry, this was discussed prior times removing checkpoints had come up, I haven't completely described the background.
+19:49:19 <Chris_Stewart_5> gmaxwell: Thanks for the explanation, i'll keep digging.
+19:49:45 <wumpus> Chris_Stewart_5: ah, you mean being isolated and being fed a wrong chain, sorry I was imaginging some wacky things at having your network hijacked :)
+19:51:01 <wumpus> ok, next topic?
+19:51:01 <gmaxwell> wumpus: just the "you got a faithful bitcoin core download but the attacker controls your network"... but that doesn't need a checkpoint to fix, a simple partitioning detction that knows the total work of the best chain at releast time is sufficient.
+19:51:01 <gmaxwell> Thanks for the discussion.
+19:51:13 <wumpus> #topic segwit against uncompressed keys or not
+19:51:17 <wumpus> (10 minutes to go)
+19:51:24 <wumpus> (9 minutes to go)
+19:51:27 <petertodd> so to be clear, *just* segwit right?
+19:51:30 <CodeShark> does anyone still use uncompressed keys?
+19:51:33 <wumpus> yes, only segwit
+19:51:39 <achow101> CodeShark: armory does
+19:51:42 <luke-jr> seems uncontroversial
+19:51:49 <petertodd> I'm happy to ACK that given just segwit
+19:51:57 <achow101> having segwit enforce uncompressed keys would delay segwit adoption for armory users
+19:52:03 <achow101> *compressed
+19:52:05 <jl2012_> it's in #8499
+19:52:09 <luke-jr> achow101: why? just compress them
+19:52:13 <wumpus> gmaxwell: yes, though we had a lot of trouble with partitioning detection, I remember some code being stripped out and such. But anyhow, yes that's the better approach if it can be gotten to work.
+19:52:22 <sipa> achow101: sigh, does armory still not do that?
+19:52:30 <achow101> luke-jr: we have to change the whole wallet structure (it's still going to happen anyways)
+19:53:34 <wumpus> gmaxwell: without too much false positives
+19:53:34 <luke-jr> achow101: why?
+19:53:34 <sipa> achow101: alan said somewhere in 2013 he was implementing it...
+19:53:34 <achow101> alan's gone now..
+19:53:34 <luke-jr> afaik the only downside to using compressed keys is it changes the address, which segwit is changing anyway
+19:53:34 <CodeShark> it's not a very complicated change
+19:53:34 <wumpus> armory still uses uncompressed keys?!
+19:53:34 <luke-jr> there's no reason you'd need to change the wallet structure I can see
+19:53:34 <wumpus> in any case this only applies to segwit, not to old transactions
+19:53:34 <achow101> the plan is to have a new wallet structure with bip32 that supports segwit and compressed keys
+19:53:41 <gmaxwell> wumpus: "you're partitioned until you see a header chain with at least work X" is a pretty simple critera. :P
+19:53:44 <sipa> luke-jr: it had fixed size records in its wallet format for pubkeys
+19:54:05 <sipa> achow101: well if a new wallet format is needed for segwit anyway, it doesn't matter right?
+19:54:10 <gmaxwell> achow101: oh god please do not use uncompressed keys with segwit. why would you do that?
+19:54:13 <luke-jr> sipa: zero-pad it?
+19:54:35 <achow101> sipa: well no, we don't need a new wallet for segwit as it could still work with the old one with a little bit of hacking
+19:54:48 <achow101> that was the original plan
+19:54:48 <luke-jr> achow101: no less than compressed could
+19:55:15 <luke-jr> sipa: or store the uncompressed key, and compress it at address-generation/signing
+19:55:26 <gmaxwell> achow101: why cant the same hack that indicates segwit is in use indicate compressed.. you just chop off some bytes of the key pretty much.
+19:55:43 <sipa> btw, uncompressed keys account for 0.7% of used keys in succesful sigs on the network (in the past 2 hours)
+19:55:44 <gmaxwell> it could be done entirely inside the process that seralizes the segwit scriptpubkey.
+19:56:06 <achow101> gmaxwell: idk. ask goatpig
+19:56:06 <gmaxwell> achow101: okay
+19:56:09 * michagogo pokes his head in belatedly
+19:56:10 <CodeShark> I think we should encourage all wallets to use compressed keys - achow101, if you need help with this I'd be willing to help
+19:56:25 <sipa> agree - we should help
+19:56:27 <gmaxwell> yes, lots of people would be glad to help.
+19:56:32 <sipa> instead of just yell
+19:56:50 <gmaxwell> well I offered to help armory move off uncompressed keys to alan several times, including offering to pay to do it.
+19:56:56 <gmaxwell> so please don't say anyone just yelled.
+19:58:39 <CodeShark> I initially designed my account structures to only use compressed keys - but later added a compressed bit to support legacy stuff
+19:59:06 <petertodd> CodeShark: what legacy stuff specifically? legacy armory users?
+19:59:08 <wumpus> CodeShark: bah,it's kind of sad that to hear some things seem to be going back instead of forward :)
+19:59:18 <CodeShark> yes, to support other wallets
+19:59:27 <wumpus> it's time
+19:59:50 <CodeShark> but I think we really do need to prod all wallets to move to compressed keys
+20:00:07 <CodeShark> there's really no reason to continue to support uncompressed keys - other than perhaps some migration tools
+20:00:15 <wumpus> #endmeeting

@@ -1,0 +1,400 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:19</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Sep 29 19:01:19 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:19</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:26</span><span class="nk"> &lt;BakSAj&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:36</span><span class="nk"> &lt;CodeShark&gt;</span> meeting time!
+<a name="l-6"></a><span class="tm">19:01:46</span><span class="nk"> &lt;MarcoFalke&gt;</span> meeting!
+<a name="l-7"></a><span class="tm">19:01:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-8"></a><span class="tm">19:02:04</span><span class="nk"> &lt;MarcoFalke&gt;</span> (oh already started)
+<a name="l-9"></a><span class="tm">19:02:07</span><span class="nk"> &lt;btcdrak&gt;</span> here
+<a name="l-10"></a><span class="tm">19:02:07</span><span class="nk"> &lt;cfields_&gt;</span> hi
+<a name="l-11"></a><span class="tm">19:02:12</span><span class="nk"> &lt;kanzure&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:02:20</span><span class="nk"> &lt;wumpus&gt;</span> any proposed topics?
+<a name="l-13"></a><span class="tm">19:02:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> topic proposal: pruning and blockrelay
+<a name="l-14"></a><span class="tm">19:02:56</span><span class="nk"> &lt;petertodd&gt;</span> hi
+<a name="l-15"></a><span class="tm">19:03:11</span><span class="nk"> &lt;sipa&gt;</span> policy against uncompressed keys or not
+<a name="l-16"></a><span class="tm">19:03:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">pruning and blockrelay</span>
+<a name="l-17"></a><span class="tm">19:03:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should add a service flag for block relay with a min-height
+<a name="l-18"></a><span class="tm">19:03:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> NODE_PRUNENETWORK or something
+<a name="l-19"></a><span class="tm">19:03:57</span><span class="nk"> &lt;sipa&gt;</span> there have been multiple ideas around that
+<a name="l-20"></a><span class="tm">19:04:35</span><span class="nk"> &lt;petertodd&gt;</span> IMO whatever we do, we should recognise that w/ segwit's larger blocks we can expect a lot of full nodes to run out of disk space quite soon
+<a name="l-21"></a><span class="tm">19:04:35</span><span class="nk"> &lt;sipa&gt;</span> the easiest is just to add a flag that says you relay valid blocks and transactions, but not historical blocks more than a few deep
+<a name="l-22"></a><span class="tm">19:04:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess people slowly start to prune the blockchain to a max of 80GB or similar... but I guess not everyone is aware of the fact that you don't relay then
+<a name="l-23"></a><span class="tm">19:04:36</span><span class="nk"> &lt;wumpus&gt;</span> it would be nice to support more than one range, e.g. also archive nodes that host part of the old blocks
+<a name="l-24"></a><span class="tm">19:04:49</span><span class="nk"> &lt;sipa&gt;</span> it becomes harder when you want multiple ranger
+<a name="l-25"></a><span class="tm">19:04:57</span><span class="nk"> &lt;petertodd&gt;</span> do we have a reason for more than one range?
+<a name="l-26"></a><span class="tm">19:05:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> We could introduce another message type... blockrange  or so
+<a name="l-27"></a><span class="tm">19:05:01</span><span class="nk"> &lt;sipa&gt;</span> it becomes even harder when you want to support sharding in an efficient way
+<a name="l-28"></a><span class="tm">19:05:08</span><span class="nk"> &lt;wumpus&gt;</span> I'm not sure why itb ecomes hard, just add a query message that returns what ranges are supported
+<a name="l-29"></a><span class="tm">19:05:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> what do you mean by sharding exactly?
+<a name="l-30"></a><span class="tm">19:05:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> you'd configure your node to maintain a certain % of blocks
+<a name="l-31"></a><span class="tm">19:05:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> query, yes, why not, or just inform like we do with sendheaders
+<a name="l-32"></a><span class="tm">19:05:47</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> see, given that the bitcoin protocol can't be safely sharded right now, I think we can safely say that we don't need to support sharding in block relay yet
+<a name="l-33"></a><span class="tm">19:05:55</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> doing so might even be dangerous if people start using it
+<a name="l-34"></a><span class="tm">19:06:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> not in block relay
+<a name="l-35"></a><span class="tm">19:06:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> for block archival
+<a name="l-36"></a><span class="tm">19:06:16</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> but why shard vs. keep ranges?
+<a name="l-37"></a><span class="tm">19:06:23</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> (ranges of full blocks)
+<a name="l-38"></a><span class="tm">19:06:25</span><span class="nk"> &lt;luke-jr&gt;</span> BitTorrent already does this. Surely we can learn from that?
+<a name="l-39"></a><span class="tm">19:06:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> I don't think so - bittorrent is a very different problem than bitcoin
+<a name="l-40"></a><span class="tm">19:06:38</span><span class="nk"> &lt;wumpus&gt;</span> this is for letting other peers know what ranges of blocks are hosted, I don't think this should affect releay
+<a name="l-41"></a><span class="tm">19:06:41</span><span class="nk"> &lt;sipa&gt;</span> so, i've been running statistics on what block depths are being requested from nodes
+<a name="l-42"></a><span class="tm">19:06:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> learn from it, not use it directly
+<a name="l-43"></a><span class="tm">19:07:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">petertodd:</span> BitTorrent's problem isn't very different from IBD
+<a name="l-44"></a><span class="tm">19:07:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> interesting.. do you have the stats public available somewhere
+<a name="l-45"></a><span class="tm">19:07:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> I wanted to do this a long time
+<a name="l-46"></a><span class="tm">19:07:20</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> so, the thing is bittorrent has the problem of a diverse set of files, we just don't have that problem and can optimise differently because everyone needs access t othe same set of data
+<a name="l-47"></a><span class="tm">19:08:03</span><span class="nk"> &lt;sipa&gt;</span> there are something like 4 meaningful 'ranges' 1) the top 2 blocks (just relay) 2) up to ~2500 blocks deep... requested very often 3) up to ~10000 deep... requested a few times more than the next range 4) the rest
+<a name="l-48"></a><span class="tm">19:08:15</span><span class="nk"> &lt;wumpus&gt;</span> otoh bittorrent has a fixed block size :)
+<a name="l-49"></a><span class="tm">19:08:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> so do we *ducks*
+<a name="l-50"></a><span class="tm">19:08:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> that probably corresponds to how long people leave their nodes offline :)
+<a name="l-51"></a><span class="tm">19:08:51</span><span class="nk"> &lt;btcdrak&gt;</span> inb4 Bittorrent XT
+<a name="l-52"></a><span class="tm">19:09:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> they're not available, and the ranges i gave above are just from me quickly glancing over the result
+<a name="l-53"></a><span class="tm">19:09:04</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">btcdrak:</span> I use Bittorrent Unlimited myself
+<a name="l-54"></a><span class="tm">19:09:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about fingerprinting issued in conjunction with available ranges?
+<a name="l-55"></a><span class="tm">19:09:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> *issues
+<a name="l-56"></a><span class="tm">19:09:20</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> make them powers of two?
+<a name="l-57"></a><span class="tm">19:09:33</span><span class="nk"> &lt;sipa&gt;</span> well 4 ranges can be done with 2 service bit flags
+<a name="l-58"></a><span class="tm">19:09:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you've worked on these ideas before, comments?
+<a name="l-59"></a><span class="tm">19:09:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> But would that work with the flexible pruning option based on MB?
+<a name="l-60"></a><span class="tm">19:10:05</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> sure, just find the biggest range less than the pruning amount
+<a name="l-61"></a><span class="tm">19:10:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> you'd change your service bits on the fly
+<a name="l-62"></a><span class="tm">19:10:20</span><span class="nk"> &lt;wumpus&gt;</span> why would the ranges need to be in the flags?
+<a name="l-63"></a><span class="tm">19:10:30</span><span class="nk"> &lt;gmaxwell&gt;</span> sorry, I missed that the meeting started.
+<a name="l-64"></a><span class="tm">19:10:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Why? Better add an explicit message for the range
+<a name="l-65"></a><span class="tm">19:10:34</span><span class="nk"> &lt;sipa&gt;</span> how would you otherwise discover what nodes to connect to?
+<a name="l-66"></a><span class="tm">19:10:45</span><span class="nk"> &lt;sipa&gt;</span> just randomly try?
+<a name="l-67"></a><span class="tm">19:10:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> oh right, you mean if MB != blocks... sorry.
+<a name="l-68"></a><span class="tm">19:10:49</span><span class="nk"> &lt;wumpus&gt;</span> I think you'll need a service flag to show support for the protocol, but not what ranges you have
+<a name="l-69"></a><span class="tm">19:10:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> query or inform the other node if proto-ver &gt; NODE_PRUNENETWORK
+<a name="l-70"></a><span class="tm">19:11:00</span><span class="nk"> &lt;wumpus&gt;</span> well that can be negotiated later, like bittorrent does I guess
+<a name="l-71"></a><span class="tm">19:11:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> well you do want addr messages to contain this information
+<a name="l-72"></a><span class="tm">19:11:18</span><span class="nk"> &lt;wumpus&gt;</span> I doubt bitcoin has 'service flags' in its tracker what blocks nodes have
+<a name="l-73"></a><span class="tm">19:11:18</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> so the nice thing about bitcoin, is just randomly try will probably work fairly often due to the low number of ranges out there
+<a name="l-74"></a><span class="tm">19:11:26</span><span class="nk"> &lt;wumpus&gt;</span> as that changes all the time anyhow
+<a name="l-75"></a><span class="tm">19:11:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I was strongly of the view that we needed to signal at least two ranges. Sipa's latest measurements make me think at least three are needed.
+<a name="l-76"></a><span class="tm">19:11:31</span><span class="nk"> &lt;wumpus&gt;</span> s/bitcoin/bittorrent/
+<a name="l-77"></a><span class="tm">19:11:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think informing other nodes ranges over addr is another thing...
+<a name="l-78"></a><span class="tm">19:11:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> A first step would be a information after connect
+<a name="l-79"></a><span class="tm">19:11:55</span><span class="nk"> &lt;wumpus&gt;</span> yes, addr is another thing
+<a name="l-80"></a><span class="tm">19:12:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I think ranges in service bits are no big deal, the harder question is what to do about the history. having nodes with 150GB of history in order to serve the last range is not very viable.
+<a name="l-81"></a><span class="tm">19:12:23</span><span class="nk"> &lt;wumpus&gt;</span> could be done later if an efficient way is needed to *locate* peers with certain ranges
+<a name="l-82"></a><span class="tm">19:12:31</span><span class="nk"> &lt;wumpus&gt;</span> but that seems premature optimization
+<a name="l-83"></a><span class="tm">19:12:36</span><span class="nk"> &lt;gmaxwell&gt;</span> We will need to redo addr sometime relatively soon in any case, as our messages are not compatible with HS-NG.
+<a name="l-84"></a><span class="tm">19:12:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> oh, you mean Tor's new hidden services standard right?
+<a name="l-85"></a><span class="tm">19:12:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> yes.
+<a name="l-86"></a><span class="tm">19:13:02</span><span class="nk"> &lt;gmaxwell&gt;</span> (also I2P though thats not new)
+<a name="l-87"></a><span class="tm">19:13:18</span><span class="nk"> &lt;wumpus&gt;</span> I think the number of ranges should be variable
+<a name="l-88"></a><span class="tm">19:13:24</span><span class="nk"> &lt;wumpus&gt;</span> redesigning addr is a different topic
+<a name="l-89"></a><span class="tm">19:13:35</span><span class="nk"> &lt;wumpus&gt;</span> also necessary, but again, doesn't need to be on one heap
+<a name="l-90"></a><span class="tm">19:13:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> when I'm saying ranges I am specifically referring to the top-N zomes.
+<a name="l-91"></a><span class="tm">19:14:14</span><span class="nk"> &lt;petertodd&gt;</span> well, so if we add service bits for recent history ranges, that should be possible to implement as a separate feature to archival history ranges, and it'd be a big first step
+<a name="l-92"></a><span class="tm">19:14:22</span><span class="nk"> &lt;wumpus&gt;</span> I think it should be possible to, say, only host the first 20GB of blocks
+<a name="l-93"></a><span class="tm">19:14:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> historic only nodes
+<a name="l-94"></a><span class="tm">19:14:37</span><span class="nk"> &lt;wumpus&gt;</span> I don't see why it should be restricted to only recent history
+<a name="l-95"></a><span class="tm">19:14:38</span><span class="nk"> &lt;petertodd&gt;</span> I don't think it's likely we'll see the two different features collide, so maybe implement recent history ranges first
+<a name="l-96"></a><span class="tm">19:14:55</span><span class="nk"> &lt;wumpus&gt;</span> or I mean first 20GB + last 144 blocks
+<a name="l-97"></a><span class="tm">19:15:07</span><span class="nk"> &lt;gmaxwell&gt;</span> For history storage, I was previously working on a proposal where nodes could signal a small (32 bit) seed and a size and from that everyone would know what parts of the history they would store.  I was so far unable to unify two different schemes, one which was computationally efficient to figure out who had what, and one which never required a peer to fetch a block it had previously deleted.
+<a name="l-98"></a><span class="tm">19:15:15</span><span class="nk"> &lt;sipa&gt;</span> so very quick breakdown: out of 7M requested blocks, 100k were for the tip, range 2-2500 has around 200-2000 requests per block, and from 10000 to genesis deep there are around 20 per block
+<a name="l-99"></a><span class="tm">19:16:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I think for now we should not worry about the old history part and only worry about Top-n vs everything, as that fits into the pruning we already have and can be accomplished purely with service bits.
+<a name="l-100"></a><span class="tm">19:16:22</span><span class="nk"> &lt;wumpus&gt;</span> the bittorrent problem is different in that there the goal of each node is to have everything
+<a name="l-101"></a><span class="tm">19:16:25</span><span class="nk"> &lt;petertodd&gt;</span> so a social consideration here, is we can think in terms of recent history as "if there's a flaw, how much would we ever reorg w/o just saying bitcoin has failed?"
+<a name="l-102"></a><span class="tm">19:16:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> thats partly why we have the 288 block maximum amount of pruning.
+<a name="l-103"></a><span class="tm">19:17:13</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> indeed, and that's only two days...
+<a name="l-104"></a><span class="tm">19:17:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Using multiple service bits for 4 ranges seems to be a hackish-design IMO
+<a name="l-105"></a><span class="tm">19:17:49</span><span class="nk"> &lt;gmaxwell&gt;</span> at 100 blocks any reorg will _necessarily_ cause unrecoverable losses. So 288 basically gives a day plus an extra day for overhead.
+<a name="l-106"></a><span class="tm">19:17:50</span><span class="nk"> &lt;petertodd&gt;</span> there's also a natural time criteria from how the difficulty adjustments reduce your resistance to 51% attack - if your node is offline longer, the minimum attacker size to fool you goes down
+<a name="l-107"></a><span class="tm">19:17:52</span><span class="nk"> &lt;sipa&gt;</span> strangely enough: i see much more requests around 1000 deep than around 100 deep
+<a name="l-108"></a><span class="tm">19:18:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I don't see anything hackish.
+<a name="l-109"></a><span class="tm">19:18:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I also think it's a strange use of service bits
+<a name="l-110"></a><span class="tm">19:18:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd prefere using a single service bit to state pruned blockchain and then a new message (or append something to version?)
+<a name="l-111"></a><span class="tm">19:18:24</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> probably because people don't turn their nodes on and off every day
+<a name="l-112"></a><span class="tm">19:18:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> you probably want to filter out the bitnodes spider, as I believe it requests a block to check the node is working.
+<a name="l-113"></a><span class="tm">19:18:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ah.
+<a name="l-114"></a><span class="tm">19:18:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> someone who hasn't turned their node on will request all of 0 to -1000. so it will not make 1000 greater.
+<a name="l-115"></a><span class="tm">19:19:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> NAK.
+<a name="l-116"></a><span class="tm">19:19:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> oh! I didn't know we did that
+<a name="l-117"></a><span class="tm">19:19:09</span><span class="nk"> &lt;sipa&gt;</span> i'm a bit surprised people think there is no need to have the available block ranges indicated in addr messages
+<a name="l-118"></a><span class="tm">19:19:30</span><span class="nk"> &lt;sipa&gt;</span> (whether through service bits, or some extension)
+<a name="l-119"></a><span class="tm">19:19:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think there is a need... but it could be a second step
+<a name="l-120"></a><span class="tm">19:19:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> appending to version should be unnecessary, that's also a hack :)
+<a name="l-121"></a><span class="tm">19:19:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> if it's a second step, we need to extend addr, and the whole management of addresses
+<a name="l-122"></a><span class="tm">19:19:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Agree. What about a new message type?
+<a name="l-123"></a><span class="tm">19:19:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> blockrange
+<a name="l-124"></a><span class="tm">19:19:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> you don't understand.
+<a name="l-125"></a><span class="tm">19:20:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> look at pieter's request figures, if nodes are effectively forced to go to peers that have everything whenever they connect becuase if they don't know they'll be able to fetch any blocks at all, then it will put lots more load on them.. causing people to stop offering blocks... causing more pressure on what remains.
+<a name="l-126"></a><span class="tm">19:20:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> the point of having it in service bits is so nodes can find peers that have the range they need
+<a name="l-127"></a><span class="tm">19:20:58</span><span class="nk"> &lt;wumpus&gt;</span> but addr information gets old really fast
+<a name="l-128"></a><span class="tm">19:21:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> much less so with feeler connections
+<a name="l-129"></a><span class="tm">19:21:26</span><span class="nk"> &lt;wumpus&gt;</span> nodes may dynamically change what blocks they have, so there will always be cases of nodes connecting and realizing they have nothing to offer each other
+<a name="l-130"></a><span class="tm">19:21:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I see the point.
+<a name="l-131"></a><span class="tm">19:21:29</span><span class="nk"> &lt;sipa&gt;</span> (presumably, i don't have numbers)
+<a name="l-132"></a><span class="tm">19:21:54</span><span class="nk"> &lt;wumpus&gt;</span> just like currently nodes will try to connect into black holes that no longer host a node
+<a name="l-133"></a><span class="tm">19:22:24</span><span class="nk"> &lt;petertodd&gt;</span> so another interesting thing here is that ranges are queried linearly - you download blocks in a roughly linear fashion - so we could take advantage of that by making sure that nodes with one range keep track of nodes with adjacent ranges
+<a name="l-134"></a><span class="tm">19:22:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> sure, feeler connections make it somewhat better
+<a name="l-135"></a><span class="tm">19:22:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes, sometimes the data is wrong. But there is a big difference between having 80% of the nodes on the network giving you no idea if they'll be useful at all until after you connect, vs a suggestion that might sometimes be wrong.
+<a name="l-136"></a><span class="tm">19:22:41</span><span class="nk"> &lt;wumpus&gt;</span> but I don't think addr is a very up-to-date information source
+<a name="l-137"></a><span class="tm">19:22:46</span><span class="nk"> &lt;petertodd&gt;</span> thus, as you sync the first time, ask nodes with the range you're syncing at this moment for the next range you need
+<a name="l-138"></a><span class="tm">19:23:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> if ranges are deterministic, they don't need to be up to date
+<a name="l-139"></a><span class="tm">19:23:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> yes, any sharding plan wouldn't randomly distribute the kept blocks, but keep randomly distributed ranges
+<a name="l-140"></a><span class="tm">19:23:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I don't know if you realize that sipa and I are not thinking in terms of absolute ranges here. but nodes saying "I keep the last 288" or "I keep the last 2016" or "I have all of history".
+<a name="l-141"></a><span class="tm">19:23:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> but indeed this is a different problem from the bittorrent problem where everyone's goal is to have everything
+<a name="l-142"></a><span class="tm">19:23:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> well that's sharding... maybe that is something to postpone for later
+<a name="l-143"></a><span class="tm">19:24:01</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> sure, I'm more talking about how the linearity affects the network p2p design - prefentially peering with peers with the adjacent range may even be a reasonable design
+<a name="l-144"></a><span class="tm">19:24:03</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> eh, everyone needs to get everything
+<a name="l-145"></a><span class="tm">19:24:03</span><span class="nk"> &lt;wumpus&gt;</span> there, nodes can just connect randomly and have a high change the other nodes has something to offer them
+<a name="l-146"></a><span class="tm">19:24:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> and I wouldn't expect that data to go out of date fast.. pretty much only when nodes go up and down.
+<a name="l-147"></a><span class="tm">19:24:04</span><span class="nk"> &lt;sipa&gt;</span> oh, nvm, i'm misreading
+<a name="l-148"></a><span class="tm">19:24:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> only initially
+<a name="l-149"></a><span class="tm">19:24:28</span><span class="nk"> &lt;luke-jr&gt;</span> oh, I see the distinction
+<a name="l-150"></a><span class="tm">19:24:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> bittorrent nodes don't throw away blocks, generally
+<a name="l-151"></a><span class="tm">19:24:53</span><span class="nk"> &lt;luke-jr&gt;</span> f(best-height, seed-in-addr) -&gt; ranges
+<a name="l-152"></a><span class="tm">19:25:12</span><span class="nk"> &lt;gmaxwell&gt;</span> for the spreading the history around, as mentioned I came up with concrete schemes (based on consistent hashes) that have nice properties.
+<a name="l-153"></a><span class="tm">19:25:30</span><span class="nk"> &lt;sipa&gt;</span> i wonder whether we need to have that in the first go at this
+<a name="l-154"></a><span class="tm">19:26:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think a first simple solution that allow to extend it further would be appriciated.
+<a name="l-155"></a><span class="tm">19:26:10</span><span class="nk"> &lt;sipa&gt;</span> even just having serve-everything and server-the-last-288-and-relay-at-tip would be a good addition
+<a name="l-156"></a><span class="tm">19:26:15</span><span class="nk"> &lt;wumpus&gt;</span> making the ranges deterministic makes some sense, on the other hand, it does restrict the flexibilty of nodes to choose what ranges they host, it means everything has to be got right in first try
+<a name="l-157"></a><span class="tm">19:26:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> thats what I am saying.
+<a name="l-158"></a><span class="tm">19:26:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> agree
+<a name="l-159"></a><span class="tm">19:26:30</span><span class="nk"> &lt;gmaxwell&gt;</span> I do not think we can do better immediately anyways.
+<a name="l-160"></a><span class="tm">19:26:45</span><span class="nk"> &lt;sipa&gt;</span> 21:18:07 &lt; jonasschnelli&gt; I'd prefere using a single service bit to state pruned blockchain and then a new message (or append something to version?)
+<a name="l-161"></a><span class="tm">19:26:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> though your latest figures suggest that the 2016 depth is important too.
+<a name="l-162"></a><span class="tm">19:26:48</span><span class="nk"> &lt;sipa&gt;</span> 21:19:07 &lt; gmaxwell&gt; jonasschnelli: NAK.
+<a name="l-163"></a><span class="tm">19:27:10</span><span class="nk"> &lt;petertodd&gt;</span> if nodes attempt to maintain a few connections to peers that have the next range after they have, maybe it doesn't matter exactly what the ranges actually are? any given node would have a few connections to the next range, and anyone syncing from them could ask for those connections
+<a name="l-164"></a><span class="tm">19:27:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> my understanding of jonasschnelli comment was there should be a bit that says "I relay blocks but don't have history" I am NAK on that.
+<a name="l-165"></a><span class="tm">19:27:36</span><span class="nk"> &lt;wumpus&gt;</span> as there is no scope for later optimization, because all nodes have to agree what ranges are implied
+<a name="l-166"></a><span class="tm">19:27:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> We could add a service bit that says "I relay only the last 288 blocks"
+<a name="l-167"></a><span class="tm">19:27:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jannes:</span> yes that would be the initial idea
+<a name="l-168"></a><span class="tm">19:27:54</span><span class="nk"> &lt;wumpus&gt;</span> jonasschnelli*
+<a name="l-169"></a><span class="tm">19:28:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> how is that different from what i suggested?
+<a name="l-170"></a><span class="tm">19:28:11</span><span class="nk"> &lt;sipa&gt;</span> 21:26:10 &lt; sipa&gt; even just having serve-everything and server-the-last-288-and-relay-at-tip would be a good addition
+<a name="l-171"></a><span class="tm">19:28:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think my initial idea with the general pruning sevice bit and a new message type is to complex and inflexible
+<a name="l-172"></a><span class="tm">19:28:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> yes, that would be better, though pieter's data suggests that there are a LOT of requests at 1000. I think if I had that data I would have been suggesting the maximum pruning should be 2016, and then had the bit at that dep.
+<a name="l-173"></a><span class="tm">19:28:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> the ability to relay blocks at depth -10.
+<a name="l-174"></a><span class="tm">19:29:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> less than 2% of blocks requested from my node are at the tip
+<a name="l-175"></a><span class="tm">19:29:22</span><span class="nk"> &lt;sipa&gt;</span> (but the tip is still 100x more frequent than any other individual depth)
+<a name="l-176"></a><span class="tm">19:29:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> "a service bit to indicate pruned blockchain" implies you can serve 288 deep :)
+<a name="l-177"></a><span class="tm">19:30:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> re: maximum pruning depth, it's reasonable for that to be a similar % of the total data that storing the UTXO set takes - if you have 10GB of UTXO, 2GB of block data isn't a big change
+<a name="l-178"></a><span class="tm">19:30:11</span><span class="nk"> &lt;wumpus&gt;</span> yes, you could define it as that
+<a name="l-179"></a><span class="tm">19:30:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think there is any remaining disagreement on using bit(s) to signal I have a top-n.  But I have some doubt on N. it needs to capture the largest amount of the block realy bandwidth without being unduely pruning incompatible.
+<a name="l-180"></a><span class="tm">19:30:37</span><span class="nk"> &lt;wumpus&gt;</span> 288 is the minimum pruning amount in bitcoin core already so it'd be a valid choice
+<a name="l-181"></a><span class="tm">19:30:44</span><span class="nk"> &lt;morcos&gt;</span> as a first pass, i wonder if you preferentially downloaded from pruned peers whenever you were behind by less than 288 blocks, that would take enough load of peers serving full history?
+<a name="l-182"></a><span class="tm">19:30:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> absolutely.
+<a name="l-183"></a><span class="tm">19:31:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> Good idea
+<a name="l-184"></a><span class="tm">19:31:09</span><span class="nk"> &lt;wumpus&gt;</span> yes, that would make sense
+<a name="l-185"></a><span class="tm">19:31:23</span><span class="nk"> &lt;gmaxwell&gt;</span> unfortunately, sipa's data suggests that 288 sheds less traffic than measurements years ago suggested.
+<a name="l-186"></a><span class="tm">19:31:43</span><span class="nk"> &lt;sipa&gt;</span> maybe i should compute statistics in bytes rather than blocks
+<a name="l-187"></a><span class="tm">19:31:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> it wasn't clear to me what the integral from 1 to 288 was compared to 288 to inf
+<a name="l-188"></a><span class="tm">19:31:46</span><span class="nk"> &lt;wumpus&gt;</span> well it is a compromise
+<a name="l-189"></a><span class="tm">19:31:53</span><span class="nk"> &lt;wumpus&gt;</span> putting the threshold higher makes some peers completely useless
+<a name="l-190"></a><span class="tm">19:31:57</span><span class="nk"> &lt;sipa&gt;</span> to see what percentage of bandwidth is needed in 1-288
+<a name="l-191"></a><span class="tm">19:31:58</span><span class="nk"> &lt;wumpus&gt;</span> which reduces morcos 's argument
+<a name="l-192"></a><span class="tm">19:32:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I guess you convinced me to use two service bits then. -288 and -2016
+<a name="l-193"></a><span class="tm">19:32:16</span><span class="nk"> &lt;gmaxwell&gt;</span> which is why it might be useful to use two bits and be able to signal 1-288, 1-2016... and perhaps start encouraging people to not prune shorter than 2016.
+<a name="l-194"></a><span class="tm">19:32:37</span><span class="nk"> &lt;sipa&gt;</span> i think we're getting into a design discussion here
+<a name="l-195"></a><span class="tm">19:32:47</span><span class="nk"> &lt;sipa&gt;</span> my number are very premature and not well analysed
+<a name="l-196"></a><span class="tm">19:32:50</span><span class="nk"> &lt;wumpus&gt;</span> it'd also be possible to add a 288-flag now, and then consider a 2016 flag later
+<a name="l-197"></a><span class="tm">19:32:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> indeed, thought that was the input you requested from me.
+<a name="l-198"></a><span class="tm">19:32:57</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes, thats what i'm saying
+<a name="l-199"></a><span class="tm">19:32:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes! indeed.
+<a name="l-200"></a><span class="tm">19:33:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree with wumpus
+<a name="l-201"></a><span class="tm">19:33:04</span><span class="nk"> &lt;wumpus&gt;</span> if it turns out to be necessary
+<a name="l-202"></a><span class="tm">19:33:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> ACK
+<a name="l-203"></a><span class="tm">19:33:15</span><span class="nk"> &lt;sipa&gt;</span> yes, i think just a 1-288 one seems useful
+<a name="l-204"></a><span class="tm">19:33:16</span><span class="nk"> &lt;wumpus&gt;</span> good :)
+<a name="l-205"></a><span class="tm">19:33:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> Start with a simple tip-288 relay, and get some experience
+<a name="l-206"></a><span class="tm">19:33:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it looks pretty clearly necessary but no need to do everything at once.
+<a name="l-207"></a><span class="tm">19:33:30</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> basically advice is, turn your node on at least once every two days
+<a name="l-208"></a><span class="tm">19:33:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> yes
+<a name="l-209"></a><span class="tm">19:33:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> we really should have cron mode for the daemon where it just syncs up and shuts off. :P
+<a name="l-210"></a><span class="tm">19:34:06</span><span class="nk"> &lt;gmaxwell&gt;</span> bitcoind -oneshot
+<a name="l-211"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-212"></a><span class="tm">19:34:17</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> heh, that's not a crazy idea - I'd use it on my laptop
+<a name="l-213"></a><span class="tm">19:34:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> didn't we once had a proposal for the pause option?
+<a name="l-214"></a><span class="tm">19:34:24</span><span class="nk"> &lt;wumpus&gt;</span> right, there's a flag that quits after reindex, but none that exits after sync
+<a name="l-215"></a><span class="tm">19:34:31</span><span class="nk"> &lt;wumpus&gt;</span> would be easy to add tho
+<a name="l-216"></a><span class="tm">19:34:41</span><span class="nk"> &lt;morcos&gt;</span> we could just ask for the utxo set, shoudl we discuss ideas how to do that
+<a name="l-217"></a><span class="tm">19:34:51</span><span class="nk"> &lt;CodeShark&gt;</span> ^ yes :)
+<a name="l-218"></a><span class="tm">19:34:58</span><span class="nk"> &lt;petertodd&gt;</span> make -oneshot run in the foreground with a progress bar :)
+<a name="l-219"></a><span class="tm">19:34:59</span><span class="nk"> &lt;wumpus&gt;</span> without utxo commitment that's a no-go
+<a name="l-220"></a><span class="tm">19:35:05</span><span class="nk"> &lt;morcos&gt;</span> thanks codeshark
+<a name="l-221"></a><span class="tm">19:35:20</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-222"></a><span class="tm">19:35:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> pointless when we were unable to get past the discussion for the security model change to not validate the past history based on proof of work.
+<a name="l-223"></a><span class="tm">19:35:48</span><span class="nk"> &lt;petertodd&gt;</span> and lets not underestimate how dangerous UTXO commitments can be - I'm very dubious about committing to the (U)TXO set more recently than maybe a month or two
+<a name="l-224"></a><span class="tm">19:35:51</span><span class="nk"> &lt;CodeShark&gt;</span> would be great to query utxo for quick sync, then go backwards in time fetching blocks to increase security...but yes, this is a design discussion
+<a name="l-225"></a><span class="tm">19:35:53</span><span class="nk"> &lt;morcos&gt;</span> i was making a joke, sorry
+<a name="l-226"></a><span class="tm">19:36:18</span><span class="nk"> &lt;CodeShark&gt;</span> alas, quick sync doesn't look feasible in the nearterm
+<a name="l-227"></a><span class="tm">19:36:20</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-228"></a><span class="tm">19:36:36</span><span class="nk"> &lt;gmaxwell&gt;</span> but since that was brought up... Can we talk about removing checkpoints?
+<a name="l-229"></a><span class="tm">19:36:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">removing checkpoints</span>
+<a name="l-230"></a><span class="tm">19:36:59</span><span class="nk"> &lt;sipa&gt;</span> what % of transactions are before the last checkpoint
+<a name="l-231"></a><span class="tm">19:37:01</span><span class="nk"> &lt;sipa&gt;</span> does anyone know?
+<a name="l-232"></a><span class="tm">19:37:03</span><span class="nk"> &lt;morcos&gt;</span> someone should write up a design proposal for that to be evaluated
+<a name="l-233"></a><span class="tm">19:37:18</span><span class="nk"> &lt;gmaxwell&gt;</span> Right now they're used for two things, preventing header flooding with low difficulty headers; and skipping signatures in earlier blocks.
+<a name="l-234"></a><span class="tm">19:37:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> just removing checkpoints, or assuming sigs are valid if buried deep enough?
+<a name="l-235"></a><span class="tm">19:37:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> and 3) estimating progress
+<a name="l-236"></a><span class="tm">19:37:45</span><span class="nk"> &lt;wumpus&gt;</span> keeping something for estimating progress would make sense
+<a name="l-237"></a><span class="tm">19:37:47</span><span class="nk"> &lt;sipa&gt;</span> i think 1) remains needed and 3) remains useful
+<a name="l-238"></a><span class="tm">19:37:50</span><span class="nk"> &lt;wumpus&gt;</span> that doesn't need to be checkpoints
+<a name="l-239"></a><span class="tm">19:38:06</span><span class="nk"> &lt;gmaxwell&gt;</span> because very few percentage of the transactions are below the checkpoint .. since libsecp256k1 (and I expect the checkqueue)-- my point two is basically pointless, and I think it could just be removed
+<a name="l-240"></a><span class="tm">19:38:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I think on a desktop it only adds 15-20 minutes to the sync.
+<a name="l-241"></a><span class="tm">19:38:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> I'd ACK simply removing checkpoints entirely; I'm not happy to see them replaced with another scheme to skip sig checking
+<a name="l-242"></a><span class="tm">19:38:33</span><span class="nk"> &lt;wumpus&gt;</span> a block-height-to-relative-difficulty map would have much less of a stigma
+<a name="l-243"></a><span class="tm">19:38:46</span><span class="nk"> &lt;wumpus&gt;</span> eh, verification difficulty that is
+<a name="l-244"></a><span class="tm">19:38:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> really?
+<a name="l-245"></a><span class="tm">19:38:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> I think we could remove CP from reason two without implementing the replcement.
+<a name="l-246"></a><span class="tm">19:39:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> morcos is right that needs a design proposal outside of the meeting.
+<a name="l-247"></a><span class="tm">19:39:12</span><span class="nk"> &lt;sdaftuar&gt;</span> i'm a bit confused about how to think about checkpoints for signature skipping
+<a name="l-248"></a><span class="tm">19:39:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I benchmarked before but I'm going off of memory, I could be wildly wrong. I will test again if there is interest.
+<a name="l-249"></a><span class="tm">19:39:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Removing checkpoints would slow down (maybe insignificant) a scan in a possible SPV hybrid mode?
+<a name="l-250"></a><span class="tm">19:39:54</span><span class="nk"> &lt;gmaxwell&gt;</span> For reason (1) the only answer I have is that I think we should proposal a bit to perpetually increase the minimum difficulty from 1 to something else.
+<a name="l-251"></a><span class="tm">19:40:00</span><span class="nk"> &lt;sdaftuar&gt;</span> for instance the recent ISM change caused us to do less validation for certain blocks in our history (blocks in a softfork between the 75% and 95% thresholds)
+<a name="l-252"></a><span class="tm">19:40:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> SPV mode won't validate *anything* at all
+<a name="l-253"></a><span class="tm">19:40:28</span><span class="nk"> &lt;gmaxwell&gt;</span> (with a checkpoint like bypass of that new rule, for existing blocks that break it) As little as 100,000 would eliminate the header flooding vulenrablity.
+<a name="l-254"></a><span class="tm">19:40:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. But assume we would add an SPV hibrid mode in oder to received payment during IBD
+<a name="l-255"></a><span class="tm">19:40:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> One would need to download 400k headers without a checkpoint at h400k
+<a name="l-256"></a><span class="tm">19:40:53</span><span class="nk"> &lt;luke-jr&gt;</span> maybe checkpoints should just be disabled by default before complete removal?
+<a name="l-257"></a><span class="tm">19:41:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i think you're confused
+<a name="l-258"></a><span class="tm">19:41:07</span><span class="nk"> &lt;gmaxwell&gt;</span> for Sipa's (3) reason for 'checkpoints' I don't give a darn, use chicken bones for progress estimation for all I care. :P it's historical accident that checkpoints and progress use the same data structure.
+<a name="l-259"></a><span class="tm">19:41:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> :) +1
+<a name="l-260"></a><span class="tm">19:41:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, my point too
+<a name="l-261"></a><span class="tm">19:41:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> agree, those could be completely separated
+<a name="l-262"></a><span class="tm">19:41:36</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ACK checken bones
+<a name="l-263"></a><span class="tm">19:41:36</span><span class="nk"> &lt;gmaxwell&gt;</span> Might as well fit a cubic spline to the height vs txn count... and store the parameters.
+<a name="l-264"></a><span class="tm">19:41:53</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-265"></a><span class="tm">19:42:09</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> heh, if we do that with floating point math that has the advantage that it _can't_ be used for consensus :)
+<a name="l-266"></a><span class="tm">19:42:18 </span><span class="nka">* sipa</span> <span class="ac">now remembers a song our student organization wrote to the melody of staying alive, called 'cubic spline'</span>
+<a name="l-267"></a><span class="tm">19:42:21</span><span class="nk"> &lt;gmaxwell&gt;</span> so my proposal, if there is interest, is that I'll measure the performance impact of removing the signature skippingentirely (esp post checkqueue). And if it's not awful, we'll remove.
+<a name="l-268"></a><span class="tm">19:42:37</span><span class="nk"> &lt;wumpus&gt;</span> +1
+<a name="l-269"></a><span class="tm">19:42:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i'm unconvinced
+<a name="l-270"></a><span class="tm">19:42:52</span><span class="nk"> &lt;wumpus&gt;</span> it doesn't hurt to benchmark
+<a name="l-271"></a><span class="tm">19:43:00</span><span class="nk"> &lt;gmaxwell&gt;</span> and maybe I'll tender a proposal to up the minimum difficulty, but I'd like to know what people think about that.
+<a name="l-272"></a><span class="tm">19:43:04</span><span class="nk"> &lt;wumpus&gt;</span> measuring is always better than making assumptions
+<a name="l-273"></a><span class="tm">19:43:11</span><span class="nk"> &lt;sipa&gt;</span> with a replacement for sig skipping that isn't based on checkpoints we could significantly improve things
+<a name="l-274"></a><span class="tm">19:43:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I don't think such a replacement can exist without changing the security assumptions; I'd *rather* have checkpoints than trusting hashing power for that
+<a name="l-275"></a><span class="tm">19:43:44</span><span class="nk"> &lt;sipa&gt;</span> the last checkpoint currently is very old for the very reason that we've been planning to replace it
+<a name="l-276"></a><span class="tm">19:43:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> would you like to help work on a proposal for that? it has been controversial in the past. I'd like to do something good, because otherwise imprudent attempts will be adopted instead.
+<a name="l-277"></a><span class="tm">19:44:15</span><span class="nk"> &lt;sipa&gt;</span> so it's unfair to use the "the last checkpoint is old" as a given; it's something we've affected indirectly
+<a name="l-278"></a><span class="tm">19:44:19</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> though what checkpoints should do is say "Something big has changed; you can disable checkpoints with --no-checkpoints, but you should find out what this means before doing so."
+<a name="l-279"></a><span class="tm">19:44:29</span><span class="nk"> &lt;gmaxwell&gt;</span> (for example Bitcoin Classic's current behavior simply looks at block header timestamps and ignores signatures when they're more than 24 hours (*par) old by the local clock. It's easily exploited and makes me sad.
+<a name="l-280"></a><span class="tm">19:44:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> it's my opinion that on a timescale of months, it doesn't matter
+<a name="l-281"></a><span class="tm">19:44:53</span><span class="nk"> &lt;sipa&gt;</span> IF you can guarantee it's actually a timescale of months
+<a name="l-282"></a><span class="tm">19:44:55</span><span class="nk"> &lt;wumpus&gt;</span> yes that makes me sad too
+<a name="l-283"></a><span class="tm">19:44:58</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> on a timescale of months, checkpoints shouldn't matter either...
+<a name="l-284"></a><span class="tm">19:45:06</span><span class="nk"> &lt;wumpus&gt;</span> anything based on time seems very brittle
+<a name="l-285"></a><span class="tm">19:45:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> look at the current hashrate; what's 3 months worth of chain work at that hashrate
+<a name="l-286"></a><span class="tm">19:45:31</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> and anything based on work isn't much better if you're running an old client, and mining has advanced significantly
+<a name="l-287"></a><span class="tm">19:45:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> I (hope) I'm not confused. If we would add a SPV hybrid mode directly fetch blocks at the tip (in order to received payments), no available checkpoint would result in downloading all headers *losing* maybe 3-4mins before you can start using SPV... minor issue though, I agree
+<a name="l-288"></a><span class="tm">19:45:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> that assumes you know what the current hashrate is
+<a name="l-289"></a><span class="tm">19:45:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the prior proposals were based on work,  e.g. skip if the best chain you see dominates the next conflicted chain at that hight by N months of work.
+<a name="l-290"></a><span class="tm">19:45:44</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> How have we solved the problem that checkpoints were originally created for? You have an excerpt in here: https://en.bitcoin.it/wiki/Bitcoin_Core_0.11_(ch_5):_Initial_Block_Download#Checkpoints
+<a name="l-291"></a><span class="tm">19:45:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> your node might be surrounded by sybils
+<a name="l-292"></a><span class="tm">19:45:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> with a 'minimum total work' coded in as part of the release proces.
+<a name="l-293"></a><span class="tm">19:46:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Chris_Stewart_5:</span> headers first sync
+<a name="l-294"></a><span class="tm">19:46:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">Chris_Stewart_5:</span> 0.10
+<a name="l-295"></a><span class="tm">19:46:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> headers first sync.
+<a name="l-296"></a><span class="tm">19:46:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> right. Well, at the least it should be measured whether such a change is really worth it.
+<a name="l-297"></a><span class="tm">19:46:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> yes, i know...
+<a name="l-298"></a><span class="tm">19:46:21</span><span class="nk"> &lt;sipa&gt;</span> so, let's measure.
+<a name="l-299"></a><span class="tm">19:46:25</span><span class="nk"> &lt;sipa&gt;</span> and discuss later
+<a name="l-300"></a><span class="tm">19:46:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> and the signature skipping behavior in checkpoints was actually a result of a bug fixed years ago.. mlock being used on all allocations making script validation INSANELY slow.
+<a name="l-301"></a><span class="tm">19:46:41</span><span class="nk"> &lt;wumpus&gt;</span> so much of the verification overhead is looking up UTXOs
+<a name="l-302"></a><span class="tm">19:46:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> okay.
+<a name="l-303"></a><span class="tm">19:46:47</span><span class="nk"> &lt;wumpus&gt;</span> something you'll not avoid
+<a name="l-304"></a><span class="tm">19:47:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> but then with chain growth we became dependant on it to keep sync times reasonable. but libsecp256k1 made signature validation &gt;5x faster.
+<a name="l-305"></a><span class="tm">19:47:21</span><span class="nk"> &lt;wumpus&gt;</span> especially for recent blocks
+<a name="l-306"></a><span class="tm">19:47:38</span><span class="nk"> &lt;wumpus&gt;</span> if you do any benchmarking please look at the recent blocks, not the first N
+<a name="l-307"></a><span class="tm">19:48:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it's still a major speed up on existing blocks.
+<a name="l-308"></a><span class="tm">19:48:07</span><span class="nk"> &lt;sipa&gt;</span> in a side node: i've already updated my logging to measure bandwidth vs blockdepth instead of just count.
+<a name="l-309"></a><span class="tm">19:48:11</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> So header sync solves the attack of flooding disk space, but not having your entire network hijacked, correct?
+<a name="l-310"></a><span class="tm">19:48:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> huh?
+<a name="l-311"></a><span class="tm">19:48:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sure, could be
+<a name="l-312"></a><span class="tm">19:48:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> isolation can be resolved by simply knowing what the total work of the best chain was at release.
+<a name="l-313"></a><span class="tm">19:49:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> sorry, this was discussed prior times removing checkpoints had come up, I haven't completely described the background.
+<a name="l-314"></a><span class="tm">19:49:19</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> Thanks for the explanation, i'll keep digging.
+<a name="l-315"></a><span class="tm">19:49:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> ah, you mean being isolated and being fed a wrong chain, sorry I was imaginging some wacky things at having your network hijacked :)
+<a name="l-316"></a><span class="tm">19:51:01</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-317"></a><span class="tm">19:51:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> just the "you got a faithful bitcoin core download but the attacker controls your network"... but that doesn't need a checkpoint to fix, a simple partitioning detction that knows the total work of the best chain at releast time is sufficient.
+<a name="l-318"></a><span class="tm">19:51:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks for the discussion.
+<a name="l-319"></a><span class="tm">19:51:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit against uncompressed keys or not</span>
+<a name="l-320"></a><span class="tm">19:51:17</span><span class="nk"> &lt;wumpus&gt;</span> (10 minutes to go)
+<a name="l-321"></a><span class="tm">19:51:24</span><span class="nk"> &lt;wumpus&gt;</span> (9 minutes to go)
+<a name="l-322"></a><span class="tm">19:51:27</span><span class="nk"> &lt;petertodd&gt;</span> so to be clear, *just* segwit right?
+<a name="l-323"></a><span class="tm">19:51:30</span><span class="nk"> &lt;CodeShark&gt;</span> does anyone still use uncompressed keys?
+<a name="l-324"></a><span class="tm">19:51:33</span><span class="nk"> &lt;wumpus&gt;</span> yes, only segwit
+<a name="l-325"></a><span class="tm">19:51:39</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">CodeShark:</span> armory does
+<a name="l-326"></a><span class="tm">19:51:42</span><span class="nk"> &lt;luke-jr&gt;</span> seems uncontroversial
+<a name="l-327"></a><span class="tm">19:51:49</span><span class="nk"> &lt;petertodd&gt;</span> I'm happy to ACK that given just segwit
+<a name="l-328"></a><span class="tm">19:51:57</span><span class="nk"> &lt;achow101&gt;</span> having segwit enforce uncompressed keys would delay segwit adoption for armory users
+<a name="l-329"></a><span class="tm">19:52:03</span><span class="nk"> &lt;achow101&gt;</span> *compressed
+<a name="l-330"></a><span class="tm">19:52:05</span><span class="nk"> &lt;jl2012_&gt;</span> it's in #8499
+<a name="l-331"></a><span class="tm">19:52:09</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> why? just compress them
+<a name="l-332"></a><span class="tm">19:52:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, though we had a lot of trouble with partitioning detection, I remember some code being stripped out and such. But anyhow, yes that's the better approach if it can be gotten to work.
+<a name="l-333"></a><span class="tm">19:52:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> sigh, does armory still not do that?
+<a name="l-334"></a><span class="tm">19:52:30</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> we have to change the whole wallet structure (it's still going to happen anyways)
+<a name="l-335"></a><span class="tm">19:53:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> without too much false positives
+<a name="l-336"></a><span class="tm">19:53:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> why?
+<a name="l-337"></a><span class="tm">19:53:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> alan said somewhere in 2013 he was implementing it...
+<a name="l-338"></a><span class="tm">19:53:34</span><span class="nk"> &lt;achow101&gt;</span> alan's gone now..
+<a name="l-339"></a><span class="tm">19:53:34</span><span class="nk"> &lt;luke-jr&gt;</span> afaik the only downside to using compressed keys is it changes the address, which segwit is changing anyway
+<a name="l-340"></a><span class="tm">19:53:34</span><span class="nk"> &lt;CodeShark&gt;</span> it's not a very complicated change
+<a name="l-341"></a><span class="tm">19:53:34</span><span class="nk"> &lt;wumpus&gt;</span> armory still uses uncompressed keys?!
+<a name="l-342"></a><span class="tm">19:53:34</span><span class="nk"> &lt;luke-jr&gt;</span> there's no reason you'd need to change the wallet structure I can see
+<a name="l-343"></a><span class="tm">19:53:34</span><span class="nk"> &lt;wumpus&gt;</span> in any case this only applies to segwit, not to old transactions
+<a name="l-344"></a><span class="tm">19:53:34</span><span class="nk"> &lt;achow101&gt;</span> the plan is to have a new wallet structure with bip32 that supports segwit and compressed keys
+<a name="l-345"></a><span class="tm">19:53:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> "you're partitioned until you see a header chain with at least work X" is a pretty simple critera. :P
+<a name="l-346"></a><span class="tm">19:53:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> it had fixed size records in its wallet format for pubkeys
+<a name="l-347"></a><span class="tm">19:54:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> well if a new wallet format is needed for segwit anyway, it doesn't matter right?
+<a name="l-348"></a><span class="tm">19:54:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> oh god please do not use uncompressed keys with segwit. why would you do that?
+<a name="l-349"></a><span class="tm">19:54:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> zero-pad it?
+<a name="l-350"></a><span class="tm">19:54:35</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> well no, we don't need a new wallet for segwit as it could still work with the old one with a little bit of hacking
+<a name="l-351"></a><span class="tm">19:54:48</span><span class="nk"> &lt;achow101&gt;</span> that was the original plan
+<a name="l-352"></a><span class="tm">19:54:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> no less than compressed could
+<a name="l-353"></a><span class="tm">19:55:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> or store the uncompressed key, and compress it at address-generation/signing
+<a name="l-354"></a><span class="tm">19:55:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> why cant the same hack that indicates segwit is in use indicate compressed.. you just chop off some bytes of the key pretty much.
+<a name="l-355"></a><span class="tm">19:55:43</span><span class="nk"> &lt;sipa&gt;</span> btw, uncompressed keys account for 0.7% of used keys in succesful sigs on the network (in the past 2 hours)
+<a name="l-356"></a><span class="tm">19:55:44</span><span class="nk"> &lt;gmaxwell&gt;</span> it could be done entirely inside the process that seralizes the segwit scriptpubkey.
+<a name="l-357"></a><span class="tm">19:56:06</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> idk. ask goatpig
+<a name="l-358"></a><span class="tm">19:56:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> okay
+<a name="l-359"></a><span class="tm">19:56:09 </span><span class="nka">* michagogo</span> <span class="ac">pokes his head in belatedly</span>
+<a name="l-360"></a><span class="tm">19:56:10</span><span class="nk"> &lt;CodeShark&gt;</span> I think we should encourage all wallets to use compressed keys - achow101, if you need help with this I'd be willing to help
+<a name="l-361"></a><span class="tm">19:56:25</span><span class="nk"> &lt;sipa&gt;</span> agree - we should help
+<a name="l-362"></a><span class="tm">19:56:27</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, lots of people would be glad to help.
+<a name="l-363"></a><span class="tm">19:56:32</span><span class="nk"> &lt;sipa&gt;</span> instead of just yell
+<a name="l-364"></a><span class="tm">19:56:50</span><span class="nk"> &lt;gmaxwell&gt;</span> well I offered to help armory move off uncompressed keys to alan several times, including offering to pay to do it.
+<a name="l-365"></a><span class="tm">19:56:56</span><span class="nk"> &lt;gmaxwell&gt;</span> so please don't say anyone just yelled.
+<a name="l-366"></a><span class="tm">19:58:39</span><span class="nk"> &lt;CodeShark&gt;</span> I initially designed my account structures to only use compressed keys - but later added a compressed bit to support legacy stuff
+<a name="l-367"></a><span class="tm">19:59:06</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">CodeShark:</span> what legacy stuff specifically? legacy armory users?
+<a name="l-368"></a><span class="tm">19:59:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> bah,it's kind of sad that to hear some things seem to be going back instead of forward :)
+<a name="l-369"></a><span class="tm">19:59:18</span><span class="nk"> &lt;CodeShark&gt;</span> yes, to support other wallets
+<a name="l-370"></a><span class="tm">19:59:27</span><span class="nk"> &lt;wumpus&gt;</span> it's time
+<a name="l-371"></a><span class="tm">19:59:50</span><span class="nk"> &lt;CodeShark&gt;</span> but I think we really do need to prod all wallets to move to compressed keys
+<a name="l-372"></a><span class="tm">20:00:07</span><span class="nk"> &lt;CodeShark&gt;</span> there's really no reason to continue to support uncompressed keys - other than perhaps some migration tools
+<a name="l-373"></a><span class="tm">20:00:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
