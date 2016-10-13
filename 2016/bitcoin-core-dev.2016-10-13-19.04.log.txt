@@ -1,0 +1,304 @@
+19:04:02 <wumpus> #startmeeting
+19:04:02 <lightningbot> Meeting started Thu Oct 13 19:04:02 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:04:02 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:04:49 <BlueMatt> ok, start with 13.1 status update?
+19:04:52 <wumpus> #topic 0.13.1
+19:04:56 <jtimon> kanzure: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-October/013204.html
+19:05:10 <wumpus> I've just done all the remaining backports in https://github.com/bitcoin/bitcoin/pull/8916
+19:05:12 <BlueMatt> looks like we're one pr away from 13.1, sipa jl2012 or sdaftuar, where are we?
+19:05:19 <sipa> close.
+19:05:20 <BlueMatt> on 8916
+19:05:27 <MarcoFalke> #link https://github.com/bitcoin/bitcoin/pull/8916
+19:05:28 <wumpus> this leaves #8499
+19:05:41 <BlueMatt> oh, sorry, 8916 is backports, meant 8499
+19:05:47 <sipa> close.
+19:05:48 <btcdrak> was 8393 backported yet?
+19:06:12 <wumpus> 0.13.0 wallet bug about importaddress and scriptpubkeys <- issue id?
+19:06:40 <wumpus> btcdrak: yes, that one is part of #8916
+19:06:43 <sipa> jl2012 has been writing a lot of tests for 8499, as there are a lot of edge cases. i believe they're all identified and fixable noe
+19:06:48 <BlueMatt> ok, so i guess hopefully by next meeting (or late this week) the final few commits on #8499 should be ready for review and we can finalize then?
+19:06:49 <sipa> wumpus: will file one soon
+19:07:44 <wumpus> so there's another blocker for 0.13.1? ok
+19:07:57 <sipa> it's part of 8499
+19:08:09 <sipa> will be fixed simulteneously
+19:08:24 <jtimon> wumpus: bip9 parameters?
+19:08:58 <gmaxwell> BIP9 recommends it be set roughly a month after software release. I don't currently see a reason to deviate from that.
+19:09:01 <wumpus> jtimon: that's a topic suggestion I suppose?
+19:09:28 <gmaxwell> There should be some list discussion. I have been one on oneing with large users of Bitcoin for the last couple weeks.
+19:09:29 <jtimon> gmaxwell: ack
+19:09:36 <instagibbs> So would the idea be to set it only at final release and not RC?
+19:09:56 <gmaxwell> instagibbs: I think we would set it at RC and take a guess.
+19:09:56 <sipa> it should be set for RC
+19:10:06 <sipa> but if a new RC is needed, we can jncrement
+19:10:10 <instagibbs> Ok.
+19:10:36 <gmaxwell> it doesn't have to be precise. The strong invariaent is that the start date should be _after_ the release. :)
+19:10:43 <michagogo> Worst case, if there are a lot of RCs that can be adjusted before the last one
+19:10:48 <wumpus> there can't be changes between the last RC and final
+19:10:53 <MarcoFalke> Huh? If we just increment it may cause a consensus bug?
+19:10:55 <wumpus> so it must be set for every RC too, I'm afraid
+19:10:56 <gmaxwell> keeping in mind that it'll take minimum of 4 weeks to activate post start.
+19:11:03 <MarcoFalke> I mean nodes don't agree
+19:11:04 <sipa> MarcoFalke: assuming miners run RCs
+19:11:07 <michagogo> But the last RC is generally within a week or so of final release
+19:11:12 <jtimon> MarcoFalke: people should not use rc apart from testing
+19:11:13 <michagogo> (Or, the other way around...)
+19:11:16 <wumpus> michagogo: yes
+19:11:21 <sipa> indeed
+19:11:21 <MarcoFalke> fine
+19:11:34 <sipa> when do we exoect 0.13.1rc1?
+19:11:37 <gmaxwell> so I would recommend taking a best guess and changing it if release ends up past that date.
+19:11:38 <wumpus> #topic BIP9 parameters
+19:11:52 <cfields> whoops. Late, but made it.
+19:11:54 <BlueMatt> lets avoid setting it differently in different rcs
+19:11:58 <sdaftuar> i don't think we can just change bip9 params during the rc process
+19:12:03 <sdaftuar> that's a consensus change
+19:12:11 <sdaftuar> we almost screwed this up in 0.13.0
+19:12:12 <wumpus> sipa: all depends on #8499 + the bug fix for 0.13.1
+19:12:34 <wumpus> I'd do 0.13.1 today if it was not for those
+19:12:36 <sipa> i'm sure we'll be ready next seek
+19:12:50 <sipa> (i'd like to say tomorrow, but who knows)
+19:12:58 <morcos> it seems not a bad idea to take a conservative estimate of the length of time the RC process will take, add a month to that and use the date.
+19:13:00 <BlueMatt> proposal: do not set activation parameters in rc1, set them in an rc when we believe we are ready (ie last rc + 1 week or so) and then let that sit for a week before final tag
+19:13:10 <morcos> so use 2 months after the time you issue the first RC for instance?
+19:13:13 <jtimon> morcos: that makes sense to me
+19:13:15 <wumpus> I usually estimate a month for the RC phase, for major releases
+19:13:16 <btcdrak> BlueMatt: +1
+19:13:16 <instagibbs> I think picking and staying with it is best.
+19:13:22 <morcos> or right, like matt said
+19:13:23 <gmaxwell> BlueMatt: the RC's are supposted to be the same as the release.
+19:13:25 <btcdrak> There is no way rc1 will pass anyway.
+19:13:31 <sipa> btcdrak: unsure.
+19:13:33 <BlueMatt> gmaxwell: then lets call the first rc beta :)
+19:13:34 <morcos> btcdrak: ha ha
+19:13:54 <gmaxwell> btcdrak: I think it's likely to do so, I've spent a lot more time on 0.13 branch than master lately.
+19:14:02 <jtimon> BlueMatt's solution is fine as well
+19:14:04 <wumpus> the last RC is supposed to be the same as the release, you could do a RC that is not *really* a release candidate I guess ...
+19:14:18 <BlueMatt> ok, so new proposal: lets do a "beta" phase first, and then graduate to rc?
+19:14:18 <michagogo> Prerc1?
+19:14:22 <michagogo> rc0?
+19:14:23 <btcdrak> 0.13.1pre
+19:14:42 <jtimon> btcdrak: if we know rc1 won't pass how come we make it an rc?
+19:14:52 <gmaxwell> I think we're over thinking it. The purpose of the starting time was simply to avoid the case where there was a risk that a feature got activated before any released version of the implementation for it existed at all-- because we found that miners were running master/candidates.
+19:14:55 <wumpus> I guess we can use beta now that bitcoin core itself is no longer beta
+19:15:00 <michagogo> jtimon: its more like, if it passes, something's "wrong"
+19:15:10 <jtimon> michagogo: not following
+19:15:12 <wumpus> thoug hI"d prefer just calling it rc, all tooling is setup for that
+19:15:14 <michagogo> Like when your code compiles without errors the first time
+19:15:15 <sipa> i don't like this. just pick a date reasonably far in the future and do rc1
+19:15:26 <BlueMatt> so set parameters to 1.5 months for rc1? or 2?
+19:15:27 <gmaxwell> Considering that there is a _minimum_ 4032 block interval from startdate to activation, there is a LOT of safty margin here.
+19:15:37 <wumpus> sipa: +1
+19:15:45 <wumpus> just estimate 2 months for the RC process
+19:15:46 <cfields> sipa: agreed. Otherwise there's no way we'll be able to explain the semantics.
+19:15:48 <wumpus> that should be ample enough
+19:15:48 <BlueMatt> ok, I'm ok with something like 2 months from rc1
+19:15:55 <btcdrak> most releases take 3 or 4 rcs, so if we set the date for 5 weeks on rc1 that would cover it I am sure.
+19:15:58 <morcos> or is wumpus saying 3 months
+19:16:07 <jtimon> michagogo: you mean we expect to have more than one? sure, but we shouldn't make it rc if there's known bugs or required changes is my point
+19:16:09 <BlueMatt> ehh, I'd rather be conservative btcdrak
+19:16:12 <wumpus> no, two months is fine
+19:16:15 <morcos> 2 months for process, one for it to be released
+19:16:17 <BlueMatt> i mean I'm ok with 1.5 months, too
+19:16:17 <achow101> I think two months after rc1 is fine
+19:16:27 <michagogo> jtimon: well, obviously the goal is for rc1 to = final
+19:16:28 <morcos> ok, i'm fine with either, less than 2 is a bit rushing it
+19:16:33 <btcdrak> this is like an auction.
+19:16:40 <gmaxwell> There are many people who _urgently_ want segwit activated yesturday.
+19:16:40 <jtimon> michagogo: undesrtood
+19:16:42 <wumpus> usually I estimate 1 month for rc1->final, but this maybe be more involved than usual, dunno
+19:16:46 <michagogo> Just like when you write code the goal is for it to compile perfectly the first time :P
+19:16:56 <BlueMatt> wumpus: or less, hopefully
+19:17:05 <BlueMatt> :p
+19:17:07 <sipa> i think this rc will be much shorter
+19:17:14 <wumpus> BlueMatt: well this is a minor release, so it *should* be shorter
+19:17:17 <gmaxwell> I think it would be fine to set start date 1 month after final. Even then if RCs take two months we still will not be at risk of activation before a software release.
+19:17:18 <btcdrak> well we could just commit to sleepless nights to make release happen on time :-p
+19:17:30 <sdaftuar> gmaxwell: the downside to rushing this out is that there's less time for everyone to test with the updated policy changes on testnet
+19:17:32 <gmaxwell> er 1 month after RC1 not final.
+19:17:44 <gmaxwell> sdaftuar: most of them are no-ops on testnet.
+19:17:55 <sdaftuar> gmaxwell: how so?
+19:17:58 <gmaxwell> though I have been running with the patches applied and testnet set to enforce policy.
+19:18:06 <gmaxwell> sdaftuar: testnet doesn't enforce standardness rules.
+19:18:13 <BlueMatt> i mean can we get testnet miners to do compact-enforcement today?
+19:18:13 <sdaftuar> yes it does, for the script checks
+19:18:17 <BlueMatt> that should be most of it?
+19:18:35 <BlueMatt> phantomcircuit: Lightsword please do that ^
+19:18:38 <btcdrak> well remember there are non Core nodes mining on testnet
+19:18:43 <sdaftuar> gmaxwell: am i missing something?
+19:19:00 <btcdrak> I think lightsword's miner must be off, none of roasbeef's txs are getting mined.
+19:19:06 <gmaxwell> sdaftuar: no, though not all the new policy is scriptchecks.
+19:19:23 <gmaxwell> In any case, I don't think we should decide for sure here, we should make a list post.
+19:19:23 <cfields> btcdrak: I'll be firing mine up in the next day or two
+19:19:38 <sdaftuar> gmaxwell: sure not all, but the most significant ones IMO
+19:19:41 <jtimon> prosed topic, maybe not for today: testnet4
+19:19:50 <btcdrak> There are 4k unconfirmed "spam" txs https://testnet.smartbit.com.au/
+19:20:09 <gmaxwell> But I think we should be suggesting 1month post rc1 as the starting time, when we do. Unless something specific comes up that suggests otherwise.
+19:20:13 <BlueMatt> gmaxwell: agreed, for now lets recommend 1.25 months from rc1 release on the list, and get some testnet miners spun up mining #8499 today so that we're less worried about sdaftuar's objection?
+19:20:35 <gmaxwell> Keep in mind, in prior softforks the starting time was infinitely far in the past. And BIP9 made its way through 95% of its development with no starting time.
+19:20:42 <michagogo> BlueMatt: perhaps 50 days for roundness
+19:20:44 <michagogo> Or 55
+19:20:56 <sipa> nov 15.
+19:21:10 <michagogo> That's good too
+19:21:16 <btcdrak> great.
+19:21:23 <michagogo> (A birthday gift for my brother, perhaps?)
+19:21:23 <gmaxwell> it was added because for one prior sf we ended up with >30% hashpower weeks before release... and that was for a SF with no quieting period... so it had a real risk of activating basically before a release.
+19:22:07 <wumpus> I doubt that's a risk for segwit
+19:22:16 <gmaxwell> Agreed.
+19:22:19 <jtimon> gmaxwell: I think it's useful beyond that
+19:22:41 <btcdrak> yes, the fact BIP9 requires 4-6 weeks to kick in realistically, makes it less of an issue
+19:23:02 <sipa> nov 15 is close to a retarget
+19:23:06 <gmaxwell> 4-8 weeks with 6 weeks being the average if all miners immediately upgrade.
+19:23:08 <btcdrak> ok so Nov 15th it is?
+19:23:11 <sipa> maybe we want to pick a date just before a retarget
+19:23:35 <achow101> nov 15th sounds good (at 00:00 AM?)
+19:23:36 <btcdrak> sipa: yes and remember Bitfury are turning on a _lot_ of hash rate going forward
+19:23:38 <gmaxwell> btcdrak: probably shouldn't be just setting it here, but just have a feel for what we think is reasonable.
+19:23:54 * jtimon wishes we had chosen hieght instead of time not to wonder what will be close to retarget
+19:24:11 <sipa> yes, let's propose on the ML
+19:24:16 <BlueMatt> ok, seems like we have rough consensus on a month after rc1 is probably a reasonable recommendation, so lets propose to the ml
+19:24:23 <instagibbs> Ack
+19:24:50 <wumpus> yes
+19:24:59 <gmaxwell> sipa: do you want to do the list thing, or should I or?
+19:25:05 <sipa> i will
+19:25:08 <jtimon> ack on following up on the mailing list, it seems nobody is unhappy about either rc1 + 1 month nor rc2 + 2 month
+19:25:19 <wumpus> #action propose segwit activation parameters on the ML
+19:25:20 <jtimon> nor 15 nov
+19:25:29 <BlueMatt> ok, next topic?
+19:25:49 <wumpus> #topic testnet4 (jtimon)
+19:26:03 <BlueMatt> why?
+19:26:08 <achow101> ^
+19:26:12 <wumpus> @jtimon
+19:26:16 <jtimon> well, I would prefer to discuss verifyBlock vs processBlock actually
+19:26:33 <wumpus> lol you proposed the topic
+19:26:42 <jtimon> but some people complained about testnet being unreliable
+19:27:00 <BlueMatt> isnt that a number of miners thing?
+19:27:04 <wumpus> do you have a concrete proposal to fix that?
+19:27:08 <gmaxwell> That has little to do with 'testnet4'  I think. It just is that testnet is not consistently mined.
+19:27:08 <sipa> i don't know that resetting would help
+19:27:11 <jtimon> my main interest would be to remove the special case for testnet on pow
+19:27:26 <BlueMatt> that would make it more unreliable?
+19:27:31 <jtimon> don't drop diff to 1, maybe just add a max difficulty or something simpler
+19:27:55 <jtimon> BlueMatt: I doubts so
+19:28:09 <BlueMatt> i mean we added that rule because testnet was unreliable
+19:28:22 <jtimon> BlueMatt: and did it solved it?
+19:28:25 <BlueMatt> though i have no intuition for properly setting a max testnet diff that is reasonable
+19:28:33 <BlueMatt> jtimon: it made it an order of magnitude (or two) better
+19:28:38 <wumpus> yes, without it it is even worse
+19:28:44 <jtimon> BlueMatt: fair enough
+19:28:44 <btcdrak> max diff would be a disaster
+19:28:51 <jtimon> maybe next topic?
+19:28:55 <sipa> we could live without the permanent reset bug, though
+19:29:01 <wumpus> any other topics?
+19:29:59 <wumpus> *crickets*
+19:30:37 <achow101> the prefinal alert that was supposed to happen but didn't?
+19:30:41 <wumpus> well, that concludes the meeting early I guess. Let's make sure we can have a 0.13.1rc1 by next week
+19:30:42 <jtimon> libconsensus: verifyBlock vs processBlock (ie the latter takes care of reorgs, updates the utxo, etc)
+19:30:50 <BlueMatt> achow101: suggested prefinal alert
+19:31:09 <gmaxwell> jtimon: a lot of people would like us to have a signed testnet using the pluggable pow stuff that is in elements, so that it would have perfectly predictable blocks and perfectly predictable reorgs.
+19:31:37 <gmaxwell> achow101: we need to write explination text for bitcoin.org and I haven't had time to do it and no one else has stepped up.
+19:31:44 <gmaxwell> I have an alert ready to go.
+19:31:49 <jtimon> gmaxwell: I would be more than happy to put that in core if it's desirable, thanks for letting me know
+19:31:50 <wumpus> #topic prefinal alert
+19:31:52 <achow101> copy-paste from email
+19:32:25 <gmaxwell> Needs to have an explination of the alert system, why it's gone now. And a description of the future steps that we discussed here.
+19:33:04 <gmaxwell> achow101: do you want to try drafting something? I would be happy to review/edit.
+19:33:15 <achow101> sure, I can try writing it
+19:33:58 <gmaxwell> sounds good.
+19:34:21 <wumpus> #action achow101 post about alert system for bitcoin.org
+19:34:44 <wumpus> thanks
+19:34:56 <btcdrak> Just a random information topic, there is a segwit dev guide for downstream published here https://bitcoincore.org/en/segwit_wallet_dev/
+19:34:57 <gmaxwell> jtimon: if we're going to do any 'new testnet thing' we should figure out how to extract the good test cases from the existing testnet. E.g. instrumenting for code coverage and syncing testnet while noting which transactions increased coverage.
+19:35:10 <wumpus> btcdrak: awesome!
+19:35:31 <wumpus> #link segwit dev guide for downstream https://bitcoincore.org/en/segwit_wallet_dev/
+19:35:57 <gmaxwell> we have other upcoming doc works. We should have a segwit deployment guide-- covering things like explaining how to setup perimiter nodes to shield unupgraded custom stuff-- ready at the start of the segwit queting period.
+19:36:11 <achow101> apparently no one but me knew that dev guide even existed...
+19:36:27 <gmaxwell> But we can get contributors outside of the regulars for this meeting, for the audience here advice on content would be good.
+19:36:31 <morcos> it seems to me a better way to make testnet usable is to just pool some funding to have some small but non-trivial hashpower running it rather than implement more differences in behavior from mainnet
+19:36:42 <wumpus> achow101: a lot of good information exists but the knowledge of that information is pretty sparse
+19:36:53 <wumpus> achow101: has always been a problem in bitcoin :(
+19:37:04 <gmaxwell> morcos: the problem is that some clown pool will occasionally drop a petahash onto it an drive the difficulty up.
+19:37:05 <jtimon> gmaxwell: is there any recommended tool for coverage in bitcoin core?
+19:37:35 <wumpus> jtimon: valgrind?
+19:37:44 <jcorgan> gmaxwell: i could likely help with some of the documentation work, if there is someone on the team to work with
+19:37:56 <gmaxwell> jtimon: lcov works. But to get data inline like that some stunts involving gprof can be done.
+19:38:26 <gmaxwell> You can ask the gprof stuff to dump the current data with a function call, IIRC.. so presumably one could instrument doing that after processing each transaction.
+19:38:27 <jtimon> oh, I just recently starting using lcov, nice
+19:39:25 <gmaxwell> in any case, there are tests in testnet that do not exist in any unit test. It would be good to find most of them and be able to start out a new testnet where the first few hundred blocks excercise all of them.
+19:39:26 <Chris_Stewart_5> gmaxwell: Content on what docs? Segwit docs?
+19:39:34 <wumpus> after each block may be enough granularity
+19:40:12 <gmaxwell> Chris_Stewart_5: on what materials should be covered in a deployment guide. For non-miners the only really important thing that comes to mind to me is instructions on setting up peremiter nodes.
+19:40:31 <Chris_Stewart_5> Gotcha.
+19:40:40 <gmaxwell> but no doubt there are other things.
+19:40:51 <sdaftuar> all the policy changes!
+19:41:05 <Chris_Stewart_5> jtimon: I think cfields has some sort of website that shows lcov coverage
+19:41:12 <gmaxwell> sdaftuar: fair enough, though I expect those to be 99% invisible, but good to cover them more.
+19:41:41 <cfields> Chris_Stewart_5: that was a one-time thing for segwit. Just need to fix up the makefile stuff so it can be auto-generated again
+19:43:00 <wumpus> gah, looks like my backport of #8393 in #8916 is failing the RPC tests
+19:43:13 <sdaftuar> wumpus: i'm running locally... compact blocks again
+19:43:35 <sdaftuar> wumpus: i can reproduce at least
+19:43:39 <wumpus> okay thanks!
+19:43:39 <jtimon> Chris_Stewart_5: gmaxwell: awesome, maybe we should consider putting some lcov stuff as tooling? something like in https://github.com/jgriffiths/libwally-core#generating-a-coverage-report ? stupid people like me appreciate these things...
+19:44:38 <jtimon> maybe I should start with that before a nexttestnet, anyway, I'll come back to you and cfields, we're mixing topics
+19:44:52 <wumpus> jtimon: recently created a bitcoin-maintainer-tools repo https://github.com/laanwj/bitcoin-maintainer-tools, would make sense to add to that
+19:45:24 <Chris_Stewart_5> jtimon: I think it is an easy way to direct new developers where it might be easiest to contribute to, as they can easily see where we are lacking tests
+19:45:30 <cfields> jtimon: we have an --enable-lcov (or something like that). But it's broken atm.
+19:46:21 <jtimon> awesome, so there's work to be done here but there's a base, thank you guys
+19:46:26 <cfields> just need to get it fixed up again, shouldn't be too tough.
+19:46:36 <wumpus> we should probably create an issue for that
+19:46:50 <jtimon> wumpus: will check that out, does it contain lcov too? maybe we should consid
+19:46:58 <gmaxwell> I haven't been too generally impressed with the utility of lcov on the bitcoin core codebase-- better than nothing I guess, but the branch coverage is full of BS unreachable branches due allocations in templaized container objects.
+19:47:07 <jtimon> s//wumpus: will check that out
+19:47:10 <wumpus> jtimon: no, it currently contains only a tool for doing per-function binary comparison of builds
+19:47:52 <wumpus> jtimon: but I'm generally for sharing our tools more
+19:48:15 <jtimon> gmaxwell: yeah, for a new testchain, take into account that we're still using globals and some hardcoding
+19:48:49 <wumpus> jtimon: I have a lot of other ones, but need to clean up and disentangle them from other local stuff first before I can publish them
+19:49:19 <wumpus> (for example for creating release notes)
+19:49:30 <jtimon> things like https://github.com/bitcoin/bitcoin/pull/8855 should help with new testchains
+19:50:18 <gmaxwell> so... another topic, probably mostly for a future meeting.. sybil attacks.
+19:50:20 <jtimon> wumpus: nice, we can incorporate those upstream little by little
+19:50:21 <wumpus> anyhow let's end the meeting, seems we're not really on a topic anymore
+19:50:34 <gmaxwell> I am now seeing 60+ connections within seconds of starting a node..
+19:50:36 <wumpus> jtimon: I really prefer having meta-tools in a separate repo
+19:51:17 <wumpus> jtimon: as they're not really on the same release cycle, and go through lots of changes that don't really need to go through the bitcoin core review process
+19:51:22 <jtimon> wumpus: well I don't have a strong opinion, you can always document where those tools are somewhere
+19:51:29 <wumpus> yes
+19:51:36 <wumpus> #topic sybil attacks
+19:51:42 <gmaxwell> Does anyone here have any back channels into amazon operations? I'd like to know why they are unresponsive to abuse conmplaints regarding this user.
+19:52:44 <gmaxwell> So background: someone is mass connecting many times in parallel to all reachable ondes, pretending, poorly, to be a mix of different spv clients.
+19:52:45 <wumpus> reminds me I should still file a complaint for that
+19:53:01 <jtimon> suggested topic: libconsensus: verifyBlock vs processBlock (ie the latter takes care of reorgs, updates the utxo, etc)
+19:53:18 <wumpus> sybil01: oh no :)
+19:53:33 <gmaxwell> Because of the connection management stuff implemented a few versions ago, it doesn't disrupt the network much (these peers can get evicted). But I presume their motivation is to undermine user's privacy through observation.
+19:54:04 <BlueMatt> gmaxwell: i mean if we fix the privacy leak that makes it useful to do this, maybe they'll go away :)
+19:54:23 <CodeShark> hi guys...traveling and can't catch entire meeting but will read thr scrollback :)
+19:54:25 <wumpus> that must be the reason to do this, it would be an extremely ineffective DoS
+19:54:29 <gmaxwell> Right now, connecting more times in parallel will leak more information and we can reduce that leackage further with already planned future relay improvements. ... which I've only not finished due to focusing on testing segwit and whatnot.
+19:54:47 <gmaxwell> wumpus: it would be a potent DOS prior to 0.12-ish.
+19:55:13 <gmaxwell> but yes, I presume they'll stop if we further reduce the privacy leaks. So thats the obvious thing to do.
+19:55:18 <wumpus> gmaxwell: but it seems they open a fixed number of connections per node. A DoS would exhaust slots
+19:55:27 <btcdrak> can we ban multiple connection from the same IP? that would be a start against this particular AWS spy.
+19:55:34 <gmaxwell> presumably they were doing this before, and prior improvements killed the leaks unless they connected multiple times which made them visible.
+19:55:48 <sipa> btcdrak: meh, they'll move to routing through different ips
+19:56:01 <gmaxwell> btcdrak: it would be pretty harmful to do that network wide as there are many instutions and even a country where all connections come from one ip.
+19:56:03 <wumpus> theyalready use multiple IPs, though they also do multiple connections per IP form some reason
+19:56:17 <gmaxwell> and they do already use multiple IPs. and they changed them after people started circulating banlists.
+19:56:53 <BlueMatt> several folks now ban aws nodes wholesale, which sucks because aws nodes are useful due to DDoS protection built-in
+19:56:58 <wumpus> but yes IPs are cheap anyway, as long as there's profit to be made from this they'll not go away. THough I personally ban multiple connects from a single IP on my nodes.
+19:56:59 <BlueMatt> (including some of my nodes)
+19:57:06 <gmaxwell> I'd like to avoid hardcoding netblock specific rules "one connection per IP from amazon IP space" and whatnot. :)
+19:57:19 <gmaxwell> so in any case, reducing the leakage is always a good move and we should do that.
+19:57:23 <BlueMatt> yup
+19:57:36 <sipa> i think we can make the relay delays use deterministic randomness based on netgroup, so nodes in the same range will see the same thing
+19:57:57 <sipa> and many more ideas
+19:58:02 <cfields> gmaxwell: for one in every X connections, we could proxy and route messages together for peer-pairs. Then they'd poison their own stats :p
+19:58:02 <sipa> probably not for this meeting
+19:58:23 <gmaxwell> cfields: That won't work for reasons I'd rather not say in public, unfortunately.
+19:58:28 <btcdrak> 1 min 30 seconds to go
+19:58:46 <wumpus> cfields: they don't actually ever send anything
+19:58:51 <gmaxwell> well it would help. but not do quite what you think.. still could be useful.. many fun things to discuss.
+19:59:24 <wumpus> cfields: they just negotiate the connection, answer pings, and listen. Though poisining the info sounds like fun.
+20:00:01 <instagibbs> ding ding
+20:00:01 <sipa> DANG
+20:00:05 <btcdrak> dong
+20:00:07 <wumpus> and yes, netblock specific rules are not an option, that'd be Hearnian
+20:00:10 <wumpus> #endmeeting
