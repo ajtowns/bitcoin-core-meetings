@@ -1,0 +1,375 @@
+19:00:15 <wumpus> #startmeeting
+19:00:15 <lightningbot> Meeting started Thu Oct 20 19:00:15 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:15 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:24 <wumpus> proposed topics?
+19:00:38 <sipa> proposed cheer: yay for 0.13.1rc
+19:00:45 <CodeShark> ^ :DDD
+19:00:50 <jonasschnelli> heh
+19:00:55 <wumpus> yay for 0.13.1rc, haven't heard of any real problems yet
+19:01:15 <achow101> hmm. where's gmaxwell-ping-bot
+19:01:23 <wumpus> not that it says much given how short it's been out, but ok, it's somewhat promising :)
+19:01:53 <CodeShark> if only execution paths with problems tended to occur first :p
+19:02:03 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:07 <jtimon> proposed topic: libconsensus: do we want to expose a verifyBlock function or a processblock one? do we want to expose verifyHeader and verifyTx ?
+19:02:34 <btcdrak> here
+19:02:50 <wumpus> ah yes I have another topic about the libconsensus interface: what to do with undocumented flags
+19:02:51 <instagibbs_> present
+19:02:59 <btcdrak> ping jl2012
+19:03:01 * paveljanik here
+19:03:08 <jl2012> yes
+19:03:10 <wumpus> jl2012 was already here
+19:03:35 <jtimon> wumpus: like bip113 ? or more like bip30 ?
+19:03:46 <wumpus> jtimon: https://github.com/bitcoin/bitcoin/pull/8976
+19:03:53 <wumpus> #topic libconsensus
+19:04:05 <wumpus> currently it's possible to pass non-consensus flags into libconsensus
+19:04:07 <wumpus> e.g. policy only flags
+19:04:25 <CodeShark> yes, that should be pulled out
+19:04:26 <sipa> i believe we should not expose policy functions in libconsensus
+19:04:49 <sipa> as that would make it impossible to later split off policy code into a separate codebase
+19:04:52 <BlueMatt> sipa: ack
+19:05:00 <sipa> and consensus code should end up being isolated
+19:05:04 <wumpus> ok so that means you agree with #8976
+19:05:10 <instagibbs_> was there thought otherwise? (I'm outsider to this work)
+19:05:20 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8976
+19:05:21 <CodeShark> yeah, doesn't seem very controversial
+19:05:22 <jtimon> I agree, currently it is not possible (at least using bitcoinconsensus_verifyScript)
+19:05:32 <instagibbs_> ah I see what you mean
+19:05:32 <wumpus> no, I don't think so. But people may be relying on this. I don't know anyone that does though.
+19:05:37 <wumpus> and NicolasDorier is okay with it
+19:05:50 <BlueMatt> wumpus: dont have a strong opinion, but I'm fine with that
+19:06:04 <wumpus> if there is to be a policy script library it'll need to be separate imo
+19:06:15 <jtimon> btw, currently the flags in script/bitcoinconsensus.h and in script/interpreter.h need to match, that shouldn't be the case
+19:06:20 <wumpus> this is lib*consensus*
+19:06:20 <sipa> jonasschnelli: agree
+19:06:23 <sipa> eh, jtimon: agree
+19:06:38 <wumpus> jtimon: no, they don't need to match, that's just an artifact
+19:06:56 <sipa> wumpus: is there are translation layer?
+19:07:00 <wumpus> although it's no longer possible to change the flags now
+19:07:10 <wumpus> ABI for libconsensus is fixed
+19:07:20 <jtimon> wumpus: I mean, if I change  bitcoinconsensus_SCRIPT_FLAGS_VERIFY_WITNESS             = (1U << 11) to some other number different from 11, things won't work
+19:07:22 <wumpus> sipa: no, that was never added
+19:07:28 <sipa> we should add one
+19:07:35 <sipa> and keep the flags for the existing bits
+19:07:35 <jtimon> agreed
+19:07:40 <sipa> as passthrough
+19:07:42 <wumpus> yes, there should be a translation layer, though the current bits can no longer be changed
+19:07:45 <wumpus> agreed
+19:07:46 <sipa> but new ones can fill up the holes
+19:08:12 <jtimon> btw, related branch: https://github.com/jtimon/bitcoin/commits/0.13-consensus-flags
+19:08:15 <wumpus> at the lesat we should add the error when invalid flags are passed
+19:08:26 <CodeShark> is anyone using these flags as ints rather than just as an enum?
+19:08:31 <wumpus> this will discourage people from doing what they're doing now, e.g. treating it as a pass-through
+19:09:05 <wumpus> they're using it as an unsigned int because that's the type passed in, remember it's a C interface, enums don't support bit field combos
+19:09:06 <sipa> CodeShark: we're already abusing enum here. it's a bit field, not an enum
+19:09:14 <sipa> the enum is just an easy way to give the constants name
+19:09:15 <jtimon> CodeShark: AFAIK there used always like if (flags & MY_FLAG)
+19:09:36 <sipa> for almost all operations we do with these enums, they decay into integers
+19:09:41 <wumpus> yes
+19:09:56 <CodeShark> right - I meant, does it matter if we shuffle the bits as long as the integer values are not used anywhere outside the definitions?
+19:10:08 <sipa> CodeShark: that breaks the ABI
+19:10:13 <wumpus> you can't shuffle the bits because it would break the *binary* interface
+19:10:18 <CodeShark> oh...
+19:10:19 <sipa> you can't link with an older version of the library in that case
+19:10:23 <CodeShark> ok
+19:10:30 <CodeShark> gotcha
+19:10:43 <wumpus> the idea is that you can jsut drop in the 0.13.1 consensus library in place of the 0.13.0 one and it will work
+19:11:08 <sipa> without recompiling your client
+19:11:10 <wumpus> arguably the SEGWIT bit can be moved until 0.13.1 is finalized, but meh
+19:11:23 <sipa> indeed, meh.
+19:12:06 <jtimon> these are the consensus flags I end with in that branch: https://github.com/jtimon/bitcoin/blob/0.13-consensus-flags/src/consensus/flags.h
+19:12:10 <CodeShark> sipa: so you're saying we can reuse the bits that get vacated when we remove the policy flags
+19:12:24 <sipa> CodeShark: yes
+19:12:34 <sipa> as those were never part of the abi
+19:12:37 <wumpus> CodeShark: the policy flags were never really allowed by the interface, it's a bug that it posibble to specify them at all
+19:12:40 <sipa> *api
+19:12:58 <wumpus> this is what #8976 fixes by adding input checking on the flags
+19:13:14 <jtimon> and my preference would be to expose a GetConsensusFlags call in libconsensus too
+19:13:35 <wumpus> what would that do?
+19:13:36 <jtimon> to hide the bip9 and previous developments stuff
+19:14:11 <jtimon> you call it, now you know which flags to use verifyScript, verifyTx or verifyBlock (or verifyBlock could call it internally)
+19:14:44 <sipa> and you pass in all block headers?
+19:14:52 <jtimon> https://github.com/jtimon/bitcoin/blob/0.13-consensus-flags/src/versionbits.cpp#L153
+19:15:20 <jtimon> no, the same CBlockIndex interface used for verifyHeader
+19:15:59 <sipa> i really don't like turning our internal representation for headers into an index
+19:15:59 <jtimon> similar to https://github.com/bitcoin/bitcoin/pull/8493
+19:16:11 <sipa> *into an interface
+19:16:13 <CodeShark> sipa: agreed
+19:16:22 <CodeShark> it could be done better
+19:16:24 <jtimon> other ideas to interface with storage ?
+19:16:31 <CodeShark> without exposing all that crap
+19:16:33 <jtimon> CodeShark: how?
+19:16:46 <sipa> just have an API where you can create a blockindexstore, and you give it headers
+19:17:00 <sipa> which are copied into the blockindexstore
+19:17:04 <CodeShark> yes
+19:17:18 <jtimon> so libconsensus remains coupled with our storage?
+19:17:28 <sipa> that's my personal preference
+19:17:33 <CodeShark> well...hmmm
+19:17:36 <jtimon> I wasn't planning on taking any headers from callers
+19:17:38 <kanzure> i don't mean to go all pointy hair or anything, but what is current expectation around libconsensus separation milestone timelines
+19:17:54 <sipa> kanzure: nobody even agrees what libconsensus means.
+19:17:59 <kanzure> perfect
+19:18:19 <CodeShark> the header storage engine is quite trivial, actually
+19:18:37 <CodeShark> not sure it needs an abstract DB interface...but on the other hand...
+19:18:39 <wumpus> I think the previous conslusion was that libconsensus should remain coupled with the current caching layer, but not with leveldb
+19:18:42 <jtimon> ok, so you guys want the libconsensus++ luke-jr wanted (ie storage included), I would be fine with having both one with storage included and one without it
+19:18:53 <BlueMatt> we already discussed this in milan
+19:19:04 <wumpus> so the *memory* storage is part of libconsensus
+19:19:08 <wumpus> the disk storage is not
+19:19:12 <BlueMatt> that
+19:19:13 <CodeShark> ok
+19:19:14 <jtimon> BlueMatt: yeah, you and me discussed it a little, with no conclusion
+19:19:29 <wumpus> right,we discussed that in Milan
+19:19:30 <sipa> jtimon: my fear is that it's very hard to create a stable API for storage of headers... things like BIP9 cache and the skiplist for example are things that would break the API, but such changes may be needed in the future
+19:19:32 <kanzure> meaning of "storage" has to be carefully defined
+19:19:45 <sipa> they're perfectly compatible with a store into which you can load headers, though
+19:20:12 <jtimon> sipa: so let's break the API, users of libconsensus++ may have a more stable API, but less flexibility and control too
+19:20:16 <jonasschnelli> We are speaking of a in-memory only store, right?
+19:20:30 <BlueMatt> i think the first target is this, and then, if at some point we decide we want to support no-headers-in-memory, we can add an api for storage
+19:20:33 <wumpus> jonasschnelli: yes. as currently used for the headers
+19:20:36 <BlueMatt> but i think that is further out on the horizon
+19:20:45 <wumpus> BlueMatt: agreed, that's no issue right now
+19:20:57 <BlueMatt> also because refactoring every use of CBlockIndex into an api right now would be a ton of work/review/diff
+19:21:06 <sipa> the criterion would be that we ourself want to use it
+19:21:13 <wumpus> later on it may make sense to not support storing all headers in memory, but let's let's not try to do everything atonce
+19:21:26 <wumpus> s/not support/support not/
+19:21:27 <sipa> if the API somehow needs to miss features, e.g. because adding some cache is hard, that goal is already broken
+19:21:28 <CodeShark> no need for premature optimization here
+19:21:38 <CodeShark> header storage is not a bottleneck ;)
+19:21:44 <sipa> CodeShark: it's not premature optimized. it's breaking existing optimization
+19:21:51 <kanzure> CBlockIndex usage is not necessarily libconsensus-only, right?
+19:21:56 <jtimon> I was speaking both memory and disk storage, for all I know, some callers may have the headers on disk and maybe others have the whole utxo in memory
+19:21:59 <sipa> storage isn't, but block index traversal needs to be past
+19:22:00 <sipa> *fast
+19:22:06 <kanzure> i mean that's only because nobody wants to maintain a CBlockIndex and also libconsensus, ya?
+19:22:20 <sipa> kanzure: i have no clue what you're talking about
+19:22:33 <Victorsueca> kanzure: maybe we could define "storage" as the port where you request/send data that needs to be stored but is not immediately required
+19:22:50 <sipa> storage... port?
+19:22:51 <sipa> wth?
+19:22:57 <wumpus> I think a good goal should be that we could use libconsensus ourselves, at least it will have one client then :)
+19:22:57 <kanzure> (i was responding to "refactoring every use of CBlockIndex into an api".)
+19:23:20 <CodeShark> let's not get sidetracked
+19:23:25 <wumpus> please, let's not split hairs over definitions
+19:23:26 <Victorsueca> sipa: not a network port obv
+19:23:27 <wumpus> any other topics?
+19:23:36 <cfields_> wumpus: +1. As a side-effect, that also forces devs to become familiar with it.
+19:23:57 <gmaxwell> sorry, went to sleep during API discussions. I agree that the library should be used by bitcoin core if it is to exist. :)
+19:24:05 <gmaxwell> (I also support it existing, to be clear!)
+19:24:10 <wumpus> cfields_: right, so it's possible to fork bitcoin core but still use the same libconsensus, for example
+19:24:10 <jtimon> BlueMatt: an interface for CBlockIndex wouldn't requiore a ton of review, just some review. Remember you can use wrappers for the old stuff and only libconsensus needs to use the interface (uppper layers can remain using CBlockIndex directly), please see https://github.com/bitcoin/bitcoin/pull/8493
+19:25:04 <wumpus> gmaxwell: if some topic isn't interesting to you, you don't need to be loud about that
+19:25:13 <jonasschnelli> Would it hurt if the libb*'s blockstorage be completly decoupled from the CBlockIndex, new structures, etc. as a first step?
+19:25:32 <sipa> jonasschnelli: we're not even talking about block storage
+19:25:40 <jonasschnelli> sorry, heards
+19:25:40 <CodeShark> we're still on headers :p
+19:25:42 <jonasschnelli> headers
+19:26:05 <jtimon> conclusion, nobody seems to want the libconsensus I've been trying to move towards to, and as an external caller I wouldn't want a libconsensus++ (coupled to bitcoin core's storage and concurrency)
+19:26:30 <kanzure> external caller == other wallet?
+19:26:31 <jtimon> you guys want a processBlock function, not a verifyBlock one
+19:26:44 <sipa> jtimon: i think exposing verification functions at different levels is useful
+19:26:49 <jtimon> kanzure: yep, a wallet, an alternative implementation, whatever
+19:26:53 <sipa> exposing headers, individual block, total block, ...
+19:27:07 <sipa> jtimon: but the question is about whether or not to abstract out the state needed for that
+19:27:08 <jtimon> sipa: cool, BlueMatt seem to think it's not
+19:27:23 <sipa> those are independent questions
+19:27:26 <jtimon> in any case, you don't want a verifyHeader independent of storage
+19:27:57 <kanzure> jtimon: yes to me it sounds like you need to pass to libconsensus a reference to something that implements storage.  but iirc there are some concerns about consensus-coupled storage backend details.
+19:28:01 <sipa> i think it would hurt our own usage of it, as it means fewer opportunities to improve memory usage
+19:28:06 <jtimon> sipa: I think "is it needed" it's not the question, nothing is needed, the wuestion is what we want to do
+19:28:19 <sipa> what i want to do is have the consensus code abstracted out
+19:28:21 <wumpus> it is needed if it is used by us
+19:28:31 <sipa> modularized
+19:28:38 <jtimon> kanzure: I highly doubt libbitcoin will ever use a libconsensus that's coupled to bitcoin's storage and concurrency, for example
+19:28:49 <BlueMatt> jtimon: I have no problem exposing a verifyblock function that makes no external state lookups, but I dont think its so useful
+19:28:50 <sipa> that doesn't mean we need to abstract out every data structure it uses
+19:29:07 <BlueMatt> jtimon: I dont see much use for a verifyblock function that makes external state calls when you could just do processnewblock
+19:29:08 <kanzure> jtimon: well the complicating detail here is that folks probably just want to use core's current storage implementation details (etc) to cut down on work, i think.
+19:29:33 <CodeShark> breaking out the storage engine can be done independently
+19:29:50 <wumpus> BlueMatt: yes, I remember we discussed that before, too :)
+19:29:51 <kanzure> what is the concurrency coupling that jtimon mentions in particular
+19:30:00 <sipa> CodeShark: we're not really talking about (disk) storage here, just in-memory representation of data structures
+19:30:07 <BlueMatt> wumpus: yes, this is exactly the discussion we had in milan
+19:30:15 <jtimon> BlueMatt: right, I believe some callers don't want the library to do the processnewblock because they want to do certain things themselves (for example, libbitcoin AFAIK)
+19:30:42 <BlueMatt> jtimon: have you spoken much to these folks? (I dont know, just asking, would love to see their responses)
+19:31:13 <jtimon> kanzure: if it's to cut down on work we can have both, that was my conclusion from a previous discussion with luke
+19:31:17 <wumpus> can we worry about that later? I think a good first goal would be to make the libarary useful for us, I agree with sipa that tha doesn't need abstracting every data structure
+19:31:33 <sipa> yes, abstracting the data structures can still happen later
+19:31:38 <wumpus> I think this is typical bitcoin scope creep
+19:31:45 <CodeShark> yes - modularization is what's most important, then we can further optimize each unit
+19:31:48 <kanzure> sounds like an emphasis on code movement first
+19:31:48 <jtimon> BlueMatt: mostly only to erik from libbitcoin, but yeah, probably we should ask around before trying to guess what they want
+19:31:51 <wumpus> nothing will ever get done this way and we keep repeating the same discussions
+19:32:29 <wumpus> +tons of huge code changes that will take ages to review
+19:32:46 <jtimon> I want libwally to use verifyHeader, its main author has seen #8493 but I don't know what he would think about a version with "storage included"
+19:33:00 <sipa> jtimon: one reason for me is that for some things, performance is in fact consensus critical, and requiring the user of the library to implement their own optimized data structures is essentially requiring them to implement some portion of consensus-critical code
+19:33:47 <wumpus> I just think it'd make sense to aim for a near-term goal of exposing something, instead of trying to refactor the whole code base first
+19:33:56 <CodeShark> the focus for now should be on separation of units and removing dependencies
+19:33:57 <jtimon> well, all I want is to have a common and clear idea of what libconsensus should be
+19:34:10 <sipa> while we already have optimized data structures, and not abstracting them out leaves more opportunities for future such optimizations
+19:34:14 <wumpus> it should be a libarary that we ourselves can use for consensus validation
+19:34:36 <wumpus> sipa: exactly! *not* exposing something as part of the API leaves flexibility to improve things later
+19:34:46 <wumpus> sipa: putting it in the API/ABI effectively sets it in stone
+19:34:47 <jtimon> CodeShark: but then people won't "see the point" of taking consensus code out of main...
+19:34:55 <CodeShark> ?
+19:35:07 <CodeShark> there
+19:35:13 <morcos> I think it would be nice if we proceeded down _a_ path right now but left ourselves open to revisiting some of these decisions as we get further along.
+19:35:30 <morcos> For instance I disagree a bit with the flexibility when it comes to cache optimization for pcoinstip.
+19:35:33 <CodeShark> there's a very simple justification for it - moving the code out of main.cpp means far simpler merging of code changes
+19:35:43 <jtimon> CodeShark: ie #8337 #8329
+19:35:54 <morcos> But we don't have to answer all those questions right now
+19:36:02 <sipa> jtimon: i think everyone agrees that modularizing consensus code is a good idea, independent of whether it's exposed as a library, or has refactorings for data structures or not
+19:36:11 <sipa> morcos: agree
+19:36:13 <kanzure> jtimon: you are referring to friction with code separation changes? i think some of that friction can be ameliorated by having it a prioritized shared goal (like segwit was).
+19:36:58 <CodeShark> kanzure: indeed
+19:37:02 <jtimon> sipa: the thing is some dependencies remain "hidden" or hard to see until you separate stuff or try to move the "consensus files" to the consensus module to expose something
+19:37:37 <sipa> jtimon: well things may not be easy
+19:37:40 <jtimon> kanzure: I would love that
+19:37:45 <CodeShark> let's not get hung up on how the lib API will be exposed and start working on moving code into separate units
+19:38:02 <Chris_Stewart_5> ^
+19:38:09 <BlueMatt> ^
+19:38:12 <jeremyrubin> ^
+19:38:16 <sipa> v
+19:38:17 <jtimon> CodeShark: I'm happy with that
+19:38:21 <jtimon> I tried that too
+19:38:23 <Chris_Stewart_5> always one sipa..
+19:38:53 <jtimon> but some people asked for the final API...
+19:38:54 <sipa> i'd really just want to see a proposal of a directory structure
+19:39:00 <kanzure> jtimon: iirc you in the past have had problems with some pull requests because others would complain about additional merge/rebase work for their unrelated changes.
+19:39:12 <sipa> which explains code responsible for what belongs where
+19:39:20 <jtimon> sipa: I gave you one: all consensus fles except those in crypto to the consensus dir
+19:39:28 <sipa> jtimon: that's not an answer
+19:39:36 <jtimon> it is one you don't like
+19:39:38 <sipa> there is code shared between consensus and non-consensus
+19:39:46 <sipa> what happens to script? is it split up again?
+19:39:51 <sipa> where does the signing code go?
+19:40:02 <jtimon> but I really don't see how can we make a subrepository or subtree out of libconsensus otherwise
+19:40:03 <kanzure> sipa did you read jtimon's libconsensus doc by any chance
+19:40:05 <sipa> do we duplicate consensu logic?
+19:40:09 <jtimon> sipa: signing code is not consensus
+19:40:14 <sipa> sigh
+19:40:18 <sipa> i know that
+19:40:30 <jtimon> it remains in the common package
+19:40:41 <jtimon> and the script dir
+19:40:52 <sipa> ok, i'll shut up about it
+19:41:00 <wumpus> I think this is monipolizing the meeting. ANy othe topics to be discussed?
+19:41:04 <sipa> i can't seem to get my point across
+19:41:15 <jtimon> no, you brought this point more times
+19:41:23 <CodeShark> can we set as a goal to prioritize some moveonly PRs?
+19:41:29 <sipa> yes, and i have never seen you give an answer to my question
+19:41:47 <CodeShark> sipa, jtimon, let's save that for after the meeting
+19:42:26 <CodeShark> can we agree for the time being to define a directory structure and prioritize moveonly PRs?
+19:42:36 <jtimon> sure I really want to understand his concerns better. It seems related to the discussion we had around luke's script "debugger"
+19:42:43 <wumpus> I can't prioritize moveonly PRs. There's just too much happening
+19:42:57 <CodeShark> wumpus: the idea is that they should be super simple to review
+19:43:05 <sipa> CodeShark: you underestimate it
+19:43:13 <michagogo> achow101: looks like it finished uploading, if you want to try it
+19:43:19 <sipa> moving the code is easy. deciding where things belong is not.
+19:43:20 <wumpus> but if people prioritize reviewing them, sure
+19:43:23 <kanzure> oh is review the bottleneck? i keep thinking it's "lots of other rebase work" for other pulls.
+19:43:36 <jtimon> wumpus: I think it being a priority for reviewers is more important
+19:43:39 <wumpus> kanzure: that's also an issue
+19:43:39 <sipa> kanzure: imho the bottleneck is no agreement about what should be done
+19:43:41 <michagogo> Wait, it's Thursday... sorry, didn't realize meeting was happening
+19:43:43 * michagogo scrolls up
+19:43:52 <jtimon> kanzure: I strongly feel review is the bottleneck
+19:44:17 <instagibbs_> proposed topic: rc2 issues, etc?
+19:44:18 <wumpus> kanzure: though not always a strong one, usually it's fairly easy to rebase over pure moves. As long as people agree that they should be done.
+19:44:30 <kanzure> oh. alright.
+19:44:31 <jtimon> CodeShark: also I think you understimate the potential for disagreements
+19:44:34 <Chris_Stewart_5> How do we keep this from being discussed for the next 3 meetings is my question. What can actually be done persuade people one way or the other?
+19:44:54 <CodeShark> can we at least agree to start discussing a directory structure? ;)
+19:45:00 <CodeShark> (after this meeting, of course)
+19:45:03 <jtimon> CodeShark: ACK
+19:45:32 <wumpus> Chris_Stewart_5: you tell me
+19:45:41 <morcos> Someone should schedule a small in-person retreat for people who really want to work on libconsensus, to make some headway
+19:45:57 <kanzure> Chris_Stewart_5: perhaps sipa could make a proposal if we ask nicely.
+19:46:01 <jtimon> I already buried my hopes of libconsensus becoming eventually C
+19:46:01 <wumpus> Chris_Stewart_5: preventing the topic from being discussed is quite easy, but I think that would be seen as censorship :)
+19:46:05 <Chris_Stewart_5> This is ALL libbconsensus right? Is tehre any concrete proposals?
+19:46:25 <instagibbs_> 14 minutes in case anyone wants to discuss anything else
+19:46:41 <jtimon> Chris_Stewart_5: afaik the most concrete proposal right now is #8493
+19:46:41 <wumpus> instagibbs_: I asked in the beginning, don't think there's any issues with rc2 yet
+19:46:45 <kanzure> Chris_Stewart_5: jtimon has made a number of proposals, such as https://github.com/jtimon/consensus-doc/blob/generated/libconsensus.pdf https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-October/013204.html
+19:47:04 <Chris_Stewart_5> Thanks, i'll take a look at it.
+19:47:15 <kanzure> ah 8493 is expose verifyheader. ok.
+19:47:21 <instagibbs_> wumpus: ok great
+19:48:07 <CodeShark> so any other topics?
+19:48:08 <Chris_Stewart_5> rc2 issues?
+19:48:16 <wumpus> which rc2 issues?
+19:48:40 <BlueMatt> the lack of rc2 issues =D
+19:48:43 <Chris_Stewart_5> *crickets*
+19:48:50 <wumpus> 19:46 < wumpus> instagibbs_: I asked in the beginning, don't think there's any issues with rc2 yet
+19:48:59 <kanzure> i think he was asking to hear for any
+19:49:01 <wumpus> if there are, feel free to say so
+19:49:14 <achow101> what about killing off windows 32 bit builds?
+19:49:31 <jonasschnelli> I guess in 0.15
+19:49:33 <wumpus> that's not an urgent topic really
+19:49:36 <wumpus> yes, 0.15 I'd say too
+19:50:10 <wumpus> I asked around and from 50 or so 'no' responses, there were two actual users admitting they were still using bitcoin core on windows 32-bit
+19:50:24 <sipa> are there likely some who don't know?
+19:50:29 <wumpus> they both expected this to stilll last only 6 months or so no longer
+19:50:31 <wumpus> old hw
+19:50:35 <gmaxwell> I haven't encountered any issues in RC2 yet, though its a bit new. The PR of mine that was merged appears to be working.
+19:50:52 <jonasschnelli> If we have no other topic, we can discuss if we want to adjust the GUI default confirmation target down to the RPC interfaces value of 2 blocks
+19:50:54 <wumpus> so that would time with 0.15, which is fine with me, no hurry
+19:51:27 <Victorsueca> gmaxwell: the lastest travis build seems to have failed for master
+19:51:30 <instagibbs_> jonasschnelli: yeah i suggested this a bit ago
+19:51:43 <jonasschnelli> 25 blocks as "normal" confirmation speed sounds ridiculous
+19:51:45 <achow101> jonasschnelli: I think it's a good idea
+19:51:46 <instagibbs_> i dont understand why having different command line and GUI behavior like that is "good"
+19:51:57 <morcos> jonasschnelli: to be honest, i actually agree we should make the target less than 25, but I think 2 is too low, and i think we're going to bikeshed where it should be
+19:52:12 <jonasschnelli> Yes. I fear that as well. :)
+19:52:14 <sipa> it seems reasonable that the default in gui and rpc is the same
+19:52:18 <instagibbs_> morcos: "match between command-line and GUI" is a starting point :)
+19:52:21 <BlueMatt> jonasschnelli: I'm for 25
+19:52:23 <BlueMatt> 25 is good
+19:52:24 <morcos> the issue is that when there is a break between blocks or network congestion, to be really sure you get confirmed very quickly, say in a couple of blocks
+19:52:26 <jonasschnelli> And the slider should probably not touch nTxConfirmTarget!
+19:52:30 <jonasschnelli> global!
+19:52:30 <morcos> then you might have to pay areally high fee
+19:52:33 <MarcoFalke> jonasschnelli: This should be uncontroversial. And actually it is a bug in the current code, as the default already says 25, but the slider is "mirrored", so it ends up on the wrong side.
+19:52:37 <morcos> which is priobably not what you want
+19:53:00 <MarcoFalke> I never fixed it because I wanted to clean it up "in a go" with all the other nasty things the gui does with the "fee"-globals
+19:53:13 <morcos> more intelligent fee estimation would maybe gauge the current conditions against historical conditions or something.
+19:53:20 <gmaxwell> Is anyone working on improving the estimator generally, right now?
+19:53:34 <jonasschnelli> I think there are some users fooled by the fact that RPCs sendto* uses different fee estimations then the "default" GUI send method.
+19:53:46 <gmaxwell> It could use improvement, though I think bumping is more important.
+19:53:49 <jonasschnelli> I mean only different confirmations targets
+19:53:53 <morcos> MarcoFalke: i dont think it was a bug.  i noticed it when it went in and i thought it was on purpose, i think we discussed it at a time
+19:54:01 <MarcoFalke> ok
+19:54:02 <jonasschnelli> Someone should review the new bumpfee PR.
+19:54:17 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/8456
+19:54:25 <morcos> gmaxwell: i mentioned on that issue that i had worked on it..  6-9 months ago..  but abandoned it.  i have some custom code that does a lot more
+19:54:29 <morcos> but nothing that really got polished
+19:54:35 <wumpus> yes, we *must* have a bumpfee for 0.14
+19:54:40 <kanzure> morcos: had you looked at bramc's work on fee estimation?
+19:55:35 <morcos> kanzure: i've been shying away from algorithms which require replacement.  i think its a great idea, but not how most users expect their default transactions to work.  I think most users want them to get confirmed relatively quickly on the first try.
+19:55:45 <morcos> But an algorithm for bumping when you guess too low makes sense.
+19:56:08 <gmaxwell> in any case, in my expirence the core estimator usually produces fees which are generally too high (compared to what gets confirmed in the next block, also compared e.g. to 21inc's estimator), having a higher confirmed target helps reduce the impact.
+19:56:39 <morcos> so to be clear, if someone else has an idea of how it should be improved, please go ahead.  and i'm happy to help.  but its just one of those things that there is no "right" answer for so it can get frustrating
+19:57:04 <gmaxwell> I was just wondering if there was anything ongoing at the moment.
+19:57:11 <gmaxwell> (since the subject came up)
+19:57:11 <jonasschnelli> What about changing the default confirmation target to 6 for RPC interface and the GUI once we have the bumpfee cmd?
+19:57:15 <Victorsueca> as example, most of my transactions where I set the fee slider to 25 it confirmed on the next 2 blocks
+19:57:23 <morcos> gmaxwell: yes, exactly and thats by design.  i interprested the question of what does it take to be confirmed in X blocks as meaning you really want to be very sure it'll be confirmed wihtin the target
+19:57:31 <jonasschnelli> Victorsueca: users made different experiences with that
+19:57:51 <gmaxwell> morcos: And that is what it must do, esp when there is no bump. :)
+19:57:51 <morcos> thats why i hesitate to set the default to 2
+19:58:08 <jtimon> 2 mins
+19:58:19 <morcos> jonasschnelli: i like 6, and i'd be fine with that....
+19:58:25 <instagibbs_> overpaying is fine until we have bump, heh
+19:58:31 <gmaxwell> I would be too.
+19:58:47 <Victorsueca> jonasschnelli: yeah, I seen too lots of people blaming slow transactions even with recommended fee, but not my case for some reason
+19:58:48 <CodeShark> wouldn't overpaying tend to raise fees up?
+19:59:05 <CodeShark> for everyone
+19:59:19 <wumpus> only if everyone is going to do that
+19:59:20 <morcos> CodeShark: ah, that is one of bramc's concerns.  i think the existing algo is pretty resistant to that
+19:59:29 <jtimon> CodeShark: I could think of some kind of overpaying race
+19:59:31 <jonasschnelli> Most important is probably review of mrbandrews's bumpfee (https://github.com/bitcoin/bitcoin/pull/8456)
+19:59:36 <morcos> yes unless literally everyone does it
+19:59:39 <MarcoFalke> We should just set it to a random value *ducks*
+19:59:40 <instagibbs_> Assuming everyone is transacting at the same exact time, sure. But there's time preferences in real life, week/weekend patterns
+19:59:41 <instagibbs_> etc
+19:59:54 <wumpus> instagibbs_: +1
+19:59:58 <instagibbs_> bitcoin businesses will do settlement on sunday evening to avoid fees
+20:00:01 <sipa> TINGELINGELING
+20:00:08 <wumpus> #endmeeting

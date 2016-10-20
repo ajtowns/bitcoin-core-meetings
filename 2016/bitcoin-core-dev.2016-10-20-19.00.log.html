@@ -1,0 +1,402 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:15</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Oct 20 19:00:15 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:15</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:24</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-5"></a><span class="tm">19:00:38</span><span class="nk"> &lt;sipa&gt;</span> proposed cheer: yay for 0.13.1rc
+<a name="l-6"></a><span class="tm">19:00:45</span><span class="nk"> &lt;CodeShark&gt;</span> ^ :DDD
+<a name="l-7"></a><span class="tm">19:00:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-8"></a><span class="tm">19:00:55</span><span class="nk"> &lt;wumpus&gt;</span> yay for 0.13.1rc, haven't heard of any real problems yet
+<a name="l-9"></a><span class="tm">19:01:15</span><span class="nk"> &lt;achow101&gt;</span> hmm. where's gmaxwell-ping-bot
+<a name="l-10"></a><span class="tm">19:01:23</span><span class="nk"> &lt;wumpus&gt;</span> not that it says much given how short it's been out, but ok, it's somewhat promising :)
+<a name="l-11"></a><span class="tm">19:01:53</span><span class="nk"> &lt;CodeShark&gt;</span> if only execution paths with problems tended to occur first :p
+<a name="l-12"></a><span class="tm">19:02:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-13"></a><span class="tm">19:02:07</span><span class="nk"> &lt;jtimon&gt;</span> proposed topic: libconsensus: do we want to expose a verifyBlock function or a processblock one? do we want to expose verifyHeader and verifyTx ?
+<a name="l-14"></a><span class="tm">19:02:34</span><span class="nk"> &lt;btcdrak&gt;</span> here
+<a name="l-15"></a><span class="tm">19:02:50</span><span class="nk"> &lt;wumpus&gt;</span> ah yes I have another topic about the libconsensus interface: what to do with undocumented flags
+<a name="l-16"></a><span class="tm">19:02:51</span><span class="nk"> &lt;instagibbs_&gt;</span> present
+<a name="l-17"></a><span class="tm">19:02:59</span><span class="nk"> &lt;btcdrak&gt;</span> ping jl2012
+<a name="l-18"></a><span class="tm">19:03:01 </span><span class="nka">* paveljanik</span> <span class="ac">here</span>
+<a name="l-19"></a><span class="tm">19:03:08</span><span class="nk"> &lt;jl2012&gt;</span> yes
+<a name="l-20"></a><span class="tm">19:03:10</span><span class="nk"> &lt;wumpus&gt;</span> jl2012 was already here
+<a name="l-21"></a><span class="tm">19:03:35</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> like bip113 ? or more like bip30 ?
+<a name="l-22"></a><span class="tm">19:03:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> https://github.com/bitcoin/bitcoin/pull/8976
+<a name="l-23"></a><span class="tm">19:03:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">libconsensus</span>
+<a name="l-24"></a><span class="tm">19:04:05</span><span class="nk"> &lt;wumpus&gt;</span> currently it's possible to pass non-consensus flags into libconsensus
+<a name="l-25"></a><span class="tm">19:04:07</span><span class="nk"> &lt;wumpus&gt;</span> e.g. policy only flags
+<a name="l-26"></a><span class="tm">19:04:25</span><span class="nk"> &lt;CodeShark&gt;</span> yes, that should be pulled out
+<a name="l-27"></a><span class="tm">19:04:26</span><span class="nk"> &lt;sipa&gt;</span> i believe we should not expose policy functions in libconsensus
+<a name="l-28"></a><span class="tm">19:04:49</span><span class="nk"> &lt;sipa&gt;</span> as that would make it impossible to later split off policy code into a separate codebase
+<a name="l-29"></a><span class="tm">19:04:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-30"></a><span class="tm">19:05:00</span><span class="nk"> &lt;sipa&gt;</span> and consensus code should end up being isolated
+<a name="l-31"></a><span class="tm">19:05:04</span><span class="nk"> &lt;wumpus&gt;</span> ok so that means you agree with #8976
+<a name="l-32"></a><span class="tm">19:05:10</span><span class="nk"> &lt;instagibbs_&gt;</span> was there thought otherwise? (I'm outsider to this work)
+<a name="l-33"></a><span class="tm">19:05:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/8976
+<a name="l-34"></a><span class="tm">19:05:21</span><span class="nk"> &lt;CodeShark&gt;</span> yeah, doesn't seem very controversial
+<a name="l-35"></a><span class="tm">19:05:22</span><span class="nk"> &lt;jtimon&gt;</span> I agree, currently it is not possible (at least using bitcoinconsensus_verifyScript)
+<a name="l-36"></a><span class="tm">19:05:32</span><span class="nk"> &lt;instagibbs_&gt;</span> ah I see what you mean
+<a name="l-37"></a><span class="tm">19:05:32</span><span class="nk"> &lt;wumpus&gt;</span> no, I don't think so. But people may be relying on this. I don't know anyone that does though.
+<a name="l-38"></a><span class="tm">19:05:37</span><span class="nk"> &lt;wumpus&gt;</span> and NicolasDorier is okay with it
+<a name="l-39"></a><span class="tm">19:05:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> dont have a strong opinion, but I'm fine with that
+<a name="l-40"></a><span class="tm">19:06:04</span><span class="nk"> &lt;wumpus&gt;</span> if there is to be a policy script library it'll need to be separate imo
+<a name="l-41"></a><span class="tm">19:06:15</span><span class="nk"> &lt;jtimon&gt;</span> btw, currently the flags in script/bitcoinconsensus.h and in script/interpreter.h need to match, that shouldn't be the case
+<a name="l-42"></a><span class="tm">19:06:20</span><span class="nk"> &lt;wumpus&gt;</span> this is lib*consensus*
+<a name="l-43"></a><span class="tm">19:06:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> agree
+<a name="l-44"></a><span class="tm">19:06:23</span><span class="nk"> &lt;sipa&gt;</span> eh, jtimon: agree
+<a name="l-45"></a><span class="tm">19:06:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> no, they don't need to match, that's just an artifact
+<a name="l-46"></a><span class="tm">19:06:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> is there are translation layer?
+<a name="l-47"></a><span class="tm">19:07:00</span><span class="nk"> &lt;wumpus&gt;</span> although it's no longer possible to change the flags now
+<a name="l-48"></a><span class="tm">19:07:10</span><span class="nk"> &lt;wumpus&gt;</span> ABI for libconsensus is fixed
+<a name="l-49"></a><span class="tm">19:07:20</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I mean, if I change  bitcoinconsensus_SCRIPT_FLAGS_VERIFY_WITNESS             = (1U &lt;&lt; 11) to some other number different from 11, things won't work
+<a name="l-50"></a><span class="tm">19:07:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> no, that was never added
+<a name="l-51"></a><span class="tm">19:07:28</span><span class="nk"> &lt;sipa&gt;</span> we should add one
+<a name="l-52"></a><span class="tm">19:07:35</span><span class="nk"> &lt;sipa&gt;</span> and keep the flags for the existing bits
+<a name="l-53"></a><span class="tm">19:07:35</span><span class="nk"> &lt;jtimon&gt;</span> agreed
+<a name="l-54"></a><span class="tm">19:07:40</span><span class="nk"> &lt;sipa&gt;</span> as passthrough
+<a name="l-55"></a><span class="tm">19:07:42</span><span class="nk"> &lt;wumpus&gt;</span> yes, there should be a translation layer, though the current bits can no longer be changed
+<a name="l-56"></a><span class="tm">19:07:45</span><span class="nk"> &lt;wumpus&gt;</span> agreed
+<a name="l-57"></a><span class="tm">19:07:46</span><span class="nk"> &lt;sipa&gt;</span> but new ones can fill up the holes
+<a name="l-58"></a><span class="tm">19:08:12</span><span class="nk"> &lt;jtimon&gt;</span> btw, related branch: https://github.com/jtimon/bitcoin/commits/0.13-consensus-flags
+<a name="l-59"></a><span class="tm">19:08:15</span><span class="nk"> &lt;wumpus&gt;</span> at the lesat we should add the error when invalid flags are passed
+<a name="l-60"></a><span class="tm">19:08:26</span><span class="nk"> &lt;CodeShark&gt;</span> is anyone using these flags as ints rather than just as an enum?
+<a name="l-61"></a><span class="tm">19:08:31</span><span class="nk"> &lt;wumpus&gt;</span> this will discourage people from doing what they're doing now, e.g. treating it as a pass-through
+<a name="l-62"></a><span class="tm">19:09:05</span><span class="nk"> &lt;wumpus&gt;</span> they're using it as an unsigned int because that's the type passed in, remember it's a C interface, enums don't support bit field combos
+<a name="l-63"></a><span class="tm">19:09:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> we're already abusing enum here. it's a bit field, not an enum
+<a name="l-64"></a><span class="tm">19:09:14</span><span class="nk"> &lt;sipa&gt;</span> the enum is just an easy way to give the constants name
+<a name="l-65"></a><span class="tm">19:09:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> AFAIK there used always like if (flags &amp; MY_FLAG)
+<a name="l-66"></a><span class="tm">19:09:36</span><span class="nk"> &lt;sipa&gt;</span> for almost all operations we do with these enums, they decay into integers
+<a name="l-67"></a><span class="tm">19:09:41</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-68"></a><span class="tm">19:09:56</span><span class="nk"> &lt;CodeShark&gt;</span> right - I meant, does it matter if we shuffle the bits as long as the integer values are not used anywhere outside the definitions?
+<a name="l-69"></a><span class="tm">19:10:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> that breaks the ABI
+<a name="l-70"></a><span class="tm">19:10:13</span><span class="nk"> &lt;wumpus&gt;</span> you can't shuffle the bits because it would break the *binary* interface
+<a name="l-71"></a><span class="tm">19:10:18</span><span class="nk"> &lt;CodeShark&gt;</span> oh...
+<a name="l-72"></a><span class="tm">19:10:19</span><span class="nk"> &lt;sipa&gt;</span> you can't link with an older version of the library in that case
+<a name="l-73"></a><span class="tm">19:10:23</span><span class="nk"> &lt;CodeShark&gt;</span> ok
+<a name="l-74"></a><span class="tm">19:10:30</span><span class="nk"> &lt;CodeShark&gt;</span> gotcha
+<a name="l-75"></a><span class="tm">19:10:43</span><span class="nk"> &lt;wumpus&gt;</span> the idea is that you can jsut drop in the 0.13.1 consensus library in place of the 0.13.0 one and it will work
+<a name="l-76"></a><span class="tm">19:11:08</span><span class="nk"> &lt;sipa&gt;</span> without recompiling your client
+<a name="l-77"></a><span class="tm">19:11:10</span><span class="nk"> &lt;wumpus&gt;</span> arguably the SEGWIT bit can be moved until 0.13.1 is finalized, but meh
+<a name="l-78"></a><span class="tm">19:11:23</span><span class="nk"> &lt;sipa&gt;</span> indeed, meh.
+<a name="l-79"></a><span class="tm">19:12:06</span><span class="nk"> &lt;jtimon&gt;</span> these are the consensus flags I end with in that branch: https://github.com/jtimon/bitcoin/blob/0.13-consensus-flags/src/consensus/flags.h
+<a name="l-80"></a><span class="tm">19:12:10</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> so you're saying we can reuse the bits that get vacated when we remove the policy flags
+<a name="l-81"></a><span class="tm">19:12:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> yes
+<a name="l-82"></a><span class="tm">19:12:34</span><span class="nk"> &lt;sipa&gt;</span> as those were never part of the abi
+<a name="l-83"></a><span class="tm">19:12:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> the policy flags were never really allowed by the interface, it's a bug that it posibble to specify them at all
+<a name="l-84"></a><span class="tm">19:12:40</span><span class="nk"> &lt;sipa&gt;</span> *api
+<a name="l-85"></a><span class="tm">19:12:58</span><span class="nk"> &lt;wumpus&gt;</span> this is what #8976 fixes by adding input checking on the flags
+<a name="l-86"></a><span class="tm">19:13:14</span><span class="nk"> &lt;jtimon&gt;</span> and my preference would be to expose a GetConsensusFlags call in libconsensus too
+<a name="l-87"></a><span class="tm">19:13:35</span><span class="nk"> &lt;wumpus&gt;</span> what would that do?
+<a name="l-88"></a><span class="tm">19:13:36</span><span class="nk"> &lt;jtimon&gt;</span> to hide the bip9 and previous developments stuff
+<a name="l-89"></a><span class="tm">19:14:11</span><span class="nk"> &lt;jtimon&gt;</span> you call it, now you know which flags to use verifyScript, verifyTx or verifyBlock (or verifyBlock could call it internally)
+<a name="l-90"></a><span class="tm">19:14:44</span><span class="nk"> &lt;sipa&gt;</span> and you pass in all block headers?
+<a name="l-91"></a><span class="tm">19:14:52</span><span class="nk"> &lt;jtimon&gt;</span> https://github.com/jtimon/bitcoin/blob/0.13-consensus-flags/src/versionbits.cpp#L153
+<a name="l-92"></a><span class="tm">19:15:20</span><span class="nk"> &lt;jtimon&gt;</span> no, the same CBlockIndex interface used for verifyHeader
+<a name="l-93"></a><span class="tm">19:15:59</span><span class="nk"> &lt;sipa&gt;</span> i really don't like turning our internal representation for headers into an index
+<a name="l-94"></a><span class="tm">19:15:59</span><span class="nk"> &lt;jtimon&gt;</span> similar to https://github.com/bitcoin/bitcoin/pull/8493
+<a name="l-95"></a><span class="tm">19:16:11</span><span class="nk"> &lt;sipa&gt;</span> *into an interface
+<a name="l-96"></a><span class="tm">19:16:13</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> agreed
+<a name="l-97"></a><span class="tm">19:16:22</span><span class="nk"> &lt;CodeShark&gt;</span> it could be done better
+<a name="l-98"></a><span class="tm">19:16:24</span><span class="nk"> &lt;jtimon&gt;</span> other ideas to interface with storage ?
+<a name="l-99"></a><span class="tm">19:16:31</span><span class="nk"> &lt;CodeShark&gt;</span> without exposing all that crap
+<a name="l-100"></a><span class="tm">19:16:33</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> how?
+<a name="l-101"></a><span class="tm">19:16:46</span><span class="nk"> &lt;sipa&gt;</span> just have an API where you can create a blockindexstore, and you give it headers
+<a name="l-102"></a><span class="tm">19:17:00</span><span class="nk"> &lt;sipa&gt;</span> which are copied into the blockindexstore
+<a name="l-103"></a><span class="tm">19:17:04</span><span class="nk"> &lt;CodeShark&gt;</span> yes
+<a name="l-104"></a><span class="tm">19:17:18</span><span class="nk"> &lt;jtimon&gt;</span> so libconsensus remains coupled with our storage?
+<a name="l-105"></a><span class="tm">19:17:28</span><span class="nk"> &lt;sipa&gt;</span> that's my personal preference
+<a name="l-106"></a><span class="tm">19:17:33</span><span class="nk"> &lt;CodeShark&gt;</span> well...hmmm
+<a name="l-107"></a><span class="tm">19:17:36</span><span class="nk"> &lt;jtimon&gt;</span> I wasn't planning on taking any headers from callers
+<a name="l-108"></a><span class="tm">19:17:38</span><span class="nk"> &lt;kanzure&gt;</span> i don't mean to go all pointy hair or anything, but what is current expectation around libconsensus separation milestone timelines
+<a name="l-109"></a><span class="tm">19:17:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> nobody even agrees what libconsensus means.
+<a name="l-110"></a><span class="tm">19:17:59</span><span class="nk"> &lt;kanzure&gt;</span> perfect
+<a name="l-111"></a><span class="tm">19:18:19</span><span class="nk"> &lt;CodeShark&gt;</span> the header storage engine is quite trivial, actually
+<a name="l-112"></a><span class="tm">19:18:37</span><span class="nk"> &lt;CodeShark&gt;</span> not sure it needs an abstract DB interface...but on the other hand...
+<a name="l-113"></a><span class="tm">19:18:39</span><span class="nk"> &lt;wumpus&gt;</span> I think the previous conslusion was that libconsensus should remain coupled with the current caching layer, but not with leveldb
+<a name="l-114"></a><span class="tm">19:18:42</span><span class="nk"> &lt;jtimon&gt;</span> ok, so you guys want the libconsensus++ luke-jr wanted (ie storage included), I would be fine with having both one with storage included and one without it
+<a name="l-115"></a><span class="tm">19:18:53</span><span class="nk"> &lt;BlueMatt&gt;</span> we already discussed this in milan
+<a name="l-116"></a><span class="tm">19:19:04</span><span class="nk"> &lt;wumpus&gt;</span> so the *memory* storage is part of libconsensus
+<a name="l-117"></a><span class="tm">19:19:08</span><span class="nk"> &lt;wumpus&gt;</span> the disk storage is not
+<a name="l-118"></a><span class="tm">19:19:12</span><span class="nk"> &lt;BlueMatt&gt;</span> that
+<a name="l-119"></a><span class="tm">19:19:13</span><span class="nk"> &lt;CodeShark&gt;</span> ok
+<a name="l-120"></a><span class="tm">19:19:14</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> yeah, you and me discussed it a little, with no conclusion
+<a name="l-121"></a><span class="tm">19:19:29</span><span class="nk"> &lt;wumpus&gt;</span> right,we discussed that in Milan
+<a name="l-122"></a><span class="tm">19:19:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> my fear is that it's very hard to create a stable API for storage of headers... things like BIP9 cache and the skiplist for example are things that would break the API, but such changes may be needed in the future
+<a name="l-123"></a><span class="tm">19:19:32</span><span class="nk"> &lt;kanzure&gt;</span> meaning of "storage" has to be carefully defined
+<a name="l-124"></a><span class="tm">19:19:45</span><span class="nk"> &lt;sipa&gt;</span> they're perfectly compatible with a store into which you can load headers, though
+<a name="l-125"></a><span class="tm">19:20:12</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> so let's break the API, users of libconsensus++ may have a more stable API, but less flexibility and control too
+<a name="l-126"></a><span class="tm">19:20:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> We are speaking of a in-memory only store, right?
+<a name="l-127"></a><span class="tm">19:20:30</span><span class="nk"> &lt;BlueMatt&gt;</span> i think the first target is this, and then, if at some point we decide we want to support no-headers-in-memory, we can add an api for storage
+<a name="l-128"></a><span class="tm">19:20:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes. as currently used for the headers
+<a name="l-129"></a><span class="tm">19:20:36</span><span class="nk"> &lt;BlueMatt&gt;</span> but i think that is further out on the horizon
+<a name="l-130"></a><span class="tm">19:20:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> agreed, that's no issue right now
+<a name="l-131"></a><span class="tm">19:20:57</span><span class="nk"> &lt;BlueMatt&gt;</span> also because refactoring every use of CBlockIndex into an api right now would be a ton of work/review/diff
+<a name="l-132"></a><span class="tm">19:21:06</span><span class="nk"> &lt;sipa&gt;</span> the criterion would be that we ourself want to use it
+<a name="l-133"></a><span class="tm">19:21:13</span><span class="nk"> &lt;wumpus&gt;</span> later on it may make sense to not support storing all headers in memory, but let's let's not try to do everything atonce
+<a name="l-134"></a><span class="tm">19:21:26</span><span class="nk"> &lt;wumpus&gt;</span> s/not support/support not/
+<a name="l-135"></a><span class="tm">19:21:27</span><span class="nk"> &lt;sipa&gt;</span> if the API somehow needs to miss features, e.g. because adding some cache is hard, that goal is already broken
+<a name="l-136"></a><span class="tm">19:21:28</span><span class="nk"> &lt;CodeShark&gt;</span> no need for premature optimization here
+<a name="l-137"></a><span class="tm">19:21:38</span><span class="nk"> &lt;CodeShark&gt;</span> header storage is not a bottleneck ;)
+<a name="l-138"></a><span class="tm">19:21:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> it's not premature optimized. it's breaking existing optimization
+<a name="l-139"></a><span class="tm">19:21:51</span><span class="nk"> &lt;kanzure&gt;</span> CBlockIndex usage is not necessarily libconsensus-only, right?
+<a name="l-140"></a><span class="tm">19:21:56</span><span class="nk"> &lt;jtimon&gt;</span> I was speaking both memory and disk storage, for all I know, some callers may have the headers on disk and maybe others have the whole utxo in memory
+<a name="l-141"></a><span class="tm">19:21:59</span><span class="nk"> &lt;sipa&gt;</span> storage isn't, but block index traversal needs to be past
+<a name="l-142"></a><span class="tm">19:22:00</span><span class="nk"> &lt;sipa&gt;</span> *fast
+<a name="l-143"></a><span class="tm">19:22:06</span><span class="nk"> &lt;kanzure&gt;</span> i mean that's only because nobody wants to maintain a CBlockIndex and also libconsensus, ya?
+<a name="l-144"></a><span class="tm">19:22:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> i have no clue what you're talking about
+<a name="l-145"></a><span class="tm">19:22:33</span><span class="nk"> &lt;Victorsueca&gt;</span> <span class="hi">kanzure:</span> maybe we could define "storage" as the port where you request/send data that needs to be stored but is not immediately required
+<a name="l-146"></a><span class="tm">19:22:50</span><span class="nk"> &lt;sipa&gt;</span> storage... port?
+<a name="l-147"></a><span class="tm">19:22:51</span><span class="nk"> &lt;sipa&gt;</span> wth?
+<a name="l-148"></a><span class="tm">19:22:57</span><span class="nk"> &lt;wumpus&gt;</span> I think a good goal should be that we could use libconsensus ourselves, at least it will have one client then :)
+<a name="l-149"></a><span class="tm">19:22:57</span><span class="nk"> &lt;kanzure&gt;</span> (i was responding to "refactoring every use of CBlockIndex into an api".)
+<a name="l-150"></a><span class="tm">19:23:20</span><span class="nk"> &lt;CodeShark&gt;</span> let's not get sidetracked
+<a name="l-151"></a><span class="tm">19:23:25</span><span class="nk"> &lt;wumpus&gt;</span> please, let's not split hairs over definitions
+<a name="l-152"></a><span class="tm">19:23:26</span><span class="nk"> &lt;Victorsueca&gt;</span> <span class="hi">sipa:</span> not a network port obv
+<a name="l-153"></a><span class="tm">19:23:27</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-154"></a><span class="tm">19:23:36</span><span class="nk"> &lt;cfields_&gt;</span> <span class="hi">wumpus:</span> +1. As a side-effect, that also forces devs to become familiar with it.
+<a name="l-155"></a><span class="tm">19:23:57</span><span class="nk"> &lt;gmaxwell&gt;</span> sorry, went to sleep during API discussions. I agree that the library should be used by bitcoin core if it is to exist. :)
+<a name="l-156"></a><span class="tm">19:24:05</span><span class="nk"> &lt;gmaxwell&gt;</span> (I also support it existing, to be clear!)
+<a name="l-157"></a><span class="tm">19:24:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields_:</span> right, so it's possible to fork bitcoin core but still use the same libconsensus, for example
+<a name="l-158"></a><span class="tm">19:24:10</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> an interface for CBlockIndex wouldn't requiore a ton of review, just some review. Remember you can use wrappers for the old stuff and only libconsensus needs to use the interface (uppper layers can remain using CBlockIndex directly), please see https://github.com/bitcoin/bitcoin/pull/8493
+<a name="l-159"></a><span class="tm">19:25:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> if some topic isn't interesting to you, you don't need to be loud about that
+<a name="l-160"></a><span class="tm">19:25:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Would it hurt if the libb*'s blockstorage be completly decoupled from the CBlockIndex, new structures, etc. as a first step?
+<a name="l-161"></a><span class="tm">19:25:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> we're not even talking about block storage
+<a name="l-162"></a><span class="tm">19:25:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> sorry, heards
+<a name="l-163"></a><span class="tm">19:25:40</span><span class="nk"> &lt;CodeShark&gt;</span> we're still on headers :p
+<a name="l-164"></a><span class="tm">19:25:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> headers
+<a name="l-165"></a><span class="tm">19:26:05</span><span class="nk"> &lt;jtimon&gt;</span> conclusion, nobody seems to want the libconsensus I've been trying to move towards to, and as an external caller I wouldn't want a libconsensus++ (coupled to bitcoin core's storage and concurrency)
+<a name="l-166"></a><span class="tm">19:26:30</span><span class="nk"> &lt;kanzure&gt;</span> external caller == other wallet?
+<a name="l-167"></a><span class="tm">19:26:31</span><span class="nk"> &lt;jtimon&gt;</span> you guys want a processBlock function, not a verifyBlock one
+<a name="l-168"></a><span class="tm">19:26:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> i think exposing verification functions at different levels is useful
+<a name="l-169"></a><span class="tm">19:26:49</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> yep, a wallet, an alternative implementation, whatever
+<a name="l-170"></a><span class="tm">19:26:53</span><span class="nk"> &lt;sipa&gt;</span> exposing headers, individual block, total block, ...
+<a name="l-171"></a><span class="tm">19:27:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> but the question is about whether or not to abstract out the state needed for that
+<a name="l-172"></a><span class="tm">19:27:08</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> cool, BlueMatt seem to think it's not
+<a name="l-173"></a><span class="tm">19:27:23</span><span class="nk"> &lt;sipa&gt;</span> those are independent questions
+<a name="l-174"></a><span class="tm">19:27:26</span><span class="nk"> &lt;jtimon&gt;</span> in any case, you don't want a verifyHeader independent of storage
+<a name="l-175"></a><span class="tm">19:27:57</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jtimon:</span> yes to me it sounds like you need to pass to libconsensus a reference to something that implements storage.  but iirc there are some concerns about consensus-coupled storage backend details.
+<a name="l-176"></a><span class="tm">19:28:01</span><span class="nk"> &lt;sipa&gt;</span> i think it would hurt our own usage of it, as it means fewer opportunities to improve memory usage
+<a name="l-177"></a><span class="tm">19:28:06</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I think "is it needed" it's not the question, nothing is needed, the wuestion is what we want to do
+<a name="l-178"></a><span class="tm">19:28:19</span><span class="nk"> &lt;sipa&gt;</span> what i want to do is have the consensus code abstracted out
+<a name="l-179"></a><span class="tm">19:28:21</span><span class="nk"> &lt;wumpus&gt;</span> it is needed if it is used by us
+<a name="l-180"></a><span class="tm">19:28:31</span><span class="nk"> &lt;sipa&gt;</span> modularized
+<a name="l-181"></a><span class="tm">19:28:38</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> I highly doubt libbitcoin will ever use a libconsensus that's coupled to bitcoin's storage and concurrency, for example
+<a name="l-182"></a><span class="tm">19:28:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> I have no problem exposing a verifyblock function that makes no external state lookups, but I dont think its so useful
+<a name="l-183"></a><span class="tm">19:28:50</span><span class="nk"> &lt;sipa&gt;</span> that doesn't mean we need to abstract out every data structure it uses
+<a name="l-184"></a><span class="tm">19:29:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> I dont see much use for a verifyblock function that makes external state calls when you could just do processnewblock
+<a name="l-185"></a><span class="tm">19:29:08</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jtimon:</span> well the complicating detail here is that folks probably just want to use core's current storage implementation details (etc) to cut down on work, i think.
+<a name="l-186"></a><span class="tm">19:29:33</span><span class="nk"> &lt;CodeShark&gt;</span> breaking out the storage engine can be done independently
+<a name="l-187"></a><span class="tm">19:29:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes, I remember we discussed that before, too :)
+<a name="l-188"></a><span class="tm">19:29:51</span><span class="nk"> &lt;kanzure&gt;</span> what is the concurrency coupling that jtimon mentions in particular
+<a name="l-189"></a><span class="tm">19:30:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> we're not really talking about (disk) storage here, just in-memory representation of data structures
+<a name="l-190"></a><span class="tm">19:30:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, this is exactly the discussion we had in milan
+<a name="l-191"></a><span class="tm">19:30:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> right, I believe some callers don't want the library to do the processnewblock because they want to do certain things themselves (for example, libbitcoin AFAIK)
+<a name="l-192"></a><span class="tm">19:30:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> have you spoken much to these folks? (I dont know, just asking, would love to see their responses)
+<a name="l-193"></a><span class="tm">19:31:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> if it's to cut down on work we can have both, that was my conclusion from a previous discussion with luke
+<a name="l-194"></a><span class="tm">19:31:17</span><span class="nk"> &lt;wumpus&gt;</span> can we worry about that later? I think a good first goal would be to make the libarary useful for us, I agree with sipa that tha doesn't need abstracting every data structure
+<a name="l-195"></a><span class="tm">19:31:33</span><span class="nk"> &lt;sipa&gt;</span> yes, abstracting the data structures can still happen later
+<a name="l-196"></a><span class="tm">19:31:38</span><span class="nk"> &lt;wumpus&gt;</span> I think this is typical bitcoin scope creep
+<a name="l-197"></a><span class="tm">19:31:45</span><span class="nk"> &lt;CodeShark&gt;</span> yes - modularization is what's most important, then we can further optimize each unit
+<a name="l-198"></a><span class="tm">19:31:48</span><span class="nk"> &lt;kanzure&gt;</span> sounds like an emphasis on code movement first
+<a name="l-199"></a><span class="tm">19:31:48</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> mostly only to erik from libbitcoin, but yeah, probably we should ask around before trying to guess what they want
+<a name="l-200"></a><span class="tm">19:31:51</span><span class="nk"> &lt;wumpus&gt;</span> nothing will ever get done this way and we keep repeating the same discussions
+<a name="l-201"></a><span class="tm">19:32:29</span><span class="nk"> &lt;wumpus&gt;</span> +tons of huge code changes that will take ages to review
+<a name="l-202"></a><span class="tm">19:32:46</span><span class="nk"> &lt;jtimon&gt;</span> I want libwally to use verifyHeader, its main author has seen #8493 but I don't know what he would think about a version with "storage included"
+<a name="l-203"></a><span class="tm">19:33:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> one reason for me is that for some things, performance is in fact consensus critical, and requiring the user of the library to implement their own optimized data structures is essentially requiring them to implement some portion of consensus-critical code
+<a name="l-204"></a><span class="tm">19:33:47</span><span class="nk"> &lt;wumpus&gt;</span> I just think it'd make sense to aim for a near-term goal of exposing something, instead of trying to refactor the whole code base first
+<a name="l-205"></a><span class="tm">19:33:56</span><span class="nk"> &lt;CodeShark&gt;</span> the focus for now should be on separation of units and removing dependencies
+<a name="l-206"></a><span class="tm">19:33:57</span><span class="nk"> &lt;jtimon&gt;</span> well, all I want is to have a common and clear idea of what libconsensus should be
+<a name="l-207"></a><span class="tm">19:34:10</span><span class="nk"> &lt;sipa&gt;</span> while we already have optimized data structures, and not abstracting them out leaves more opportunities for future such optimizations
+<a name="l-208"></a><span class="tm">19:34:14</span><span class="nk"> &lt;wumpus&gt;</span> it should be a libarary that we ourselves can use for consensus validation
+<a name="l-209"></a><span class="tm">19:34:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> exactly! *not* exposing something as part of the API leaves flexibility to improve things later
+<a name="l-210"></a><span class="tm">19:34:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> putting it in the API/ABI effectively sets it in stone
+<a name="l-211"></a><span class="tm">19:34:47</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> but then people won't "see the point" of taking consensus code out of main...
+<a name="l-212"></a><span class="tm">19:34:55</span><span class="nk"> &lt;CodeShark&gt;</span> ?
+<a name="l-213"></a><span class="tm">19:35:07</span><span class="nk"> &lt;CodeShark&gt;</span> there
+<a name="l-214"></a><span class="tm">19:35:13</span><span class="nk"> &lt;morcos&gt;</span> I think it would be nice if we proceeded down _a_ path right now but left ourselves open to revisiting some of these decisions as we get further along.
+<a name="l-215"></a><span class="tm">19:35:30</span><span class="nk"> &lt;morcos&gt;</span> For instance I disagree a bit with the flexibility when it comes to cache optimization for pcoinstip.
+<a name="l-216"></a><span class="tm">19:35:33</span><span class="nk"> &lt;CodeShark&gt;</span> there's a very simple justification for it - moving the code out of main.cpp means far simpler merging of code changes
+<a name="l-217"></a><span class="tm">19:35:43</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> ie #8337 #8329
+<a name="l-218"></a><span class="tm">19:35:54</span><span class="nk"> &lt;morcos&gt;</span> But we don't have to answer all those questions right now
+<a name="l-219"></a><span class="tm">19:36:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> i think everyone agrees that modularizing consensus code is a good idea, independent of whether it's exposed as a library, or has refactorings for data structures or not
+<a name="l-220"></a><span class="tm">19:36:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> agree
+<a name="l-221"></a><span class="tm">19:36:13</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jtimon:</span> you are referring to friction with code separation changes? i think some of that friction can be ameliorated by having it a prioritized shared goal (like segwit was).
+<a name="l-222"></a><span class="tm">19:36:58</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">kanzure:</span> indeed
+<a name="l-223"></a><span class="tm">19:37:02</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> the thing is some dependencies remain "hidden" or hard to see until you separate stuff or try to move the "consensus files" to the consensus module to expose something
+<a name="l-224"></a><span class="tm">19:37:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> well things may not be easy
+<a name="l-225"></a><span class="tm">19:37:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> I would love that
+<a name="l-226"></a><span class="tm">19:37:45</span><span class="nk"> &lt;CodeShark&gt;</span> let's not get hung up on how the lib API will be exposed and start working on moving code into separate units
+<a name="l-227"></a><span class="tm">19:38:02</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> ^
+<a name="l-228"></a><span class="tm">19:38:09</span><span class="nk"> &lt;BlueMatt&gt;</span> ^
+<a name="l-229"></a><span class="tm">19:38:12</span><span class="nk"> &lt;jeremyrubin&gt;</span> ^
+<a name="l-230"></a><span class="tm">19:38:16</span><span class="nk"> &lt;sipa&gt;</span> v
+<a name="l-231"></a><span class="tm">19:38:17</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> I'm happy with that
+<a name="l-232"></a><span class="tm">19:38:21</span><span class="nk"> &lt;jtimon&gt;</span> I tried that too
+<a name="l-233"></a><span class="tm">19:38:23</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> always one sipa..
+<a name="l-234"></a><span class="tm">19:38:53</span><span class="nk"> &lt;jtimon&gt;</span> but some people asked for the final API...
+<a name="l-235"></a><span class="tm">19:38:54</span><span class="nk"> &lt;sipa&gt;</span> i'd really just want to see a proposal of a directory structure
+<a name="l-236"></a><span class="tm">19:39:00</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jtimon:</span> iirc you in the past have had problems with some pull requests because others would complain about additional merge/rebase work for their unrelated changes.
+<a name="l-237"></a><span class="tm">19:39:12</span><span class="nk"> &lt;sipa&gt;</span> which explains code responsible for what belongs where
+<a name="l-238"></a><span class="tm">19:39:20</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I gave you one: all consensus fles except those in crypto to the consensus dir
+<a name="l-239"></a><span class="tm">19:39:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> that's not an answer
+<a name="l-240"></a><span class="tm">19:39:36</span><span class="nk"> &lt;jtimon&gt;</span> it is one you don't like
+<a name="l-241"></a><span class="tm">19:39:38</span><span class="nk"> &lt;sipa&gt;</span> there is code shared between consensus and non-consensus
+<a name="l-242"></a><span class="tm">19:39:46</span><span class="nk"> &lt;sipa&gt;</span> what happens to script? is it split up again?
+<a name="l-243"></a><span class="tm">19:39:51</span><span class="nk"> &lt;sipa&gt;</span> where does the signing code go?
+<a name="l-244"></a><span class="tm">19:40:02</span><span class="nk"> &lt;jtimon&gt;</span> but I really don't see how can we make a subrepository or subtree out of libconsensus otherwise
+<a name="l-245"></a><span class="tm">19:40:03</span><span class="nk"> &lt;kanzure&gt;</span> sipa did you read jtimon's libconsensus doc by any chance
+<a name="l-246"></a><span class="tm">19:40:05</span><span class="nk"> &lt;sipa&gt;</span> do we duplicate consensu logic?
+<a name="l-247"></a><span class="tm">19:40:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> signing code is not consensus
+<a name="l-248"></a><span class="tm">19:40:14</span><span class="nk"> &lt;sipa&gt;</span> sigh
+<a name="l-249"></a><span class="tm">19:40:18</span><span class="nk"> &lt;sipa&gt;</span> i know that
+<a name="l-250"></a><span class="tm">19:40:30</span><span class="nk"> &lt;jtimon&gt;</span> it remains in the common package
+<a name="l-251"></a><span class="tm">19:40:41</span><span class="nk"> &lt;jtimon&gt;</span> and the script dir
+<a name="l-252"></a><span class="tm">19:40:52</span><span class="nk"> &lt;sipa&gt;</span> ok, i'll shut up about it
+<a name="l-253"></a><span class="tm">19:41:00</span><span class="nk"> &lt;wumpus&gt;</span> I think this is monipolizing the meeting. ANy othe topics to be discussed?
+<a name="l-254"></a><span class="tm">19:41:04</span><span class="nk"> &lt;sipa&gt;</span> i can't seem to get my point across
+<a name="l-255"></a><span class="tm">19:41:15</span><span class="nk"> &lt;jtimon&gt;</span> no, you brought this point more times
+<a name="l-256"></a><span class="tm">19:41:23</span><span class="nk"> &lt;CodeShark&gt;</span> can we set as a goal to prioritize some moveonly PRs?
+<a name="l-257"></a><span class="tm">19:41:29</span><span class="nk"> &lt;sipa&gt;</span> yes, and i have never seen you give an answer to my question
+<a name="l-258"></a><span class="tm">19:41:47</span><span class="nk"> &lt;CodeShark&gt;</span> sipa, jtimon, let's save that for after the meeting
+<a name="l-259"></a><span class="tm">19:42:26</span><span class="nk"> &lt;CodeShark&gt;</span> can we agree for the time being to define a directory structure and prioritize moveonly PRs?
+<a name="l-260"></a><span class="tm">19:42:36</span><span class="nk"> &lt;jtimon&gt;</span> sure I really want to understand his concerns better. It seems related to the discussion we had around luke's script "debugger"
+<a name="l-261"></a><span class="tm">19:42:43</span><span class="nk"> &lt;wumpus&gt;</span> I can't prioritize moveonly PRs. There's just too much happening
+<a name="l-262"></a><span class="tm">19:42:57</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> the idea is that they should be super simple to review
+<a name="l-263"></a><span class="tm">19:43:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> you underestimate it
+<a name="l-264"></a><span class="tm">19:43:13</span><span class="nk"> &lt;michagogo&gt;</span> <span class="hi">achow101:</span> looks like it finished uploading, if you want to try it
+<a name="l-265"></a><span class="tm">19:43:19</span><span class="nk"> &lt;sipa&gt;</span> moving the code is easy. deciding where things belong is not.
+<a name="l-266"></a><span class="tm">19:43:20</span><span class="nk"> &lt;wumpus&gt;</span> but if people prioritize reviewing them, sure
+<a name="l-267"></a><span class="tm">19:43:23</span><span class="nk"> &lt;kanzure&gt;</span> oh is review the bottleneck? i keep thinking it's "lots of other rebase work" for other pulls.
+<a name="l-268"></a><span class="tm">19:43:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I think it being a priority for reviewers is more important
+<a name="l-269"></a><span class="tm">19:43:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> that's also an issue
+<a name="l-270"></a><span class="tm">19:43:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> imho the bottleneck is no agreement about what should be done
+<a name="l-271"></a><span class="tm">19:43:41</span><span class="nk"> &lt;michagogo&gt;</span> Wait, it's Thursday... sorry, didn't realize meeting was happening
+<a name="l-272"></a><span class="tm">19:43:43 </span><span class="nka">* michagogo</span> <span class="ac">scrolls up</span>
+<a name="l-273"></a><span class="tm">19:43:52</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> I strongly feel review is the bottleneck
+<a name="l-274"></a><span class="tm">19:44:17</span><span class="nk"> &lt;instagibbs_&gt;</span> proposed topic: rc2 issues, etc?
+<a name="l-275"></a><span class="tm">19:44:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> though not always a strong one, usually it's fairly easy to rebase over pure moves. As long as people agree that they should be done.
+<a name="l-276"></a><span class="tm">19:44:30</span><span class="nk"> &lt;kanzure&gt;</span> oh. alright.
+<a name="l-277"></a><span class="tm">19:44:31</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> also I think you understimate the potential for disagreements
+<a name="l-278"></a><span class="tm">19:44:34</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> How do we keep this from being discussed for the next 3 meetings is my question. What can actually be done persuade people one way or the other?
+<a name="l-279"></a><span class="tm">19:44:54</span><span class="nk"> &lt;CodeShark&gt;</span> can we at least agree to start discussing a directory structure? ;)
+<a name="l-280"></a><span class="tm">19:45:00</span><span class="nk"> &lt;CodeShark&gt;</span> (after this meeting, of course)
+<a name="l-281"></a><span class="tm">19:45:03</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> ACK
+<a name="l-282"></a><span class="tm">19:45:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> you tell me
+<a name="l-283"></a><span class="tm">19:45:41</span><span class="nk"> &lt;morcos&gt;</span> Someone should schedule a small in-person retreat for people who really want to work on libconsensus, to make some headway
+<a name="l-284"></a><span class="tm">19:45:57</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">Chris_Stewart_5:</span> perhaps sipa could make a proposal if we ask nicely.
+<a name="l-285"></a><span class="tm">19:46:01</span><span class="nk"> &lt;jtimon&gt;</span> I already buried my hopes of libconsensus becoming eventually C
+<a name="l-286"></a><span class="tm">19:46:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">Chris_Stewart_5:</span> preventing the topic from being discussed is quite easy, but I think that would be seen as censorship :)
+<a name="l-287"></a><span class="tm">19:46:05</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> This is ALL libbconsensus right? Is tehre any concrete proposals?
+<a name="l-288"></a><span class="tm">19:46:25</span><span class="nk"> &lt;instagibbs_&gt;</span> 14 minutes in case anyone wants to discuss anything else
+<a name="l-289"></a><span class="tm">19:46:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">Chris_Stewart_5:</span> afaik the most concrete proposal right now is #8493
+<a name="l-290"></a><span class="tm">19:46:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs_:</span> I asked in the beginning, don't think there's any issues with rc2 yet
+<a name="l-291"></a><span class="tm">19:46:45</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">Chris_Stewart_5:</span> jtimon has made a number of proposals, such as https://github.com/jtimon/consensus-doc/blob/generated/libconsensus.pdf https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-October/013204.html
+<a name="l-292"></a><span class="tm">19:47:04</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> Thanks, i'll take a look at it.
+<a name="l-293"></a><span class="tm">19:47:15</span><span class="nk"> &lt;kanzure&gt;</span> ah 8493 is expose verifyheader. ok.
+<a name="l-294"></a><span class="tm">19:47:21</span><span class="nk"> &lt;instagibbs_&gt;</span> <span class="hi">wumpus:</span> ok great
+<a name="l-295"></a><span class="tm">19:48:07</span><span class="nk"> &lt;CodeShark&gt;</span> so any other topics?
+<a name="l-296"></a><span class="tm">19:48:08</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> rc2 issues?
+<a name="l-297"></a><span class="tm">19:48:16</span><span class="nk"> &lt;wumpus&gt;</span> which rc2 issues?
+<a name="l-298"></a><span class="tm">19:48:40</span><span class="nk"> &lt;BlueMatt&gt;</span> the lack of rc2 issues =D
+<a name="l-299"></a><span class="tm">19:48:43</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> *crickets*
+<a name="l-300"></a><span class="tm">19:48:50</span><span class="nk"> &lt;wumpus&gt;</span> 19:46 &lt; wumpus&gt; instagibbs_: I asked in the beginning, don't think there's any issues with rc2 yet
+<a name="l-301"></a><span class="tm">19:48:59</span><span class="nk"> &lt;kanzure&gt;</span> i think he was asking to hear for any
+<a name="l-302"></a><span class="tm">19:49:01</span><span class="nk"> &lt;wumpus&gt;</span> if there are, feel free to say so
+<a name="l-303"></a><span class="tm">19:49:14</span><span class="nk"> &lt;achow101&gt;</span> what about killing off windows 32 bit builds?
+<a name="l-304"></a><span class="tm">19:49:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess in 0.15
+<a name="l-305"></a><span class="tm">19:49:33</span><span class="nk"> &lt;wumpus&gt;</span> that's not an urgent topic really
+<a name="l-306"></a><span class="tm">19:49:36</span><span class="nk"> &lt;wumpus&gt;</span> yes, 0.15 I'd say too
+<a name="l-307"></a><span class="tm">19:50:10</span><span class="nk"> &lt;wumpus&gt;</span> I asked around and from 50 or so 'no' responses, there were two actual users admitting they were still using bitcoin core on windows 32-bit
+<a name="l-308"></a><span class="tm">19:50:24</span><span class="nk"> &lt;sipa&gt;</span> are there likely some who don't know?
+<a name="l-309"></a><span class="tm">19:50:29</span><span class="nk"> &lt;wumpus&gt;</span> they both expected this to stilll last only 6 months or so no longer
+<a name="l-310"></a><span class="tm">19:50:31</span><span class="nk"> &lt;wumpus&gt;</span> old hw
+<a name="l-311"></a><span class="tm">19:50:35</span><span class="nk"> &lt;gmaxwell&gt;</span> I haven't encountered any issues in RC2 yet, though its a bit new. The PR of mine that was merged appears to be working.
+<a name="l-312"></a><span class="tm">19:50:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> If we have no other topic, we can discuss if we want to adjust the GUI default confirmation target down to the RPC interfaces value of 2 blocks
+<a name="l-313"></a><span class="tm">19:50:54</span><span class="nk"> &lt;wumpus&gt;</span> so that would time with 0.15, which is fine with me, no hurry
+<a name="l-314"></a><span class="tm">19:51:27</span><span class="nk"> &lt;Victorsueca&gt;</span> <span class="hi">gmaxwell:</span> the lastest travis build seems to have failed for master
+<a name="l-315"></a><span class="tm">19:51:30</span><span class="nk"> &lt;instagibbs_&gt;</span> <span class="hi">jonasschnelli:</span> yeah i suggested this a bit ago
+<a name="l-316"></a><span class="tm">19:51:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> 25 blocks as "normal" confirmation speed sounds ridiculous
+<a name="l-317"></a><span class="tm">19:51:45</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">jonasschnelli:</span> I think it's a good idea
+<a name="l-318"></a><span class="tm">19:51:46</span><span class="nk"> &lt;instagibbs_&gt;</span> i dont understand why having different command line and GUI behavior like that is "good"
+<a name="l-319"></a><span class="tm">19:51:57</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> to be honest, i actually agree we should make the target less than 25, but I think 2 is too low, and i think we're going to bikeshed where it should be
+<a name="l-320"></a><span class="tm">19:52:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I fear that as well. :)
+<a name="l-321"></a><span class="tm">19:52:14</span><span class="nk"> &lt;sipa&gt;</span> it seems reasonable that the default in gui and rpc is the same
+<a name="l-322"></a><span class="tm">19:52:18</span><span class="nk"> &lt;instagibbs_&gt;</span> <span class="hi">morcos:</span> "match between command-line and GUI" is a starting point :)
+<a name="l-323"></a><span class="tm">19:52:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> I'm for 25
+<a name="l-324"></a><span class="tm">19:52:23</span><span class="nk"> &lt;BlueMatt&gt;</span> 25 is good
+<a name="l-325"></a><span class="tm">19:52:24</span><span class="nk"> &lt;morcos&gt;</span> the issue is that when there is a break between blocks or network congestion, to be really sure you get confirmed very quickly, say in a couple of blocks
+<a name="l-326"></a><span class="tm">19:52:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> And the slider should probably not touch nTxConfirmTarget!
+<a name="l-327"></a><span class="tm">19:52:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> global!
+<a name="l-328"></a><span class="tm">19:52:30</span><span class="nk"> &lt;morcos&gt;</span> then you might have to pay areally high fee
+<a name="l-329"></a><span class="tm">19:52:33</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jonasschnelli:</span> This should be uncontroversial. And actually it is a bug in the current code, as the default already says 25, but the slider is "mirrored", so it ends up on the wrong side.
+<a name="l-330"></a><span class="tm">19:52:37</span><span class="nk"> &lt;morcos&gt;</span> which is priobably not what you want
+<a name="l-331"></a><span class="tm">19:53:00</span><span class="nk"> &lt;MarcoFalke&gt;</span> I never fixed it because I wanted to clean it up "in a go" with all the other nasty things the gui does with the "fee"-globals
+<a name="l-332"></a><span class="tm">19:53:13</span><span class="nk"> &lt;morcos&gt;</span> more intelligent fee estimation would maybe gauge the current conditions against historical conditions or something.
+<a name="l-333"></a><span class="tm">19:53:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Is anyone working on improving the estimator generally, right now?
+<a name="l-334"></a><span class="tm">19:53:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think there are some users fooled by the fact that RPCs sendto* uses different fee estimations then the "default" GUI send method.
+<a name="l-335"></a><span class="tm">19:53:46</span><span class="nk"> &lt;gmaxwell&gt;</span> It could use improvement, though I think bumping is more important.
+<a name="l-336"></a><span class="tm">19:53:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> I mean only different confirmations targets
+<a name="l-337"></a><span class="tm">19:53:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">MarcoFalke:</span> i dont think it was a bug.  i noticed it when it went in and i thought it was on purpose, i think we discussed it at a time
+<a name="l-338"></a><span class="tm">19:54:01</span><span class="nk"> &lt;MarcoFalke&gt;</span> ok
+<a name="l-339"></a><span class="tm">19:54:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> Someone should review the new bumpfee PR.
+<a name="l-340"></a><span class="tm">19:54:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/8456
+<a name="l-341"></a><span class="tm">19:54:25</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i mentioned on that issue that i had worked on it..  6-9 months ago..  but abandoned it.  i have some custom code that does a lot more
+<a name="l-342"></a><span class="tm">19:54:29</span><span class="nk"> &lt;morcos&gt;</span> but nothing that really got polished
+<a name="l-343"></a><span class="tm">19:54:35</span><span class="nk"> &lt;wumpus&gt;</span> yes, we *must* have a bumpfee for 0.14
+<a name="l-344"></a><span class="tm">19:54:40</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">morcos:</span> had you looked at bramc's work on fee estimation?
+<a name="l-345"></a><span class="tm">19:55:35</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">kanzure:</span> i've been shying away from algorithms which require replacement.  i think its a great idea, but not how most users expect their default transactions to work.  I think most users want them to get confirmed relatively quickly on the first try.
+<a name="l-346"></a><span class="tm">19:55:45</span><span class="nk"> &lt;morcos&gt;</span> But an algorithm for bumping when you guess too low makes sense.
+<a name="l-347"></a><span class="tm">19:56:08</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, in my expirence the core estimator usually produces fees which are generally too high (compared to what gets confirmed in the next block, also compared e.g. to 21inc's estimator), having a higher confirmed target helps reduce the impact.
+<a name="l-348"></a><span class="tm">19:56:39</span><span class="nk"> &lt;morcos&gt;</span> so to be clear, if someone else has an idea of how it should be improved, please go ahead.  and i'm happy to help.  but its just one of those things that there is no "right" answer for so it can get frustrating
+<a name="l-349"></a><span class="tm">19:57:04</span><span class="nk"> &lt;gmaxwell&gt;</span> I was just wondering if there was anything ongoing at the moment.
+<a name="l-350"></a><span class="tm">19:57:11</span><span class="nk"> &lt;gmaxwell&gt;</span> (since the subject came up)
+<a name="l-351"></a><span class="tm">19:57:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about changing the default confirmation target to 6 for RPC interface and the GUI once we have the bumpfee cmd?
+<a name="l-352"></a><span class="tm">19:57:15</span><span class="nk"> &lt;Victorsueca&gt;</span> as example, most of my transactions where I set the fee slider to 25 it confirmed on the next 2 blocks
+<a name="l-353"></a><span class="tm">19:57:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes, exactly and thats by design.  i interprested the question of what does it take to be confirmed in X blocks as meaning you really want to be very sure it'll be confirmed wihtin the target
+<a name="l-354"></a><span class="tm">19:57:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Victorsueca:</span> users made different experiences with that
+<a name="l-355"></a><span class="tm">19:57:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> And that is what it must do, esp when there is no bump. :)
+<a name="l-356"></a><span class="tm">19:57:51</span><span class="nk"> &lt;morcos&gt;</span> thats why i hesitate to set the default to 2
+<a name="l-357"></a><span class="tm">19:58:08</span><span class="nk"> &lt;jtimon&gt;</span> 2 mins
+<a name="l-358"></a><span class="tm">19:58:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> i like 6, and i'd be fine with that....
+<a name="l-359"></a><span class="tm">19:58:25</span><span class="nk"> &lt;instagibbs_&gt;</span> overpaying is fine until we have bump, heh
+<a name="l-360"></a><span class="tm">19:58:31</span><span class="nk"> &lt;gmaxwell&gt;</span> I would be too.
+<a name="l-361"></a><span class="tm">19:58:47</span><span class="nk"> &lt;Victorsueca&gt;</span> <span class="hi">jonasschnelli:</span> yeah, I seen too lots of people blaming slow transactions even with recommended fee, but not my case for some reason
+<a name="l-362"></a><span class="tm">19:58:48</span><span class="nk"> &lt;CodeShark&gt;</span> wouldn't overpaying tend to raise fees up?
+<a name="l-363"></a><span class="tm">19:59:05</span><span class="nk"> &lt;CodeShark&gt;</span> for everyone
+<a name="l-364"></a><span class="tm">19:59:19</span><span class="nk"> &lt;wumpus&gt;</span> only if everyone is going to do that
+<a name="l-365"></a><span class="tm">19:59:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">CodeShark:</span> ah, that is one of bramc's concerns.  i think the existing algo is pretty resistant to that
+<a name="l-366"></a><span class="tm">19:59:29</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">CodeShark:</span> I could think of some kind of overpaying race
+<a name="l-367"></a><span class="tm">19:59:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Most important is probably review of mrbandrews's bumpfee (https://github.com/bitcoin/bitcoin/pull/8456)
+<a name="l-368"></a><span class="tm">19:59:36</span><span class="nk"> &lt;morcos&gt;</span> yes unless literally everyone does it
+<a name="l-369"></a><span class="tm">19:59:39</span><span class="nk"> &lt;MarcoFalke&gt;</span> We should just set it to a random value *ducks*
+<a name="l-370"></a><span class="tm">19:59:40</span><span class="nk"> &lt;instagibbs_&gt;</span> Assuming everyone is transacting at the same exact time, sure. But there's time preferences in real life, week/weekend patterns
+<a name="l-371"></a><span class="tm">19:59:41</span><span class="nk"> &lt;instagibbs_&gt;</span> etc
+<a name="l-372"></a><span class="tm">19:59:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs_:</span> +1
+<a name="l-373"></a><span class="tm">19:59:58</span><span class="nk"> &lt;instagibbs_&gt;</span> bitcoin businesses will do settlement on sunday evening to avoid fees
+<a name="l-374"></a><span class="tm">20:00:01</span><span class="nk"> &lt;sipa&gt;</span> TINGELINGELING
+<a name="l-375"></a><span class="tm">20:00:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
