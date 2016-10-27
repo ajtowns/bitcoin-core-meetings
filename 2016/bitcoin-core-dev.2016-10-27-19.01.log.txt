@@ -1,0 +1,216 @@
+19:01:23 <wumpus> #startmeeting
+19:01:23 <lightningbot> Meeting started Thu Oct 27 19:01:23 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:23 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:26 <jtimon> 0.13.1 is out 18 mins ago! yay
+19:01:40 <CodeShark> binaries?
+19:01:42 <kanzure> btcdrak: looks like faq menu entry is working now https://bitcoincore.org/en/2016/10/27/segwit-upgrade-guide/
+19:01:59 <jeremyrubin> here
+19:02:26 <wumpus> CodeShark: https://bitcoin.org/bin/bitcoin-core-0.13.1/
+19:02:27 * luke-jr wakes up
+19:02:46 <CodeShark> Nice!
+19:02:49 <gmaxwell> https://www.reddit.com/r/Bitcoin/comments/59pt66/bitcoin_core_0131_released/
+19:03:04 <wumpus> or magnet:?xt=urn:btih:dbe48c446b1113890644bbef03e361269f69c49a&dn=bitcoin-core-0.13.1&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.ccc.de%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&ws=https%3A%2F%2Fbitcoin.org%2Fbin%2F
+19:03:51 <wumpus> bitcoin.org should be updated after travis passes on https://github.com/bitcoin-dot-org/bitcoin.org/pull/1400
+19:04:25 <morcos> congrats everyone!
+19:04:31 <sipa> indeed!
+19:04:53 <wumpus> woohoo!
+19:05:03 <sipa> and thanks everyone for getting us this far
+19:05:37 <luke-jr> wumpus: did we get the gitian builds already? is that a record? :o
+19:05:54 <wumpus> luke-jr: yes, four signed builders IIRC
+19:06:24 <luke-jr> or maybe it just feels like a record since it was the middle of the night for me
+19:06:30 <jtimon> I'm trying the gitian builder script for the first time
+19:06:33 <wumpus> it may be a record
+19:06:43 <wumpus> very fast at least
+19:07:09 <jtimon> btcdrak reminded me I have no good excuse for not doing gitian builds
+19:07:33 <sipa> i haven't even started :(
+19:08:20 <jtimon> well, I have never done it so it may take some time, but the sooner I learn...
+19:08:22 <btcdrak> wumpus: I dont see a signed message from you with the binary hashes
+19:08:44 <wumpus> BlueMatt: you can release your PPA now (if you didn't yet)
+19:09:03 <wumpus> btcdrak: https://bitcoin.org/bin/bitcoin-core-0.13.1/SHA256SUMS.asc
+19:09:04 <BlueMatt> wumpus: i have not yet, will try to get that out
+19:09:23 <jonasschnelli> BlueMatt: don't forget to add libzmq
+19:09:35 <harding> btcdrak: https://lists.linuxfoundation.org/pipermail/bitcoin-core-dev/2016-October/000023.html
+19:09:37 <jonasschnelli> Some uses have complained about the missing ZMQ support
+19:10:12 <BlueMatt> jonasschnelli: yup
+19:11:30 <wumpus> ok, any other topics today than 0.13.1?
+19:11:51 <kanzure> i was going to ask sipa or jtimon about libconsensus follow-up stuff
+19:12:04 <sipa> i'm the wrong person to ask
+19:12:16 <wumpus> I'm kind of tired so I wouldn't mind ending early :p
+19:12:59 <jtimon> kanzure: nothing to report, nobody suggested anything to me or gave me any feedback since last week
+19:13:05 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:13:24 <BlueMatt> few minutes late there, gmaxwell
+19:13:27 <jtimon> been focusing on the signedblocks patch
+19:13:32 <gmaxwell> Just noticed wumpus hadn't done it. :)
+19:13:43 <sipa> maybe we can discuss signed blocks a bit
+19:13:51 <gmaxwell> So there are a number of things we want to do in a 0.13.2; so those should get in soon.
+19:14:06 <morcos> i'm interested in discussing that, because i want to understand whether this is meant to replace the existing testnet or just be another option
+19:14:10 <morcos> (signed blocks)
+19:14:11 <gmaxwell> (I guess some are in and just need to backport to 0.13 branch.
+19:14:21 <wumpus> no, it's not meant to replace the current testnet
+19:14:24 <kanzure> re: testnet i also saw the suggestion of loading testnet params from json file
+19:14:31 <jtimon> fine with me, I still extremely dsilike having to use a global, but don't see other way around it if we want to use the union
+19:14:51 <gmaxwell> morcos: my expectation was that it would just be another option. Obviously it would be useless for testing much of anything mining related.
+19:15:11 <jtimon> what I have implemented is from .conf file, not .json file
+19:15:11 <wumpus> indeed there should at least be a PoW testnet
+19:15:27 <morcos> ok, i think its still important that we have a well used testnet that uses PoW as similarly to mainnet as possible..  i worry that there is kind of only going to be one "testnet" that people use for most purposes though
+19:15:47 <morcos> perhaps it would be possible for transactions to easily end up on both?
+19:15:49 <kanzure> jtimon: didn't mean to recommend a specific file format; i was just pulling a thing from memory.
+19:16:05 <morcos> but maybe thats askign for trouble
+19:16:06 <wumpus> yes the file format is completely not important
+19:16:13 <jtimon> I'm still trying to test the blocksigning stuff, but the "custom chain" code that preceeds it is pretty much ready I think (feel free to test it and give suggestions), see https://github.com/bitcoin/bitcoin/pull/8994
+19:16:16 <sipa> morcos: i think the issue is that 'testnet' can mean "a place where we test new network features, and subject it to huge reorgs, and other edge cases" or "a place where we expect companies to build a parallel infrastructure"
+19:16:28 <cfields_> adding to that, see the faux-mining mode added in the #9000 PR. That was crucial for me for real-world mining testing of segwit.
+19:16:31 <sipa> and those aren't reconcilable, i think
+19:16:56 <jtimon> that alone should be helpful for rapidly creating a new segwitnet (for the next thing) or whatever
+19:17:03 <btcdrak> Blog post is up https://bitcoincore.org/en/2016/10/27/release-0.13.1/
+19:17:13 <wumpus> one testnet is simply not enough for all testing scenarios
+19:17:16 <gmaxwell> morcos: alas, I don't think htats really possible. Right now the consensus insability of testnet causes some people to just not test on it.
+19:17:19 <wumpus> btcdrak: awesome
+19:17:32 <kanzure> re: company testing, i have been (lightly) planning to use regtest for those purposes. e.g. company-to-company regtest instances.   testnet is still important for testing of course.
+19:18:07 <wumpus> kanzure: right - within a trusted group using a regtest is just as useful as signed blocks
+19:18:25 <kanzure> oh is that what the proposal is-- i'll have to go look. sorry.
+19:18:45 <wumpus> it's only when exposing publicly that signing is necessary so people can't grief by generating e.g. tons of blocks
+19:19:30 <gmaxwell> morcos: the issue is that while not ideal, on mainnet a reasonable way of handling very large reorgs is to shut your site down and wait for the operator to manually do something about it. If you try that strategy on testnet, your service will just be down all the time.
+19:19:38 <kanzure> so for the company-to-company testing scenario, my assumption was you simply limit the number of participants to one other group, and then you know who is causing problems (either you or the other guys). still, i can see some advantages to public regtesting. sure.
+19:19:57 <JackH> when will ubuntu ppa's be updated?
+19:20:17 <BlueMatt> JackH: when i get to it (today)
+19:20:29 <JackH> ah sweet, you are fast this time then
+19:20:30 <sipa> btcdrak: nice, the timeline is cool
+19:21:25 <luke-jr> BlueMatt: btw, is it possible/easy to do a PPA with Knots as well? (is it something I can do reasonably myself perhaps?)
+19:21:56 <wumpus> I think everyone can sign up to make PPAs
+19:22:11 * btcdrak is reading scrollback
+19:22:52 <BlueMatt> luke-jr: its not bad
+19:22:55 <kanzure> without signedblocks, if you had three companies trying to test an integration, you would need multiple different regtest links and to relay blocks from one network to the other with a different signature. i could see how that would be annoying to write. yeah..
+19:23:03 <luke-jr> wumpus: yes, it's just not very clear how one would actually make them, especially someone who doesn't use Ubuntu :p
+19:25:07 <Frederic94500> #bitcoin If segwit doesn't activate, he will be activate to the next 2016 blocks?
+19:25:29 <sipa> parse error
+19:25:30 <jtimon> one thing about #8994 related to wumpus' point about regtest among trusted peers... one can select -chain=custom -chainpetname=mysharedsecret and people without access to mysharedsecret  won't be able to create the genesis block locally
+19:25:43 <BlueMatt> Frederic94500: we're in the middle of a meeting, please go to #bitcoin
+19:26:01 <jtimon> for the hash of the genesis block depends on -chainpetname
+19:26:06 <wumpus> luke-jr: in a way it's similar to travis, you have to configure the environment and the building happens on their build servers
+19:26:16 <wumpus> luke-jr: no need to run ubuntu yourself
+19:26:36 <jonasschnelli> Luke-Jr: there are also meta-generator that auto-generated deb/PPA and fedora, etc. out of one script/conf
+19:26:47 <BlueMatt> wumpus: only in theory....the upload tool stuff is really a bitch to get installed on non-debian systems
+19:26:55 <luke-jr> :x
+19:27:24 <wumpus> BlueMatt: haha that's sad, I didn't know
+19:27:34 <petertodd> jtimon: I like the idea of a shared secret vs. pubkey based testnet, as it makes it clear that it's only for testing, not doing some kind of "bankchain" sillyness
+19:28:05 <jtimon> well, signed blocks have other advantages for testing, but it's definitely more dsiruptive
+19:28:16 <wumpus> bitcoin.org change is merged
+19:29:08 <petertodd> jtimon: also, a hmac based thing may be easier to implement it - can be done by just changing the most-work chain test to require XOR key == 0; doesn't require any datastructures to change
+19:29:41 <jtimon> you can just share a chainparams.conf file and when if someone decides to load your testnet with too much work, s/mychainname/mychainname2/ and you start again I guess
+19:29:47 <wumpus> right, changing the block header structure is what makes it scary
+19:30:53 <petertodd> wumpus: s/scary/a lot of work/ :)
+19:31:12 <gmaxwell> topic: suggestion final alert stuff.
+19:31:12 <jtimon> petertodd: not hmac, the chainpetname is simply used for the genesis block timestamp (ie replacing "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"), see https://github.com/bitcoin/bitcoin/pull/8994/commits/ee3a9e4ed986a3aef84b0e081a31d91237d53294
+19:31:21 <wumpus> I mean more s/scary/high risk/
+19:31:31 <sipa> petertodd: it's surprisingly little work, but it's hard to do in a way that is 1) clean 2) runtime selectable 3) reviewable
+19:31:35 <wumpus> the implementation work is not so bad, review, sure
+19:31:38 <sipa> petertodd: pick 2
+19:31:50 <petertodd> fwiw, I use this same kind of hmac auth trick in open timestamps so calendar servers can use clients as a last-ditch backup, without having the servers actually sign anything in a non-repudiatable way
+19:31:51 <jtimon> we could make other chainparams count for the genesis block hash
+19:33:10 <wumpus> I mean introducing some union into CBlockHeader would mean there'd be a risk of regression even in the non-testing case
+19:33:25 <petertodd> wumpus: ah, yes, good point
+19:33:28 <jtimon> petertodd: well, I find it more scary than painful too, at least the way I'm doing it with the union (there's also a less scary way that uses more memory in mainnet and another one that is simply way way way too disruptive)
+19:33:46 <petertodd> wumpus: I'm wrong - that is scary
+19:33:52 <btcdrak> sipa: you have to thank harding! he wrote it all.
+19:35:15 <kanzure> what is remaining re: final alert things?
+19:35:24 <kanzure> was the page on one of the .org sites merged
+19:35:55 <jtimon> topic suggestion: are we removing the use of checkpoints for progress estimation?
+19:35:55 <gmaxwell> kanzure: we're not on that toopic now.
+19:36:24 <gmaxwell> topic suggestion: My work removing checkpoints _completely_.
+19:36:45 <wumpus> #topic removing checkpoints
+19:37:24 <gmaxwell> I have a branch that is removing checkpoints. Haven't totally taken them out yet because I need to replace progress estimation.
+19:37:46 <gmaxwell> It's not hard to do that, just takes a little twiddling.
+19:37:50 <wumpus> that's good news - progress estimation is probably the least interesting use of them
+19:38:00 <gmaxwell> https://github.com/gmaxwell/bitcoin/tree/remove_checkpoints
+19:38:01 <wumpus> yea
+19:38:11 <wumpus> #link https://github.com/gmaxwell/bitcoin/tree/remove_checkpoints
+19:38:47 <gmaxwell> There are three main components:  Removal of checkpoints for IBD test.  This is a no brainer.  Removal of checkpoints for script checking-- this depends on benchmark results, as we discussed perhaps 4 meethings ago. and the third:
+19:38:50 <wumpus> did you run into something difficult / uncertain?
+19:39:42 <gmaxwell> The last use is avoiding header flooding.  I came up with a tidy way to do this, I think, but it requires an implicit consensus change but I think it is very trivial and obviously fine. But likely to delay things.
+19:39:43 <wumpus> what about the DoS protection?
+19:40:07 <wumpus> consensus change, as in a softfork?
+19:40:14 <morcos> do tell
+19:40:20 <gmaxwell> not a softfork. I'm telling.
+19:40:38 <gmaxwell> My changes introduce a constant in chain params which is the known amount of work in the best chain at ~release time.  The IBD check uses this, we've talked about using that before for some checkpoint like things.
+19:41:34 <gmaxwell> So I propose that once we have any header chain that has at least that much work in it, we do not accept any more blocks with difficulty under 16 million-- which is roughly equal to about 10 commercially available mining devices.
+19:41:35 <petertodd> note that from the point of view of consensus this is technically speaking no different than making bitcoin core come with a set of blockchain data
+19:41:49 <jtimon> isn't the minimum difficulty check a softfork?
+19:42:06 <gmaxwell> This is a consenus change because the chain could never fall below difficulty 16 million in the future, but an unobservable one... as observing it would require the difficulty fall below 16 million. :)
+19:42:10 <wumpus> petertodd: well it wouldn't lock in specific blocks as the checkpoints do
+19:42:10 <petertodd> er, gregs #2 thing makes my statement invalid :)
+19:42:40 <jtimon> gmaxwell: yeah, it's a softfork in the pedantic sense
+19:42:42 <petertodd> wumpus: right, I mean, w/o the minimum diff thing, the effect would be no different than ensuring bitcoin core shipped with blockchain data
+19:42:45 <gmaxwell> jtimon: in a sense, but an unobservable one. Yes.
+19:42:45 <jeremyrubin> I don't think that's great...
+19:43:03 <jeremyrubin> Can't difficulty fall that low under a soft fork to a different PoW?
+19:43:16 <jeremyrubin> (not that that should happen)
+19:43:19 <petertodd> jeremyrubin: yes, and at that point your idea of what bitcoin is is so insecure as to be useless
+19:43:22 <gmaxwell> jeremyrubin: then you take out the rule.
+19:43:30 <jtimon> like really imposing the 21 M limit, that was a softfork too, but no need to use bip9 to deploy I guess
+19:43:40 <petertodd> jtimon: +1
+19:43:43 <Chris_Stewart_5> wouldn't that be a hard fork to remove it if it was enforced?
+19:43:53 <gmaxwell> the 16 million number was just a result of a tidy amount with bitmasking that also is really infeasable to attack but also trivial to mine... 10 devices.
+19:44:11 <petertodd> Chris_Stewart_5: yes, removiing is a hard fork, but remember we're talking about a situation where bitcoin as you know it is useless, so tha'ts irrelevant IMO
+19:44:24 <gmaxwell> If someone worried that 16 million were too high, there is a pretty broad range that the number could reasonable be set in.
+19:44:54 <petertodd> gmaxwell: honestly, I'd be inclined to go even higher - 10 machines is absolutely nothing
+19:45:18 <gmaxwell> Anything over 100k would pretty much halt any real risk headerflooding, with current hardware. 16M adds a good amount of headroom.
+19:45:24 <Chris_Stewart_5> but in jeremyrubin example if we are soft forkign to a different PoW that doesn't necessarily hold true, does it? Perhaps I don't understand circumstances of forking to another PoW though..
+19:45:36 <jeremyrubin> petertodd: I disagree, but that's more of a wizards topic
+19:45:50 <jtimon> gmaxwell: are you sure you want to change CheckBlockHeader instead of CheckProofOfWork ?
+19:45:53 <morcos> gmaxwell: i'm not so sure about that.. isn't the abilitity to soft fork to a different PoW something we might want to preserve?
+19:45:57 <petertodd> Chris_Stewart_5: a "soft-fork" to a different PoW isn't really a soft-fork, because the old clients are now horribly insecure
+19:46:10 <jeremyrubin> petertodd: e.g., something like tadge's proof of idle
+19:46:11 <gmaxwell> Chris_Stewart_5: softforking to a new pow is not really a softfork.  In any case: keeping it at least that high would require only 10 devices, and ... any old nodes in that world could have their chain redone by those same 10 devices.
+19:46:23 <petertodd> morcos: there is no such thing as a soft-fork to a different proof-of-work - doing that doesn't have the security characteristics of a soft-fork
+19:46:25 <gmaxwell> morcos: it is preserved.
+19:46:33 <gmaxwell> to the extent that it exists.
+19:46:34 <morcos> give how hard hard forks are.. imagine there was a contentious HF that took majority hash power..  might the minority not want to be able to softfork away without having to agree on a HF
+19:46:46 <jtimon> Chris_Stewart_5: yeah if you want a different pow just hardfork
+19:46:58 <gmaxwell> Imagine the diff floor is 1. okay, then the diff goes down to 1. okay.. now I start up a 2011 asic miner and immediately break all those un upgraded nodes.
+19:47:01 <morcos> ok, i need to think about it more.. but i think we should analyze all those scenarios
+19:47:21 <gmaxwell> morcos: but thats also why my figure is ~10 devices and not 10,000 devices. :)
+19:47:43 <gmaxwell> In any case. I think it's fairly easy to understand. And I think the solution basically has all the properties that we want.
+19:47:48 <petertodd> morcos: again, this is a scenario where bitcoin as you know it is horribly insecure - anyone with >10 machines could attack your min-diff chain. I had a high enough credit limit as a student to buy more machines than that. :)
+19:47:51 <gmaxwell> But I expected thought and discussion on it.
+19:48:12 <BlueMatt> gmaxwell: ideally we would like to add the property that someone cant flood you during IBD, but to be fair we also suffer from DoS issues there now
+19:48:24 <petertodd> gmaxwell: if hardware improves, do we up the min diff again? IMO that'd be reasonable
+19:48:31 <morcos> petertodd: not if you've softforked in other PoW requirements that the attackers don't have the hashing or whateve rto produce
+19:48:42 <gmaxwell> BlueMatt: So hold up there.
+19:49:01 <gmaxwell> BlueMatt: I think what I propos has _exactly_ as good protection for that as we currently have, if not somewhat better.
+19:49:09 <Chris_Stewart_5> And this solves header flooding because it requires the attacker to provide headers with ATLEAST that much difficulty, correct?
+19:49:18 <BlueMatt> gmaxwell: didnt disagree, only suggested that ideally we'd fix the issues we have now
+19:49:18 <petertodd> morcos: but again, because that's not really a soft-fork, might as well do a small hardfork at that point to drop the requirement for SHA2 PoW at some point wel before just 10 machines are needed
+19:49:19 <gmaxwell> BlueMatt: right now we won't accept lower difficulty blocks after we've validated up to a paritcular checkpoint.
+19:49:30 <gmaxwell> (okay I'll still explain as other people might miss this)
+19:49:51 <gmaxwell> So you can consider two cases: one where the first peer you fetch from is an attacker, and one where the first peer is honest.
+19:50:10 <morcos> petertodd: i need to think about that.. but i imagine it might always be easier to soft fork, even under adverse scenario like that
+19:50:11 <gmaxwell> If the first peer is an attacker, you'll get header flooded now or under my proposal. (but at least it's just a one time initial install exposure)
+19:50:33 <BlueMatt> gmaxwell: well, not sure its better since the "frst checkpoint" is "known amount of work in the best chain at ~release time" instead of a few along the way to 300k
+19:50:51 <gmaxwell> If the first peer is not an attacker, in my propoal you'll quickly have all the headers and blocked from any attacks. Also no less good than now.
+19:50:53 <BlueMatt> (under first-peer-is-evil attacks, but ok)
+19:51:00 <gmaxwell> BlueMatt: but my proposal needs only headers.
+19:51:16 <gmaxwell> oh under first peer is attacker
+19:51:17 <petertodd> morcos: anyway, good to do up some deployment scenarios regardless to explain how that'd work
+19:51:17 <BlueMatt> oh, i thought we applied checkpoints against headers now
+19:51:18 <BlueMatt> nvm
+19:51:49 <sipa> BlueMatt: we do; after passing a certain checkpoint, we don't accept headers that fork off before that checkpoint
+19:52:06 <BlueMatt> ok, lets take this offline
+19:52:11 <BlueMatt> suggested additional topics?
+19:52:13 <gmaxwell> Okay, thats the overview.
+19:52:42 <gmaxwell> I suggested the final alert. I suppose I should coordinate with achow and cobra to get the thing up and alert out. Any reasons to hold off?
+19:53:38 <jtimon> mhmm, pindexBestHeader->nChainWork < UintToArith256(consensusParams.nMinimumChainWork) ? consensusParams.powLimit : consensusParams.powLimitLater
+19:53:38 <jtimon> what about instead... block.nHeight < consensusParams.highPowLimitHeight ? consensusParams.powLimit : consensusParams.powLimitLater
+19:53:39 <wumpus> #topic the final alert
+19:53:53 <wumpus> no reason IMO
+19:53:55 <btcdrak> gmaxwell: please get it over with.
+19:54:39 <gmaxwell> Okay. will coordinate.
+19:55:13 <gmaxwell> jtimon: that would make it trivial for an attacker to capture you on a fake chain.
+19:55:38 <gmaxwell> jtimon: just feed you a chain of diff 1 blocks of that height.. and now you won't accept the low diff blocks on the real chain anymore.
+19:56:48 <jtimon> gmaxwell: how am I prevented from handling reorgs in the same way as you?
+19:57:14 <sipa> jtimon: creating many blocks is easy. creating much work is hard
+19:57:43 <gmaxwell> anyting left in the meeting (I'll continue this convo after)
+19:57:49 <jtimon> what I think it's add less risk since  consensusParams.highPowLimitHeight is fixed but nMinimumChainWork is expected to chain with each release, no?
+19:58:24 <jtimon> I must be missing something, I don't see the vulnerability that my proposed change introduces
+19:58:26 <wumpus> ok, that concludes the meeting I think
+19:58:34 <wumpus> #endmeeting
