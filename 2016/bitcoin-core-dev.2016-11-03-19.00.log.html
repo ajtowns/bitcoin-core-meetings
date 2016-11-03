@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:39</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov  3 19:00:39 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:39</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:44</span><span class="nk"> &lt;sipa&gt;</span> meeting!
+<a name="l-5"></a><span class="tm">19:00:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012</span>
+<a name="l-6"></a><span class="tm">19:01:02</span><span class="nk"> &lt;gmaxwell&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> here
+<a name="l-8"></a><span class="tm">19:01:08</span><span class="nk"> &lt;jtimon&gt;</span> hello
+<a name="l-9"></a><span class="tm">19:01:17</span><span class="nk"> &lt;GitHub136&gt;</span> [13bitcoin] 15TheBlueMatt opened pull request #9075: Decouple peer-processing-logic from block-connection-logic (#3) (06master...06net_processing_4) 02https://github.com/bitcoin/bitcoin/pull/9075
+<a name="l-10"></a><span class="tm">19:01:18</span><span class="nk"> &lt;BlueMatt&gt;</span> second to last one ^
+<a name="l-11"></a><span class="tm">19:01:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> you just keep reopening it after we merge it, isn't it :)
+<a name="l-12"></a><span class="tm">19:01:45</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-13"></a><span class="tm">19:02:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> E_NO_PARSE, but, yes, all this stuff is pretty much queued up, once one gets merged another gets pr'd
+<a name="l-14"></a><span class="tm">19:02:59</span><span class="nk"> &lt;wumpus&gt;</span> no topics at all for this meeting?
+<a name="l-15"></a><span class="tm">19:03:20</span><span class="nk"> &lt;wumpus&gt;</span> did the pre-final alert go out gmaxwell?
+<a name="l-16"></a><span class="tm">19:03:24</span><span class="nk"> &lt;achow101&gt;</span> it did
+<a name="l-17"></a><span class="tm">19:03:29</span><span class="nk"> &lt;wumpus&gt;</span> ok, great
+<a name="l-18"></a><span class="tm">19:03:38</span><span class="nk"> &lt;sipa&gt;</span> did anyone see it?
+<a name="l-19"></a><span class="tm">19:03:41</span><span class="nk"> &lt;btcdrak&gt;</span> hi
+<a name="l-20"></a><span class="tm">19:03:42</span><span class="nk"> &lt;sdaftuar&gt;</span> i did
+<a name="l-21"></a><span class="tm">19:03:50</span><span class="nk"> &lt;achow101&gt;</span> I caught it on a 0.12.0 node I fired up just for it
+<a name="l-22"></a><span class="tm">19:04:21</span><span class="nk"> &lt;arubi&gt;</span> I have it on onlynet=onion
+<a name="l-23"></a><span class="tm">19:04:25</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell and i were talking recently about some improvements to the block/header fetch logic
+<a name="l-24"></a><span class="tm">19:04:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">block header/fetch logic</span>
+<a name="l-25"></a><span class="tm">19:05:03</span><span class="nk"> &lt;sipa&gt;</span> there are a bunch of related points there
+<a name="l-26"></a><span class="tm">19:05:14</span><span class="nk"> &lt;sipa&gt;</span> one is that we don't have a timeout for headers requests
+<a name="l-27"></a><span class="tm">19:05:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> is there a long branch where I can see the code movements you're planning?
+<a name="l-28"></a><span class="tm">19:05:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> working on an updated version now
+<a name="l-29"></a><span class="tm">19:05:59</span><span class="nk"> &lt;sipa&gt;</span> and that we don't respond to headers requests while in IBD, which can cause stalls if nodes mistakenly believe they are in IBD
+<a name="l-30"></a><span class="tm">19:06:21</span><span class="nk"> &lt;sipa&gt;</span> bit it goes even further... the block fetch logic only disconnects peers who slow down the process
+<a name="l-31"></a><span class="tm">19:06:41</span><span class="nk"> &lt;sipa&gt;</span> we may just have a peer who has no blocks we can fetch at all from, and we never try, and we never disconnect them
+<a name="l-32"></a><span class="tm">19:07:04</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> eg non-NODE_WITNESS nodes?
+<a name="l-33"></a><span class="tm">19:07:11</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> cool
+<a name="l-34"></a><span class="tm">19:07:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> or nodes who are legitimately behind
+<a name="l-35"></a><span class="tm">19:07:18</span><span class="nk"> &lt;sdaftuar&gt;</span> ah, right
+<a name="l-36"></a><span class="tm">19:07:50</span><span class="nk"> &lt;sipa&gt;</span> so it seems there is a simple solution: disconnect outgoing connections you're not downloading from while in IBD
+<a name="l-37"></a><span class="tm">19:08:13</span><span class="nk"> &lt;sipa&gt;</span> but remove the non-response to getheaders in IBD
+<a name="l-38"></a><span class="tm">19:08:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-39"></a><span class="tm">19:08:35</span><span class="nk"> &lt;sipa&gt;</span> if the peer actually is behind, we won't fetch from them, and we'll disconnect them instead of stalling yhem
+<a name="l-40"></a><span class="tm">19:09:30</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell suggested something even stronger: ever minute, disconnect the peer that is slowest to give you blocks overall (during IBD)
+<a name="l-41"></a><span class="tm">19:09:35</span><span class="nk"> &lt;sdaftuar&gt;</span> if we remove the non-response to getheaders in IBD, mightn't we disconnect people who are downloading from us?
+<a name="l-42"></a><span class="tm">19:09:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> During IBD?
+<a name="l-43"></a><span class="tm">19:10:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> note that this is only for outgoing connections
+<a name="l-44"></a><span class="tm">19:10:14</span><span class="nk"> &lt;sdaftuar&gt;</span> ah
+<a name="l-45"></a><span class="tm">19:10:48</span><span class="nk"> &lt;sipa&gt;</span> i think serving blocks to someone who is even more behind than us, whike we are in IBD, is perfectly fine
+<a name="l-46"></a><span class="tm">19:10:58</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe my suggestion went further, if you have MAX outbound, and it's been a minute since you disconnected anyone, and you're downloading blocks, disconnect the outbound peer you recieved the fewest blocks from in the last minute. (or, least recently recieved a block from). Presumably excempting -connect peers.
+<a name="l-47"></a><span class="tm">19:11:06</span><span class="nk"> &lt;gmaxwell&gt;</span> (ah pieter just said some of that)
+<a name="l-48"></a><span class="tm">19:11:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about prioritize peers that can server "faster" (don't know if it's really measurable)
+<a name="l-49"></a><span class="tm">19:12:05</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> one complication with serving headers during IBD is that we might be on a bogus chain
+<a name="l-50"></a><span class="tm">19:12:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> that's what we already do... the slowest ones get disconnected if they slow your overall sync speed down
+<a name="l-51"></a><span class="tm">19:12:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> ah
+<a name="l-52"></a><span class="tm">19:12:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> that's something better IBD/chainpoint replacement is for, i guess?
+<a name="l-53"></a><span class="tm">19:13:09</span><span class="nk"> &lt;sipa&gt;</span> *checkpoint
+<a name="l-54"></a><span class="tm">19:13:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> during my SPV work I encountered some stalling because of peers serving blocks each in a ~5min rhythm.
+<a name="l-55"></a><span class="tm">19:13:30</span><span class="nk"> &lt;sdaftuar&gt;</span> i thought gmaxwell's PR to replcae the checkpointed-height with a checkpointed work as a way to determine if you're in IBD makes sense
+<a name="l-56"></a><span class="tm">19:14:07</span><span class="nk"> &lt;sdaftuar&gt;</span> so if we eliminate the IBD restriction on serving headers, we'd still want to keep some version of that checkpointed-work requirement i think
+<a name="l-57"></a><span class="tm">19:15:09</span><span class="nk"> &lt;sdaftuar&gt;</span> which i guess would be fine?
+<a name="l-58"></a><span class="tm">19:15:15</span><span class="nk"> &lt;sdaftuar&gt;</span> and an improvement over the current situation
+<a name="l-59"></a><span class="tm">19:15:18</span><span class="nk"> &lt;sdaftuar&gt;</span> ?
+<a name="l-60"></a><span class="tm">19:15:20</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-61"></a><span class="tm">19:15:22</span><span class="nk"> &lt;sipa&gt;</span> i think so
+<a name="l-62"></a><span class="tm">19:15:54</span><span class="nk"> &lt;sipa&gt;</span> it's hard to reason about this. if you're truly sybilled during IBD, none of this will have an effect
+<a name="l-63"></a><span class="tm">19:16:07</span><span class="nk"> &lt;sipa&gt;</span> if not, you'll quickly learn about the real chain anyway
+<a name="l-64"></a><span class="tm">19:17:22</span><span class="nk"> &lt;Chris_St1&gt;</span> <span class="hi">sipa:</span> So that pull request does not help if you are fully sybilled? Won't you at least be able to determine if there was a lot of work expended in the sybil attack? (not sure how reassuring that is)
+<a name="l-65"></a><span class="tm">19:17:41</span><span class="nk"> &lt;gmaxwell&gt;</span> this is going offtopic. :)
+<a name="l-66"></a><span class="tm">19:18:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> sdaftuar is pointing out that if we're on a checkpoint invalid chain, and serve headers for it, our peers will ban us. So thats a complication with serving headers while below the top checkpoint.
+<a name="l-67"></a><span class="tm">19:18:45</span><span class="nk"> &lt;sipa&gt;</span> ah.
+<a name="l-68"></a><span class="tm">19:19:17</span><span class="nk"> &lt;sdaftuar&gt;</span> right, so assuming we are keeping the checkpoint-work-requirement (or some version of it) as a gate on responding to a getheaders, then which of the IBD checks are we trying to eliminate?
+<a name="l-69"></a><span class="tm">19:19:42</span><span class="nk"> &lt;sdaftuar&gt;</span> from past conversations i think the concern is that we might have some long headers chain that we can't access/download blocks towards, like on testnet or something
+<a name="l-70"></a><span class="tm">19:19:46</span><span class="nk"> &lt;sdaftuar&gt;</span> is that basicalyl right?
+<a name="l-71"></a><span class="tm">19:20:14</span><span class="nk"> &lt;gmaxwell&gt;</span> We'd like to eliminate all cases where we simply ignore a getheaders request (potentially replace it with hanging up on the peer)-- because it DOS attacks peers unlucky enough to select us for their initial headers fetch.
+<a name="l-72"></a><span class="tm">19:20:27</span><span class="nk"> &lt;sipa&gt;</span> we only serve headers for blocks in our main chain, no?
+<a name="l-73"></a><span class="tm">19:20:35</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-74"></a><span class="tm">19:20:38</span><span class="nk"> &lt;sipa&gt;</span> which indeed may contains dummy low difficulty blocks
+<a name="l-75"></a><span class="tm">19:21:40</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, the download part of this can be done first before any change to how we respond to getheaders.
+<a name="l-76"></a><span class="tm">19:21:51</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-77"></a><span class="tm">19:21:59</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> thanks, i think it was important to clearly delineate the problem.  i didn't know what we were trying to accomplish.  it doesn't seem that having a bunch of IBD nodes able to serve each other as much as they have is _that_ beneficial
+<a name="l-78"></a><span class="tm">19:22:19</span><span class="nk"> &lt;morcos&gt;</span> however freeing them up to ask someone else for headers withotu waiting for a long timeout seems valuable
+<a name="l-79"></a><span class="tm">19:22:29</span><span class="nk"> &lt;GitHub84&gt;</span> [13bitcoin] 15TheBlueMatt closed pull request #8930: Move orphan processing to ActivateBestChain (06master...06net_processing_3) 02https://github.com/bitcoin/bitcoin/pull/8930
+<a name="l-80"></a><span class="tm">19:22:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes, thats mostly irrelevant, the concern is primarily that we cause harm to peers by not responding.
+<a name="l-81"></a><span class="tm">19:22:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> My recollection is that currently we don't even have a timeout for the initial headers fetch! the 'timeout' is a new block being offered by some other peer.
+<a name="l-82"></a><span class="tm">19:23:14</span><span class="nk"> &lt;sdaftuar&gt;</span> so step 1: #9068?
+<a name="l-83"></a><span class="tm">19:23:15</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9068 | Timeout for headers fetch · Issue #9068 · bitcoin/bitcoin · GitHub
+<a name="l-84"></a><span class="tm">19:23:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> right... i think by using a "kick peers that aren't useful for sync" generic approach, we won't need the "don't serve headers while in IBD" anyway... less comllexity
+<a name="l-85"></a><span class="tm">19:23:40</span><span class="nk"> &lt;sipa&gt;</span> *complexity
+<a name="l-86"></a><span class="tm">19:24:31</span><span class="nk"> &lt;luke-jr&gt;</span> (suggested topic: when to halt changes to BIPs; 0.13.1 is no longer BIP 152-compatible I think)
+<a name="l-87"></a><span class="tm">19:24:35</span><span class="nk"> &lt;gmaxwell&gt;</span> That should be fixed as well, but even with it fixed it would be rude to make them wait.
+<a name="l-88"></a><span class="tm">19:28:16</span><span class="nk"> &lt;wumpus&gt;</span> 0.13.1 is no longer BIP 152 compatible?
+<a name="l-89"></a><span class="tm">19:28:25</span><span class="nk"> &lt;sdaftuar&gt;</span> well, it seems to have some bugs
+<a name="l-90"></a><span class="tm">19:28:39</span><span class="nk"> &lt;BlueMatt&gt;</span> 0.13.1 is bip 152 compatible after sdaftuar's proposed changes
+<a name="l-91"></a><span class="tm">19:28:52</span><span class="nk"> &lt;sipa&gt;</span> switch topic?
+<a name="l-92"></a><span class="tm">19:28:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP 152 changes</span>
+<a name="l-93"></a><span class="tm">19:29:10</span><span class="nk"> &lt;BlueMatt&gt;</span> which was merged
+<a name="l-94"></a><span class="tm">19:29:18</span><span class="nk"> &lt;sipa&gt;</span> 0.13.1 does not relayever before validating, right?
+<a name="l-95"></a><span class="tm">19:29:21</span><span class="nk"> &lt;wumpus&gt;</span> but if it has bugs, was it ever BIP 152 compatible?
+<a name="l-96"></a><span class="tm">19:29:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, but it can ban in response to a peer doing that
+<a name="l-97"></a><span class="tm">19:29:31</span><span class="nk"> &lt;wumpus&gt;</span> or were the bugsin the BIP
+<a name="l-98"></a><span class="tm">19:29:34</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> correct
+<a name="l-99"></a><span class="tm">19:29:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> the bip has been updated to say that you may no longer pre-relay unless there was a version bump
+<a name="l-100"></a><span class="tm">19:29:56</span><span class="nk"> &lt;BlueMatt&gt;</span> which is #9026
+<a name="l-101"></a><span class="tm">19:29:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9026 | Fix handling of invalid compact blocks by sdaftuar · Pull Request #9026 · bitcoin/bitcoin · GitHub
+<a name="l-102"></a><span class="tm">19:30:05</span><span class="nk"> &lt;sipa&gt;</span> so the issue is only when potential other bip152 implementations are oresent on the network
+<a name="l-103"></a><span class="tm">19:30:11</span><span class="nk"> &lt;sdaftuar&gt;</span> right
+<a name="l-104"></a><span class="tm">19:30:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, but no such implementations exist, and if they do it now they must wait for the protocol version
+<a name="l-105"></a><span class="tm">19:30:30</span><span class="nk"> &lt;sipa&gt;</span> so i believe 0.13.1 is compliant with the updated bip152
+<a name="l-106"></a><span class="tm">19:30:38</span><span class="nk"> &lt;BlueMatt&gt;</span> yes
+<a name="l-107"></a><span class="tm">19:30:39</span><span class="nk"> &lt;sdaftuar&gt;</span> yes, i think so as well.
+<a name="l-108"></a><span class="tm">19:30:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> unfortunately because of the checkpoint stupidity we may still. :(
+<a name="l-109"></a><span class="tm">19:30:46</span><span class="nk"> &lt;gmaxwell&gt;</span> but lets think about that outside of the meeting.
+<a name="l-110"></a><span class="tm">19:30:46</span><span class="nk"> &lt;gmaxwell&gt;</span> 0.13.0 did too.
+<a name="l-111"></a><span class="tm">19:30:46</span><span class="nk"> &lt;gmaxwell&gt;</span> But I think what luke was referring to is that BIP152 didn't originally document version 2 compact blocks that use the wtxid instead.
+<a name="l-112"></a><span class="tm">19:30:57</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> people are changing BIP 152 still
+<a name="l-113"></a><span class="tm">19:31:14</span><span class="nk"> &lt;gmaxwell&gt;</span> Luke's question was really about when should someone be told 'write a new BIP' rather than changing an existing one.
+<a name="l-114"></a><span class="tm">19:31:26</span><span class="nk"> &lt;sipa&gt;</span> yes, this is a good question
+<a name="l-115"></a><span class="tm">19:32:04</span><span class="nk"> &lt;luke-jr&gt;</span> I may be wrong about the current status of v0.13.1 and BIP 152, but yes, the general principle is what I think needs to be discussed
+<a name="l-116"></a><span class="tm">19:32:30</span><span class="nk"> &lt;gmaxwell&gt;</span> Not really much of a question for this meeting though, perhaps solicit input on the mailing list?
+<a name="l-117"></a><span class="tm">19:32:42</span><span class="nk"> &lt;luke-jr&gt;</span> I didn't realise v0.13.1 bumped the protocol version-number
+<a name="l-118"></a><span class="tm">19:32:47</span><span class="nk"> &lt;sdaftuar&gt;</span> it didn't
+<a name="l-119"></a><span class="tm">19:32:49</span><span class="nk"> &lt;luke-jr&gt;</span> hmm, ok
+<a name="l-120"></a><span class="tm">19:33:10</span><span class="nk"> &lt;morcos&gt;</span> i don't think its realistic to think we're going to not want to make small tweaks to complicated BIP's like this after releasing implementations of it.  and it seems much clearer in the future to just edit the original bip to reflect the fully thought out final design
+<a name="l-121"></a><span class="tm">19:33:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> then how is it BIP 152 compatible iwth your change?
+<a name="l-122"></a><span class="tm">19:33:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> it imposes a restriction on code to not do something (which no one is currently doing) unless the recipient is at-or-above the bumped version number
+<a name="l-123"></a><span class="tm">19:33:54</span><span class="nk"> &lt;sdaftuar&gt;</span> in this case, relay before full validation
+<a name="l-124"></a><span class="tm">19:35:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> for the specifics here, 0.13.1 is compatible with BIP152 because it implements a new version number that the original bip152 was just silent on.
+<a name="l-125"></a><span class="tm">19:35:30</span><span class="nk"> &lt;luke-jr&gt;</span> it says "nodes SHOULD NOT ban a peer for announcing a new block with a CMPCTBLOCK message that is invalid, but has a valid header" unconditionally, and says nodes should bump the version number
+<a name="l-126"></a><span class="tm">19:36:16</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, well that is a language mistake
+<a name="l-127"></a><span class="tm">19:36:20</span><span class="nk"> &lt;gmaxwell&gt;</span> and BIP152 already explained how versions were to be handled in a compatible way.
+<a name="l-128"></a><span class="tm">19:36:30</span><span class="nk"> &lt;BlueMatt&gt;</span> by that language, indeed, 0.13.1 violates a SHOULD NOT
+<a name="l-129"></a><span class="tm">19:36:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> re banning it's just a bug that all prior versions have as well.
+<a name="l-130"></a><span class="tm">19:37:14</span><span class="nk"> &lt;BlueMatt&gt;</span> however, this wont effect functionality, as we're a) fixing this as if it were a bug, b) we say you SHOULD NOT announce without validation if the number is below
+<a name="l-131"></a><span class="tm">19:37:54</span><span class="nk"> &lt;luke-jr&gt;</span> ok
+<a name="l-132"></a><span class="tm">19:39:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> with this change, as the author are you comfortable with a freeze to the BIP so we can move it forward to Final status?
+<a name="l-133"></a><span class="tm">19:40:08</span><span class="nk"> &lt;gmaxwell&gt;</span> is there a reason to rush?
+<a name="l-134"></a><span class="tm">19:40:44</span><span class="nk"> &lt;wumpus&gt;</span> is this about https://github.com/bitcoin/bitcoin/pull/9058? there was also talk of a protocol change there
+<a name="l-135"></a><span class="tm">19:40:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> after https://github.com/bitcoin/bips/pull/469, yea, probably
+<a name="l-136"></a><span class="tm">19:40:51</span><span class="nk"> &lt;BlueMatt&gt;</span> but need to review tht
+<a name="l-137"></a><span class="tm">19:40:52</span><span class="nk"> &lt;BlueMatt&gt;</span> at
+<a name="l-138"></a><span class="tm">19:41:20</span><span class="nk"> &lt;wumpus&gt;</span> I thought it mentioned a BIP change, but doesn't seem to mention that anymore
+<a name="l-139"></a><span class="tm">19:41:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> how will existing nodes react if they get a full block message there?
+<a name="l-140"></a><span class="tm">19:41:45</span><span class="nk"> &lt;morcos&gt;</span> i don't see why we should Finalize it at all until we've stopped changing it for 6-12 mos
+<a name="l-141"></a><span class="tm">19:42:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> makes sense to not finalize too soon, it's unrealistic to expect a bip to come into being completely perfect
+<a name="l-142"></a><span class="tm">19:42:31</span><span class="nk"> &lt;sipa&gt;</span> i think it depends
+<a name="l-143"></a><span class="tm">19:42:34</span><span class="nk"> &lt;gmaxwell&gt;</span> Agreed with Morcos. Though for things like consensus code, really being widely active on the network defines final.
+<a name="l-144"></a><span class="tm">19:42:42</span><span class="nk"> &lt;sipa&gt;</span> there shouldn't be material changes to ideas
+<a name="l-145"></a><span class="tm">19:42:47</span><span class="nk"> &lt;luke-jr&gt;</span> no particular reason to rush, I guess, just feels like a moving goal for anyone who wanted to be compatible with it
+<a name="l-146"></a><span class="tm">19:43:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> at least they are minor alterations.
+<a name="l-147"></a><span class="tm">19:43:09</span><span class="nk"> &lt;wumpus&gt;</span> that's always the case. Others could also report problems encountered during implementing it
+<a name="l-148"></a><span class="tm">19:43:13</span><span class="nk"> &lt;sipa&gt;</span> but clarifications and elaborating on edge cases is something else
+<a name="l-149"></a><span class="tm">19:43:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> heh, even there, its a matter of whether we are confident that we've really understood what the consensus is.   but yeah i agree it shoudl depend on the changes we want to make.
+<a name="l-150"></a><span class="tm">19:43:26</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> sure, we still make clarifications to Final BIPs even now I think
+<a name="l-151"></a><span class="tm">19:43:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> agreed, it sucks that its still moving, but currently there are no other implementors (except XT, which I believe is still moving as well)
+<a name="l-152"></a><span class="tm">19:43:53</span><span class="nk"> &lt;wumpus&gt;</span> it could also move because of problems other implementors find
+<a name="l-153"></a><span class="tm">19:44:53</span><span class="nk"> &lt;luke-jr&gt;</span> since it's being used live on the network, changes also should probably address backwards compatibility, which they aren't in this case
+<a name="l-154"></a><span class="tm">19:45:05</span><span class="nk"> &lt;wumpus&gt;</span> it's just unrealsitic to expect not even small issues in wording/clarity/definitions, although I guess if it is in a release there should not be substantial incompatible changes anymore
+<a name="l-155"></a><span class="tm">19:45:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> so interesting point, say we discovered that BIP30 was implemented differently from the BIP tomorrow. What should we do?   IETF way would be to attach an erratum to the document right away. But I find that this often confuses people who manage to read the document without an erratum. Then later a new document is published that reflects reality.  Though this has a problem that people reme
+<a name="l-156"></a><span class="tm">19:45:48</span><span class="nk"> &lt;gmaxwell&gt;</span> mber the original number.
+<a name="l-157"></a><span class="tm">19:45:48</span><span class="nk"> &lt;gmaxwell&gt;</span> If no one of consequence actually implemented BIP30 as specified in the doc, what use does keeping the old doc around (except in the git history) serve?
+<a name="l-158"></a><span class="tm">19:45:48</span><span class="nk"> &lt;wumpus&gt;</span> yes, those at least will need to address backwards compatibilty
+<a name="l-159"></a><span class="tm">19:46:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I *think* we've fixed such issues in Final BIPs already
+<a name="l-160"></a><span class="tm">19:46:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> we're not plaintext, lets highlight it in red! :p
+<a name="l-161"></a><span class="tm">19:46:51</span><span class="nk"> &lt;luke-jr&gt;</span> &gt;_&lt;
+<a name="l-162"></a><span class="tm">19:46:53</span><span class="nk"> &lt;morcos&gt;</span> yes, BIP 34 for example
+<a name="l-163"></a><span class="tm">19:47:34</span><span class="nk"> &lt;morcos&gt;</span> ehh, i guess that was just wrong explanation
+<a name="l-164"></a><span class="tm">19:47:50</span><span class="nk"> &lt;luke-jr&gt;</span> BIP 16
+<a name="l-165"></a><span class="tm">19:48:01</span><span class="nk"> &lt;luke-jr&gt;</span> https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size
+<a name="l-166"></a><span class="tm">19:48:02</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/520 | log low-level network messages only when fDebug is set by tcatm · Pull Request #520 · bitcoin/bitcoin · GitHub
+<a name="l-167"></a><span class="tm">19:48:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> the erratum link on the ietf website is red, https://tools.ietf.org/html/rfc6716
+<a name="l-168"></a><span class="tm">19:48:35 </span><span class="nka">* luke-jr</span> <span class="ac">looks at gribble</span>
+<a name="l-169"></a><span class="tm">19:49:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I warned about that!
+<a name="l-170"></a><span class="tm">19:49:56</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, I still think that the BIP discussion belongs elsewhere. :)
+<a name="l-171"></a><span class="tm">19:50:47</span><span class="nk"> &lt;morcos&gt;</span> well you come up with something else to talk about for 11 more minutes then!
+<a name="l-172"></a><span class="tm">19:51:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> sipa: thanks for merging lots of stuff!
+<a name="l-173"></a><span class="tm">19:51:12</span><span class="nk"> &lt;BlueMatt&gt;</span> &lt;3
+<a name="l-174"></a><span class="tm">19:51:13</span><span class="nk"> &lt;sdaftuar&gt;</span> +1
+<a name="l-175"></a><span class="tm">19:51:16</span><span class="nk"> &lt;wumpus&gt;</span> I think there was some pull where we wondered whether to backport to 0.13.2
+<a name="l-176"></a><span class="tm">19:51:27</span><span class="nk"> &lt;wumpus&gt;</span> np :)
+<a name="l-177"></a><span class="tm">19:51:48</span><span class="nk"> &lt;BlueMatt&gt;</span> making 0.14 great again!
+<a name="l-178"></a><span class="tm">19:51:50</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/pull/9053
+<a name="l-179"></a><span class="tm">19:51:56</span><span class="nk"> &lt;jtimon&gt;</span> topic potential backports to 0.13.2 ?
+<a name="l-180"></a><span class="tm">19:52:38</span><span class="nk"> &lt;wumpus&gt;</span> I don't think there's time enough to discuss all potential backports to 0.13.2, but that one would do
+<a name="l-181"></a><span class="tm">19:53:18</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it would be harmless to backport, and helpful for testnet nodes.  But I don't have a strong opinion.
+<a name="l-182"></a><span class="tm">19:53:23</span><span class="nk"> &lt;gmaxwell&gt;</span> oh I see sipa mentioned testnet.
+<a name="l-183"></a><span class="tm">19:54:14</span><span class="nk"> &lt;wumpus&gt;</span> so I guess in practice it fixes testnet issues only on 0.13.2, so the question would be is that worth it to potential regressions?
+<a name="l-184"></a><span class="tm">19:54:41</span><span class="nk"> &lt;sdaftuar&gt;</span> it's not that much of a fix for testnet right, it just allows you to reorg out the non-segwit chain?
+<a name="l-185"></a><span class="tm">19:55:09</span><span class="nk"> &lt;gmaxwell&gt;</span> it does actually fix a misbehavior that we see on testnet. &lt;famous last words&gt;I can't see it causing a regression.&lt;/famous last words&gt;
+<a name="l-186"></a><span class="tm">19:55:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> because of the 20 minute rule in general it's very easy to get testnet nodes into a state where they just stop mining. Trivial vulnerablity, the active issue is that the non-segwit chain there unintentionally triggers it from time to time.
+<a name="l-187"></a><span class="tm">19:56:16</span><span class="nk"> &lt;gmaxwell&gt;</span> ('stop mining' is ambigious, they won't mine after they're restarted)
+<a name="l-188"></a><span class="tm">19:56:48</span><span class="nk"> &lt;sdaftuar&gt;</span> fwiw i have a few bridges of my own back up now that i hope will keep that from happening again
+<a name="l-189"></a><span class="tm">19:56:58</span><span class="nk"> &lt;sdaftuar&gt;</span> can you elaborate on the 20 minute rule though?
+<a name="l-190"></a><span class="tm">19:57:08</span><span class="nk"> &lt;sdaftuar&gt;</span> oh
+<a name="l-191"></a><span class="tm">19:57:23</span><span class="nk"> &lt;wumpus&gt;</span> I think personally I'd prefer to keep it for 0.14, so the new rule/logic can prove itself a while
+<a name="l-192"></a><span class="tm">19:57:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> the issue is that if anyone produces a lot of headers beyond your current tip which you accept (made computationally easy by the diff1 blocks) then you'll not leave IBD.
+<a name="l-193"></a><span class="tm">19:58:29</span><span class="nk"> &lt;sdaftuar&gt;</span> got it
+<a name="l-194"></a><span class="tm">19:58:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> the non-segwit chain does this by accident through a confluence of other behaviors (the not fetching blocks from non-witness peers). But the real bug is just using forward header count to cause you to not leave ibd.
+<a name="l-195"></a><span class="tm">19:58:49</span><span class="nk"> &lt;gmaxwell&gt;</span> which that PR fixes.
+<a name="l-196"></a><span class="tm">19:58:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok, we can of course later decide to backport to whatever 0.13.x at that time
+<a name="l-197"></a><span class="tm">19:59:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-198"></a><span class="tm">19:59:16</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds fine to me.
+<a name="l-199"></a><span class="tm">19:59:19</span><span class="nk"> &lt;wumpus&gt;</span> that doesn't prohibit backporting it later
+<a name="l-200"></a><span class="tm">19:59:36</span><span class="nk"> &lt;gmaxwell&gt;</span> because of the latching in IBD this code is pretty robust against mistbehavior to begin with.
+<a name="l-201"></a><span class="tm">20:00:05</span><span class="nk"> &lt;sipa&gt;</span> $-+(#(_+$+ PC LOAD LETTER
+<a name="l-202"></a><span class="tm">20:00:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

@@ -1,0 +1,202 @@
+19:00:39 <wumpus> #startmeeting
+19:00:39 <lightningbot> Meeting started Thu Nov  3 19:00:39 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:39 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:44 <sipa> meeting!
+19:00:53 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012
+19:01:02 <gmaxwell> hi
+19:01:03 <jonasschnelli> here
+19:01:08 <jtimon> hello
+19:01:17 <GitHub136> [13bitcoin] 15TheBlueMatt opened pull request #9075: Decouple peer-processing-logic from block-connection-logic (#3) (06master...06net_processing_4) 02https://github.com/bitcoin/bitcoin/pull/9075
+19:01:18 <BlueMatt> second to last one ^
+19:01:39 <wumpus> BlueMatt: you just keep reopening it after we merge it, isn't it :)
+19:01:45 <wumpus> proposed topics?
+19:02:10 <BlueMatt> wumpus: E_NO_PARSE, but, yes, all this stuff is pretty much queued up, once one gets merged another gets pr'd
+19:02:59 <wumpus> no topics at all for this meeting?
+19:03:20 <wumpus> did the pre-final alert go out gmaxwell?
+19:03:24 <achow101> it did
+19:03:29 <wumpus> ok, great
+19:03:38 <sipa> did anyone see it?
+19:03:41 <btcdrak> hi
+19:03:42 <sdaftuar> i did
+19:03:50 <achow101> I caught it on a 0.12.0 node I fired up just for it
+19:04:21 <arubi> I have it on onlynet=onion
+19:04:25 <sipa> gmaxwell and i were talking recently about some improvements to the block/header fetch logic
+19:04:50 <wumpus> #topic block header/fetch logic
+19:05:03 <sipa> there are a bunch of related points there
+19:05:14 <sipa> one is that we don't have a timeout for headers requests
+19:05:36 <jtimon> BlueMatt: is there a long branch where I can see the code movements you're planning?
+19:05:54 <BlueMatt> jtimon: working on an updated version now
+19:05:59 <sipa> and that we don't respond to headers requests while in IBD, which can cause stalls if nodes mistakenly believe they are in IBD
+19:06:21 <sipa> bit it goes even further... the block fetch logic only disconnects peers who slow down the process
+19:06:41 <sipa> we may just have a peer who has no blocks we can fetch at all from, and we never try, and we never disconnect them
+19:07:04 <sdaftuar> sipa: eg non-NODE_WITNESS nodes?
+19:07:11 <jtimon> BlueMatt: cool
+19:07:15 <sipa> sdaftuar: or nodes who are legitimately behind
+19:07:18 <sdaftuar> ah, right
+19:07:50 <sipa> so it seems there is a simple solution: disconnect outgoing connections you're not downloading from while in IBD
+19:08:13 <sipa> but remove the non-response to getheaders in IBD
+19:08:30 <jonasschnelli> sipa: ack
+19:08:35 <sipa> if the peer actually is behind, we won't fetch from them, and we'll disconnect them instead of stalling yhem
+19:09:30 <sipa> gmaxwell suggested something even stronger: ever minute, disconnect the peer that is slowest to give you blocks overall (during IBD)
+19:09:35 <sdaftuar> if we remove the non-response to getheaders in IBD, mightn't we disconnect people who are downloading from us?
+19:09:54 <jonasschnelli> During IBD?
+19:10:05 <sipa> sdaftuar: note that this is only for outgoing connections
+19:10:14 <sdaftuar> ah
+19:10:48 <sipa> i think serving blocks to someone who is even more behind than us, whike we are in IBD, is perfectly fine
+19:10:58 <gmaxwell> I believe my suggestion went further, if you have MAX outbound, and it's been a minute since you disconnected anyone, and you're downloading blocks, disconnect the outbound peer you recieved the fewest blocks from in the last minute. (or, least recently recieved a block from). Presumably excempting -connect peers.
+19:11:06 <gmaxwell> (ah pieter just said some of that)
+19:11:42 <jonasschnelli> What about prioritize peers that can server "faster" (don't know if it's really measurable)
+19:12:05 <sdaftuar> sipa: one complication with serving headers during IBD is that we might be on a bogus chain
+19:12:14 <sipa> jonasschnelli: that's what we already do... the slowest ones get disconnected if they slow your overall sync speed down
+19:12:28 <jonasschnelli> sipa: ah
+19:12:58 <sipa> sdaftuar: that's something better IBD/chainpoint replacement is for, i guess?
+19:13:09 <sipa> *checkpoint
+19:13:23 <jonasschnelli> during my SPV work I encountered some stalling because of peers serving blocks each in a ~5min rhythm.
+19:13:30 <sdaftuar> i thought gmaxwell's PR to replcae the checkpointed-height with a checkpointed work as a way to determine if you're in IBD makes sense
+19:14:07 <sdaftuar> so if we eliminate the IBD restriction on serving headers, we'd still want to keep some version of that checkpointed-work requirement i think
+19:15:09 <sdaftuar> which i guess would be fine?
+19:15:15 <sdaftuar> and an improvement over the current situation
+19:15:18 <sdaftuar> ?
+19:15:20 <kanzure> hi.
+19:15:22 <sipa> i think so
+19:15:54 <sipa> it's hard to reason about this. if you're truly sybilled during IBD, none of this will have an effect
+19:16:07 <sipa> if not, you'll quickly learn about the real chain anyway
+19:17:22 <Chris_St1> sipa: So that pull request does not help if you are fully sybilled? Won't you at least be able to determine if there was a lot of work expended in the sybil attack? (not sure how reassuring that is)
+19:17:41 <gmaxwell> this is going offtopic. :)
+19:18:17 <gmaxwell> sipa: sdaftuar is pointing out that if we're on a checkpoint invalid chain, and serve headers for it, our peers will ban us. So thats a complication with serving headers while below the top checkpoint.
+19:18:45 <sipa> ah.
+19:19:17 <sdaftuar> right, so assuming we are keeping the checkpoint-work-requirement (or some version of it) as a gate on responding to a getheaders, then which of the IBD checks are we trying to eliminate?
+19:19:42 <sdaftuar> from past conversations i think the concern is that we might have some long headers chain that we can't access/download blocks towards, like on testnet or something
+19:19:46 <sdaftuar> is that basicalyl right?
+19:20:14 <gmaxwell> We'd like to eliminate all cases where we simply ignore a getheaders request (potentially replace it with hanging up on the peer)-- because it DOS attacks peers unlucky enough to select us for their initial headers fetch.
+19:20:27 <sipa> we only serve headers for blocks in our main chain, no?
+19:20:35 <sdaftuar> sipa: yes
+19:20:38 <sipa> which indeed may contains dummy low difficulty blocks
+19:21:40 <gmaxwell> In any case, the download part of this can be done first before any change to how we respond to getheaders.
+19:21:51 <sipa> right
+19:21:59 <morcos> gmaxwell: thanks, i think it was important to clearly delineate the problem.  i didn't know what we were trying to accomplish.  it doesn't seem that having a bunch of IBD nodes able to serve each other as much as they have is _that_ beneficial
+19:22:19 <morcos> however freeing them up to ask someone else for headers withotu waiting for a long timeout seems valuable
+19:22:29 <GitHub84> [13bitcoin] 15TheBlueMatt closed pull request #8930: Move orphan processing to ActivateBestChain (06master...06net_processing_3) 02https://github.com/bitcoin/bitcoin/pull/8930
+19:22:33 <gmaxwell> morcos: yes, thats mostly irrelevant, the concern is primarily that we cause harm to peers by not responding.
+19:22:58 <gmaxwell> morcos: My recollection is that currently we don't even have a timeout for the initial headers fetch! the 'timeout' is a new block being offered by some other peer.
+19:23:14 <sdaftuar> so step 1: #9068?
+19:23:15 <gribble> https://github.com/bitcoin/bitcoin/issues/9068 | Timeout for headers fetch · Issue #9068 · bitcoin/bitcoin · GitHub
+19:23:35 <sipa> morcos: right... i think by using a "kick peers that aren't useful for sync" generic approach, we won't need the "don't serve headers while in IBD" anyway... less comllexity
+19:23:40 <sipa> *complexity
+19:24:31 <luke-jr> (suggested topic: when to halt changes to BIPs; 0.13.1 is no longer BIP 152-compatible I think)
+19:24:35 <gmaxwell> That should be fixed as well, but even with it fixed it would be rude to make them wait.
+19:28:16 <wumpus> 0.13.1 is no longer BIP 152 compatible?
+19:28:25 <sdaftuar> well, it seems to have some bugs
+19:28:39 <BlueMatt> 0.13.1 is bip 152 compatible after sdaftuar's proposed changes
+19:28:52 <sipa> switch topic?
+19:28:59 <wumpus> #topic BIP 152 changes
+19:29:10 <BlueMatt> which was merged
+19:29:18 <sipa> 0.13.1 does not relayever before validating, right?
+19:29:21 <wumpus> but if it has bugs, was it ever BIP 152 compatible?
+19:29:29 <BlueMatt> sipa: yes, but it can ban in response to a peer doing that
+19:29:31 <wumpus> or were the bugsin the BIP
+19:29:34 <sdaftuar> sipa: correct
+19:29:42 <BlueMatt> sipa: the bip has been updated to say that you may no longer pre-relay unless there was a version bump
+19:29:56 <BlueMatt> which is #9026
+19:29:57 <gribble> https://github.com/bitcoin/bitcoin/issues/9026 | Fix handling of invalid compact blocks by sdaftuar · Pull Request #9026 · bitcoin/bitcoin · GitHub
+19:30:05 <sipa> so the issue is only when potential other bip152 implementations are oresent on the network
+19:30:11 <sdaftuar> right
+19:30:27 <BlueMatt> sipa: yes, but no such implementations exist, and if they do it now they must wait for the protocol version
+19:30:30 <sipa> so i believe 0.13.1 is compliant with the updated bip152
+19:30:38 <BlueMatt> yes
+19:30:39 <sdaftuar> yes, i think so as well.
+19:30:45 <gmaxwell> sipa: unfortunately because of the checkpoint stupidity we may still. :(
+19:30:46 <gmaxwell> but lets think about that outside of the meeting.
+19:30:46 <gmaxwell> 0.13.0 did too.
+19:30:46 <gmaxwell> But I think what luke was referring to is that BIP152 didn't originally document version 2 compact blocks that use the wtxid instead.
+19:30:57 <luke-jr> wumpus: people are changing BIP 152 still
+19:31:14 <gmaxwell> Luke's question was really about when should someone be told 'write a new BIP' rather than changing an existing one.
+19:31:26 <sipa> yes, this is a good question
+19:32:04 <luke-jr> I may be wrong about the current status of v0.13.1 and BIP 152, but yes, the general principle is what I think needs to be discussed
+19:32:30 <gmaxwell> Not really much of a question for this meeting though, perhaps solicit input on the mailing list?
+19:32:42 <luke-jr> I didn't realise v0.13.1 bumped the protocol version-number
+19:32:47 <sdaftuar> it didn't
+19:32:49 <luke-jr> hmm, ok
+19:33:10 <morcos> i don't think its realistic to think we're going to not want to make small tweaks to complicated BIP's like this after releasing implementations of it.  and it seems much clearer in the future to just edit the original bip to reflect the fully thought out final design
+19:33:14 <luke-jr> sdaftuar: then how is it BIP 152 compatible iwth your change?
+19:33:42 <sdaftuar> luke-jr: it imposes a restriction on code to not do something (which no one is currently doing) unless the recipient is at-or-above the bumped version number
+19:33:54 <sdaftuar> in this case, relay before full validation
+19:35:14 <gmaxwell> luke-jr: for the specifics here, 0.13.1 is compatible with BIP152 because it implements a new version number that the original bip152 was just silent on.
+19:35:30 <luke-jr> it says "nodes SHOULD NOT ban a peer for announcing a new block with a CMPCTBLOCK message that is invalid, but has a valid header" unconditionally, and says nodes should bump the version number
+19:36:16 <BlueMatt> oh, well that is a language mistake
+19:36:20 <gmaxwell> and BIP152 already explained how versions were to be handled in a compatible way.
+19:36:30 <BlueMatt> by that language, indeed, 0.13.1 violates a SHOULD NOT
+19:36:43 <gmaxwell> luke-jr: re banning it's just a bug that all prior versions have as well.
+19:37:14 <BlueMatt> however, this wont effect functionality, as we're a) fixing this as if it were a bug, b) we say you SHOULD NOT announce without validation if the number is below
+19:37:54 <luke-jr> ok
+19:39:02 <luke-jr> BlueMatt: with this change, as the author are you comfortable with a freeze to the BIP so we can move it forward to Final status?
+19:40:08 <gmaxwell> is there a reason to rush?
+19:40:44 <wumpus> is this about https://github.com/bitcoin/bitcoin/pull/9058? there was also talk of a protocol change there
+19:40:47 <BlueMatt> luke-jr: after https://github.com/bitcoin/bips/pull/469, yea, probably
+19:40:51 <BlueMatt> but need to review tht
+19:40:52 <BlueMatt> at
+19:41:20 <wumpus> I thought it mentioned a BIP change, but doesn't seem to mention that anymore
+19:41:22 <luke-jr> BlueMatt: how will existing nodes react if they get a full block message there?
+19:41:45 <morcos> i don't see why we should Finalize it at all until we've stopped changing it for 6-12 mos
+19:42:28 <wumpus> morcos: makes sense to not finalize too soon, it's unrealistic to expect a bip to come into being completely perfect
+19:42:31 <sipa> i think it depends
+19:42:34 <gmaxwell> Agreed with Morcos. Though for things like consensus code, really being widely active on the network defines final.
+19:42:42 <sipa> there shouldn't be material changes to ideas
+19:42:47 <luke-jr> no particular reason to rush, I guess, just feels like a moving goal for anyone who wanted to be compatible with it
+19:43:07 <gmaxwell> luke-jr: at least they are minor alterations.
+19:43:09 <wumpus> that's always the case. Others could also report problems encountered during implementing it
+19:43:13 <sipa> but clarifications and elaborating on edge cases is something else
+19:43:22 <morcos> gmaxwell: heh, even there, its a matter of whether we are confident that we've really understood what the consensus is.   but yeah i agree it shoudl depend on the changes we want to make.
+19:43:26 <luke-jr> sipa: sure, we still make clarifications to Final BIPs even now I think
+19:43:29 <BlueMatt> luke-jr: agreed, it sucks that its still moving, but currently there are no other implementors (except XT, which I believe is still moving as well)
+19:43:53 <wumpus> it could also move because of problems other implementors find
+19:44:53 <luke-jr> since it's being used live on the network, changes also should probably address backwards compatibility, which they aren't in this case
+19:45:05 <wumpus> it's just unrealsitic to expect not even small issues in wording/clarity/definitions, although I guess if it is in a release there should not be substantial incompatible changes anymore
+19:45:48 <gmaxwell> morcos: so interesting point, say we discovered that BIP30 was implemented differently from the BIP tomorrow. What should we do?   IETF way would be to attach an erratum to the document right away. But I find that this often confuses people who manage to read the document without an erratum. Then later a new document is published that reflects reality.  Though this has a problem that people reme
+19:45:48 <gmaxwell> mber the original number.
+19:45:48 <gmaxwell> If no one of consequence actually implemented BIP30 as specified in the doc, what use does keeping the old doc around (except in the git history) serve?
+19:45:48 <wumpus> yes, those at least will need to address backwards compatibilty
+19:46:28 <luke-jr> gmaxwell: I *think* we've fixed such issues in Final BIPs already
+19:46:45 <BlueMatt> gmaxwell: we're not plaintext, lets highlight it in red! :p
+19:46:51 <luke-jr> >_<
+19:46:53 <morcos> yes, BIP 34 for example
+19:47:34 <morcos> ehh, i guess that was just wrong explanation
+19:47:50 <luke-jr> BIP 16
+19:48:01 <luke-jr> https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size
+19:48:02 <gribble> https://github.com/bitcoin/bitcoin/issues/520 | log low-level network messages only when fDebug is set by tcatm · Pull Request #520 · bitcoin/bitcoin · GitHub
+19:48:03 <gmaxwell> BlueMatt: the erratum link on the ietf website is red, https://tools.ietf.org/html/rfc6716
+19:48:35 * luke-jr looks at gribble
+19:49:20 <gmaxwell> I warned about that!
+19:49:56 <gmaxwell> In any case, I still think that the BIP discussion belongs elsewhere. :)
+19:50:47 <morcos> well you come up with something else to talk about for 11 more minutes then!
+19:51:03 <gmaxwell> wumpus: sipa: thanks for merging lots of stuff!
+19:51:12 <BlueMatt> <3
+19:51:13 <sdaftuar> +1
+19:51:16 <wumpus> I think there was some pull where we wondered whether to backport to 0.13.2
+19:51:27 <wumpus> np :)
+19:51:48 <BlueMatt> making 0.14 great again!
+19:51:50 <wumpus> https://github.com/bitcoin/bitcoin/pull/9053
+19:51:56 <jtimon> topic potential backports to 0.13.2 ?
+19:52:38 <wumpus> I don't think there's time enough to discuss all potential backports to 0.13.2, but that one would do
+19:53:18 <gmaxwell> I think it would be harmless to backport, and helpful for testnet nodes.  But I don't have a strong opinion.
+19:53:23 <gmaxwell> oh I see sipa mentioned testnet.
+19:54:14 <wumpus> so I guess in practice it fixes testnet issues only on 0.13.2, so the question would be is that worth it to potential regressions?
+19:54:41 <sdaftuar> it's not that much of a fix for testnet right, it just allows you to reorg out the non-segwit chain?
+19:55:09 <gmaxwell> it does actually fix a misbehavior that we see on testnet. <famous last words>I can't see it causing a regression.</famous last words>
+19:55:50 <gmaxwell> sdaftuar: because of the 20 minute rule in general it's very easy to get testnet nodes into a state where they just stop mining. Trivial vulnerablity, the active issue is that the non-segwit chain there unintentionally triggers it from time to time.
+19:56:16 <gmaxwell> ('stop mining' is ambigious, they won't mine after they're restarted)
+19:56:48 <sdaftuar> fwiw i have a few bridges of my own back up now that i hope will keep that from happening again
+19:56:58 <sdaftuar> can you elaborate on the 20 minute rule though?
+19:57:08 <sdaftuar> oh
+19:57:23 <wumpus> I think personally I'd prefer to keep it for 0.14, so the new rule/logic can prove itself a while
+19:57:44 <gmaxwell> sdaftuar: the issue is that if anyone produces a lot of headers beyond your current tip which you accept (made computationally easy by the diff1 blocks) then you'll not leave IBD.
+19:58:29 <sdaftuar> got it
+19:58:40 <gmaxwell> sdaftuar: the non-segwit chain does this by accident through a confluence of other behaviors (the not fetching blocks from non-witness peers). But the real bug is just using forward header count to cause you to not leave ibd.
+19:58:49 <gmaxwell> which that PR fixes.
+19:58:58 <sipa> wumpus: ok, we can of course later decide to backport to whatever 0.13.x at that time
+19:59:07 <wumpus> sipa: yes
+19:59:16 <gmaxwell> sounds fine to me.
+19:59:19 <wumpus> that doesn't prohibit backporting it later
+19:59:36 <gmaxwell> because of the latching in IBD this code is pretty robust against mistbehavior to begin with.
+20:00:05 <sipa> $-+(#(_+$+ PC LOAD LETTER
+20:00:22 <wumpus> #endmeeting
