@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:03:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:03:00</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov 10 19:03:00 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:03:00</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:03:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012</span>
+<a name="l-5"></a><span class="tm">19:03:35</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-6"></a><span class="tm">19:03:36</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-7"></a><span class="tm">19:03:41</span><span class="nk"> &lt;paveljanik&gt;</span> Hi
+<a name="l-8"></a><span class="tm">19:03:41</span><span class="nk"> &lt;btcdrak&gt;</span> holidays
+<a name="l-9"></a><span class="tm">19:03:58</span><span class="nk"> &lt;BlueMatt&gt;</span> reasons why there is no way in hell we could multithread ProcessMessages in 0.14
+<a name="l-10"></a><span class="tm">19:04:00</span><span class="nk"> &lt;BlueMatt&gt;</span> :)
+<a name="l-11"></a><span class="tm">19:04:03</span><span class="nk"> &lt;achow101&gt;</span> oh, meeting already?
+<a name="l-12"></a><span class="tm">19:04:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not sure if it's OT or not, but if possible, it like to propose a short topic "concept of hybrid SPV"
+<a name="l-13"></a><span class="tm">19:04:27</span><span class="nk"> &lt;BlueMatt&gt;</span> anyone else just want a bloom filter commitment soft fork for that?
+<a name="l-14"></a><span class="tm">19:04:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> yes please
+<a name="l-15"></a><span class="tm">19:04:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">hybrid SPV</span>
+<a name="l-16"></a><span class="tm">19:04:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> I wanted to ask if we'd like to see some form of "SPV" (wrong term, i agree) mode in Bitcoin-Core, if it's worth to continue the work
+<a name="l-17"></a><span class="tm">19:05:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO it could affect the userbase
+<a name="l-18"></a><span class="tm">19:05:14</span><span class="nk"> &lt;kanzure&gt;</span> was this about initial block download?
+<a name="l-19"></a><span class="tm">19:05:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> (from expertish to novicish)
+<a name="l-20"></a><span class="tm">19:05:50</span><span class="nk"> &lt;wumpus&gt;</span> I think the idea has always been to have some kind of SPV mode in bitcoin core, yes
+<a name="l-21"></a><span class="tm">19:05:53</span><span class="nk"> &lt;sipa&gt;</span> why would it be a wrong term?
+<a name="l-22"></a><span class="tm">19:05:59</span><span class="nk"> &lt;kanzure&gt;</span> "SPV" was the one about fraud proofs etc
+<a name="l-23"></a><span class="tm">19:06:17</span><span class="nk"> &lt;sipa&gt;</span> ok, "client mode" as bitcoin's creator called it then
+<a name="l-24"></a><span class="tm">19:06:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> I like SPV, ... but some people told me SPV implies bloom filters. I somehow disagree with that though
+<a name="l-25"></a><span class="tm">19:06:25</span><span class="nk"> &lt;wumpus&gt;</span> even if full block SPV without bloom filters
+<a name="l-26"></a><span class="tm">19:06:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think full block hybrid SPV sounds ideal IMO
+<a name="l-27"></a><span class="tm">19:06:52</span><span class="nk"> &lt;BlueMatt&gt;</span> ^ that
+<a name="l-28"></a><span class="tm">19:06:58</span><span class="nk"> &lt;wumpus&gt;</span> no, it doesn't need bloom filters. Say you want to do SPV against a local node which stores the block chain anyway, there's no need for bloom filters
+<a name="l-29"></a><span class="tm">19:07:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> Once we have 150/151, we could add bloomfiltering options against bip150 authed peers.
+<a name="l-30"></a><span class="tm">19:07:21</span><span class="nk"> &lt;BlueMatt&gt;</span> preferably not
+<a name="l-31"></a><span class="tm">19:07:23</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> hybrid spv means it starts out as spv, but eventually becomes fully validating?
+<a name="l-32"></a><span class="tm">19:07:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sdaftuar:</span> right.
+<a name="l-33"></a><span class="tm">19:07:34</span><span class="nk"> &lt;wumpus&gt;</span> and yes could always be added later, if there is a sane way of filtering that doesn't throw all your privacy out of thew indow
+<a name="l-34"></a><span class="tm">19:07:34</span><span class="nk"> &lt;BlueMatt&gt;</span> better designs are possible, but for full blocks agreed
+<a name="l-35"></a><span class="tm">19:07:36</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> sounds awesome!
+<a name="l-36"></a><span class="tm">19:07:41</span><span class="nk"> &lt;NicolasDorier&gt;</span> I'm bit lost here, why is it called SPV if the node store the blockchain oO
+<a name="l-37"></a><span class="tm">19:07:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">NicolasDorier:</span> SPV here is referring to the trust model of trusting miners
+<a name="l-38"></a><span class="tm">19:07:56</span><span class="nk"> &lt;NicolasDorier&gt;</span> is there some past discussion somewhere about it I can read ?
+<a name="l-39"></a><span class="tm">19:08:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">NicolasDorier:</span> no, it doesn't need to store it
+<a name="l-40"></a><span class="tm">19:08:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> For those who haven seen it, there a full working PR for the hybrid SPV: https://github.com/bitcoin/bitcoin/pull/9076
+<a name="l-41"></a><span class="tm">19:08:09</span><span class="nk"> &lt;kanzure&gt;</span> the level of confusion around naming and name-implications is really high. it's sort of amusing.
+<a name="l-42"></a><span class="tm">19:08:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">NicolasDorier:</span> it just receives the blocks, filters them locally intead of setting a bloom filter
+<a name="l-43"></a><span class="tm">19:08:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> Haven't got conceptual ACKs and wasen't sure if its worth to continue, ... make it clean and stable, etc.
+<a name="l-44"></a><span class="tm">19:08:42</span><span class="nk"> &lt;NicolasDorier&gt;</span> how is it different from a pruned node?
+<a name="l-45"></a><span class="tm">19:08:47</span><span class="nk"> &lt;kanzure&gt;</span> if it's not immediately obvious to most of us that feature x is included (like block downloading or something) then we need better names :P
+<a name="l-46"></a><span class="tm">19:08:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">NicolasDorier:</span> it does no validation
+<a name="l-47"></a><span class="tm">19:09:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">NicolasDorier:</span> it would allow receiving transactions while validation is not complete yet, for example
+<a name="l-48"></a><span class="tm">19:09:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">NicolasDorier:</span> just header chainwork check and pass the transaction to the wallet
+<a name="l-49"></a><span class="tm">19:09:12</span><span class="nk"> &lt;wumpus&gt;</span> a pruned node is a full node
+<a name="l-50"></a><span class="tm">19:09:34</span><span class="nk"> &lt;NicolasDorier&gt;</span> ah ok, so basically a node without UTXO ?
+<a name="l-51"></a><span class="tm">19:09:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> The main difference is, that we load blocks during IBD first from the wallet brthday.
+<a name="l-52"></a><span class="tm">19:09:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">NicolasDorier:</span> yes. No UTXO set
+<a name="l-53"></a><span class="tm">19:09:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> No mempool, same fee problem that all SPV wallets have to deal with
+<a name="l-54"></a><span class="tm">19:09:55</span><span class="nk"> &lt;NicolasDorier&gt;</span> ah ok got it
+<a name="l-55"></a><span class="tm">19:10:07</span><span class="nk"> &lt;wumpus&gt;</span> pruning has nothing to do with SPV, full node has nothing to do with 'storing the block chain' or not
+<a name="l-56"></a><span class="tm">19:10:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> But with the option of slowing becomming a full node
+<a name="l-57"></a><span class="tm">19:10:08</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">jonasschnelli:</span> I dont think anyone concept ack because it's so obviously a good feature.
+<a name="l-58"></a><span class="tm">19:10:11</span><span class="nk"> &lt;wumpus&gt;</span> right, it is about the UTXO set
+<a name="l-59"></a><span class="tm">19:10:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I've been very busy, sorry
+<a name="l-60"></a><span class="tm">19:10:27</span><span class="nk"> &lt;jtimon&gt;</span> oh, I undesrtand the details now, headers first, then you are an spv node that fetches the full block instead of using bloom filter but you keep syncing on the background to become a full node, sounds all fine
+<a name="l-61"></a><span class="tm">19:10:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> it's obviously a good idea
+<a name="l-62"></a><span class="tm">19:10:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> but still fill-blocks-in-background?
+<a name="l-63"></a><span class="tm">19:10:39</span><span class="nk"> &lt;BlueMatt&gt;</span> or are we moving away from that?
+<a name="l-64"></a><span class="tm">19:10:41</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yes, obviously good
+<a name="l-65"></a><span class="tm">19:10:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> there are two modes, purespv and hybridspv
+<a name="l-66"></a><span class="tm">19:10:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> that should certainly be an option
+<a name="l-67"></a><span class="tm">19:10:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> purespv will just throw away blocks...
+<a name="l-68"></a><span class="tm">19:11:08</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, only optional? hum, not a fan of it only being optional
+<a name="l-69"></a><span class="tm">19:11:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> hybrid spv will keep the blocks and does IBD in the background (maybe throttled)
+<a name="l-70"></a><span class="tm">19:11:20</span><span class="nk"> &lt;wumpus&gt;</span> hybrid stores them for later
+<a name="l-71"></a><span class="tm">19:11:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> why not?
+<a name="l-72"></a><span class="tm">19:11:29</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> +1 on the ability to throttle, think that would make it very useful
+<a name="l-73"></a><span class="tm">19:11:31</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean you dont have to keep blocks, but you still want to ibd and build the utxo set
+<a name="l-74"></a><span class="tm">19:11:40</span><span class="nk"> &lt;BlueMatt&gt;</span> /validate
+<a name="l-75"></a><span class="tm">19:11:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> because if you're not gonna be upgrading to full trust model why are you running bitcoin core as a wallet?
+<a name="l-76"></a><span class="tm">19:11:58</span><span class="nk"> &lt;wumpus&gt;</span> being able to use bitcoin core as a full SPV node would be useful, especially with a local node that does validate
+<a name="l-77"></a><span class="tm">19:12:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> why not?
+<a name="l-78"></a><span class="tm">19:12:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> if you throw away blocks with the long term goal of getting a full node your wasting bandwith
+<a name="l-79"></a><span class="tm">19:12:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> no, you're not!
+<a name="l-80"></a><span class="tm">19:12:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> you're upgrading your security model
+<a name="l-81"></a><span class="tm">19:12:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt::</span> you have to download the block again!
+<a name="l-82"></a><span class="tm">19:12:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> huh? oh, you mean keeping the blocks at the tip that you're using to fill wallet...ahh, misunderstanding
+<a name="l-83"></a><span class="tm">19:12:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> purespv is interesting when connecting to a trusted node.
+<a name="l-84"></a><span class="tm">19:13:25</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-85"></a><span class="tm">19:13:35</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm not sure if its worth the effort to make bitcoin core a competitive spv wallet - they mostly all already support connecting to a trusted node (though need auth)
+<a name="l-86"></a><span class="tm">19:13:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> fullblock SPV gets uninteresting if you import keys or watchonlys.. because we set the timestamp to 0 = download the whole blockchain
+<a name="l-87"></a><span class="tm">19:13:40</span><span class="nk"> &lt;achow101&gt;</span> so hybrid keeps blocks for later and purespv doesn't? Is that the only diference?
+<a name="l-88"></a><span class="tm">19:13:42</span><span class="nk"> &lt;BlueMatt&gt;</span> if someone wants to work on it I wont complain, but...
+<a name="l-89"></a><span class="tm">19:13:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> right.
+<a name="l-90"></a><span class="tm">19:14:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> argh, I'm lost in your terms here
+<a name="l-91"></a><span class="tm">19:14:05</span><span class="nk"> &lt;btcdrak&gt;</span> Yeah I also think purespv seems wrong for Bitcoin Core.
+<a name="l-92"></a><span class="tm">19:14:09</span><span class="nk"> &lt;btcdrak&gt;</span> but w/e
+<a name="l-93"></a><span class="tm">19:14:11</span><span class="nk"> &lt;sipa&gt;</span> i don't see why
+<a name="l-94"></a><span class="tm">19:14:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> hybrid means, your doing IBD with all its downsides...
+<a name="l-95"></a><span class="tm">19:14:17</span><span class="nk"> &lt;NicolasDorier&gt;</span> well bitcoin core has a wallet part
+<a name="l-96"></a><span class="tm">19:14:18</span><span class="nk"> &lt;sipa&gt;</span> bitcoin core has a perfectly good wallet
+<a name="l-97"></a><span class="tm">19:14:19</span><span class="nk"> &lt;BlueMatt&gt;</span> purespv? fullblock spv? define?
+<a name="l-98"></a><span class="tm">19:14:31</span><span class="nk"> &lt;sipa&gt;</span> seems stupid to restrict it to full node use only
+<a name="l-99"></a><span class="tm">19:14:31</span><span class="nk"> &lt;CodeShark&gt;</span> We really should drop the term spv
+<a name="l-100"></a><span class="tm">19:14:33</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">achow101:</span> it seems also hybridspv does background ibd while pure doesn't
+<a name="l-101"></a><span class="tm">19:14:41</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-102"></a><span class="tm">19:14:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> purespv = no IBD, hybridspv = SPV during IDB
+<a name="l-103"></a><span class="tm">19:15:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> wait, so what is fullblockspv?
+<a name="l-104"></a><span class="tm">19:15:08</span><span class="nk"> &lt;wumpus&gt;</span> both
+<a name="l-105"></a><span class="tm">19:15:12</span><span class="nk"> &lt;btcdrak&gt;</span> I thought the point of the hybride SPV is just to make the wallet usable immediately during IDB, and put an end to the poor user experience for new users.
+<a name="l-106"></a><span class="tm">19:15:12</span><span class="nk"> &lt;BlueMatt&gt;</span> huh
+<a name="l-107"></a><span class="tm">19:15:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Both. Yes.
+<a name="l-108"></a><span class="tm">19:15:20</span><span class="nk"> &lt;BlueMatt&gt;</span> what does both mean?
+<a name="l-109"></a><span class="tm">19:15:28</span><span class="nk"> &lt;jtimon&gt;</span> isn't hybridspv the same as "both"?
+<a name="l-110"></a><span class="tm">19:15:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> both hybrid and pure download full blocks
+<a name="l-111"></a><span class="tm">19:15:33</span><span class="nk"> &lt;wumpus&gt;</span> no bloom filters are used in either case, it is all retrieving full blocks
+<a name="l-112"></a><span class="tm">19:15:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> Both modes (pure and hybrid) are full block SPV modes.
+<a name="l-113"></a><span class="tm">19:15:41</span><span class="nk"> &lt;achow101&gt;</span> fullblock spv is where the full block is downloaded and the transaction is pulled. watever happens to the block is depended on hybrid or pure
+<a name="l-114"></a><span class="tm">19:15:41</span><span class="nk"> &lt;wumpus&gt;</span> what is so hard to understand about that?
+<a name="l-115"></a><span class="tm">19:15:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> right
+<a name="l-116"></a><span class="tm">19:15:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> let me write a short post on bitcoincore ML
+<a name="l-117"></a><span class="tm">19:15:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus/sipa:</span> ahh, just referring to the way we download in either case
+<a name="l-118"></a><span class="tm">19:16:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> the way it was referenced it sounded like a different mode
+<a name="l-119"></a><span class="tm">19:16:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> From the enduser perspective, the modes are very different
+<a name="l-120"></a><span class="tm">19:16:34</span><span class="nk"> &lt;wumpus&gt;</span> the only difference is that in pure SPV mode, the blocks are thrown away and there is no IBD, in hybrid mode the blocks are backfilled and IBD happens
+<a name="l-121"></a><span class="tm">19:16:51</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, i was confused and thought there was a third mode
+<a name="l-122"></a><span class="tm">19:17:04</span><span class="nk"> &lt;jtimon&gt;</span> I see no problem with allowing purespv optionally, the default is going to be hybridspv, right?
+<a name="l-123"></a><span class="tm">19:17:10</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-124"></a><span class="tm">19:17:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes
+<a name="l-125"></a><span class="tm">19:17:20</span><span class="nk"> &lt;ryanofsky&gt;</span> in the pr, i suggested calling hybrid spv "prioritized download"
+<a name="l-126"></a><span class="tm">19:17:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> purespv can solve an interesting usecase where one likes to decouple the wallet from the node
+<a name="l-127"></a><span class="tm">19:17:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> exactly
+<a name="l-128"></a><span class="tm">19:17:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> agreed, just saying that it seems a strange thing to focus work on...there are already good options for consumers on the purespv front
+<a name="l-129"></a><span class="tm">19:17:45</span><span class="nk"> &lt;BlueMatt&gt;</span> like, lots of good options
+<a name="l-130"></a><span class="tm">19:17:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> it's basically a stand-alone wallet
+<a name="l-131"></a><span class="tm">19:18:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> purespv would be the only fullblock SPV wallet in the wild
+<a name="l-132"></a><span class="tm">19:18:07</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> I suspect the reasoning is that it will be relatively cheap to add that extra mode
+<a name="l-133"></a><span class="tm">19:18:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> it is not *focusing* work on, it's just a by-effect of allowing it
+<a name="l-134"></a><span class="tm">19:18:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yup, I'm fine with it being a free feature, just making a note
+<a name="l-135"></a><span class="tm">19:18:39</span><span class="nk"> &lt;jtimon&gt;</span> maybe a pr with the hybrid default one and a later one adding the purespv mode would make sense
+<a name="l-136"></a><span class="tm">19:18:40</span><span class="nk"> &lt;achow101&gt;</span> purespv would be great for privacy
+<a name="l-137"></a><span class="tm">19:18:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> not for bandwidth thought
+<a name="l-138"></a><span class="tm">19:19:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> fair enough, but if we want hybrid spv because of the terrible syncing experience, we have all the pieces in place for purespv as well
+<a name="l-139"></a><span class="tm">19:19:07</span><span class="nk"> &lt;CodeShark&gt;</span> I still don't quite get purespv - sorry, scrolling back and keeping up is hard
+<a name="l-140"></a><span class="tm">19:19:20</span><span class="nk"> &lt;wumpus&gt;</span> sigh.\
+<a name="l-141"></a><span class="tm">19:19:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> purespv = plain full block SPV
+<a name="l-142"></a><span class="tm">19:19:25</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-143"></a><span class="tm">19:19:32</span><span class="nk"> &lt;wumpus&gt;</span> we're starting to repeat ourselves and that is annoying
+<a name="l-144"></a><span class="tm">19:19:35</span><span class="nk"> &lt;gmaxwell&gt;</span> hah
+<a name="l-145"></a><span class="tm">19:19:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> download block, no validation, extract relevavnt txs
+<a name="l-146"></a><span class="tm">19:19:47</span><span class="nk"> &lt;CodeShark&gt;</span> ok
+<a name="l-147"></a><span class="tm">19:19:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I'll continue and try to make small PRs (could be hard though). Thanks
+<a name="l-148"></a><span class="tm">19:20:03</span><span class="nk"> &lt;wumpus&gt;</span> please just read back if you want to know things that have been discussed before, we can't repeat every single thing specifically for everyone
+<a name="l-149"></a><span class="tm">19:20:25</span><span class="nk"> &lt;BlueMatt&gt;</span> topics?
+<a name="l-150"></a><span class="tm">19:20:27</span><span class="nk"> &lt;MarcoF____&gt;</span> topic suggestion: 0.14
+<a name="l-151"></a><span class="tm">19:20:33</span><span class="nk"> &lt;CodeShark&gt;</span> I'd rather discuss bloom filter commitments or clientside bloom filtering from trusted nodes
+<a name="l-152"></a><span class="tm">19:20:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic  </span><span class="topicline">multithread ProcessMessages</span>
+<a name="l-153"></a><span class="tm">19:20:44</span><span class="nk"> &lt;MarcoF____&gt;</span> Personally I mostly care about multiwallet refactoring for 0.14
+<a name="l-154"></a><span class="tm">19:21:00</span><span class="nk"> &lt;MarcoF____&gt;</span> but there are plenty of other pulls open, so we might want to prioritize?
+<a name="l-155"></a><span class="tm">19:21:04</span><span class="nk"> &lt;wumpus&gt;</span> BlueMatt ^^
+<a name="l-156"></a><span class="tm">19:21:33</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean i think we all want multiple message-processing threads
+<a name="l-157"></a><span class="tm">19:21:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1
+<a name="l-158"></a><span class="tm">19:21:51</span><span class="nk"> &lt;gmaxwell&gt;</span> Sorry, I delayed matt by asking him about it offline.  My only comment was "don't reorder messages from a single peer!" :P but apparently I'm behind the times.
+<a name="l-159"></a><span class="tm">19:21:53</span><span class="nk"> &lt;BlueMatt&gt;</span> and while it probably wont be so useful with cs_main at the head of like every message, I'd like to see plumbing for it sooner rather than later
+<a name="l-160"></a><span class="tm">19:21:58</span><span class="nk"> &lt;wumpus&gt;</span> well if cs_main usage is brought down enough, that will start to make sense
+<a name="l-161"></a><span class="tm">19:22:10</span><span class="nk"> &lt;BlueMatt&gt;</span> then people can remove cs_main one message at a time and it will be useful
+<a name="l-162"></a><span class="tm">19:22:32</span><span class="nk"> &lt;BlueMatt&gt;</span> I'd be happy to see, but dont know if we'll make, cs_main split-outs too much for 0.14 (thats next after main.cpp split)
+<a name="l-163"></a><span class="tm">19:22:48</span><span class="nk"> &lt;BlueMatt&gt;</span> but I'd like to see a few free wins like being able to respond to getblocktxn requests while a block is processing
+<a name="l-164"></a><span class="tm">19:23:05</span><span class="nk"> &lt;BlueMatt&gt;</span> anyone have any thoughts on blockers for this? things likely to break? etc?
+<a name="l-165"></a><span class="tm">19:23:05</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, thanks for the concrete example of something pretty useful.
+<a name="l-166"></a><span class="tm">19:23:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> seems unlikely to have any real-world benefit without breaking out CNodeState? Maybe we should try to knock that out first?
+<a name="l-167"></a><span class="tm">19:23:28</span><span class="nk"> &lt;gmaxwell&gt;</span> I was struggling to come up with one, but that one is good.
+<a name="l-168"></a><span class="tm">19:23:44</span><span class="nk"> &lt;wumpus&gt;</span> being able to service multiple nodes at once would be very useful
+<a name="l-169"></a><span class="tm">19:24:01</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> why do you have to break out CNodeState? you'll never call ProcessMessages in two threads for a single peer at the same time
+<a name="l-170"></a><span class="tm">19:24:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> that would violate our serialization stuff
+<a name="l-171"></a><span class="tm">19:24:30</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, in particular being able to reply to getblocktxn multiple times in parallel should reduce block relaying delays.
+<a name="l-172"></a><span class="tm">19:25:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, i really want it for FIBRE-based relay network - respond to getblocktxn from a shared_ptr&lt;const CBlock&gt; block_currently_processing
+<a name="l-173"></a><span class="tm">19:25:06</span><span class="nk"> &lt;wumpus&gt;</span> I mean looking at it from the other side, there's no good reason for keeping doing message processing only in one thread
+<a name="l-174"></a><span class="tm">19:25:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> I think its going to be important to do a thorough review of synchronization issues first.  Sometimes I feel like things just happen to not be a problem b/c they are only accessed from the single thread.
+<a name="l-175"></a><span class="tm">19:25:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yea, thats my concern :(
+<a name="l-176"></a><span class="tm">19:25:41</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> well when each one is grabbing for cs_main, it only takes one long lock to drop us back to single-threaded
+<a name="l-177"></a><span class="tm">19:25:42</span><span class="nk"> &lt;morcos&gt;</span> We do an ok job of fixing these missing locks when we find them, but if we're goign to make multiple message processing threads, we need to make sure we've really got them all
+<a name="l-178"></a><span class="tm">19:25:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> any concrete things i should be looking for
+<a name="l-179"></a><span class="tm">19:25:59</span><span class="nk"> &lt;morcos&gt;</span> I think we should make a list of what needs to be protected by cs_main
+<a name="l-180"></a><span class="tm">19:26:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> yea, I mean I'm ok with switching to a multi-threaded model that does ~nothing and then slowly reducing the locks
+<a name="l-181"></a><span class="tm">19:26:15</span><span class="nk"> &lt;gmaxwell&gt;</span> So I think making process message concurrent may create greater exposure for data races around the nodestats.  Right now the locking around stats is _widely_ incorrect, leading to undefined behavior. (I haven't been watching closely and cfields likely improved a lot of it recently, but I expect there are still problems)
+<a name="l-182"></a><span class="tm">19:26:47</span><span class="nk"> &lt;gmaxwell&gt;</span> (this is responsive to matt's question about likely sources of problems)
+<a name="l-183"></a><span class="tm">19:27:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> for stats we can just change them all to atomics
+<a name="l-184"></a><span class="tm">19:27:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I recommend that we run testing harnesses with valgrind DRD and try to get this change to be data race free at least according to DRD.
+<a name="l-185"></a><span class="tm">19:27:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> good suggestion, indeed
+<a name="l-186"></a><span class="tm">19:27:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I made that suggestion previously. I think we access them infrequently enough that it's not an awful idea.
+<a name="l-187"></a><span class="tm">19:28:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you can also cache per peer, and flush to a locked global occasionally if it's a concern.
+<a name="l-188"></a><span class="tm">19:28:20</span><span class="nk"> &lt;sipa&gt;</span> stats are easy, no consistency requirements
+<a name="l-189"></a><span class="tm">19:28:45</span><span class="nk"> &lt;gmaxwell&gt;</span> last time I ran DRD I saw some races around stats but there wasn't a wall of errors.
+<a name="l-190"></a><span class="tm">19:28:54</span><span class="nk"> &lt;wumpus&gt;</span> and the per-node stats should not be an issue as we likely don't want to be processing two messages from the same peer at the same time?
+<a name="l-191"></a><span class="tm">19:28:56</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> that sounds like a good model
+<a name="l-192"></a><span class="tm">19:29:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> indeed
+<a name="l-193"></a><span class="tm">19:29:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, that would reduce lots of issues
+<a name="l-194"></a><span class="tm">19:29:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I suspect we can get a message from peer A that causes use to iterate over all the other peers stats.
+<a name="l-195"></a><span class="tm">19:29:28</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">BlueMatt:</span> have you given much thought to how the threading logic would work?
+<a name="l-196"></a><span class="tm">19:29:41</span><span class="nk"> &lt;sdaftuar&gt;</span> i mean, how you'd decide how to split work across threads
+<a name="l-197"></a><span class="tm">19:29:46</span><span class="nk"> &lt;gmaxwell&gt;</span> (just an example why single peer at a time doesn't automatically mean thread safty of per node stats)
+<a name="l-198"></a><span class="tm">19:29:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that sounds scary
+<a name="l-199"></a><span class="tm">19:30:35</span><span class="nk"> &lt;gmaxwell&gt;</span> (maybe we don't actually do that anywhere, at least in response to a message... a connection, for example, causes that--)
+<a name="l-200"></a><span class="tm">19:30:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> hum? do we need anything more complicated than just a thread pool each looking for peers that have available work and arent being worked on that just wait on a cv when there is nothing to do
+<a name="l-201"></a><span class="tm">19:30:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> no, but keeping to rules like that will make it easier manageable
+<a name="l-202"></a><span class="tm">19:31:17</span><span class="nk"> &lt;gmaxwell&gt;</span> Another point to keep in mind is thread prolifervation and address space usage on 32-bit hosts. Not a reason to not do this, but just a cost.
+<a name="l-203"></a><span class="tm">19:31:19</span><span class="nk"> &lt;sdaftuar&gt;</span> well, my thought was that since most messages are tx's, we might find ourselves tying up all our threads but unable to continue, as they're all contending on cs_main
+<a name="l-204"></a><span class="tm">19:31:34</span><span class="nk"> &lt;sdaftuar&gt;</span> so you wouldn't necessarily be able to respond to a getblocktxn while processing a block
+<a name="l-205"></a><span class="tm">19:31:42</span><span class="nk"> &lt;sdaftuar&gt;</span> you could do somethign smarter though...
+<a name="l-206"></a><span class="tm">19:31:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it would still be possible to run with only one thread I suppose
+<a name="l-207"></a><span class="tm">19:31:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm not terribly worried
+<a name="l-208"></a><span class="tm">19:32:01</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> yes, i was thinking for v1 we ignore that issue
+<a name="l-209"></a><span class="tm">19:32:08</span><span class="nk"> &lt;sdaftuar&gt;</span> ok :)
+<a name="l-210"></a><span class="tm">19:32:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I'm not either.
+<a name="l-211"></a><span class="tm">19:32:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> indeed, eventually we could have some "oh, these messages take cs_main" list to make it smart
+<a name="l-212"></a><span class="tm">19:32:37</span><span class="nk"> &lt;gmaxwell&gt;</span> Besides, this is a better use of threads (actual concurrency) than some others we have had.
+<a name="l-213"></a><span class="tm">19:32:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> very true :(
+<a name="l-214"></a><span class="tm">19:32:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> we certainly shouldn't be restricting work towards better performance because there happen to be a few nodes on small systems, those can be handled specifically
+<a name="l-215"></a><span class="tm">19:33:10</span><span class="nk"> &lt;gmaxwell&gt;</span> (e.g. connect has a thread, wallet flush thread, etc.)
+<a name="l-216"></a><span class="tm">19:33:17</span><span class="nk"> &lt;BlueMatt&gt;</span> we can make up the difference by moving wallet flush into cscheduler thread :)
+<a name="l-217"></a><span class="tm">19:33:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> agreed, I am just exposing areas of consideration. I support the work.
+<a name="l-218"></a><span class="tm">19:33:26</span><span class="nk"> &lt;wumpus&gt;</span> (and I run most of my nodes on 32-bit ARM so it's not like I don't care)
+<a name="l-219"></a><span class="tm">19:33:30</span><span class="nk"> &lt;BlueMatt&gt;</span> well, and like three net threads to cscheduler
+<a name="l-220"></a><span class="tm">19:33:59</span><span class="nk"> &lt;wumpus&gt;</span> yes, we can do thread-stack accounting like that, but let's not get lost in details
+<a name="l-221"></a><span class="tm">19:34:04</span><span class="nk"> &lt;morcos&gt;</span> and while we're at it we can increase script checking threads :)
+<a name="l-222"></a><span class="tm">19:34:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> oh, on rpi's and the like?
+<a name="l-223"></a><span class="tm">19:34:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> cubox-i's are my favourite
+<a name="l-224"></a><span class="tm">19:34:28</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> interesting, thanks!
+<a name="l-225"></a><span class="tm">19:35:23</span><span class="nk"> &lt;wumpus&gt;</span> next topic, I suppose
+<a name="l-226"></a><span class="tm">19:35:30</span><span class="nk"> &lt;gmaxwell&gt;</span> (there are other possibilties like decresing the stack size on some threads that don't do much, firefox uses 128k or 256k (I forget) stacks for media processing threads.  So I really don't at all think it's a blocker, just something to keep in mind.)
+<a name="l-227"></a><span class="tm">19:36:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> indeed you can do that through an environment variable IIRC, I think I even list it in my "reducing bitcoind memory usage" document ,if not I should
+<a name="l-228"></a><span class="tm">19:36:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.14</span>
+<a name="l-229"></a><span class="tm">19:36:49</span><span class="nk"> &lt;wumpus&gt;</span> @MarcoFalke
+<a name="l-230"></a><span class="tm">19:37:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> multiwallet support would be nice
+<a name="l-231"></a><span class="tm">19:37:16</span><span class="nk"> &lt;wumpus&gt;</span> oh he left?
+<a name="l-232"></a><span class="tm">19:37:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> yes, well you can control it for all threads in an env variable --- though that can result in security problems. :(  But there are some threads where their stack usage is precisely decidable easily. (e.g. the connect thread).
+<a name="l-233"></a><span class="tm">19:37:27</span><span class="nk"> &lt;jtimon&gt;</span> yep, it seems so
+<a name="l-234"></a><span class="tm">19:37:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> [20:36:29]  &lt;@wumpus&gt;	#topic 0.14
+<a name="l-235"></a><span class="tm">19:37:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> [20:36:49]  &lt;@wumpus&gt;	@MarcoFalke
+<a name="l-236"></a><span class="tm">19:38:00</span><span class="nk"> &lt;BlueMatt&gt;</span> MarcoFalk_:
+<a name="l-237"></a><span class="tm">19:38:08</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15morcos opened pull request #9123: Remove extraneous LogPrint from fee estimation (06master...06eliminateFeeWarning) 02https://github.com/bitcoin/bitcoin/pull/9123
+<a name="l-238"></a><span class="tm">19:38:19</span><span class="nk"> &lt;MarcoFalk_&gt;</span> Jup, I'd like to hear what is a priority to get in to 0.14
+<a name="l-239"></a><span class="tm">19:38:21</span><span class="nk"> &lt;jtimon&gt;</span> multiwallet refactoring for 0.14
+<a name="l-240"></a><span class="tm">19:38:26</span><span class="nk"> &lt;MarcoFalk_&gt;</span> ^
+<a name="l-241"></a><span class="tm">19:38:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm not sure about security problems, though yes it can cause crashes if you set it that low that the stack underflows
+<a name="l-242"></a><span class="tm">19:38:28 </span><span class="nka">* jonasschnelli</span> <span class="ac">gives MarcoFalk a IRC bouncer for birthday</span>
+<a name="l-243"></a><span class="tm">19:38:42</span><span class="nk"> &lt;BlueMatt&gt;</span> main.cpp split, but thats guaranteed at this point, pretty much
+<a name="l-244"></a><span class="tm">19:38:57</span><span class="nk"> &lt;sdaftuar&gt;</span> i think the validation speedups from jeremyrubin would be great for 0.14
+<a name="l-245"></a><span class="tm">19:39:00</span><span class="nk"> &lt;MarcoFalk_&gt;</span> Ok, what is the progess on the net refactor. Is it almost done?
+<a name="l-246"></a><span class="tm">19:39:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> then again the thread stacks are extremely small on some platforms
+<a name="l-247"></a><span class="tm">19:39:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> linux assigns quite a lot by default
+<a name="l-248"></a><span class="tm">19:39:12</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> yea, at least the cucku cache thing
+<a name="l-249"></a><span class="tm">19:39:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think there is not much left for the multi-wallet support. Though, not sure if we can make this happen for 0.14
+<a name="l-250"></a><span class="tm">19:39:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also.. we should add a private-key free mode.
+<a name="l-251"></a><span class="tm">19:39:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> A safe-mode
+<a name="l-252"></a><span class="tm">19:39:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I agree, all of them.
+<a name="l-253"></a><span class="tm">19:39:48</span><span class="nk"> &lt;wumpus&gt;</span> if we all agree to start reviewing wallet changes, I'm sure we can get multi wallet support in 0.14
+<a name="l-254"></a><span class="tm">19:39:52</span><span class="nk"> &lt;jtimon&gt;</span> I would like to move on libconsensus, but so far nothing seems to be happening on that front
+<a name="l-255"></a><span class="tm">19:40:00</span><span class="nk"> &lt;MarcoFalk_&gt;</span> Some of the wallet changes need rebase
+<a name="l-256"></a><span class="tm">19:40:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Nice! I can review some stuff next week.
+<a name="l-257"></a><span class="tm">19:40:15</span><span class="nk"> &lt;gmaxwell&gt;</span> In terms of wallet features I think some kind of multiwallet support would have the greatest ratio of benefit to cost+risk.
+<a name="l-258"></a><span class="tm">19:40:23</span><span class="nk"> &lt;gmaxwell&gt;</span> It's just software eng.
+<a name="l-259"></a><span class="tm">19:40:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> ack!
+<a name="l-260"></a><span class="tm">19:41:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also, with the current fundrawtransaction options, you can perfectly run watch-only wallets
+<a name="l-261"></a><span class="tm">19:41:56</span><span class="nk"> &lt;cfields&gt;</span> I'm aiming to get net.h/cpp split in half in the next ~week also.
+<a name="l-262"></a><span class="tm">19:41:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> So.. theres a project: https://github.com/bitcoin/bitcoin/projects/2
+<a name="l-263"></a><span class="tm">19:42:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> for MW support
+<a name="l-264"></a><span class="tm">19:42:03</span><span class="nk"> &lt;cfields&gt;</span> (for the 0.14 list)
+<a name="l-265"></a><span class="tm">19:42:04</span><span class="nk"> &lt;gmaxwell&gt;</span> So I think multiwallet should be a greater priority.  Also while 0.14 has a lot of really great infrastructural changes, I think it has relatively few ordinary user visible improvements.
+<a name="l-266"></a><span class="tm">19:42:26</span><span class="nk"> &lt;paveljanik&gt;</span> Network on/off in GUI please :-)
+<a name="l-267"></a><span class="tm">19:42:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">paveljanik:</span> Yes. I'll make that happen soon.
+<a name="l-268"></a><span class="tm">19:42:49</span><span class="nk"> &lt;wumpus&gt;</span> because most of the focus has been on 0.13.1, 0.14 will be somewhat of a smaller release, I don't think that's a problem
+<a name="l-269"></a><span class="tm">19:43:05</span><span class="nk"> &lt;gmaxwell&gt;</span> There are a number of other things I'd like to work on, like more bandwidth usage controls. Improvement to header fetching logic... but I think it's not useful to speak to work that hasn't even started.
+<a name="l-270"></a><span class="tm">19:43:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> I was hoping the mempool stats can be in 0.14... but not sure if there are enough reviews
+<a name="l-271"></a><span class="tm">19:43:21</span><span class="nk"> &lt;BlueMatt&gt;</span> bumpfee
+<a name="l-272"></a><span class="tm">19:43:22</span><span class="nk"> &lt;MarcoFalk_&gt;</span> I was pinging luke-jr on #8776, but haven't heard anything about luke-jr recently
+<a name="l-273"></a><span class="tm">19:43:23</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8776 | Wallet refactoring leading up to multiwallet by luke-jr · Pull Request #8776 · bitcoin/bitcoin · GitHub
+<a name="l-274"></a><span class="tm">19:43:26</span><span class="nk"> &lt;MarcoFalk_&gt;</span> Hope hes doing fine
+<a name="l-275"></a><span class="tm">19:43:54</span><span class="nk"> &lt;paveljanik&gt;</span> jonasschnelli, mempool stats: count with me for review!
+<a name="l-276"></a><span class="tm">19:44:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> yeah! Bumpfee should get some review. Guys! https://github.com/bitcoin/bitcoin/pull/8456
+<a name="l-277"></a><span class="tm">19:44:26</span><span class="nk"> &lt;paveljanik&gt;</span> it would be nice to have a estimatefee 2, 3, 4 graph also...
+<a name="l-278"></a><span class="tm">19:44:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> weren't you working on bandwidth throttling w/ the P2P libevent switch?
+<a name="l-279"></a><span class="tm">19:44:30</span><span class="nk"> &lt;MarcoFalk_&gt;</span> <span class="hi">paveljanik:</span> I think the review-intense part is #8501
+<a name="l-280"></a><span class="tm">19:44:32</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8501 | Add mempool statistics collector by jonasschnelli · Pull Request #8501 · bitcoin/bitcoin · GitHub
+<a name="l-281"></a><span class="tm">19:44:36</span><span class="nk"> &lt;gmaxwell&gt;</span> We'll see what shows up, in any case.
+<a name="l-282"></a><span class="tm">19:44:51</span><span class="nk"> &lt;wumpus&gt;</span> yeah there's not much point in listing all major open pulls here now
+<a name="l-283"></a><span class="tm">19:44:54</span><span class="nk"> &lt;MarcoFalk_&gt;</span> <span class="hi">paveljanik:</span> The gui change is rel. simple
+<a name="l-284"></a><span class="tm">19:45:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. #8501 is groundwork for mempool stats. Has no review so far
+<a name="l-285"></a><span class="tm">19:45:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8501 | Add mempool statistics collector by jonasschnelli · Pull Request #8501 · bitcoin/bitcoin · GitHub
+<a name="l-286"></a><span class="tm">19:45:11</span><span class="nk"> &lt;wumpus&gt;</span> we know about them, what they need is more review and testing :)
+<a name="l-287"></a><span class="tm">19:45:25</span><span class="nk"> &lt;MarcoFalk_&gt;</span> (and rebase) *ducks*
+<a name="l-288"></a><span class="tm">19:45:26</span><span class="nk"> &lt;morcos&gt;</span> I'm going to do at least some minor (and needed) improvements to fee estimation.  Is  there any interest on estimates for longer than 25 blocks?  Or should I continue to punt on that?
+<a name="l-289"></a><span class="tm">19:45:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> yes, i don't think that's likely for 0.14 though. The libevent changes are going to be quite different from what I originally intended, I think
+<a name="l-290"></a><span class="tm">19:45:41</span><span class="nk"> &lt;gmaxwell&gt;</span> WRT review, I believe that multiwallet review is fundimentally easier than bumpfee for example, because in bumpfee I need to reason about a complex state machine, the effect on the network, corner cases with double spends, etc.  And multiwallet is 98% "does this crash or not". :)
+<a name="l-291"></a><span class="tm">19:45:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> it's taking quite longer than we expected :)
+<a name="l-292"></a><span class="tm">19:46:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> so start reviewing multiwallet pulls then :D
+<a name="l-293"></a><span class="tm">19:46:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> lol, doesnt everything
+<a name="l-294"></a><span class="tm">19:46:21</span><span class="nk"> &lt;wumpus&gt;</span> (or did you already?)
+<a name="l-295"></a><span class="tm">19:46:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> mempool backlog levels are not great enough where estimates &gt;25 blocks matter that much I think, currently.
+<a name="l-296"></a><span class="tm">19:46:35</span><span class="nk"> &lt;jtimon&gt;</span> btw maybe we can talk about the "custom mode" (separately from the blocksigning mode which I think it's unlikely to get to master with the union and the global, but we can just rebase every release)
+<a name="l-297"></a><span class="tm">19:46:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> yes, sorry for that. I vastly underestimated the refactor impact.
+<a name="l-298"></a><span class="tm">19:46:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes, I'm kind of overwhelmed already, so I don't care that much some things are going slower
+<a name="l-299"></a><span class="tm">19:47:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> But its often possible to pay a much lower fee if you are willing to wait 100 blocks or whatever...  So in the interest of keeping fees down.., but I just don't know if thats much of a use case.
+<a name="l-300"></a><span class="tm">19:47:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> fun graph, fee availble at the time of a block (red) vs immediately after (green): https://people.xiph.org/~greg/temp/fee_avail.png  thats a week of data,  also a different reason during the high fee floods a couple weeks ago: https://people.xiph.org/~greg/temp/fee_avail2.png
+<a name="l-301"></a><span class="tm">19:48:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> interesting, if it would make a big difference I think it would be interesting. I wasn't thinking it would make much of a difference.
+<a name="l-302"></a><span class="tm">19:48:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> my worry is that some things are blocked on it, e.g. gmaxwell talks about wanting to do things with bandwidth management, those things would all be easier if we had switched to libevent, instead of trying to cram it into the current networking backend
+<a name="l-303"></a><span class="tm">19:48:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I still wouldn't priortize it over general improvements.
+<a name="l-304"></a><span class="tm">19:49:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> tremendous difference. i'm pretty sure you could always pay about 2 sat/byte if you are wiling to wait a couple days..  limiting factor might be the 3 day eviction.
+<a name="l-305"></a><span class="tm">19:49:13</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, I've held off on doing too much more with bandwidth management due to that.  There are somethings we can do, for example delaying inv relays when bandwidth starved.
+<a name="l-306"></a><span class="tm">19:49:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> ACK. I'll pick up the pace.
+<a name="l-307"></a><span class="tm">19:49:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> my publically reachable nodes don't really expirence 3 day eviction, -- some clown or another inevitably connects and restores the evicted stuff. :P
+<a name="l-308"></a><span class="tm">19:50:09</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell, cfields: it sounds to me like the bandwidth management you're talking about is very different and probably won't have much code conflicts
+<a name="l-309"></a><span class="tm">19:50:36</span><span class="nk"> &lt;sipa&gt;</span> as gmaxwell is talking about application level decisions that afaik don't even affect anything at the network layer
+<a name="l-310"></a><span class="tm">19:50:53</span><span class="nk"> &lt;gmaxwell&gt;</span> Well I specifically just mentioned the part of the management scope that wouldn't have conflicts. (and I think should probably be done first:  to quickly offer something but then relay it out slowly is somewhat peer abusive. :P )
+<a name="l-311"></a><span class="tm">19:51:41</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> indeed
+<a name="l-312"></a><span class="tm">19:53:44</span><span class="nk"> &lt;wumpus&gt;</span> other topics?
+<a name="l-313"></a><span class="tm">19:54:19</span><span class="nk"> &lt;gmaxwell&gt;</span> we should say hello to all the americans that missed the timezone change.
+<a name="l-314"></a><span class="tm">19:54:25</span><span class="nk"> &lt;gmaxwell&gt;</span> and are just arriving now. :P
+<a name="l-315"></a><span class="tm">19:54:33</span><span class="nk"> &lt;jcorgan&gt;</span> heh
+<a name="l-316"></a><span class="tm">19:54:48</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> canadians too :)
+<a name="l-317"></a><span class="tm">19:54:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Hi guys.
+<a name="l-318"></a><span class="tm">19:55:00</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-319"></a><span class="tm">19:55:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Welcome to the end of the meeting.
+<a name="l-320"></a><span class="tm">19:55:46</span><span class="nk"> &lt;wumpus&gt;</span> yes, welcome
+<a name="l-321"></a><span class="tm">19:55:50</span><span class="nk"> &lt;sipa&gt;</span> kthxbye
+<a name="l-322"></a><span class="tm">19:55:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

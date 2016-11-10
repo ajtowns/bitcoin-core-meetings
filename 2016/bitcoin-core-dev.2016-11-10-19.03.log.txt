@@ -1,0 +1,322 @@
+19:03:00 <wumpus> #startmeeting
+19:03:00 <lightningbot> Meeting started Thu Nov 10 19:03:00 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:03:00 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:03:26 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012
+19:03:35 <kanzure> hi.
+19:03:36 <wumpus> proposed topics?
+19:03:41 <paveljanik> Hi
+19:03:41 <btcdrak> holidays
+19:03:58 <BlueMatt> reasons why there is no way in hell we could multithread ProcessMessages in 0.14
+19:04:00 <BlueMatt> :)
+19:04:03 <achow101> oh, meeting already?
+19:04:05 <jonasschnelli> Not sure if it's OT or not, but if possible, it like to propose a short topic "concept of hybrid SPV"
+19:04:27 <BlueMatt> anyone else just want a bloom filter commitment soft fork for that?
+19:04:36 <cfields> jonasschnelli: yes please
+19:04:51 <wumpus> #topic hybrid SPV
+19:04:55 <jonasschnelli> I wanted to ask if we'd like to see some form of "SPV" (wrong term, i agree) mode in Bitcoin-Core, if it's worth to continue the work
+19:05:08 <jonasschnelli> IMO it could affect the userbase
+19:05:14 <kanzure> was this about initial block download?
+19:05:17 <jonasschnelli> (from expertish to novicish)
+19:05:50 <wumpus> I think the idea has always been to have some kind of SPV mode in bitcoin core, yes
+19:05:53 <sipa> why would it be a wrong term?
+19:05:59 <kanzure> "SPV" was the one about fraud proofs etc
+19:06:17 <sipa> ok, "client mode" as bitcoin's creator called it then
+19:06:22 <jonasschnelli> I like SPV, ... but some people told me SPV implies bloom filters. I somehow disagree with that though
+19:06:25 <wumpus> even if full block SPV without bloom filters
+19:06:47 <jonasschnelli> I think full block hybrid SPV sounds ideal IMO
+19:06:52 <BlueMatt> ^ that
+19:06:58 <wumpus> no, it doesn't need bloom filters. Say you want to do SPV against a local node which stores the block chain anyway, there's no need for bloom filters
+19:07:10 <jonasschnelli> Once we have 150/151, we could add bloomfiltering options against bip150 authed peers.
+19:07:21 <BlueMatt> preferably not
+19:07:23 <sdaftuar> jonasschnelli: hybrid spv means it starts out as spv, but eventually becomes fully validating?
+19:07:31 <jonasschnelli> sdaftuar: right.
+19:07:34 <wumpus> and yes could always be added later, if there is a sane way of filtering that doesn't throw all your privacy out of thew indow
+19:07:34 <BlueMatt> better designs are possible, but for full blocks agreed
+19:07:36 <sdaftuar> jonasschnelli: sounds awesome!
+19:07:41 <NicolasDorier> I'm bit lost here, why is it called SPV if the node store the blockchain oO
+19:07:56 <BlueMatt> NicolasDorier: SPV here is referring to the trust model of trusting miners
+19:07:56 <NicolasDorier> is there some past discussion somewhere about it I can read ?
+19:08:00 <wumpus> NicolasDorier: no, it doesn't need to store it
+19:08:02 <jonasschnelli> For those who haven seen it, there a full working PR for the hybrid SPV: https://github.com/bitcoin/bitcoin/pull/9076
+19:08:09 <kanzure> the level of confusion around naming and name-implications is really high. it's sort of amusing.
+19:08:19 <wumpus> NicolasDorier: it just receives the blocks, filters them locally intead of setting a bloom filter
+19:08:41 <jonasschnelli> Haven't got conceptual ACKs and wasen't sure if its worth to continue, ... make it clean and stable, etc.
+19:08:42 <NicolasDorier> how is it different from a pruned node?
+19:08:47 <kanzure> if it's not immediately obvious to most of us that feature x is included (like block downloading or something) then we need better names :P
+19:08:55 <jonasschnelli> NicolasDorier: it does no validation
+19:09:00 <wumpus> NicolasDorier: it would allow receiving transactions while validation is not complete yet, for example
+19:09:10 <jonasschnelli> NicolasDorier: just header chainwork check and pass the transaction to the wallet
+19:09:12 <wumpus> a pruned node is a full node
+19:09:34 <NicolasDorier> ah ok, so basically a node without UTXO ?
+19:09:37 <jonasschnelli> The main difference is, that we load blocks during IBD first from the wallet brthday.
+19:09:43 <jonasschnelli> NicolasDorier: yes. No UTXO set
+19:09:53 <jonasschnelli> No mempool, same fee problem that all SPV wallets have to deal with
+19:09:55 <NicolasDorier> ah ok got it
+19:10:07 <wumpus> pruning has nothing to do with SPV, full node has nothing to do with 'storing the block chain' or not
+19:10:08 <jonasschnelli> But with the option of slowing becomming a full node
+19:10:08 <btcdrak> jonasschnelli: I dont think anyone concept ack because it's so obviously a good feature.
+19:10:11 <wumpus> right, it is about the UTXO set
+19:10:25 <wumpus> jonasschnelli: I've been very busy, sorry
+19:10:27 <jtimon> oh, I undesrtand the details now, headers first, then you are an spv node that fetches the full block instead of using bloom filter but you keep syncing on the background to become a full node, sounds all fine
+19:10:30 <wumpus> jonasschnelli: it's obviously a good idea
+19:10:32 <BlueMatt> jonasschnelli: but still fill-blocks-in-background?
+19:10:39 <BlueMatt> or are we moving away from that?
+19:10:41 <BlueMatt> but, yes, obviously good
+19:10:52 <jonasschnelli> BlueMatt: there are two modes, purespv and hybridspv
+19:10:53 <wumpus> BlueMatt: that should certainly be an option
+19:10:59 <jonasschnelli> purespv will just throw away blocks...
+19:11:08 <BlueMatt> oh, only optional? hum, not a fan of it only being optional
+19:11:11 <jonasschnelli> hybrid spv will keep the blocks and does IBD in the background (maybe throttled)
+19:11:20 <wumpus> hybrid stores them for later
+19:11:28 <wumpus> BlueMatt: why not?
+19:11:29 <morcos> jonasschnelli: +1 on the ability to throttle, think that would make it very useful
+19:11:31 <BlueMatt> i mean you dont have to keep blocks, but you still want to ibd and build the utxo set
+19:11:40 <BlueMatt> /validate
+19:11:58 <BlueMatt> wumpus: because if you're not gonna be upgrading to full trust model why are you running bitcoin core as a wallet?
+19:11:58 <wumpus> being able to use bitcoin core as a full SPV node would be useful, especially with a local node that does validate
+19:12:03 <wumpus> BlueMatt: why not?
+19:12:05 <jonasschnelli> BlueMatt: if you throw away blocks with the long term goal of getting a full node your wasting bandwith
+19:12:15 <BlueMatt> jonasschnelli: no, you're not!
+19:12:21 <BlueMatt> jonasschnelli: you're upgrading your security model
+19:12:28 <jonasschnelli> BlueMatt:: you have to download the block again!
+19:12:50 <BlueMatt> jonasschnelli: huh? oh, you mean keeping the blocks at the tip that you're using to fill wallet...ahh, misunderstanding
+19:12:58 <jonasschnelli> purespv is interesting when connecting to a trusted node.
+19:13:25 <wumpus> right
+19:13:35 <BlueMatt> I'm not sure if its worth the effort to make bitcoin core a competitive spv wallet - they mostly all already support connecting to a trusted node (though need auth)
+19:13:39 <jonasschnelli> fullblock SPV gets uninteresting if you import keys or watchonlys.. because we set the timestamp to 0 = download the whole blockchain
+19:13:40 <achow101> so hybrid keeps blocks for later and purespv doesn't? Is that the only diference?
+19:13:42 <BlueMatt> if someone wants to work on it I wont complain, but...
+19:13:57 <jonasschnelli> achow101: right.
+19:14:00 <BlueMatt> jonasschnelli: argh, I'm lost in your terms here
+19:14:05 <btcdrak> Yeah I also think purespv seems wrong for Bitcoin Core.
+19:14:09 <btcdrak> but w/e
+19:14:11 <sipa> i don't see why
+19:14:17 <jonasschnelli> achow101: hybrid means, your doing IBD with all its downsides...
+19:14:17 <NicolasDorier> well bitcoin core has a wallet part
+19:14:18 <sipa> bitcoin core has a perfectly good wallet
+19:14:19 <BlueMatt> purespv? fullblock spv? define?
+19:14:31 <sipa> seems stupid to restrict it to full node use only
+19:14:31 <CodeShark> We really should drop the term spv
+19:14:33 <jtimon> achow101: it seems also hybridspv does background ibd while pure doesn't
+19:14:41 <achow101> ok
+19:14:43 <jonasschnelli> purespv = no IBD, hybridspv = SPV during IDB
+19:15:00 <BlueMatt> jonasschnelli: wait, so what is fullblockspv?
+19:15:08 <wumpus> both
+19:15:12 <btcdrak> I thought the point of the hybride SPV is just to make the wallet usable immediately during IDB, and put an end to the poor user experience for new users.
+19:15:12 <BlueMatt> huh
+19:15:15 <jonasschnelli> Both. Yes.
+19:15:20 <BlueMatt> what does both mean?
+19:15:28 <jtimon> isn't hybridspv the same as "both"?
+19:15:32 <sipa> BlueMatt: both hybrid and pure download full blocks
+19:15:33 <wumpus> no bloom filters are used in either case, it is all retrieving full blocks
+19:15:33 <jonasschnelli> Both modes (pure and hybrid) are full block SPV modes.
+19:15:41 <achow101> fullblock spv is where the full block is downloaded and the transaction is pulled. watever happens to the block is depended on hybrid or pure
+19:15:41 <wumpus> what is so hard to understand about that?
+19:15:50 <wumpus> achow101: right
+19:15:52 <jonasschnelli> let me write a short post on bitcoincore ML
+19:15:52 <BlueMatt> wumpus/sipa: ahh, just referring to the way we download in either case
+19:16:04 <BlueMatt> wumpus: the way it was referenced it sounded like a different mode
+19:16:24 <jonasschnelli> From the enduser perspective, the modes are very different
+19:16:34 <wumpus> the only difference is that in pure SPV mode, the blocks are thrown away and there is no IBD, in hybrid mode the blocks are backfilled and IBD happens
+19:16:51 <BlueMatt> wumpus: yes, i was confused and thought there was a third mode
+19:17:04 <jtimon> I see no problem with allowing purespv optionally, the default is going to be hybridspv, right?
+19:17:10 <wumpus> ok
+19:17:15 <wumpus> jtimon: yes
+19:17:20 <ryanofsky> in the pr, i suggested calling hybrid spv "prioritized download"
+19:17:23 <jonasschnelli> purespv can solve an interesting usecase where one likes to decouple the wallet from the node
+19:17:32 <wumpus> jonasschnelli: exactly
+19:17:33 <BlueMatt> jtimon: agreed, just saying that it seems a strange thing to focus work on...there are already good options for consumers on the purespv front
+19:17:45 <BlueMatt> like, lots of good options
+19:17:46 <wumpus> jonasschnelli: it's basically a stand-alone wallet
+19:18:05 <jonasschnelli> BlueMatt: purespv would be the only fullblock SPV wallet in the wild
+19:18:07 <jtimon> BlueMatt: I suspect the reasoning is that it will be relatively cheap to add that extra mode
+19:18:12 <wumpus> BlueMatt: it is not *focusing* work on, it's just a by-effect of allowing it
+19:18:29 <BlueMatt> wumpus: yup, I'm fine with it being a free feature, just making a note
+19:18:39 <jtimon> maybe a pr with the hybrid default one and a later one adding the purespv mode would make sense
+19:18:40 <achow101> purespv would be great for privacy
+19:18:57 <jonasschnelli> not for bandwidth thought
+19:19:03 <sipa> BlueMatt: fair enough, but if we want hybrid spv because of the terrible syncing experience, we have all the pieces in place for purespv as well
+19:19:07 <CodeShark> I still don't quite get purespv - sorry, scrolling back and keeping up is hard
+19:19:20 <wumpus> sigh.\
+19:19:23 <jonasschnelli> purespv = plain full block SPV
+19:19:25 <wumpus> any other topics?
+19:19:32 <wumpus> we're starting to repeat ourselves and that is annoying
+19:19:35 <gmaxwell> hah
+19:19:36 <jonasschnelli> download block, no validation, extract relevavnt txs
+19:19:47 <CodeShark> ok
+19:19:48 <jonasschnelli> Okay. I'll continue and try to make small PRs (could be hard though). Thanks
+19:20:03 <wumpus> please just read back if you want to know things that have been discussed before, we can't repeat every single thing specifically for everyone
+19:20:25 <BlueMatt> topics?
+19:20:27 <MarcoF____> topic suggestion: 0.14
+19:20:33 <CodeShark> I'd rather discuss bloom filter commitments or clientside bloom filtering from trusted nodes
+19:20:34 <wumpus> #topic  multithread ProcessMessages
+19:20:44 <MarcoF____> Personally I mostly care about multiwallet refactoring for 0.14
+19:21:00 <MarcoF____> but there are plenty of other pulls open, so we might want to prioritize?
+19:21:04 <wumpus> BlueMatt ^^
+19:21:33 <BlueMatt> i mean i think we all want multiple message-processing threads
+19:21:40 <jonasschnelli> +1
+19:21:51 <gmaxwell> Sorry, I delayed matt by asking him about it offline.  My only comment was "don't reorder messages from a single peer!" :P but apparently I'm behind the times.
+19:21:53 <BlueMatt> and while it probably wont be so useful with cs_main at the head of like every message, I'd like to see plumbing for it sooner rather than later
+19:21:58 <wumpus> well if cs_main usage is brought down enough, that will start to make sense
+19:22:10 <BlueMatt> then people can remove cs_main one message at a time and it will be useful
+19:22:32 <BlueMatt> I'd be happy to see, but dont know if we'll make, cs_main split-outs too much for 0.14 (thats next after main.cpp split)
+19:22:48 <BlueMatt> but I'd like to see a few free wins like being able to respond to getblocktxn requests while a block is processing
+19:23:05 <BlueMatt> anyone have any thoughts on blockers for this? things likely to break? etc?
+19:23:05 <gmaxwell> okay, thanks for the concrete example of something pretty useful.
+19:23:21 <cfields> BlueMatt: seems unlikely to have any real-world benefit without breaking out CNodeState? Maybe we should try to knock that out first?
+19:23:28 <gmaxwell> I was struggling to come up with one, but that one is good.
+19:23:44 <wumpus> being able to service multiple nodes at once would be very useful
+19:24:01 <BlueMatt> cfields: why do you have to break out CNodeState? you'll never call ProcessMessages in two threads for a single peer at the same time
+19:24:07 <BlueMatt> cfields: that would violate our serialization stuff
+19:24:30 <gmaxwell> Yes, in particular being able to reply to getblocktxn multiple times in parallel should reduce block relaying delays.
+19:25:02 <BlueMatt> gmaxwell: yes, i really want it for FIBRE-based relay network - respond to getblocktxn from a shared_ptr<const CBlock> block_currently_processing
+19:25:06 <wumpus> I mean looking at it from the other side, there's no good reason for keeping doing message processing only in one thread
+19:25:16 <morcos> BlueMatt: I think its going to be important to do a thorough review of synchronization issues first.  Sometimes I feel like things just happen to not be a problem b/c they are only accessed from the single thread.
+19:25:34 <BlueMatt> morcos: yea, thats my concern :(
+19:25:41 <cfields> BlueMatt: well when each one is grabbing for cs_main, it only takes one long lock to drop us back to single-threaded
+19:25:42 <morcos> We do an ok job of fixing these missing locks when we find them, but if we're goign to make multiple message processing threads, we need to make sure we've really got them all
+19:25:44 <BlueMatt> morcos: any concrete things i should be looking for
+19:25:59 <morcos> I think we should make a list of what needs to be protected by cs_main
+19:26:10 <BlueMatt> cfields: yea, I mean I'm ok with switching to a multi-threaded model that does ~nothing and then slowly reducing the locks
+19:26:15 <gmaxwell> So I think making process message concurrent may create greater exposure for data races around the nodestats.  Right now the locking around stats is _widely_ incorrect, leading to undefined behavior. (I haven't been watching closely and cfields likely improved a lot of it recently, but I expect there are still problems)
+19:26:47 <gmaxwell> (this is responsive to matt's question about likely sources of problems)
+19:27:18 <sipa> gmaxwell: for stats we can just change them all to atomics
+19:27:19 <gmaxwell> I recommend that we run testing harnesses with valgrind DRD and try to get this change to be data race free at least according to DRD.
+19:27:34 <BlueMatt> gmaxwell: good suggestion, indeed
+19:27:47 <gmaxwell> sipa: I made that suggestion previously. I think we access them infrequently enough that it's not an awful idea.
+19:28:14 <sipa> gmaxwell: you can also cache per peer, and flush to a locked global occasionally if it's a concern.
+19:28:20 <sipa> stats are easy, no consistency requirements
+19:28:45 <gmaxwell> last time I ran DRD I saw some races around stats but there wasn't a wall of errors.
+19:28:54 <wumpus> and the per-node stats should not be an issue as we likely don't want to be processing two messages from the same peer at the same time?
+19:28:56 <cfields> sipa: that sounds like a good model
+19:29:11 <sipa> wumpus: indeed
+19:29:14 <BlueMatt> wumpus: yes, that would reduce lots of issues
+19:29:19 <gmaxwell> wumpus: I suspect we can get a message from peer A that causes use to iterate over all the other peers stats.
+19:29:28 <sdaftuar> BlueMatt: have you given much thought to how the threading logic would work?
+19:29:41 <sdaftuar> i mean, how you'd decide how to split work across threads
+19:29:46 <gmaxwell> (just an example why single peer at a time doesn't automatically mean thread safty of per node stats)
+19:29:53 <wumpus> gmaxwell: that sounds scary
+19:30:35 <gmaxwell> (maybe we don't actually do that anywhere, at least in response to a message... a connection, for example, causes that--)
+19:30:35 <BlueMatt> sdaftuar: hum? do we need anything more complicated than just a thread pool each looking for peers that have available work and arent being worked on that just wait on a cv when there is nothing to do
+19:30:51 <wumpus> gmaxwell: no, but keeping to rules like that will make it easier manageable
+19:31:17 <gmaxwell> Another point to keep in mind is thread prolifervation and address space usage on 32-bit hosts. Not a reason to not do this, but just a cost.
+19:31:19 <sdaftuar> well, my thought was that since most messages are tx's, we might find ourselves tying up all our threads but unable to continue, as they're all contending on cs_main
+19:31:34 <sdaftuar> so you wouldn't necessarily be able to respond to a getblocktxn while processing a block
+19:31:42 <sdaftuar> you could do somethign smarter though...
+19:31:55 <wumpus> gmaxwell: it would still be possible to run with only one thread I suppose
+19:31:59 <wumpus> gmaxwell: I'm not terribly worried
+19:32:01 <BlueMatt> sdaftuar: yes, i was thinking for v1 we ignore that issue
+19:32:08 <sdaftuar> ok :)
+19:32:09 <gmaxwell> wumpus: I'm not either.
+19:32:21 <BlueMatt> sdaftuar: indeed, eventually we could have some "oh, these messages take cs_main" list to make it smart
+19:32:37 <gmaxwell> Besides, this is a better use of threads (actual concurrency) than some others we have had.
+19:32:47 <BlueMatt> gmaxwell: very true :(
+19:32:58 <wumpus> gmaxwell: we certainly shouldn't be restricting work towards better performance because there happen to be a few nodes on small systems, those can be handled specifically
+19:33:10 <gmaxwell> (e.g. connect has a thread, wallet flush thread, etc.)
+19:33:17 <BlueMatt> we can make up the difference by moving wallet flush into cscheduler thread :)
+19:33:24 <gmaxwell> wumpus: agreed, I am just exposing areas of consideration. I support the work.
+19:33:26 <wumpus> (and I run most of my nodes on 32-bit ARM so it's not like I don't care)
+19:33:30 <BlueMatt> well, and like three net threads to cscheduler
+19:33:59 <wumpus> yes, we can do thread-stack accounting like that, but let's not get lost in details
+19:34:04 <morcos> and while we're at it we can increase script checking threads :)
+19:34:10 <petertodd> wumpus: oh, on rpi's and the like?
+19:34:22 <wumpus> petertodd: cubox-i's are my favourite
+19:34:28 <petertodd> wumpus: interesting, thanks!
+19:35:23 <wumpus> next topic, I suppose
+19:35:30 <gmaxwell> (there are other possibilties like decresing the stack size on some threads that don't do much, firefox uses 128k or 256k (I forget) stacks for media processing threads.  So I really don't at all think it's a blocker, just something to keep in mind.)
+19:36:14 <wumpus> gmaxwell: indeed you can do that through an environment variable IIRC, I think I even list it in my "reducing bitcoind memory usage" document ,if not I should
+19:36:29 <wumpus> #topic 0.14
+19:36:49 <wumpus> @MarcoFalke
+19:37:07 <jonasschnelli> multiwallet support would be nice
+19:37:16 <wumpus> oh he left?
+19:37:27 <gmaxwell> wumpus: yes, well you can control it for all threads in an env variable --- though that can result in security problems. :(  But there are some threads where their stack usage is precisely decidable easily. (e.g. the connect thread).
+19:37:27 <jtimon> yep, it seems so
+19:37:52 <jonasschnelli> [20:36:29]  <@wumpus>	#topic 0.14
+19:37:52 <jonasschnelli> [20:36:49]  <@wumpus>	@MarcoFalke
+19:38:00 <BlueMatt> MarcoFalk_:
+19:38:08 <bitcoin-git> [13bitcoin] 15morcos opened pull request #9123: Remove extraneous LogPrint from fee estimation (06master...06eliminateFeeWarning) 02https://github.com/bitcoin/bitcoin/pull/9123
+19:38:19 <MarcoFalk_> Jup, I'd like to hear what is a priority to get in to 0.14
+19:38:21 <jtimon> multiwallet refactoring for 0.14
+19:38:26 <MarcoFalk_> ^
+19:38:26 <wumpus> gmaxwell: I'm not sure about security problems, though yes it can cause crashes if you set it that low that the stack underflows
+19:38:28 * jonasschnelli gives MarcoFalk a IRC bouncer for birthday
+19:38:42 <BlueMatt> main.cpp split, but thats guaranteed at this point, pretty much
+19:38:57 <sdaftuar> i think the validation speedups from jeremyrubin would be great for 0.14
+19:39:00 <MarcoFalk_> Ok, what is the progess on the net refactor. Is it almost done?
+19:39:01 <wumpus> gmaxwell: then again the thread stacks are extremely small on some platforms
+19:39:11 <wumpus> gmaxwell: linux assigns quite a lot by default
+19:39:12 <BlueMatt> sdaftuar: yea, at least the cucku cache thing
+19:39:16 <jonasschnelli> I think there is not much left for the multi-wallet support. Though, not sure if we can make this happen for 0.14
+19:39:30 <jonasschnelli> Also.. we should add a private-key free mode.
+19:39:43 <jonasschnelli> A safe-mode
+19:39:44 <gmaxwell> sdaftuar: I agree, all of them.
+19:39:48 <wumpus> if we all agree to start reviewing wallet changes, I'm sure we can get multi wallet support in 0.14
+19:39:52 <jtimon> I would like to move on libconsensus, but so far nothing seems to be happening on that front
+19:40:00 <MarcoFalk_> Some of the wallet changes need rebase
+19:40:12 <jonasschnelli> wumpus: Nice! I can review some stuff next week.
+19:40:15 <gmaxwell> In terms of wallet features I think some kind of multiwallet support would have the greatest ratio of benefit to cost+risk.
+19:40:23 <gmaxwell> It's just software eng.
+19:40:23 <jonasschnelli> gmaxwell: ack!
+19:41:01 <jonasschnelli> Also, with the current fundrawtransaction options, you can perfectly run watch-only wallets
+19:41:56 <cfields> I'm aiming to get net.h/cpp split in half in the next ~week also.
+19:41:58 <jonasschnelli> So.. theres a project: https://github.com/bitcoin/bitcoin/projects/2
+19:42:02 <jonasschnelli> for MW support
+19:42:03 <cfields> (for the 0.14 list)
+19:42:04 <gmaxwell> So I think multiwallet should be a greater priority.  Also while 0.14 has a lot of really great infrastructural changes, I think it has relatively few ordinary user visible improvements.
+19:42:26 <paveljanik> Network on/off in GUI please :-)
+19:42:37 <jonasschnelli> paveljanik: Yes. I'll make that happen soon.
+19:42:49 <wumpus> because most of the focus has been on 0.13.1, 0.14 will be somewhat of a smaller release, I don't think that's a problem
+19:43:05 <gmaxwell> There are a number of other things I'd like to work on, like more bandwidth usage controls. Improvement to header fetching logic... but I think it's not useful to speak to work that hasn't even started.
+19:43:19 <jonasschnelli> I was hoping the mempool stats can be in 0.14... but not sure if there are enough reviews
+19:43:21 <BlueMatt> bumpfee
+19:43:22 <MarcoFalk_> I was pinging luke-jr on #8776, but haven't heard anything about luke-jr recently
+19:43:23 <gribble> https://github.com/bitcoin/bitcoin/issues/8776 | Wallet refactoring leading up to multiwallet by luke-jr · Pull Request #8776 · bitcoin/bitcoin · GitHub
+19:43:26 <MarcoFalk_> Hope hes doing fine
+19:43:54 <paveljanik> jonasschnelli, mempool stats: count with me for review!
+19:44:12 <jonasschnelli> BlueMatt: yeah! Bumpfee should get some review. Guys! https://github.com/bitcoin/bitcoin/pull/8456
+19:44:26 <paveljanik> it would be nice to have a estimatefee 2, 3, 4 graph also...
+19:44:29 <wumpus> cfields: weren't you working on bandwidth throttling w/ the P2P libevent switch?
+19:44:30 <MarcoFalk_> paveljanik: I think the review-intense part is #8501
+19:44:32 <gribble> https://github.com/bitcoin/bitcoin/issues/8501 | Add mempool statistics collector by jonasschnelli · Pull Request #8501 · bitcoin/bitcoin · GitHub
+19:44:36 <gmaxwell> We'll see what shows up, in any case.
+19:44:51 <wumpus> yeah there's not much point in listing all major open pulls here now
+19:44:54 <MarcoFalk_> paveljanik: The gui change is rel. simple
+19:45:06 <jonasschnelli> Yes. #8501 is groundwork for mempool stats. Has no review so far
+19:45:08 <gribble> https://github.com/bitcoin/bitcoin/issues/8501 | Add mempool statistics collector by jonasschnelli · Pull Request #8501 · bitcoin/bitcoin · GitHub
+19:45:11 <wumpus> we know about them, what they need is more review and testing :)
+19:45:25 <MarcoFalk_> (and rebase) *ducks*
+19:45:26 <morcos> I'm going to do at least some minor (and needed) improvements to fee estimation.  Is  there any interest on estimates for longer than 25 blocks?  Or should I continue to punt on that?
+19:45:38 <cfields> wumpus: yes, i don't think that's likely for 0.14 though. The libevent changes are going to be quite different from what I originally intended, I think
+19:45:41 <gmaxwell> WRT review, I believe that multiwallet review is fundimentally easier than bumpfee for example, because in bumpfee I need to reason about a complex state machine, the effect on the network, corner cases with double spends, etc.  And multiwallet is 98% "does this crash or not". :)
+19:45:55 <wumpus> cfields: it's taking quite longer than we expected :)
+19:46:13 <wumpus> gmaxwell: so start reviewing multiwallet pulls then :D
+19:46:18 <BlueMatt> wumpus: lol, doesnt everything
+19:46:21 <wumpus> (or did you already?)
+19:46:30 <gmaxwell> morcos: mempool backlog levels are not great enough where estimates >25 blocks matter that much I think, currently.
+19:46:35 <jtimon> btw maybe we can talk about the "custom mode" (separately from the blocksigning mode which I think it's unlikely to get to master with the union and the global, but we can just rebase every release)
+19:46:39 <cfields> wumpus: yes, sorry for that. I vastly underestimated the refactor impact.
+19:46:59 <wumpus> BlueMatt: yes, I'm kind of overwhelmed already, so I don't care that much some things are going slower
+19:47:11 <morcos> gmaxwell: But its often possible to pay a much lower fee if you are willing to wait 100 blocks or whatever...  So in the interest of keeping fees down.., but I just don't know if thats much of a use case.
+19:47:39 <gmaxwell> morcos: fun graph, fee availble at the time of a block (red) vs immediately after (green): https://people.xiph.org/~greg/temp/fee_avail.png  thats a week of data,  also a different reason during the high fee floods a couple weeks ago: https://people.xiph.org/~greg/temp/fee_avail2.png
+19:48:09 <gmaxwell> morcos: interesting, if it would make a big difference I think it would be interesting. I wasn't thinking it would make much of a difference.
+19:48:27 <wumpus> cfields: my worry is that some things are blocked on it, e.g. gmaxwell talks about wanting to do things with bandwidth management, those things would all be easier if we had switched to libevent, instead of trying to cram it into the current networking backend
+19:48:29 <gmaxwell> morcos: I still wouldn't priortize it over general improvements.
+19:49:06 <morcos> gmaxwell: tremendous difference. i'm pretty sure you could always pay about 2 sat/byte if you are wiling to wait a couple days..  limiting factor might be the 3 day eviction.
+19:49:13 <gmaxwell> Yes, I've held off on doing too much more with bandwidth management due to that.  There are somethings we can do, for example delaying inv relays when bandwidth starved.
+19:49:36 <cfields> wumpus: ACK. I'll pick up the pace.
+19:49:49 <gmaxwell> morcos: my publically reachable nodes don't really expirence 3 day eviction, -- some clown or another inevitably connects and restores the evicted stuff. :P
+19:50:09 <sipa> gmaxwell, cfields: it sounds to me like the bandwidth management you're talking about is very different and probably won't have much code conflicts
+19:50:36 <sipa> as gmaxwell is talking about application level decisions that afaik don't even affect anything at the network layer
+19:50:53 <gmaxwell> Well I specifically just mentioned the part of the management scope that wouldn't have conflicts. (and I think should probably be done first:  to quickly offer something but then relay it out slowly is somewhat peer abusive. :P )
+19:51:41 <cfields> sipa: indeed
+19:53:44 <wumpus> other topics?
+19:54:19 <gmaxwell> we should say hello to all the americans that missed the timezone change.
+19:54:25 <gmaxwell> and are just arriving now. :P
+19:54:33 <jcorgan> heh
+19:54:48 <petertodd> gmaxwell: canadians too :)
+19:54:56 <gmaxwell> Hi guys.
+19:55:00 <achow101> hi
+19:55:00 <gmaxwell> Welcome to the end of the meeting.
+19:55:46 <wumpus> yes, welcome
+19:55:50 <sipa> kthxbye
+19:55:51 <wumpus> #endmeeting
