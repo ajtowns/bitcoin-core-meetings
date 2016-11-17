@@ -1,0 +1,305 @@
+19:04:21 <jonasschnelli> #startmeeting
+19:04:21 <lightningbot> Meeting started Thu Nov 17 19:04:21 2016 UTC.  The chair is jonasschnelli. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:04:21 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:04:27 <wumpus> hello
+19:05:09 <sipa> present
+19:05:31 * michagogo looks at wumpus's @
+19:05:34 <CodeShark> Hi
+19:05:37 <jonasschnelli> No topic proposals?
+19:05:50 <MarcoFalke_web> Short meeting, then :P
+19:06:02 <instagibbs> ideas for account removal/replacement? I'm getting annoyed at account code :)
+19:06:02 <sipa> can i ask a bit about shared_ptr changes?
+19:06:32 <jonasschnelli> #topic shared_ptr
+19:06:42 <morcos> i have a topic, i'd like tot alk about priority
+19:07:01 <sipa> the #topic is only recognized when said by the chair, i think
+19:07:06 <morcos> also +1 instagibbs
+19:07:14 <jonasschnelli> I'm the chair
+19:07:19 <sipa> oh!
+19:07:28 <instagibbs> sipa, better watch yourself ;)
+19:07:37 * sipa will go stand in the corner
+19:07:44 <sipa> so, i have a series of 3 PRs to introduce shared_ptr in more places
+19:08:14 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/9125
+19:08:20 <sipa> #9125, #8580, #8589
+19:08:22 <gribble> https://github.com/bitcoin/bitcoin/issues/9125 | Make CBlock a vector of shared_ptr of CTransactions by sipa · Pull Request #9125 · bitcoin/bitcoin · GitHub
+19:08:24 <gribble> https://github.com/bitcoin/bitcoin/issues/8580 | Make CTransaction actually immutable by sipa · Pull Request #8580 · bitcoin/bitcoin · GitHub
+19:08:25 <gribble> https://github.com/bitcoin/bitcoin/issues/8589 | Inline CTxInWitness inside CTxIn (on top of #8580) by sipa · Pull Request #8589 · bitcoin/bitcoin · GitHub
+19:09:05 <wumpus> I'm testing #9125
+19:09:05 <sipa> the first i hope is a clear improvement and necessary refactor for the ones that follow (and it's 3-4% reindex performance improvement)
+19:09:06 <gribble> https://github.com/bitcoin/bitcoin/issues/9125 | Make CBlock a vector of shared_ptr of CTransactions by sipa · Pull Request #9125 · bitcoin/bitcoin · GitHub
+19:09:29 <jonasschnelli> Do I understand it right that one of the key benefits of the shared_ptr transition are the concurrency benefits with less locking?
+19:09:43 <sipa> that is a potential future advantage
+19:09:44 <BlueMatt> sipa: concept ack+1000
+19:09:45 <wumpus> also less copying
+19:09:45 <gmaxwell> No.
+19:09:46 <jonasschnelli> and less copis
+19:09:47 <BlueMatt> to all of them
+19:09:54 <sipa> but less copying is the immediate reason
+19:09:58 <gmaxwell> Thats an abstract advantage of shared pointers.
+19:10:01 <jonasschnelli> Okay.
+19:10:16 <gmaxwell> But right avoiding copies is that it accomplishes here.
+19:10:27 <jonasschnelli> So performance and memory? Right?
+19:10:28 <sipa> the second one may be more controversial, as it affects the wallet code significantly, making CWalletTx not inherit from CTransaction anymore, and move it to a field
+19:10:32 <cfields> sipa: is there any specific part of the first that you think needs extra scrutiny/testing?
+19:10:38 <wumpus> sipa: YES
+19:10:59 <sipa> wumpus: YES as in "do it" or YES as in "it's more controversial"
+19:11:03 <wumpus> CWalleTx is pretty much the example of an abuse of inheritance
+19:11:05 <wumpus> in OOP
+19:11:11 <gmaxwell> wumpus: that was exactly my response.
+19:11:12 <sipa> ok, glad you agree on that
+19:11:38 <jonasschnelli> Yes. Also, is there a reason for the extra CMerkleTx inheritance?
+19:11:46 <sipa> jonasschnelli: abuse of C++
+19:11:49 <wumpus> wallettx should *contain* a line-level tx, plus metadata
+19:11:50 <jonasschnelli> heh
+19:12:02 <sipa> jonasschnelli: meaning you don't need to copy the interface
+19:12:46 <sipa> and then inlining CTxInWitness is to just simplify the code
+19:13:03 <sipa> (which is likely a small performance regression for non-witness txn, but an improvement for witness txn)
+19:13:45 <sipa> if no further comments on that, i'm done with the topic
+19:13:51 <jonasschnelli> While were at it, we should also remove "main.h" and "txmempool.h" from wallet.c (slightly OT) to avoid the circular dependency.
+19:13:53 <wumpus> no comments, i think it's the way forward
+19:14:11 <sipa> jonasschnelli: why is that a circular dependency?
+19:14:11 <jonasschnelli> sipa: ack
+19:14:12 <gmaxwell> why isn't it all done and merged yet? :P
+19:14:23 <sipa> jonasschnelli: main and txmempool should not depend on wallet
+19:14:32 <sipa> but wallet depending on main seems perfectly expected for me
+19:14:34 <wumpus> wallet is allowed to depend on stuff in libbitcoin_server
+19:14:42 <wumpus> just not the other way around
+19:14:44 <jonasschnelli> sipa: have a look at https://github.com/bitcoin/bitcoin/pull/8745
+19:15:24 <sipa> what should i see there?
+19:15:37 <wumpus> I think we can discuss this outside the meeting? other more urgent topics?
+19:15:45 <sipa> ah, i understnad
+19:15:51 <jonasschnelli> Yes. Outside the meeting.
+19:15:51 <sipa> yes, let's discuss design at another time
+19:16:10 <jonasschnelli> morcos had the topic proposal "priority"
+19:16:16 <morcos> Lets talk about potential for account or priority removal (2 separate topics)
+19:16:27 <sipa> agree on topic
+19:16:31 <jonasschnelli> #action account or priority removal
+19:16:36 <jonasschnelli> #topic account or priority removal
+19:16:36 <gmaxwell> lol
+19:16:40 <jonasschnelli> :/
+19:16:53 <morcos> I think luke-jr was the main proponent of keeping priority around, so if he's not here, maybe we need to postpone further discussion
+19:17:08 <morcos> but it was my hope that we could all be in agreeement that it serves not much of a function any more
+19:17:32 <morcos> Perhaps we can set a target for 0.15 if 0.14 is too close, but it would be nice to remove ALL of the priority code
+19:17:46 <morcos> it would clean a lot of things up
+19:17:49 <wumpus> I think that ship has already sailed?
+19:17:54 <BlueMatt> morcos: ACK, but maybe 0.15
+19:17:59 <BlueMatt> deprecate more formally in 0.14
+19:18:09 <wumpus> I mean, we merged some stuff on the way for priority removal already
+19:18:09 <morcos> BlueMatt: that makes sense to me
+19:18:14 <BlueMatt> wumpus: not even eligius is doing any priority selection now...at the time maybe luke could have argued for it, but now.....
+19:18:21 <sipa> we removed priority estimation
+19:18:38 <jcorgan> is there any empirical data on miner behavior?
+19:18:40 <morcos> wumpus: i mostly agree, but the removal of priority estimation was because it wasn't functional any more, so it was an easier decision
+19:18:42 <sipa> all that is left is priority based mining, i think
+19:19:04 <sipa> if it serves no function (and maybe we need a bit more data on that), it should be equally easy imho
+19:19:13 <gmaxwell> I agree, I think any desire to keep it around could be answered by intelligent automatic use of fee delta. But this is going to get rehashed with luke later anyways. I think it's likely that everyone who regularly attends the meetings except luke agrees.
+19:19:26 <morcos> there is also the free transactoin and rate limiting code
+19:19:28 <wumpus> users can still set prioritizetransaction
+19:20:09 <achow101> does priority estimation even work? estimatepriority just gives me -1 regardless
+19:20:18 <sipa> achow101: priority estimation is removed
+19:20:19 <morcos> achow101: thats why it is removed for 0.14
+19:20:29 <sipa> achow101: the RPC remains for backward compatibility, but is a stub
+19:20:30 <gmaxwell> jcorgan: some had been collected in the past when it was defaulted to off.  general result is that its not used ~anywhere anymore.
+19:20:33 <wumpus> so if prioritization on some criterion that is not fee it can still be implemented outside of bitcoind
+19:20:44 <morcos> it works, its just correctly telling you that no priority is high enough to get you mined quickluy
+19:20:50 <achow101> ah, i see
+19:21:01 <wumpus> heh
+19:22:00 <morcos> back in a couple min
+19:22:10 <jtimon> so I thought we were waiting on 0.14 for removing the priority, now we wait for 0.15?
+19:22:47 <wumpus> is there any reason to hurry?
+19:22:54 <sipa> jtimon: there seem to be at least 4 components to "removing the priority", i'm not sure they all need to happen simultaneously
+19:23:10 <sipa> (rpc, estimation, mining, relay)
+19:23:29 <jtimon> wumpus: no, any reason to wait ?
+19:23:35 <wumpus> I'm sure no one is really waiting for it to be removed, it can be removed part by part and 0.15 is a fine target
+19:23:40 <gmaxwell> relay is the only one I really care much about, because it currently causes bandwidth wasting relaying around junk that won't get mined.
+19:23:50 <jtimon> if people want to work on that, I don't see why they should wait
+19:23:53 <wumpus> jtimon: there are always other "priorities"
+19:24:09 <MarcoFalke_web> Can we disable relay by default for .14?
+19:24:46 <jonasschnelli> ack on DEFAULT_RELAYPRIORITY = false; for 0.14
+19:25:05 <gmaxwell> I'd support that, if we don't go further.
+19:25:23 <sipa> agree
+19:25:25 <MarcoFalke_web> What do you mean with "go further"?
+19:25:32 <wumpus> disabling by default always makes sense as a first step
+19:25:36 <gmaxwell> MarcoFalke_web: remove the code entirely.
+19:25:47 <MarcoFalke_web> #action DEFAULT_RELAYPRIORITY = false; for 0.14
+19:25:59 <wumpus> even if you rip out the code two days later...
+19:26:13 <jtimon> ok, I see, disable for 0.14 first what you want to remove for 0.15, that makes sense
+19:26:34 <sipa> ok, account removal?
+19:26:42 <MarcoFalke_web> next topic
+19:26:55 <morcos> wait i'm confused
+19:27:03 <gmaxwell> uh oh.
+19:27:08 <morcos> what are the proposed changes to relay
+19:27:22 <morcos> that priority doesn't let you skip the rate limiting
+19:28:17 <morcos> ok nm, ignore me.  we are proposing that you always have to have minrelaytxfee
+19:28:22 <gmaxwell> Yes.
+19:28:29 <jonasschnelli> #topic "account removal"
+19:28:39 <morcos> i don't think thats going to help too much with junk, but agree it would be good change
+19:28:40 <gmaxwell> also, the help text for relaypriority is wrong/confusing. :P
+19:29:13 <MarcoFalke_web> I think we already have a pull open for this #7729
+19:29:14 <morcos> account removal is more tricky
+19:29:17 <wumpus> so I proposed a label API to replace accounts at the start of this year, it still hasn't had much review yet: https://github.com/bitcoin/bitcoin/pull/7729
+19:29:17 <jonasschnelli> There is sill an open PR from wumpus to #7729 which is a step towards account removal
+19:29:20 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:29:21 <jonasschnelli> heh
+19:29:22 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:29:24 <wumpus> not sure there's anything new to discuss there
+19:29:33 <gmaxwell> "Bitcoin developers oppose accountability."
+19:30:04 <morcos> so the idea would be we have to have labels first
+19:30:08 <morcos> maybe for a release or two
+19:30:09 <jonasschnelli> morcos: what would be your approach for the removal-transition?
+19:30:15 <morcos> and then we coudl remove accounts?
+19:30:18 <wumpus> if people are ok with that proposal I'll go forward with it, but there's always so little attention on wallet related changes, let alone deprecating features
+19:30:24 <wumpus> morcos: yes
+19:30:26 <instagibbs> yes labels would have to come first
+19:30:32 <morcos> i mean i wish we could just rip them out, they're terrible.  but it seems like people still depend on them
+19:30:32 <gmaxwell> I think I had just managed to miss 7729.
+19:30:43 <gmaxwell> Doing both lavels and accounts means more breaking API changes, no?
+19:30:55 <MarcoFalke_web> wumpus: You mentioned that this may cause problems when people use the account AND label api?
+19:31:09 <wumpus> MarcoFalke_web: there may need to be protection against that, yes
+19:31:20 <gmaxwell> morcos: most of the time I see them mentioned, they are being used as labels.
+19:31:21 <wumpus> MarcoFalke_web: though the same already happens if you use accounts and the GUI
+19:31:32 <wumpus> MarcoFalke_web: and there is no protection against that either
+19:31:33 <jtimon> can't we replace accounts with labels all at once?
+19:32:04 <gmaxwell> morcos: and people are confused when the accounts centric behavior shows up...  or, alternatively, they're confused when they don't control "from" addresses (that they're not seperate wallets).
+19:32:04 <jtimon> it's not like we haven't been warning against the use of accounts for ages
+19:32:06 <wumpus> can we first *agree* on the label api?
+19:32:19 <instagibbs> jtimon, at some point I don't think people believe the deprecated warning
+19:32:22 <sipa> jtimon: go review 7729 (and i should do the same)
+19:32:25 <instagibbs> we should put scary ascii art :)
+19:32:26 <gmaxwell> so proposed action: everyone go comment on 7729.
+19:32:30 <instagibbs> action yes
+19:32:32 <morcos> ok, lets all read 7729 again and discuss on there
+19:32:35 <instagibbs> ack
+19:32:37 <morcos> damn i type too slow
+19:32:38 <jtimon> sipa: right
+19:32:39 <gmaxwell> yea, it sounds great.
+19:32:53 <instagibbs> also who uses labels that we talk to? dooglus?
+19:32:55 <MarcoFalke_web> #action look at https://github.com/bitcoin/bitcoin/pull/7729
+19:33:15 <jonasschnelli> Removing the accounting system entirely will be difficult (especially old wallet migration)
+19:33:29 <wumpus> whether to rip accounts at the same time as introducing labels is for later discussion, none of this is hard to implement, but deciding what API we want is more difficult
+19:33:36 <wumpus> jonasschnelli: no, it's not difficult at all
+19:34:14 <wumpus> jonasschnelli: you could even keep the accounting records around and just ignore them and treat previous accounts as labels instead
+19:34:22 <gmaxwell> ^ is what I expected.
+19:34:23 <sipa> just the concept of 'balance of a label/account' disappears, not the ability to selectively list transactions affecting labels/accounts
+19:34:25 <jonasschnelli> I once did it in a test branch and it took me a long time to get it right... but maybe I was overcomplicating stuff there
+19:34:38 <MarcoFalke_web> I think dooglus use case would be covered by the new label api, but better someone ping him on the pr
+19:34:41 <wumpus> jonasschnelli: it's mainly a matter of deleting code
+19:34:56 <jonasschnelli> Right. I removed it with no labels migration
+19:35:07 <gmaxwell> I expected the account->label change would mostly be a matter of getting rid of balance related functionality. And otherwise not much perhaps beyond some new label centric features.
+19:35:11 <sipa> jonasschnelli: i think you're overcomplicating
+19:35:16 <wumpus> gmaxwell: yes
+19:35:34 <wumpus> gmaxwell: and just to be claear *account* RPCs are renamed to *label*, basically
+19:35:36 <sipa> jonasschnelli: it's literally just removing the balance RPCs, and then dropping the 'from account' field in send RPC, and renaming the rest account->label
+19:35:44 <wumpus> yes
+19:35:48 <gmaxwell> (e.g. of 'obvious' additional features: multiple labels on items, being able to label a single transaction without labling any involved addresses)
+19:36:23 <wumpus> well at first it just implements the GUI label API, which doesn't allow labeling transactions either
+19:36:30 <wumpus> I think that's a whole different thing
+19:36:31 <gmaxwell> yep. makes sense.
+19:36:59 <jonasschnelli> you can label addresses but not transactions, right?
+19:37:03 <wumpus> right
+19:37:04 <jonasschnelli> We have a comment feature for transaction
+19:37:07 <jtimon> isn't the move call also affected (if we still have that)?
+19:37:13 <morcos> perhaps as an immediate step, we could more forcefully declare accounts unsupported and deprecated for 0.14
+19:37:13 <jonasschnelli> (which is sadly not really used and exposed)
+19:37:17 <wumpus> move will disappear jtimon
+19:37:25 <wumpus> please actually read #7729 :(
+19:37:26 <jtimon> wumpus: k
+19:37:27 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:37:31 <morcos> so that in the course of adding labels, we don't have to worry about any edge case mixing of the 2
+19:37:36 <gmaxwell> morcos: that would be negative for the many people who use accounts as labels today, however.
+19:38:11 <wumpus> first introduce labels
+19:38:14 <morcos> gmaxwell: yeah but i don't mean we're actually going to change it,  i just worry that in the course of adding labels around accounts we'll give ourselves extra work, but maybe not.
+19:38:21 <wumpus> only then I'll agree on doing anything more to deprecate accounts
+19:38:34 <wumpus> if we don't move forward for labels, we'll stay in this state forever
+19:38:42 <gmaxwell> I need to read the PR to comment more!
+19:38:47 <instagibbs> 2 spooky
+19:40:03 <instagibbs> any other topics?
+19:40:04 <wumpus> making more noise about removing accounts before we have a labels API will just make people (such as dooglus) panicked
+19:40:33 * gmaxwell looks at btcdrak pining #joinmarket and contemplates ^ :P
+19:41:10 <gmaxwell> okay, I think we should take the proposed action of everyone reading and commenting on 7729 and move to another subject.
+19:41:11 <jonasschnelli> I guess he's afk
+19:41:18 <wumpus> yes
+19:41:55 <gmaxwell> Or otherwise, we could instead engage in the age old art of completely uninformed combat.
+19:42:16 <morcos> you want to talk about block size?
+19:42:18 <jtimon> morcos: are you saying remove accounts before labels or just do both at the same time (to not worry about incompatibilities between the 2)?
+19:42:24 <gmaxwell> "I haven't read 7729 but I oppose any change that causes blindness in small children!"
+19:42:34 <petertodd> gmaxwell: I didn't read your last comment, but ACK
+19:42:53 <jtimon> other topics?
+19:42:54 <jonasschnelli> If there are no other topic, we could talk about "auxiliary block requests" if some are interested in it?
+19:43:08 <jtimon> what is that?
+19:43:14 <jonasschnelli> #9171
+19:43:15 <gribble> https://github.com/bitcoin/bitcoin/issues/9171 | Introduce auxiliary block requests by jonasschnelli · Pull Request #9171 · bitcoin/bitcoin · GitHub
+19:43:20 <gmaxwell> jonasschnelli: will that cause blindness in small children?
+19:43:24 * BlueMatt petitions for one more review on #9075
+19:43:26 <gribble> https://github.com/bitcoin/bitcoin/issues/9075 | Decouple peer-processing-logic from block-connection-logic (#3) by TheBlueMatt · Pull Request #9075 · bitcoin/bitcoin · GitHub
+19:43:44 <gmaxwell> jtimon: it provides hot and cold running blocks.
+19:43:45 <sipa> gmaxwell: yes, through xkcd 378
+19:43:46 <jonasschnelli> jtimon "auxiliary block requests" is a requirement for SPV
+19:43:48 <instagibbs> BlueMatt, thanks, added to queue
+19:44:01 <jonasschnelli> It allows you to request blocks during IBD... which not getting validated
+19:44:18 <morcos> jonasschnelli: is there some more general description of how all that would work.  i started to look at it, but i wasn't sure what the high level design was
+19:44:30 <instagibbs> ACK morcos I couldn't grasp immediately
+19:44:39 <jonasschnelli> Hmm... I can write a paper?
+19:45:03 <morcos> it doesn't have to be formal
+19:45:23 <jonasschnelli> It's simple: you ask your node, "giveme blocks D, F, G", node downloads blocks "D, F, G" and pass it though the signals with validate=fale"
+19:45:27 <BlueMatt> jonasschnelli: note that I'm working to remove fForceProcessing/etc from ProcessNewBlock...please do not pass the blockRequest object all the way in...
+19:45:38 <gmaxwell> I have to admit I expirenced some groan related to "oh no, yet another block fetching modality" -- but the application of being able to on demand randomly request blocks is perfectly reasonsable.  More description would be helpful.
+19:45:54 <jonasschnelli> It uses all the available mechanisms.
+19:46:04 <BlueMatt> jonasschnelli: I'd kinda prefer this not call AcceptBlock at all...do we need to store the block or can we just pass to wallet?
+19:46:10 <jonasschnelli> It just "prioritize the requested blocks"
+19:46:14 <sipa> overall concept ack, but i think the implementation will need to change with the ongoing network processing refactors
+19:46:51 <gmaxwell> BlueMatt: seems foolish to download blocks twice... which would happen if we didn't store them.
+19:46:57 <BlueMatt> hum, true
+19:46:57 <jonasschnelli> BlueMatt: Right. We could factor out the on-disk-storing part
+19:47:08 <BlueMatt> still, would be nice to not store unless we need to
+19:47:15 <wumpus> it needs to get the chance to store it, atl east
+19:47:20 <gmaxwell> ^ yep.
+19:47:23 <sipa> BlueMatt: it would integrate into some callback for downloaded blocks, i would guess
+19:47:23 <BlueMatt> gmaxwell: we could also use the needs-download logic in the p2p logic to dedup download
+19:47:31 <gmaxwell> Interaction with pruning seems somewhat complicated.
+19:47:40 <BlueMatt> that way the p2p logic could decide to hand to ProcessNewBlock...or not
+19:47:43 <wumpus> there may be further policy not to store it, e.g. based on pruning and such
+19:47:45 <BlueMatt> gmaxwell: thats part of my concern
+19:47:56 <wumpus> but for a full IBD you'd really want to pre-fill blocks
+19:48:02 <BlueMatt> just seems kinda broken to have the block-processing logic process a block which it explicitly doesnt want
+19:48:15 <gmaxwell> BlueMatt: but the main application now is a node that starts off with a spv mode wallet while it syncs up in the background.  Such nodes will likely also be pruned.
+19:48:18 <wumpus> it will likely want it later
+19:48:27 <sipa> i guess there should be a separation of "which blocks to download" and "which blocks to process" logic
+19:48:32 <sipa> where the second can ask the first
+19:48:38 <jonasschnelli> I think to make it work with pruning is not very hard... just step after step
+19:48:57 <BlueMatt> wumpus: yes, I'm saying if we have a full-spv mode then the p2p logic should be able to not pass it to ProcessNewBlock....alternatively it can choose to do so if it thinks block-logic needs it
+19:48:58 <wumpus> could e.g. store it for later processing
+19:49:16 <wumpus> discarding by default would be stupid, at least
+19:49:28 <BlueMatt> wumpus: sure, but we have logic to figure out if we want a block or not, already
+19:49:36 <BlueMatt> jonasschnelli: note that I have a pr to change the stuff there to deserialize blocks into shared_ptrs, so passing it over to wallet should use that
+19:50:02 <BlueMatt> #9014, though its blocked on #9075
+19:50:02 <gmaxwell> blocks as sharedptr, hurrah
+19:50:02 <jonasschnelli> BlueMatt: okay. Though #9171 aims to be a wallet free PR
+19:50:06 <gribble> https://github.com/bitcoin/bitcoin/issues/9014 | Fix block-connection performance regression by TheBlueMatt · Pull Request #9014 · bitcoin/bitcoin · GitHub
+19:50:07 <gribble> https://github.com/bitcoin/bitcoin/issues/9075 | Decouple peer-processing-logic from block-connection-logic (#3) by TheBlueMatt · Pull Request #9075 · bitcoin/bitcoin · GitHub
+19:50:09 <gribble> https://github.com/bitcoin/bitcoin/issues/9171 | Introduce auxiliary block requests by jonasschnelli · Pull Request #9171 · bitcoin/bitcoin · GitHub
+19:50:32 <sipa> BlueMatt: note that after 9125, deserializing into a share_ptr is literally just "std::shared_ptr<const CBlock> ptr; ss >> ptr; "
+19:50:40 <BlueMatt> sipa: cool
+19:52:53 <jonasschnelli> more topics? 8m to go.
+19:53:27 <wumpus> *crickets*
+19:53:27 <Chris_Stewart_5> jonasschnelli: What is the use case for that? Why request the full block if we aren't validating?
+19:53:39 <sipa> Chris_Stewart_5: light wallet support
+19:53:49 <gmaxwell> Chris_Stewart_5: so we can scan it for wallet transactions.
+19:53:50 <instagibbs> Chris_Stewart_5, you download blocks based on age of your wallet
+19:53:55 <jonasschnelli> Chris_Stewart_5: allow receiving and sending transactions in "client" mode
+19:54:00 <sipa> Chris_Stewart_5: the ability to use the wallet before you're fully synced
+19:54:11 <instagibbs> "Where did my money go" <---
+19:54:14 <wumpus> let's take basic questions to outside the meeting
+19:54:31 <Chris_Stewart_5> This is alt solution to BIP37 then, or complementary?
+19:54:44 <gmaxwell> Chris_Stewart_5: bip37 _utterly_ destroys privacy, and would waste bandwidth if you're later going to need the block for verification anyways.
+19:54:56 <jonasschnelli> Chris_Stewart_5: its a safer solution then BIP37...
+19:55:38 <gmaxwell> (BIP37 is also vulnerable to txn being hidden from you)
+19:55:55 <wumpus> yes, BIP37 is a bad idea, we're not going to use it in core
+19:56:37 <Chris_Stewart_5> Yes I understand that part, I'm trying to piece together how new spv mode will function i guess.
+19:56:39 <wumpus> (bad idea with untrusted peers at least, and that's the use case here)
+19:56:52 <jonasschnelli> I think it could have it's reason when connected to a BIP150 authed trusted peer. But only then.
+19:56:53 <wumpus> any other topics?
+19:56:57 <wumpus> the meeting is derailed
+19:57:13 <wumpus> otherwise better to close it
+19:57:15 <instagibbs> 3 minutes, no topics, bound to
+19:57:17 <MarcoFalke_web> #endsmeeting
+19:57:22 <jonasschnelli> #endmeeting
