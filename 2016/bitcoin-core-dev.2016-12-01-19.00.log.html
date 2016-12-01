@@ -1,0 +1,406 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:33</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Dec  1 19:00:33 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:33</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:39</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-5"></a><span class="tm">19:00:41</span><span class="nk"> &lt;bitcoin070&gt;</span> sipa -- evicted meaning what exactly?
+<a name="l-6"></a><span class="tm">19:00:46</span><span class="nk"> &lt;bitcoin070&gt;</span> sorry guys I don't want to interrupt
+<a name="l-7"></a><span class="tm">19:00:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-8"></a><span class="tm">19:00:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> here
+<a name="l-9"></a><span class="tm">19:00:59</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-10"></a><span class="tm">19:01:00</span><span class="nk"> &lt;btcdrak&gt;</span> here
+<a name="l-11"></a><span class="tm">19:01:01</span><span class="nk"> &lt;cfields&gt;</span> here
+<a name="l-12"></a><span class="tm">19:01:02</span><span class="nk"> &lt;paveljanik&gt;</span> Hi
+<a name="l-13"></a><span class="tm">19:01:04</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-14"></a><span class="tm">19:01:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bitcoin070:</span> evicted because they pay the least fee/kb of the transactions in the mempool and the maximum size is reached, you can increase the maximum mempool size though
+<a name="l-15"></a><span class="tm">19:01:30</span><span class="nk"> &lt;michagogo&gt;</span> Oh, right, now that I'm in the U.S. these are in the early afternoon
+<a name="l-16"></a><span class="tm">19:01:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">bitcoin070:</span> please if you file an issue about this include the output of getbalance() and getunconfirmedbalance() without giving any accounts
+<a name="l-17"></a><span class="tm">19:01:40</span><span class="nk"> &lt;bitcoin070&gt;</span> okay
+<a name="l-18"></a><span class="tm">19:01:46</span><span class="nk"> &lt;bitcoin070&gt;</span> fwiw, bitcoin-cli estimatefee 1 returns -1
+<a name="l-19"></a><span class="tm">19:01:53</span><span class="nk"> &lt;morcos&gt;</span> both "" and "*" when used as the account, give different answers than putting nothing in for the account
+<a name="l-20"></a><span class="tm">19:01:53</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, meeting started. Any proposed topics?
+<a name="l-21"></a><span class="tm">19:01:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">bitcoin070:</span> expected
+<a name="l-22"></a><span class="tm">19:02:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bitcoin070:</span> yes, that is known behavior
+<a name="l-23"></a><span class="tm">19:02:11</span><span class="nk"> &lt;bitcoin070&gt;</span> okay
+<a name="l-24"></a><span class="tm">19:02:14</span><span class="nk"> &lt;bitcoin070&gt;</span> 2 and 3 are okay
+<a name="l-25"></a><span class="tm">19:02:30</span><span class="nk"> &lt;bitcoin070&gt;</span> should these unconfirmed chains eventually confirm and the balance will correct?
+<a name="l-26"></a><span class="tm">19:02:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> What issues do people feel aren't getting attention right now?
+<a name="l-27"></a><span class="tm">19:03:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> in what regard?
+<a name="l-28"></a><span class="tm">19:03:33</span><span class="nk"> &lt;paveljanik&gt;</span> review etc.
+<a name="l-29"></a><span class="tm">19:03:37</span><span class="nk"> &lt;gmaxwell&gt;</span> like PRs and what not, proposed topic: does anyone need some love.
+<a name="l-30"></a><span class="tm">19:04:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bitcoin070:</span> re: estimatefee returning -1 there's an issue about that: https://github.com/bitcoin/bitcoin/issues/9106
+<a name="l-31"></a><span class="tm">19:04:22</span><span class="nk"> &lt;bitcoin070&gt;</span> thanks guys
+<a name="l-32"></a><span class="tm">19:04:25</span><span class="nk"> &lt;bitcoin070&gt;</span> I'll wait and see what happens here
+<a name="l-33"></a><span class="tm">19:04:29</span><span class="nk"> &lt;bitcoin070&gt;</span> thanks again
+<a name="l-34"></a><span class="tm">19:04:34</span><span class="nk"> &lt;BlueMatt&gt;</span> so #9183 is proabbly ready for merge after travis passes, means we need to discuss when to do The(tm) split
+<a name="l-35"></a><span class="tm">19:04:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9183 | Final Preparation for main.cpp Split by TheBlueMatt · Pull Request #9183 · bitcoin/bitcoin · GitHub
+<a name="l-36"></a><span class="tm">19:04:37</span><span class="nk"> &lt;sipa&gt;</span> i have a short topic for later, about vchDefaultKey (walking to office right now)
+<a name="l-37"></a><span class="tm">19:04:39</span><span class="nk"> &lt;wumpus&gt;</span> wallet PRs need review at least
+<a name="l-38"></a><span class="tm">19:04:52</span><span class="nk"> &lt;wumpus&gt;</span> espeically the multiwallet ones
+<a name="l-39"></a><span class="tm">19:04:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. An HD.
+<a name="l-40"></a><span class="tm">19:04:59</span><span class="nk"> &lt;gmaxwell&gt;</span> The test before evict PR seems to be being forgotten a bit.
+<a name="l-41"></a><span class="tm">19:05:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> We need a restore feature.
+<a name="l-42"></a><span class="tm">19:05:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> We shouldn't keep users to long in the dark about how they can restore a HD wallet
+<a name="l-43"></a><span class="tm">19:05:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Would be nice to have something in 0.14
+<a name="l-44"></a><span class="tm">19:05:47</span><span class="nk"> &lt;wumpus&gt;</span> vchDefaultKey should die
+<a name="l-45"></a><span class="tm">19:05:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh. Lets discuss that when sipa is back
+<a name="l-46"></a><span class="tm">19:06:09</span><span class="nk"> &lt;morcos&gt;</span> Now is probably a good time to do a thorough evaluation of which PR's need 0.14.0 milestone...  who should we ping if we want someone to mark a PR?
+<a name="l-47"></a><span class="tm">19:06:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> re: vchDefaultkey I once created this issue: https://github.com/bitcoin/bitcoin/issues/8416
+<a name="l-48"></a><span class="tm">19:06:42 </span><span class="nka">* jonasschnelli</span> <span class="ac">marks pr</span>
+<a name="l-49"></a><span class="tm">19:06:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> usually fanquake is pretty on top of it if you mention it in the pr or leave a note on here
+<a name="l-50"></a><span class="tm">19:07:54</span><span class="nk"> &lt;wumpus&gt;</span> usually if you just ask in teh channel someone will do it
+<a name="l-51"></a><span class="tm">19:08:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> Tag #9239 for 0.14? IMO we should
+<a name="l-52"></a><span class="tm">19:08:05</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9239 | Disable fee estimates for 1 block target by morcos · Pull Request #9239 · bitcoin/bitcoin · GitHub
+<a name="l-53"></a><span class="tm">19:08:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> do you have any more big wads of data race fixes.
+<a name="l-54"></a><span class="tm">19:08:18</span><span class="nk"> &lt;bitcoin070&gt;</span> guys I agree 100% we need an HD wallet restore feature
+<a name="l-55"></a><span class="tm">19:08:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> we should.
+<a name="l-56"></a><span class="tm">19:08:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> definitely
+<a name="l-57"></a><span class="tm">19:08:29</span><span class="nk"> &lt;bitcoin070&gt;</span> I would make that top priority
+<a name="l-58"></a><span class="tm">19:08:42</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">bitcoin070:</span> ha ha, it'll just make it always give -1
+<a name="l-59"></a><span class="tm">19:08:52</span><span class="nk"> &lt;bitcoin070&gt;</span> :)
+<a name="l-60"></a><span class="tm">19:08:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I think not...maybe one or two more that I should PR and then net things, but since net is in the middle of so mouch touching I dont want to step all over cfields' toes trying to fix things he already has fixes for
+<a name="l-61"></a><span class="tm">19:09:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> have you advised cfields about the racy things you found there?
+<a name="l-62"></a><span class="tm">19:09:27</span><span class="nk"> &lt;BlueMatt&gt;</span> to we have topics?
+<a name="l-63"></a><span class="tm">19:09:34</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, we've been discussing them
+<a name="l-64"></a><span class="tm">19:09:44</span><span class="nk"> &lt;morcos&gt;</span> answering your own question?
+<a name="l-65"></a><span class="tm">19:09:51</span><span class="nk"> &lt;BlueMatt&gt;</span> topics? or are we meeting-chat-time-ing?
+<a name="l-66"></a><span class="tm">19:09:59</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd like to discuss #9194
+<a name="l-67"></a><span class="tm">19:10:01</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+<a name="l-68"></a><span class="tm">19:10:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> yes, i'm nuking things in parallel. Simple atomic changes aren't interrupting anything of mine
+<a name="l-69"></a><span class="tm">19:10:11</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">morcos:</span> he means he is answering the 'racy' question
+<a name="l-70"></a><span class="tm">19:10:11</span><span class="nk"> &lt;BlueMatt&gt;</span> I'd like to discuss when to do The Main Split
+<a name="l-71"></a><span class="tm">19:10:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Non-segwit serialization vai rpc (#9194)</span>
+<a name="l-72"></a><span class="tm">19:10:41</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+<a name="l-73"></a><span class="tm">19:11:23</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks, where are we on this? (the change to let the rawtxn returning rpcs return witness stripped results) I think it's moderately important but there seemed to be some disagreement on the general direction.
+<a name="l-74"></a><span class="tm">19:11:58</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> as part of your named-arg PR, did you consider allowing any global named args?
+<a name="l-75"></a><span class="tm">19:12:04</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> initially i wasn't a huge fan of it, but it ended up being less work than i thought, so i don't really care if we do it
+<a name="l-76"></a><span class="tm">19:12:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> okay, it was mostly you I was concerned about.
+<a name="l-77"></a><span class="tm">19:12:21</span><span class="nk"> &lt;cfields&gt;</span> where for ^^, any command could accept a "serialversion" named arg
+<a name="l-78"></a><span class="tm">19:12:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> we're in a meeting
+<a name="l-79"></a><span class="tm">19:12:37</span><span class="nk"> &lt;sdaftuar&gt;</span> "sdaftuar was here"  i did mean to review the test changes though
+<a name="l-80"></a><span class="tm">19:12:58</span><span class="nk"> &lt;instagibbs&gt;</span> sdaftuar, yes i basically failed to remember how the commitment worked :) thanks for the review
+<a name="l-81"></a><span class="tm">19:12:59</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> eh? I was referencing 9194 :)
+<a name="l-82"></a><span class="tm">19:13:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> that is directly relevant here. :)
+<a name="l-83"></a><span class="tm">19:13:37</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, if sdaftuar is not concerned about it,  -- instagibbs are you waiting for anything there or just more review?
+<a name="l-84"></a><span class="tm">19:13:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> well that's not implemented in my pull, could be added later on I guess if you need "context" arguments
+<a name="l-85"></a><span class="tm">19:14:01</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, more review I think. Want to make sure it doesn't screw up anything I don't touch often
+<a name="l-86"></a><span class="tm">19:14:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I don't have any problem with the idea at least.
+<a name="l-87"></a><span class="tm">19:14:13</span><span class="nk"> &lt;instagibbs&gt;</span> (ie zmq/rest suggestion)
+<a name="l-88"></a><span class="tm">19:14:36</span><span class="nk"> &lt;instagibbs&gt;</span> I think the tests actually work now, so confident on rpc side
+<a name="l-89"></a><span class="tm">19:14:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> okay, sounds good to me then. I'll be happy to test and review.
+<a name="l-90"></a><span class="tm">19:14:56</span><span class="nk"> &lt;instagibbs&gt;</span> great
+<a name="l-91"></a><span class="tm">19:16:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">re:</span> luke-jr's point on "stripped sigs", lots of code gets written that calculates its own txids and isn't using the RPC for that, e.g. python-bitcoinlib RPC code would likely do that, so stripped sigs mode isn't useful there; 100% backwards compatibility is
+<a name="l-92"></a><span class="tm">19:16:35</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd also like to ask about some other PRs? ##8895 and the checkqueue work for example-- but I don't think JeremyRubin is around.
+<a name="l-93"></a><span class="tm">19:16:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8895 | Better SigCache Implementation by JeremyRubin · Pull Request #8895 · bitcoin/bitcoin · GitHub
+<a name="l-94"></a><span class="tm">19:16:57</span><span class="nk"> &lt;morcos&gt;</span> i think 8895 is ready to go in (maybe a little bit more review)
+<a name="l-95"></a><span class="tm">19:17:10</span><span class="nk"> &lt;morcos&gt;</span> in my opinion checkqueue is still a work in progress
+<a name="l-96"></a><span class="tm">19:17:10</span><span class="nk"> &lt;wumpus&gt;</span> is that a next topic?
+<a name="l-97"></a><span class="tm">19:17:18</span><span class="nk"> &lt;morcos&gt;</span> i would really like to get 8895 in for 0.14
+<a name="l-98"></a><span class="tm">19:17:22</span><span class="nk"> &lt;wumpus&gt;</span> if so, BlueMatt proposed one first
+<a name="l-99"></a><span class="tm">19:17:24</span><span class="nk"> &lt;BlueMatt&gt;</span> what morcos said, jeremyrubin is just waiting on review for #8895, I think
+<a name="l-100"></a><span class="tm">19:17:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8895 | Better SigCache Implementation by JeremyRubin · Pull Request #8895 · bitcoin/bitcoin · GitHub
+<a name="l-101"></a><span class="tm">19:17:37</span><span class="nk"> &lt;sipa&gt;</span> i'll review 8895 again after the last round of changed to it
+<a name="l-102"></a><span class="tm">19:17:41</span><span class="nk"> &lt;gmaxwell&gt;</span> sorry, tangent.
+<a name="l-103"></a><span class="tm">19:17:51</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds like the question is answered then.
+<a name="l-104"></a><span class="tm">19:17:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> either way we finished that topic :p
+<a name="l-105"></a><span class="tm">19:18:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Main split</span>
+<a name="l-106"></a><span class="tm">19:18:27</span><span class="nk"> &lt;sipa&gt;</span> let's do it
+<a name="l-107"></a><span class="tm">19:18:28</span><span class="nk"> &lt;morcos&gt;</span> to summarize last 2 topics... concept ack 9194 and 8895 for 0.14.0
+<a name="l-108"></a><span class="tm">19:18:47</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#9194</span><span class="cmdline"></span>
+<a name="l-109"></a><span class="tm">19:18:49</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+<a name="l-110"></a><span class="tm">19:18:52</span><span class="nk"> &lt;instagibbs&gt;</span> oh right
+<a name="l-111"></a><span class="tm">19:19:02</span><span class="nk"> &lt;BlueMatt&gt;</span> well I think #9183 is +/- ready for merge, jtimon just posted another comment I should look at, but probably ready in an hour or two, it has lots of acks, so question is when to do The Split
+<a name="l-112"></a><span class="tm">19:19:04</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9183 | Final Preparation for main.cpp Split by TheBlueMatt · Pull Request #9183 · bitcoin/bitcoin · GitHub
+<a name="l-113"></a><span class="tm">19:19:31</span><span class="nk"> &lt;wumpus&gt;</span> if it has lots of acks it should be merged
+<a name="l-114"></a><span class="tm">19:19:34</span><span class="nk"> &lt;cfields&gt;</span> no objections to splitting asap here. It'll only collide trivially with my current work.
+<a name="l-115"></a><span class="tm">19:19:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> why when? Because of upcoming rebases?
+<a name="l-116"></a><span class="tm">19:19:42</span><span class="nk"> &lt;jtimon&gt;</span> I would say open the PR as soon as 9183 gets merged
+<a name="l-117"></a><span class="tm">19:19:52</span><span class="nk"> &lt;wumpus&gt;</span> no need to delay it if it is ready
+<a name="l-118"></a><span class="tm">19:19:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> question is if we do it now or wait until like right before 0.14
+<a name="l-119"></a><span class="tm">19:20:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think all of us are happy to rebase for a such split
+<a name="l-120"></a><span class="tm">19:20:08</span><span class="nk"> &lt;BlueMatt&gt;</span> ok!
+<a name="l-121"></a><span class="tm">19:20:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO asap
+<a name="l-122"></a><span class="tm">19:20:11</span><span class="nk"> &lt;wumpus&gt;</span> let's just go on with it
+<a name="l-123"></a><span class="tm">19:20:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> why? what's the advantage of waiting?
+<a name="l-124"></a><span class="tm">19:20:25</span><span class="nk"> &lt;BlueMatt&gt;</span> ok! sounds good, will open as soon as 9183 is merged
+<a name="l-125"></a><span class="tm">19:20:31</span><span class="nk"> &lt;morcos&gt;</span> Perhaps BlueMatt is asking if there are any more 0.13 backports to worry about first?
+<a name="l-126"></a><span class="tm">19:20:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> to ease backports in the meantime i guess?
+<a name="l-127"></a><span class="tm">19:20:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> oh, yea, that too
+<a name="l-128"></a><span class="tm">19:20:53</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> cfields oh, right
+<a name="l-129"></a><span class="tm">19:21:07</span><span class="nk"> &lt;jtimon&gt;</span> are there any backports on the horizon?
+<a name="l-130"></a><span class="tm">19:21:19</span><span class="nk"> &lt;jtimon&gt;</span> do they conflict with this?
+<a name="l-131"></a><span class="tm">19:21:22</span><span class="nk"> &lt;wumpus&gt;</span> speaking of 0.13.2, what still needs to go in? (that isn't merged into master yet)
+<a name="l-132"></a><span class="tm">19:21:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm more comfortable with 9183 since matt has been doing a lot of data race and locking testing. usually the worry I have with these sorts of rearrangements is that they'll invalidate hidden locking assumptions.
+<a name="l-133"></a><span class="tm">19:21:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the estimatefee 1 thing. and uhhh
+<a name="l-134"></a><span class="tm">19:21:39</span><span class="nk"> &lt;sdaftuar&gt;</span> i have one that could go in, the cs_main locking thing with compact blocks
+<a name="l-135"></a><span class="tm">19:21:42</span><span class="nk"> &lt;sdaftuar&gt;</span> plus 9194
+<a name="l-136"></a><span class="tm">19:21:45</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> is it 100% move-only?
+<a name="l-137"></a><span class="tm">19:21:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> yes
+<a name="l-138"></a><span class="tm">19:22:02</span><span class="nk"> &lt;morcos&gt;</span> huh is what move only
+<a name="l-139"></a><span class="tm">19:22:08</span><span class="nk"> &lt;BlueMatt&gt;</span> splitting main.cpp
+<a name="l-140"></a><span class="tm">19:22:09</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, the locking around compact blocks
+<a name="l-141"></a><span class="tm">19:22:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#9253 </span><span class="cmdline">perhaps (though its minor)</span>
+<a name="l-142"></a><span class="tm">19:22:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that one isn't tagged https://github.com/bitcoin/bitcoin/milestone/24
+<a name="l-143"></a><span class="tm">19:22:27</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9253 | Fix calculation of number of bound sockets to use by TheBlueMatt · Pull Request #9253 · bitcoin/bitcoin · GitHub
+<a name="l-144"></a><span class="tm">19:22:30</span><span class="nk"> &lt;sdaftuar&gt;</span> that doens't cleanly apply anyway though, so i'll open a separate PR for it for the backport
+<a name="l-145"></a><span class="tm">19:22:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#9229</span><span class="cmdline"></span>
+<a name="l-146"></a><span class="tm">19:22:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9229 | Remove calls to getaddrinfo_a by TheBlueMatt · Pull Request #9229 · bitcoin/bitcoin · GitHub
+<a name="l-147"></a><span class="tm">19:23:00 </span><span class="nka">* jonasschnelli</span> <span class="ac">tagged 9239 (estimtefee -1) req. backport</span>
+<a name="l-148"></a><span class="tm">19:23:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#9194 </span><span class="cmdline">I think (which is why I was asking about it)</span>
+<a name="l-149"></a><span class="tm">19:23:28</span><span class="nk"> &lt;wumpus&gt;</span> so does the main split pose a difficulty for any of those?
+<a name="l-150"></a><span class="tm">19:23:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+<a name="l-151"></a><span class="tm">19:23:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> i was wondering about that, i think that would be my preference
+<a name="l-152"></a><span class="tm">19:23:39</span><span class="nk"> &lt;bitcoin070&gt;</span> hey guys, how often does a wallet rebroadcast transactions that aren't on the network?
+<a name="l-153"></a><span class="tm">19:23:49</span><span class="nk"> &lt;gmaxwell&gt;</span> I just noticed #9188 isn't merged. that too
+<a name="l-154"></a><span class="tm">19:23:51</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9188 | Make orphan parent fetching ask for witnesses. by gmaxwell · Pull Request #9188 · bitcoin/bitcoin · GitHub
+<a name="l-155"></a><span class="tm">19:23:58 </span><span class="nka">* gmaxwell</span> <span class="ac">looks to see if he's the delay on that one</span>
+<a name="l-156"></a><span class="tm">19:24:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">bitcoin070:</span> after the meeting please
+<a name="l-157"></a><span class="tm">19:24:08 </span><span class="nka">* gmaxwell</span> <span class="ac">is not the delay</span>
+<a name="l-158"></a><span class="tm">19:24:15</span><span class="nk"> &lt;bitcoin070&gt;</span> sorry..
+<a name="l-159"></a><span class="tm">19:24:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think after the main split, backports can get a bit more complicated.
+<a name="l-160"></a><span class="tm">19:24:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> thanks
+<a name="l-161"></a><span class="tm">19:24:59</span><span class="nk"> &lt;gmaxwell&gt;</span> oh good point.
+<a name="l-162"></a><span class="tm">19:25:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> move-only isn't that much of a difficulty if the functions remain the same name and keep the same calling relationship
+<a name="l-163"></a><span class="tm">19:25:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#9229 </span><span class="cmdline">does not touch main, #9239 also not.</span>
+<a name="l-164"></a><span class="tm">19:25:18</span><span class="nk"> &lt;gmaxwell&gt;</span> well all our backports should be small at least.
+<a name="l-165"></a><span class="tm">19:25:19</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9229 | Remove calls to getaddrinfo_a by TheBlueMatt · Pull Request #9229 · bitcoin/bitcoin · GitHub
+<a name="l-166"></a><span class="tm">19:25:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9239 | Disable fee estimates for 1 block target by morcos · Pull Request #9239 · bitcoin/bitcoin · GitHub
+<a name="l-167"></a><span class="tm">19:25:20</span><span class="nk"> &lt;wumpus&gt;</span> the only thing that really messes up backports is if the logic changes
+<a name="l-168"></a><span class="tm">19:25:30</span><span class="nk"> &lt;morcos&gt;</span> can someone tag all the backports we just mentioned...
+<a name="l-169"></a><span class="tm">19:25:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed.
+<a name="l-170"></a><span class="tm">19:25:36</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="cmd">#9252 </span><span class="cmdline">does, but it's easy for me to backport, so i am not worried</span>
+<a name="l-171"></a><span class="tm">19:25:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9252 | Release cs_main before calling ProcessNewBlock (cmpctblock handling) by sdaftuar · Pull Request #9252 · bitcoin/bitcoin · GitHub
+<a name="l-172"></a><span class="tm">19:25:40</span><span class="nk"> &lt;sipa&gt;</span> general request for move-only commits: leave functions/methods in the same order in the new file as in the old file; makes diffing much easier to verify move-onlyness
+<a name="l-173"></a><span class="tm">19:25:40</span><span class="nk"> &lt;BlueMatt&gt;</span> I can rebase main split on top of all the "Backport needed" PRs
+<a name="l-174"></a><span class="tm">19:25:49</span><span class="nk"> &lt;BlueMatt&gt;</span> but then we need to move fast on the backport-needed PRs
+<a name="l-175"></a><span class="tm">19:25:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> kk
+<a name="l-176"></a><span class="tm">19:26:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> backport taged: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+label%3A%22Needs+backport%22
+<a name="l-177"></a><span class="tm">19:26:28</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, I don't see anything else thats open which I strongly believe needs to be in 0.13.2
+<a name="l-178"></a><span class="tm">19:26:41</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-179"></a><span class="tm">19:27:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> makes sense to move fast on 0.13.2 in any case
+<a name="l-180"></a><span class="tm">19:27:24</span><span class="nk"> &lt;BlueMatt&gt;</span> true
+<a name="l-181"></a><span class="tm">19:27:28</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-182"></a><span class="tm">19:27:33</span><span class="nk"> &lt;wumpus&gt;</span> there's plenty of stuff for a release already
+<a name="l-183"></a><span class="tm">19:27:36</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> 9194, 9252 for backport i think is what we said
+<a name="l-184"></a><span class="tm">19:27:48</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so then everyone's review focus is "Needs backport" tag, and then we main-split after those are done?
+<a name="l-185"></a><span class="tm">19:28:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> sgtm
+<a name="l-186"></a><span class="tm">19:28:08</span><span class="nk"> &lt;sdaftuar&gt;</span> agreed
+<a name="l-187"></a><span class="tm">19:28:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> tagged 9194 9252
+<a name="l-188"></a><span class="tm">19:28:09</span><span class="nk"> &lt;wumpus&gt;</span> sgtm too
+<a name="l-189"></a><span class="tm">19:28:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> could you give #9019 a look? we might want a simple fix for that in 0.13.2. It might be a two liner.
+<a name="l-190"></a><span class="tm">19:28:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9019 | Avoid making chains of txn &gt;25 deep. · Issue #9019 · bitcoin/bitcoin · GitHub
+<a name="l-191"></a><span class="tm">19:28:37</span><span class="nk"> &lt;jtimon&gt;</span> fine with me but will actually review 9183 first
+<a name="l-192"></a><span class="tm">19:28:49</span><span class="nk"> &lt;instagibbs&gt;</span> yeah sure, ive run into that a number of times :)
+<a name="l-193"></a><span class="tm">19:29:49</span><span class="nk"> &lt;wumpus&gt;</span> okay, that concludes the 0.13.2 and main split topic I guess
+<a name="l-194"></a><span class="tm">19:30:02</span><span class="nk"> &lt;wumpus&gt;</span> any other topics proposed?
+<a name="l-195"></a><span class="tm">19:30:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic from sipa: wallets default key, another topic could be: HD restore
+<a name="l-196"></a><span class="tm">19:30:09</span><span class="nk"> &lt;wumpus&gt;</span> ah yes
+<a name="l-197"></a><span class="tm">19:30:15</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-198"></a><span class="tm">19:30:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">vchdefault in wallet</span>
+<a name="l-199"></a><span class="tm">19:30:28</span><span class="nk"> &lt;sipa&gt;</span> so we currently have a leftover remnant of ancient times, vchDefaultKey in the wallet
+<a name="l-200"></a><span class="tm">19:30:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> The default key is misused for detecting the first run IMO
+<a name="l-201"></a><span class="tm">19:30:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/issues/8416</span>
+<a name="l-202"></a><span class="tm">19:30:43</span><span class="nk"> &lt;sipa&gt;</span> which is absolutely unused, except for determining whether a new wallet was just created
+<a name="l-203"></a><span class="tm">19:30:52</span><span class="nk"> &lt;sipa&gt;</span> i'd like to get rid of it
+<a name="l-204"></a><span class="tm">19:30:54</span><span class="nk"> &lt;sipa&gt;</span> however
+<a name="l-205"></a><span class="tm">19:31:01</span><span class="nk"> &lt;wumpus&gt;</span> yes, we should get rid of it, but maybe not for 0.14, it's not really urgent
+<a name="l-206"></a><span class="tm">19:31:11</span><span class="nk"> &lt;sipa&gt;</span> if we do that, a downgrade to an older wallet version would result in failing to rescan
+<a name="l-207"></a><span class="tm">19:31:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. We should combine it with other features.
+<a name="l-208"></a><span class="tm">19:31:25</span><span class="nk"> &lt;sipa&gt;</span> as it would trigger the new wallet logic, which writes the current chainstate to the wallet file
+<a name="l-209"></a><span class="tm">19:31:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> We should have combined it with HD in 0.13. :/
+<a name="l-210"></a><span class="tm">19:31:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> we could add fallback logic into 0.14
+<a name="l-211"></a><span class="tm">19:31:49</span><span class="nk"> &lt;wumpus&gt;</span> then remove it for 0.15
+<a name="l-212"></a><span class="tm">19:31:55</span><span class="nk"> &lt;sipa&gt;</span> writing a dummy has the disadvantage of actually risking giving out a dummy key as address (in very old versions)
+<a name="l-213"></a><span class="tm">19:32:11</span><span class="nk"> &lt;wumpus&gt;</span> then it'd be possible to go back to 0.14 when 0.15 is released
+<a name="l-214"></a><span class="tm">19:32:14</span><span class="nk"> &lt;wumpus&gt;</span> but o further back
+<a name="l-215"></a><span class="tm">19:32:24</span><span class="nk"> &lt;sipa&gt;</span> a third option is introducing a new min wallet version, so for example 0.15 wallets will never be openable with 0.13
+<a name="l-216"></a><span class="tm">19:32:25</span><span class="nk"> &lt;wumpus&gt;</span> (unless we backport the fallback logic ofc)
+<a name="l-217"></a><span class="tm">19:32:46</span><span class="nk"> &lt;wumpus&gt;</span> yes, that'd be my preference
+<a name="l-218"></a><span class="tm">19:32:56</span><span class="nk"> &lt;wumpus&gt;</span> no dummies and other hacks, just versioining
+<a name="l-219"></a><span class="tm">19:33:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. This only affect new wallets, right?
+<a name="l-220"></a><span class="tm">19:33:13</span><span class="nk"> &lt;wumpus&gt;</span> it'd only apply to new wallets created with the new version anyway
+<a name="l-221"></a><span class="tm">19:33:15</span><span class="nk"> &lt;wumpus&gt;</span> right.
+<a name="l-222"></a><span class="tm">19:33:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm okay with versioning, but we should keep it simple.
+<a name="l-223"></a><span class="tm">19:33:23</span><span class="nk"> &lt;wumpus&gt;</span> it's not like you can't go back with an old wallet
+<a name="l-224"></a><span class="tm">19:33:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> If you have a wallet from 0.12, it won't upgrade unless you do an explicit upgrtadew
+<a name="l-225"></a><span class="tm">19:33:40</span><span class="nk"> &lt;sipa&gt;</span> so let's switch in 0.14 to stop relying on vchDefault key, but still write it (as an actually valid key)
+<a name="l-226"></a><span class="tm">19:33:41</span><span class="nk"> &lt;wumpus&gt;</span> in any case this isn't urgent
+<a name="l-227"></a><span class="tm">19:33:53</span><span class="nk"> &lt;sipa&gt;</span> and then in 0.15 delete the vchDefaultKey and increase the min version to 0.14?
+<a name="l-228"></a><span class="tm">19:33:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> ack
+<a name="l-229"></a><span class="tm">19:33:54</span><span class="nk"> &lt;wumpus&gt;</span> we could do it over 2-3 major versions
+<a name="l-230"></a><span class="tm">19:34:11</span><span class="nk"> &lt;gmaxwell&gt;</span> ACK sipa.
+<a name="l-231"></a><span class="tm">19:34:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes that's what I meant too
+<a name="l-232"></a><span class="tm">19:34:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> Downgrading new wallets is probably not required over more then 2 major versions.
+<a name="l-233"></a><span class="tm">19:34:42</span><span class="nk"> &lt;wumpus&gt;</span> we could even backport that to 0.13
+<a name="l-234"></a><span class="tm">19:35:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. We should.
+<a name="l-235"></a><span class="tm">19:35:01</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. work if there is no vchdefault, but do make it)
+<a name="l-236"></a><span class="tm">19:35:41</span><span class="nk"> &lt;wumpus&gt;</span> that particular code hasn't been touched for years so backporting is trivial
+<a name="l-237"></a><span class="tm">19:36:08</span><span class="nk"> &lt;sipa&gt;</span> ok, end topic
+<a name="l-238"></a><span class="tm">19:36:14</span><span class="nk"> &lt;morcos&gt;</span> my 2 cents would be against backporting to 0.13.2 at least.. since i think 1 major version backport for downgrading the wallet seems sufficient
+<a name="l-239"></a><span class="tm">19:36:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> HD restore? anyone interested?
+<a name="l-240"></a><span class="tm">19:36:47</span><span class="nk"> &lt;morcos&gt;</span> just to not hold up 0.13.2
+<a name="l-241"></a><span class="tm">19:36:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> whats the downside of the (simple) backport?
+<a name="l-242"></a><span class="tm">19:36:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> ok.
+<a name="l-243"></a><span class="tm">19:37:02</span><span class="nk"> &lt;jtimon&gt;</span> ack min wallet version
+<a name="l-244"></a><span class="tm">19:37:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> certainly, but it requires some pretty big changes (like removing keypool entries with seen keys in received transactions)
+<a name="l-245"></a><span class="tm">19:37:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I mean to 0.13 *branch*, so 0.13.2 or 0.13.3 or whatever happens to be then
+<a name="l-246"></a><span class="tm">19:37:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I certainly wouldn't propose holding up 0.13.2 for it
+<a name="l-247"></a><span class="tm">19:37:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> +1 if it doesn't hold 13.2
+<a name="l-248"></a><span class="tm">19:37:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Yes. If the BP is non trivial, we can skip it.
+<a name="l-249"></a><span class="tm">19:37:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> no one is saying that!
+<a name="l-250"></a><span class="tm">19:37:45</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, no holdup. but BP would be nice.
+<a name="l-251"></a><span class="tm">19:38:30</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> who requires to downgrade wallets?
+<a name="l-252"></a><span class="tm">19:38:39</span><span class="nk"> &lt;wumpus&gt;</span> "removing keypool entries with seen keys in received transactions"?
+<a name="l-253"></a><span class="tm">19:38:47</span><span class="nk"> &lt;wumpus&gt;</span> is that required for removing the default key?
+<a name="l-254"></a><span class="tm">19:39:51</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> is that HD restore he's talking about?
+<a name="l-255"></a><span class="tm">19:39:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> Is more about the option to run your wallet.dat on an older version
+<a name="l-256"></a><span class="tm">19:40:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> not yet
+<a name="l-257"></a><span class="tm">19:40:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> default key != HD
+<a name="l-258"></a><span class="tm">19:40:23</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> yes understood, just trying to decipher sipas comment
+<a name="l-259"></a><span class="tm">19:40:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I don't know? I'm confused
+<a name="l-260"></a><span class="tm">19:40:34</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> right, why do you want that? anyway, I was reading slow, we can discuss after the meeting
+<a name="l-261"></a><span class="tm">19:40:38</span><span class="nk"> &lt;gmaxwell&gt;</span> I thought sip was responding to "hd restore"
+<a name="l-262"></a><span class="tm">19:40:39</span><span class="nk"> &lt;wumpus&gt;</span> it'd make more sense, we're combinding topics is an awkward way now
+<a name="l-263"></a><span class="tm">19:40:43</span><span class="nk"> &lt;gmaxwell&gt;</span> s/sip/sipa/
+<a name="l-264"></a><span class="tm">19:40:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ah. Sorry
+<a name="l-265"></a><span class="tm">19:41:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">HD restore</span>
+<a name="l-266"></a><span class="tm">19:41:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Can we have the HD restore topic then?
+<a name="l-267"></a><span class="tm">19:41:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> thx
+<a name="l-268"></a><span class="tm">19:41:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">TM:</span> Prefix all messages related to topic 1 with T1: and for topic 2 with T2:
+<a name="l-269"></a><span class="tm">19:41:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> Since 0.13 we have HD by default, we should have a feature to restore hd wallets
+<a name="l-270"></a><span class="tm">19:41:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> Maybe to late for 0.14, but in 0.15.
+<a name="l-271"></a><span class="tm">19:41:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we need a concept first
+<a name="l-272"></a><span class="tm">19:41:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO it should go over a seperate tool (bitcoin-wallet)
+<a name="l-273"></a><span class="tm">19:42:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> can you explain what that means... you lost the full wallet backup but have the master seed/key whatever it's called?
+<a name="l-274"></a><span class="tm">19:42:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> Because you ideally don't want to handle master xpriv in RPC or -cmd
+<a name="l-275"></a><span class="tm">19:42:29</span><span class="nk"> &lt;gmaxwell&gt;</span> seperate tool sounds like something that would need a non-pruned blockchain .. which I don't think is desirable.
+<a name="l-276"></a><span class="tm">19:42:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. You have an (olx) xpriv or a wallet.dump and you wish to restore the complete wallet
+<a name="l-277"></a><span class="tm">19:43:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. This is a good point.
+<a name="l-278"></a><span class="tm">19:43:17</span><span class="nk"> &lt;gmaxwell&gt;</span> how is this different from having a wallet.dat that you backed up right at the start?
+<a name="l-279"></a><span class="tm">19:43:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> The tool should create wallet(s).dat and then you can run a rescan
+<a name="l-280"></a><span class="tm">19:43:33</span><span class="nk"> &lt;gmaxwell&gt;</span> okay thats how.
+<a name="l-281"></a><span class="tm">19:43:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> Maybe the tool can interact with RPC and the UTXO set to detect the gap limits
+<a name="l-282"></a><span class="tm">19:44:35</span><span class="nk"> &lt;gmaxwell&gt;</span> I think a tool to create a wallet.dat from dump data would be good, but perhaps not essential for restore functionality. which could work from just a wallet.dat that the user already backed up.
+<a name="l-283"></a><span class="tm">19:44:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO it should result with a wallet with the corresponding keys up to the last detected UTXO (respecting a large gap)
+<a name="l-284"></a><span class="tm">19:44:59</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm really concnered that we didn't manage to split the change keypool for the HD wallet support. This makes recovery a mess.
+<a name="l-285"></a><span class="tm">19:45:00</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> what about something like this, create first 100 addresses, rescan, while some of them got any funds, create the next 100 and loop
+<a name="l-286"></a><span class="tm">19:45:28</span><span class="nk"> &lt;jtimon&gt;</span> I assume is horribly inefficient, reading slow again
+<a name="l-287"></a><span class="tm">19:45:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> sometime 100 years later your wallet is restored.
+<a name="l-288"></a><span class="tm">19:45:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> there was a PR with that. But nobody reviewd it (external and internal chain)
+<a name="l-289"></a><span class="tm">19:45:49</span><span class="nk"> &lt;gmaxwell&gt;</span> (rescans take hours, we should stop thinking of rescans as an option generally.)
+<a name="l-290"></a><span class="tm">19:45:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yea :/ review is always a problem with wallet pulls
+<a name="l-291"></a><span class="tm">19:45:55</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> thanks for confirming that is the flaw of my naive design
+<a name="l-292"></a><span class="tm">19:46:19</span><span class="nk"> &lt;wumpus&gt;</span> I'd recommend that we first review and get the current wallet pulls merged, before working on even more
+<a name="l-293"></a><span class="tm">19:46:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-294"></a><span class="tm">19:46:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it would help to review #9143 and #9256
+<a name="l-295"></a><span class="tm">19:46:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9143 | Refactor ZapWalletTxes to avoid layer violations by jonasschnelli · Pull Request #9143 · bitcoin/bitcoin · GitHub
+<a name="l-296"></a><span class="tm">19:46:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9256 | Fix more CWallet/CWalletDB layer violations by jonasschnelli · Pull Request #9256 · bitcoin/bitcoin · GitHub
+<a name="l-297"></a><span class="tm">19:46:54</span><span class="nk"> &lt;wumpus&gt;</span> I don't think HD recovery will make 0.4 as it still has to be written
+<a name="l-298"></a><span class="tm">19:46:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I thought it was merged in fact, at the time. oh well.
+<a name="l-299"></a><span class="tm">19:47:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> This would slowly allow creating a such tool
+<a name="l-300"></a><span class="tm">19:47:03</span><span class="nk"> &lt;wumpus&gt;</span> but we can make e.g. multiwallet land
+<a name="l-301"></a><span class="tm">19:47:13</span><span class="nk"> &lt;wumpus&gt;</span> s/0.4/0.14
+<a name="l-302"></a><span class="tm">19:47:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#8723 </span><span class="cmdline">would also nice for HD</span>
+<a name="l-303"></a><span class="tm">19:47:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8723 | [Wallet] Add support for flexible BIP32/HD keypath-scheme by jonasschnelli · Pull Request #8723 · bitcoin/bitcoin · GitHub
+<a name="l-304"></a><span class="tm">19:47:32</span><span class="nk"> &lt;wumpus&gt;</span> and yes the refactors
+<a name="l-305"></a><span class="tm">19:47:50</span><span class="nk"> &lt;jtimon&gt;</span> what about not restoring the whole wallet but only what's currently in the utxo? would that be acceptable?
+<a name="l-306"></a><span class="tm">19:48:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> Yes. That should be the default IMO
+<a name="l-307"></a><span class="tm">19:48:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Then you can optionally do a rescan if you like.
+<a name="l-308"></a><span class="tm">19:48:12</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we should not add any more complexity to the HD support until we fix the path split issue.
+<a name="l-309"></a><span class="tm">19:48:30</span><span class="nk"> &lt;gmaxwell&gt;</span> We're already going to have to support one legacy setup, lets try to not proliferate little changes.
+<a name="l-310"></a><span class="tm">19:49:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I can focus on the path split
+<a name="l-311"></a><span class="tm">19:49:31</span><span class="nk"> &lt;jcorgan&gt;</span> <span class="hi">gmaxwell:</span> background on the "path split issue" i can go read?
+<a name="l-312"></a><span class="tm">19:49:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> But users start to ask,... how can I recover a HD wallet. We need to give them a reasonable answer.
+<a name="l-313"></a><span class="tm">19:49:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jcorgan:</span> bip32 internal and external chains
+<a name="l-314"></a><span class="tm">19:50:03</span><span class="nk"> &lt;instagibbs&gt;</span> jcorgan, change output is on same chain as spending
+<a name="l-315"></a><span class="tm">19:50:08</span><span class="nk"> &lt;jcorgan&gt;</span> ah, yes, i should ack 8723
+<a name="l-316"></a><span class="tm">19:50:35</span><span class="nk"> &lt;instagibbs&gt;</span> err receiving*
+<a name="l-317"></a><span class="tm">19:51:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jcorgan:</span> the consequence is that you can end up giving out change keys as addresses for people to pay (hiding their payments from you) or have change show up as payments if you have wallets recovered from hd data.
+<a name="l-318"></a><span class="tm">19:51:20</span><span class="nk"> &lt;jcorgan&gt;</span> yeah, i get it
+<a name="l-319"></a><span class="tm">19:51:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jcorgan:</span> e.g. I give you an address. then recover my wallet. Then create a transaction and use the same addr for change.  Then you pay that address, and I don't see the payment.
+<a name="l-320"></a><span class="tm">19:51:29</span><span class="nk"> &lt;gmaxwell&gt;</span> yadda yadda.
+<a name="l-321"></a><span class="tm">19:51:37</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> Thanks for the explanation
+<a name="l-322"></a><span class="tm">19:52:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> load your old wallet.dat. rescan.   Where does that currently fall down?
+<a name="l-323"></a><span class="tm">19:52:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> missing keys
+<a name="l-324"></a><span class="tm">19:52:28</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-325"></a><span class="tm">19:52:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> you mean restore a old wallet.dat?
+<a name="l-326"></a><span class="tm">19:52:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> you need to loop(1000, getnewaddress) first. :)
+<a name="l-327"></a><span class="tm">19:52:56</span><span class="nk"> &lt;gmaxwell&gt;</span> right we don't remove all keys up to the highest observed, only observed?  that sounds like a simple fix.
+<a name="l-328"></a><span class="tm">19:53:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> Well, if you have 1001 keys, you miss one.
+<a name="l-329"></a><span class="tm">19:53:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> this would result in multiple rescans.
+<a name="l-330"></a><span class="tm">19:53:21</span><span class="nk"> &lt;wumpus&gt;</span> right, it doesn't automatically wind forward when it sees known keys
+<a name="l-331"></a><span class="tm">19:53:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> what do you mean remove?
+<a name="l-332"></a><span class="tm">19:53:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> mark used in keypool.
+<a name="l-333"></a><span class="tm">19:53:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> that's not implemented at all
+<a name="l-334"></a><span class="tm">19:53:45</span><span class="nk"> &lt;luke-jr&gt;</span> :x
+<a name="l-335"></a><span class="tm">19:53:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> which is a workaround that you can answer.
+<a name="l-336"></a><span class="tm">19:53:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you need the keypool
+<a name="l-337"></a><span class="tm">19:54:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. The loop getnewaddress is the current workaround.
+<a name="l-338"></a><span class="tm">19:54:09</span><span class="nk"> &lt;jcorgan&gt;</span> it seems the bigger issue is there is no standard way of archiving derivation path usage + metadata
+<a name="l-339"></a><span class="tm">19:54:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> that needs to be implemented, at least that much would be small.
+<a name="l-340"></a><span class="tm">19:54:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> But we don't even offer a rescan down to the HD feature birthdate.
+<a name="l-341"></a><span class="tm">19:54:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> The UX is bad
+<a name="l-342"></a><span class="tm">19:54:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> it's not easy
+<a name="l-343"></a><span class="tm">19:54:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes. It's pretty complex.
+<a name="l-344"></a><span class="tm">19:54:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> as we don't have a way to store keys without private key
+<a name="l-345"></a><span class="tm">19:54:53</span><span class="nk"> &lt;sipa&gt;</span> or rescan would require the passphrase
+<a name="l-346"></a><span class="tm">19:54:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> we can still mark the right things as used!
+<a name="l-347"></a><span class="tm">19:54:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> We first need a Wallet record type hdkey
+<a name="l-348"></a><span class="tm">19:55:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ah, yes!
+<a name="l-349"></a><span class="tm">19:55:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> no we don't
+<a name="l-350"></a><span class="tm">19:55:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> e.g. rescan, unlock, rescan. not great, but failing to mark things as used is really goofy.
+<a name="l-351"></a><span class="tm">19:55:45</span><span class="nk"> &lt;gmaxwell&gt;</span> but should also be trivial to fix.
+<a name="l-352"></a><span class="tm">19:55:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> just a way to store a key without known private key (with semantics that it will get computed at first unlock)
+<a name="l-353"></a><span class="tm">19:55:57</span><span class="nk"> &lt;sipa&gt;</span> or not at all, i guess
+<a name="l-354"></a><span class="tm">19:56:08</span><span class="nk"> &lt;sipa&gt;</span> and always derive it on the fly
+<a name="l-355"></a><span class="tm">19:56:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> No, we can't.
+<a name="l-356"></a><span class="tm">19:56:27</span><span class="nk"> &lt;gmaxwell&gt;</span> (keys are hardened because we support export)
+<a name="l-357"></a><span class="tm">19:56:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO we should just store pubkeys and the according keypath
+<a name="l-358"></a><span class="tm">19:56:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> oh, right
+<a name="l-359"></a><span class="tm">19:56:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> maybe the relevant master key (if we support multiple=
+<a name="l-360"></a><span class="tm">19:56:53</span><span class="nk"> &lt;gmaxwell&gt;</span> and yes, storing the private keys is a bit silly. :P but an optimization.
+<a name="l-361"></a><span class="tm">19:56:56</span><span class="nk"> &lt;jcorgan&gt;</span> <span class="hi">jonasschnelli:</span> agree, if there were a standard way of documenting that
+<a name="l-362"></a><span class="tm">19:57:19</span><span class="nk"> &lt;sipa&gt;</span> 3 minutes
+<a name="l-363"></a><span class="tm">19:57:30</span><span class="nk"> &lt;gmaxwell&gt;</span> ( I meant that not storing the private keys is mearly an optimization and not important.)
+<a name="l-364"></a><span class="tm">19:58:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> we could also stop rescanning whenever the keypool goes below some value, and require unlocking first
+<a name="l-365"></a><span class="tm">19:58:06</span><span class="nk"> &lt;sipa&gt;</span> or something
+<a name="l-366"></a><span class="tm">19:58:34</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> I still don't know how you solve the problem you described
+<a name="l-367"></a><span class="tm">19:58:36</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, IMO low hanging is to correctly do the use-marking, and also increase the default keypool for hdwallets.. 100 is somewhat absurdly small, 1000 would be better.   And getting splitting in.
+<a name="l-368"></a><span class="tm">19:59:04</span><span class="nk"> &lt;gmaxwell&gt;</span> the last is a path incompatible change unfortunately, :(
+<a name="l-369"></a><span class="tm">19:59:19</span><span class="nk"> &lt;gmaxwell&gt;</span> but the rest does not need coordination with anything.
+<a name="l-370"></a><span class="tm">19:59:20</span><span class="nk"> &lt;sipa&gt;</span> we should first split up the keypools into change and non-change, iguess
+<a name="l-371"></a><span class="tm">19:59:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I can work on a patch.
+<a name="l-372"></a><span class="tm">19:59:39</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> oh, I see
+<a name="l-373"></a><span class="tm">19:59:41</span><span class="nk"> &lt;sipa&gt;</span> then do the use marking (as it will need to mark within each path)
+<a name="l-374"></a><span class="tm">19:59:43</span><span class="nk"> &lt;jcorgan&gt;</span> <span class="hi">jonasschnelli:</span> let's pm after the mtg on that
+<a name="l-375"></a><span class="tm">19:59:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> the split will make wallets that do that incompatible with older software.
+<a name="l-376"></a><span class="tm">20:00:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-377"></a><span class="tm">20:00:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. We just need to support both types
+<a name="l-378"></a><span class="tm">20:00:34</span><span class="nk"> &lt;jtimon&gt;</span> does the change keypool have its own seed or is it derived?
+<a name="l-379"></a><span class="tm">20:00:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

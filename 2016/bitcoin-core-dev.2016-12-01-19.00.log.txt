@@ -1,0 +1,379 @@
+19:00:33 <wumpus> #startmeeting
+19:00:33 <lightningbot> Meeting started Thu Dec  1 19:00:33 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:33 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:39 <sipa> present
+19:00:41 <bitcoin070> sipa -- evicted meaning what exactly?
+19:00:46 <bitcoin070> sorry guys I don't want to interrupt
+19:00:49 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:53 <jonasschnelli> here
+19:00:59 <kanzure> hi.
+19:01:00 <btcdrak> here
+19:01:01 <cfields> here
+19:01:02 <paveljanik> Hi
+19:01:04 <achow101> hi
+19:01:13 <wumpus> bitcoin070: evicted because they pay the least fee/kb of the transactions in the mempool and the maximum size is reached, you can increase the maximum mempool size though
+19:01:30 <michagogo> Oh, right, now that I'm in the U.S. these are in the early afternoon
+19:01:30 <morcos> bitcoin070: please if you file an issue about this include the output of getbalance() and getunconfirmedbalance() without giving any accounts
+19:01:40 <bitcoin070> okay
+19:01:46 <bitcoin070> fwiw, bitcoin-cli estimatefee 1 returns -1
+19:01:53 <morcos> both "" and "*" when used as the account, give different answers than putting nothing in for the account
+19:01:53 <wumpus> anyhow, meeting started. Any proposed topics?
+19:01:56 <morcos> bitcoin070: expected
+19:02:09 <wumpus> bitcoin070: yes, that is known behavior
+19:02:11 <bitcoin070> okay
+19:02:14 <bitcoin070> 2 and 3 are okay
+19:02:30 <bitcoin070> should these unconfirmed chains eventually confirm and the balance will correct?
+19:02:35 <gmaxwell> wumpus: What issues do people feel aren't getting attention right now?
+19:03:23 <wumpus> gmaxwell: in what regard?
+19:03:33 <paveljanik> review etc.
+19:03:37 <gmaxwell> like PRs and what not, proposed topic: does anyone need some love.
+19:04:14 <wumpus> bitcoin070: re: estimatefee returning -1 there's an issue about that: https://github.com/bitcoin/bitcoin/issues/9106
+19:04:22 <bitcoin070> thanks guys
+19:04:25 <bitcoin070> I'll wait and see what happens here
+19:04:29 <bitcoin070> thanks again
+19:04:34 <BlueMatt> so #9183 is proabbly ready for merge after travis passes, means we need to discuss when to do The(tm) split
+19:04:37 <gribble> https://github.com/bitcoin/bitcoin/issues/9183 | Final Preparation for main.cpp Split by TheBlueMatt · Pull Request #9183 · bitcoin/bitcoin · GitHub
+19:04:37 <sipa> i have a short topic for later, about vchDefaultKey (walking to office right now)
+19:04:39 <wumpus> wallet PRs need review at least
+19:04:52 <wumpus> espeically the multiwallet ones
+19:04:58 <jonasschnelli> Yes. An HD.
+19:04:59 <gmaxwell> The test before evict PR seems to be being forgotten a bit.
+19:05:04 <jonasschnelli> We need a restore feature.
+19:05:23 <jonasschnelli> We shouldn't keep users to long in the dark about how they can restore a HD wallet
+19:05:35 <jonasschnelli> Would be nice to have something in 0.14
+19:05:47 <wumpus> vchDefaultKey should die
+19:05:58 <jonasschnelli> heh. Lets discuss that when sipa is back
+19:06:09 <morcos> Now is probably a good time to do a thorough evaluation of which PR's need 0.14.0 milestone...  who should we ping if we want someone to mark a PR?
+19:06:39 <wumpus> sipa: re: vchDefaultkey I once created this issue: https://github.com/bitcoin/bitcoin/issues/8416
+19:06:42 * jonasschnelli marks pr
+19:06:44 <BlueMatt> morcos: usually fanquake is pretty on top of it if you mention it in the pr or leave a note on here
+19:07:54 <wumpus> usually if you just ask in teh channel someone will do it
+19:08:03 <jonasschnelli> Tag #9239 for 0.14? IMO we should
+19:08:05 <gribble> https://github.com/bitcoin/bitcoin/issues/9239 | Disable fee estimates for 1 block target by morcos · Pull Request #9239 · bitcoin/bitcoin · GitHub
+19:08:11 <gmaxwell> BlueMatt: do you have any more big wads of data race fixes.
+19:08:18 <bitcoin070> guys I agree 100% we need an HD wallet restore feature
+19:08:21 <gmaxwell> jonasschnelli: we should.
+19:08:24 <morcos> jonasschnelli: definitely
+19:08:29 <bitcoin070> I would make that top priority
+19:08:42 <morcos> bitcoin070: ha ha, it'll just make it always give -1
+19:08:52 <bitcoin070> :)
+19:08:58 <BlueMatt> gmaxwell: I think not...maybe one or two more that I should PR and then net things, but since net is in the middle of so mouch touching I dont want to step all over cfields' toes trying to fix things he already has fixes for
+19:09:25 <gmaxwell> BlueMatt: have you advised cfields about the racy things you found there?
+19:09:27 <BlueMatt> to we have topics?
+19:09:34 <BlueMatt> yes, we've been discussing them
+19:09:44 <morcos> answering your own question?
+19:09:51 <BlueMatt> topics? or are we meeting-chat-time-ing?
+19:09:59 <gmaxwell> I'd like to discuss #9194
+19:10:01 <gribble> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+19:10:06 <cfields> gmaxwell: yes, i'm nuking things in parallel. Simple atomic changes aren't interrupting anything of mine
+19:10:11 <kanzure> morcos: he means he is answering the 'racy' question
+19:10:11 <BlueMatt> I'd like to discuss when to do The Main Split
+19:10:39 <wumpus> #topic Non-segwit serialization vai rpc (#9194)
+19:10:41 <gribble> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+19:11:23 <gmaxwell> Thanks, where are we on this? (the change to let the rawtxn returning rpcs return witness stripped results) I think it's moderately important but there seemed to be some disagreement on the general direction.
+19:11:58 <cfields> wumpus: as part of your named-arg PR, did you consider allowing any global named args?
+19:12:04 <sdaftuar> gmaxwell: initially i wasn't a huge fan of it, but it ended up being less work than i thought, so i don't really care if we do it
+19:12:19 <gmaxwell> sdaftuar: okay, it was mostly you I was concerned about.
+19:12:21 <cfields> where for ^^, any command could accept a "serialversion" named arg
+19:12:36 <wumpus> cfields: we're in a meeting
+19:12:37 <sdaftuar> "sdaftuar was here"  i did mean to review the test changes though
+19:12:58 <instagibbs> sdaftuar, yes i basically failed to remember how the commitment worked :) thanks for the review
+19:12:59 <cfields> wumpus: eh? I was referencing 9194 :)
+19:13:03 <gmaxwell> wumpus: that is directly relevant here. :)
+19:13:37 <gmaxwell> okay, if sdaftuar is not concerned about it,  -- instagibbs are you waiting for anything there or just more review?
+19:13:41 <wumpus> cfields: well that's not implemented in my pull, could be added later on I guess if you need "context" arguments
+19:14:01 <instagibbs> gmaxwell, more review I think. Want to make sure it doesn't screw up anything I don't touch often
+19:14:08 <wumpus> cfields: I don't have any problem with the idea at least.
+19:14:13 <instagibbs> (ie zmq/rest suggestion)
+19:14:36 <instagibbs> I think the tests actually work now, so confident on rpc side
+19:14:40 <gmaxwell> instagibbs: okay, sounds good to me then. I'll be happy to test and review.
+19:14:56 <instagibbs> great
+19:16:22 <petertodd> re: luke-jr's point on "stripped sigs", lots of code gets written that calculates its own txids and isn't using the RPC for that, e.g. python-bitcoinlib RPC code would likely do that, so stripped sigs mode isn't useful there; 100% backwards compatibility is
+19:16:35 <gmaxwell> I'd also like to ask about some other PRs? ##8895 and the checkqueue work for example-- but I don't think JeremyRubin is around.
+19:16:37 <gribble> https://github.com/bitcoin/bitcoin/issues/8895 | Better SigCache Implementation by JeremyRubin · Pull Request #8895 · bitcoin/bitcoin · GitHub
+19:16:57 <morcos> i think 8895 is ready to go in (maybe a little bit more review)
+19:17:10 <morcos> in my opinion checkqueue is still a work in progress
+19:17:10 <wumpus> is that a next topic?
+19:17:18 <morcos> i would really like to get 8895 in for 0.14
+19:17:22 <wumpus> if so, BlueMatt proposed one first
+19:17:24 <BlueMatt> what morcos said, jeremyrubin is just waiting on review for #8895, I think
+19:17:26 <gribble> https://github.com/bitcoin/bitcoin/issues/8895 | Better SigCache Implementation by JeremyRubin · Pull Request #8895 · bitcoin/bitcoin · GitHub
+19:17:37 <sipa> i'll review 8895 again after the last round of changed to it
+19:17:41 <gmaxwell> sorry, tangent.
+19:17:51 <gmaxwell> sounds like the question is answered then.
+19:17:57 <BlueMatt> wumpus: either way we finished that topic :p
+19:18:07 <wumpus> #topic Main split
+19:18:27 <sipa> let's do it
+19:18:28 <morcos> to summarize last 2 topics... concept ack 9194 and 8895 for 0.14.0
+19:18:47 <instagibbs> #9194
+19:18:49 <gribble> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+19:18:52 <instagibbs> oh right
+19:19:02 <BlueMatt> well I think #9183 is +/- ready for merge, jtimon just posted another comment I should look at, but probably ready in an hour or two, it has lots of acks, so question is when to do The Split
+19:19:04 <gribble> https://github.com/bitcoin/bitcoin/issues/9183 | Final Preparation for main.cpp Split by TheBlueMatt · Pull Request #9183 · bitcoin/bitcoin · GitHub
+19:19:31 <wumpus> if it has lots of acks it should be merged
+19:19:34 <cfields> no objections to splitting asap here. It'll only collide trivially with my current work.
+19:19:40 <jonasschnelli> BlueMatt: why when? Because of upcoming rebases?
+19:19:42 <jtimon> I would say open the PR as soon as 9183 gets merged
+19:19:52 <wumpus> no need to delay it if it is ready
+19:19:56 <BlueMatt> jonasschnelli: question is if we do it now or wait until like right before 0.14
+19:20:01 <jonasschnelli> I think all of us are happy to rebase for a such split
+19:20:08 <BlueMatt> ok!
+19:20:09 <jonasschnelli> IMO asap
+19:20:11 <wumpus> let's just go on with it
+19:20:13 <jtimon> BlueMatt: why? what's the advantage of waiting?
+19:20:25 <BlueMatt> ok! sounds good, will open as soon as 9183 is merged
+19:20:31 <morcos> Perhaps BlueMatt is asking if there are any more 0.13 backports to worry about first?
+19:20:36 <cfields> jtimon: to ease backports in the meantime i guess?
+19:20:46 <BlueMatt> morcos: oh, yea, that too
+19:20:53 <jtimon> morcos: cfields oh, right
+19:21:07 <jtimon> are there any backports on the horizon?
+19:21:19 <jtimon> do they conflict with this?
+19:21:22 <wumpus> speaking of 0.13.2, what still needs to go in? (that isn't merged into master yet)
+19:21:22 <gmaxwell> I'm more comfortable with 9183 since matt has been doing a lot of data race and locking testing. usually the worry I have with these sorts of rearrangements is that they'll invalidate hidden locking assumptions.
+19:21:39 <gmaxwell> wumpus: the estimatefee 1 thing. and uhhh
+19:21:39 <sdaftuar> i have one that could go in, the cs_main locking thing with compact blocks
+19:21:42 <sdaftuar> plus 9194
+19:21:45 <cfields> BlueMatt: is it 100% move-only?
+19:21:50 <BlueMatt> cfields: yes
+19:22:02 <morcos> huh is what move only
+19:22:08 <BlueMatt> splitting main.cpp
+19:22:09 <gmaxwell> yea, the locking around compact blocks
+19:22:26 <gmaxwell> #9253 perhaps (though its minor)
+19:22:26 <wumpus> gmaxwell: that one isn't tagged https://github.com/bitcoin/bitcoin/milestone/24
+19:22:27 <gribble> https://github.com/bitcoin/bitcoin/issues/9253 | Fix calculation of number of bound sockets to use by TheBlueMatt · Pull Request #9253 · bitcoin/bitcoin · GitHub
+19:22:30 <sdaftuar> that doens't cleanly apply anyway though, so i'll open a separate PR for it for the backport
+19:22:55 <gmaxwell> #9229
+19:22:57 <gribble> https://github.com/bitcoin/bitcoin/issues/9229 | Remove calls to getaddrinfo_a by TheBlueMatt · Pull Request #9229 · bitcoin/bitcoin · GitHub
+19:23:00 * jonasschnelli tagged 9239 (estimtefee -1) req. backport
+19:23:27 <gmaxwell> #9194 I think (which is why I was asking about it)
+19:23:28 <wumpus> so does the main split pose a difficulty for any of those?
+19:23:29 <gribble> https://github.com/bitcoin/bitcoin/issues/9194 | Add option to return non-segwit serialization via rpc by instagibbs · Pull Request #9194 · bitcoin/bitcoin · GitHub
+19:23:30 <morcos> jonasschnelli: i was wondering about that, i think that would be my preference
+19:23:39 <bitcoin070> hey guys, how often does a wallet rebroadcast transactions that aren't on the network?
+19:23:49 <gmaxwell> I just noticed #9188 isn't merged. that too
+19:23:51 <gribble> https://github.com/bitcoin/bitcoin/issues/9188 | Make orphan parent fetching ask for witnesses. by gmaxwell · Pull Request #9188 · bitcoin/bitcoin · GitHub
+19:23:58 * gmaxwell looks to see if he's the delay on that one
+19:24:03 <wumpus> bitcoin070: after the meeting please
+19:24:08 * gmaxwell is not the delay
+19:24:15 <bitcoin070> sorry..
+19:24:32 <jonasschnelli> I think after the main split, backports can get a bit more complicated.
+19:24:34 <wumpus> jonasschnelli: thanks
+19:24:59 <gmaxwell> oh good point.
+19:25:00 <wumpus> jonasschnelli: move-only isn't that much of a difficulty if the functions remain the same name and keep the same calling relationship
+19:25:17 <jonasschnelli> #9229 does not touch main, #9239 also not.
+19:25:18 <gmaxwell> well all our backports should be small at least.
+19:25:19 <gribble> https://github.com/bitcoin/bitcoin/issues/9229 | Remove calls to getaddrinfo_a by TheBlueMatt · Pull Request #9229 · bitcoin/bitcoin · GitHub
+19:25:20 <gribble> https://github.com/bitcoin/bitcoin/issues/9239 | Disable fee estimates for 1 block target by morcos · Pull Request #9239 · bitcoin/bitcoin · GitHub
+19:25:20 <wumpus> the only thing that really messes up backports is if the logic changes
+19:25:30 <morcos> can someone tag all the backports we just mentioned...
+19:25:34 <jonasschnelli> Indeed.
+19:25:36 <sdaftuar> #9252 does, but it's easy for me to backport, so i am not worried
+19:25:38 <gribble> https://github.com/bitcoin/bitcoin/issues/9252 | Release cs_main before calling ProcessNewBlock (cmpctblock handling) by sdaftuar · Pull Request #9252 · bitcoin/bitcoin · GitHub
+19:25:40 <sipa> general request for move-only commits: leave functions/methods in the same order in the new file as in the old file; makes diffing much easier to verify move-onlyness
+19:25:40 <BlueMatt> I can rebase main split on top of all the "Backport needed" PRs
+19:25:49 <BlueMatt> but then we need to move fast on the backport-needed PRs
+19:25:57 <BlueMatt> sipa: kk
+19:26:17 <jonasschnelli> backport taged: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+label%3A%22Needs+backport%22
+19:26:28 <gmaxwell> okay, I don't see anything else thats open which I strongly believe needs to be in 0.13.2
+19:26:41 <wumpus> great
+19:27:17 <wumpus> BlueMatt: makes sense to move fast on 0.13.2 in any case
+19:27:24 <BlueMatt> true
+19:27:28 <jtimon> wumpus: +1
+19:27:33 <wumpus> there's plenty of stuff for a release already
+19:27:36 <morcos> jonasschnelli: 9194, 9252 for backport i think is what we said
+19:27:48 <BlueMatt> ok, so then everyone's review focus is "Needs backport" tag, and then we main-split after those are done?
+19:28:01 <sipa> BlueMatt: sgtm
+19:28:08 <sdaftuar> agreed
+19:28:09 <jonasschnelli> tagged 9194 9252
+19:28:09 <wumpus> sgtm too
+19:28:35 <gmaxwell> instagibbs: could you give #9019 a look? we might want a simple fix for that in 0.13.2. It might be a two liner.
+19:28:36 <gribble> https://github.com/bitcoin/bitcoin/issues/9019 | Avoid making chains of txn >25 deep. · Issue #9019 · bitcoin/bitcoin · GitHub
+19:28:37 <jtimon> fine with me but will actually review 9183 first
+19:28:49 <instagibbs> yeah sure, ive run into that a number of times :)
+19:29:49 <wumpus> okay, that concludes the 0.13.2 and main split topic I guess
+19:30:02 <wumpus> any other topics proposed?
+19:30:04 <jonasschnelli> proposed topic from sipa: wallets default key, another topic could be: HD restore
+19:30:09 <wumpus> ah yes
+19:30:15 <sipa> ok
+19:30:16 <wumpus> #topic vchdefault in wallet
+19:30:28 <sipa> so we currently have a leftover remnant of ancient times, vchDefaultKey in the wallet
+19:30:34 <jonasschnelli> The default key is misused for detecting the first run IMO
+19:30:38 <wumpus> #link https://github.com/bitcoin/bitcoin/issues/8416
+19:30:43 <sipa> which is absolutely unused, except for determining whether a new wallet was just created
+19:30:52 <sipa> i'd like to get rid of it
+19:30:54 <sipa> however
+19:31:01 <wumpus> yes, we should get rid of it, but maybe not for 0.14, it's not really urgent
+19:31:11 <sipa> if we do that, a downgrade to an older wallet version would result in failing to rescan
+19:31:23 <jonasschnelli> Yes. We should combine it with other features.
+19:31:25 <sipa> as it would trigger the new wallet logic, which writes the current chainstate to the wallet file
+19:31:31 <jonasschnelli> We should have combined it with HD in 0.13. :/
+19:31:45 <wumpus> sipa: we could add fallback logic into 0.14
+19:31:49 <wumpus> then remove it for 0.15
+19:31:55 <sipa> writing a dummy has the disadvantage of actually risking giving out a dummy key as address (in very old versions)
+19:32:11 <wumpus> then it'd be possible to go back to 0.14 when 0.15 is released
+19:32:14 <wumpus> but o further back
+19:32:24 <sipa> a third option is introducing a new min wallet version, so for example 0.15 wallets will never be openable with 0.13
+19:32:25 <wumpus> (unless we backport the fallback logic ofc)
+19:32:46 <wumpus> yes, that'd be my preference
+19:32:56 <wumpus> no dummies and other hacks, just versioining
+19:33:09 <jonasschnelli> Yes. This only affect new wallets, right?
+19:33:13 <wumpus> it'd only apply to new wallets created with the new version anyway
+19:33:15 <wumpus> right.
+19:33:19 <gmaxwell> I'm okay with versioning, but we should keep it simple.
+19:33:23 <wumpus> it's not like you can't go back with an old wallet
+19:33:26 <jonasschnelli> If you have a wallet from 0.12, it won't upgrade unless you do an explicit upgrtadew
+19:33:40 <sipa> so let's switch in 0.14 to stop relying on vchDefault key, but still write it (as an actually valid key)
+19:33:41 <wumpus> in any case this isn't urgent
+19:33:53 <sipa> and then in 0.15 delete the vchDefaultKey and increase the min version to 0.14?
+19:33:54 <jonasschnelli> sipa: ack
+19:33:54 <wumpus> we could do it over 2-3 major versions
+19:34:11 <gmaxwell> ACK sipa.
+19:34:12 <wumpus> sipa: yes that's what I meant too
+19:34:21 <jonasschnelli> Downgrading new wallets is probably not required over more then 2 major versions.
+19:34:42 <wumpus> we could even backport that to 0.13
+19:35:00 <jonasschnelli> wumpus: Yes. We should.
+19:35:01 <wumpus> (e.g. work if there is no vchdefault, but do make it)
+19:35:41 <wumpus> that particular code hasn't been touched for years so backporting is trivial
+19:36:08 <sipa> ok, end topic
+19:36:14 <morcos> my 2 cents would be against backporting to 0.13.2 at least.. since i think 1 major version backport for downgrading the wallet seems sufficient
+19:36:15 <jonasschnelli> HD restore? anyone interested?
+19:36:47 <morcos> just to not hold up 0.13.2
+19:36:52 <jonasschnelli> morcos: whats the downside of the (simple) backport?
+19:36:56 <jonasschnelli> ok.
+19:37:02 <jtimon> ack min wallet version
+19:37:07 <sipa> jonasschnelli: certainly, but it requires some pretty big changes (like removing keypool entries with seen keys in received transactions)
+19:37:11 <wumpus> morcos: I mean to 0.13 *branch*, so 0.13.2 or 0.13.3 or whatever happens to be then
+19:37:20 <wumpus> morcos: I certainly wouldn't propose holding up 0.13.2 for it
+19:37:23 <morcos> wumpus: +1 if it doesn't hold 13.2
+19:37:27 <jonasschnelli> Okay. Yes. If the BP is non trivial, we can skip it.
+19:37:32 <wumpus> morcos: no one is saying that!
+19:37:45 <gmaxwell> yea, no holdup. but BP would be nice.
+19:38:30 <jtimon> jonasschnelli: who requires to downgrade wallets?
+19:38:39 <wumpus> "removing keypool entries with seen keys in received transactions"?
+19:38:47 <wumpus> is that required for removing the default key?
+19:39:51 <morcos> wumpus: is that HD restore he's talking about?
+19:39:56 <jonasschnelli> jtimon: Is more about the option to run your wallet.dat on an older version
+19:40:02 <jonasschnelli> morcos: not yet
+19:40:11 <jonasschnelli> default key != HD
+19:40:23 <morcos> jonasschnelli: yes understood, just trying to decipher sipas comment
+19:40:25 <wumpus> morcos: I don't know? I'm confused
+19:40:34 <jtimon> jonasschnelli: right, why do you want that? anyway, I was reading slow, we can discuss after the meeting
+19:40:38 <gmaxwell> I thought sip was responding to "hd restore"
+19:40:39 <wumpus> it'd make more sense, we're combinding topics is an awkward way now
+19:40:43 <gmaxwell> s/sip/sipa/
+19:40:54 <jonasschnelli> Ah. Sorry
+19:41:11 <wumpus> #topic HD restore
+19:41:12 <jonasschnelli> Can we have the HD restore topic then?
+19:41:15 <jonasschnelli> thx
+19:41:20 <gmaxwell> TM: Prefix all messages related to topic 1 with T1: and for topic 2 with T2:
+19:41:30 <jonasschnelli> Since 0.13 we have HD by default, we should have a feature to restore hd wallets
+19:41:38 <jonasschnelli> Maybe to late for 0.14, but in 0.15.
+19:41:44 <jonasschnelli> I think we need a concept first
+19:41:59 <jonasschnelli> IMO it should go over a seperate tool (bitcoin-wallet)
+19:42:19 <morcos> jonasschnelli: can you explain what that means... you lost the full wallet backup but have the master seed/key whatever it's called?
+19:42:22 <jonasschnelli> Because you ideally don't want to handle master xpriv in RPC or -cmd
+19:42:29 <gmaxwell> seperate tool sounds like something that would need a non-pruned blockchain .. which I don't think is desirable.
+19:42:50 <jonasschnelli> Yes. You have an (olx) xpriv or a wallet.dump and you wish to restore the complete wallet
+19:43:00 <jonasschnelli> gmaxwell: Yes. This is a good point.
+19:43:17 <gmaxwell> how is this different from having a wallet.dat that you backed up right at the start?
+19:43:20 <jonasschnelli> The tool should create wallet(s).dat and then you can run a rescan
+19:43:33 <gmaxwell> okay thats how.
+19:43:44 <jonasschnelli> Maybe the tool can interact with RPC and the UTXO set to detect the gap limits
+19:44:35 <gmaxwell> I think a tool to create a wallet.dat from dump data would be good, but perhaps not essential for restore functionality. which could work from just a wallet.dat that the user already backed up.
+19:44:39 <jonasschnelli> IMO it should result with a wallet with the corresponding keys up to the last detected UTXO (respecting a large gap)
+19:44:59 <gmaxwell> I'm really concnered that we didn't manage to split the change keypool for the HD wallet support. This makes recovery a mess.
+19:45:00 <jtimon> jonasschnelli: what about something like this, create first 100 addresses, rescan, while some of them got any funds, create the next 100 and loop
+19:45:28 <jtimon> I assume is horribly inefficient, reading slow again
+19:45:34 <gmaxwell> jtimon: sometime 100 years later your wallet is restored.
+19:45:34 <jonasschnelli> gmaxwell: there was a PR with that. But nobody reviewd it (external and internal chain)
+19:45:49 <gmaxwell> (rescans take hours, we should stop thinking of rescans as an option generally.)
+19:45:52 <wumpus> jonasschnelli: yea :/ review is always a problem with wallet pulls
+19:45:55 <jtimon> gmaxwell: thanks for confirming that is the flaw of my naive design
+19:46:19 <wumpus> I'd recommend that we first review and get the current wallet pulls merged, before working on even more
+19:46:40 <sipa> wumpus: +1
+19:46:48 <jonasschnelli> I think it would help to review #9143 and #9256
+19:46:50 <gribble> https://github.com/bitcoin/bitcoin/issues/9143 | Refactor ZapWalletTxes to avoid layer violations by jonasschnelli · Pull Request #9143 · bitcoin/bitcoin · GitHub
+19:46:52 <gribble> https://github.com/bitcoin/bitcoin/issues/9256 | Fix more CWallet/CWalletDB layer violations by jonasschnelli · Pull Request #9256 · bitcoin/bitcoin · GitHub
+19:46:54 <wumpus> I don't think HD recovery will make 0.4 as it still has to be written
+19:46:57 <gmaxwell> jonasschnelli: I thought it was merged in fact, at the time. oh well.
+19:47:00 <jonasschnelli> This would slowly allow creating a such tool
+19:47:03 <wumpus> but we can make e.g. multiwallet land
+19:47:13 <wumpus> s/0.4/0.14
+19:47:28 <jonasschnelli> #8723 would also nice for HD
+19:47:30 <gribble> https://github.com/bitcoin/bitcoin/issues/8723 | [Wallet] Add support for flexible BIP32/HD keypath-scheme by jonasschnelli · Pull Request #8723 · bitcoin/bitcoin · GitHub
+19:47:32 <wumpus> and yes the refactors
+19:47:50 <jtimon> what about not restoring the whole wallet but only what's currently in the utxo? would that be acceptable?
+19:48:03 <jonasschnelli> jtimon: Yes. That should be the default IMO
+19:48:12 <jonasschnelli> Then you can optionally do a rescan if you like.
+19:48:12 <gmaxwell> I think we should not add any more complexity to the HD support until we fix the path split issue.
+19:48:30 <gmaxwell> We're already going to have to support one legacy setup, lets try to not proliferate little changes.
+19:49:12 <jonasschnelli> Okay. I can focus on the path split
+19:49:31 <jcorgan> gmaxwell: background on the "path split issue" i can go read?
+19:49:42 <jonasschnelli> But users start to ask,... how can I recover a HD wallet. We need to give them a reasonable answer.
+19:49:54 <jonasschnelli> jcorgan: bip32 internal and external chains
+19:50:03 <instagibbs> jcorgan, change output is on same chain as spending
+19:50:08 <jcorgan> ah, yes, i should ack 8723
+19:50:35 <instagibbs> err receiving*
+19:51:00 <gmaxwell> jcorgan: the consequence is that you can end up giving out change keys as addresses for people to pay (hiding their payments from you) or have change show up as payments if you have wallets recovered from hd data.
+19:51:20 <jcorgan> yeah, i get it
+19:51:25 <gmaxwell> jcorgan: e.g. I give you an address. then recover my wallet. Then create a transaction and use the same addr for change.  Then you pay that address, and I don't see the payment.
+19:51:29 <gmaxwell> yadda yadda.
+19:51:37 <Chris_Stewart_5> gmaxwell: Thanks for the explanation
+19:52:15 <gmaxwell> jonasschnelli: load your old wallet.dat. rescan.   Where does that currently fall down?
+19:52:24 <jonasschnelli> gmaxwell: missing keys
+19:52:28 <sipa> ?
+19:52:40 <jonasschnelli> you mean restore a old wallet.dat?
+19:52:50 <jonasschnelli> you need to loop(1000, getnewaddress) first. :)
+19:52:56 <gmaxwell> right we don't remove all keys up to the highest observed, only observed?  that sounds like a simple fix.
+19:53:01 <jonasschnelli> Well, if you have 1001 keys, you miss one.
+19:53:17 <jonasschnelli> gmaxwell: this would result in multiple rescans.
+19:53:21 <wumpus> right, it doesn't automatically wind forward when it sees known keys
+19:53:22 <sipa> gmaxwell: what do you mean remove?
+19:53:35 <gmaxwell> sipa: mark used in keypool.
+19:53:42 <sipa> gmaxwell: that's not implemented at all
+19:53:45 <luke-jr> :x
+19:53:46 <gmaxwell> jonasschnelli: which is a workaround that you can answer.
+19:53:58 <sipa> gmaxwell: you need the keypool
+19:54:02 <jonasschnelli> Yes. The loop getnewaddress is the current workaround.
+19:54:09 <jcorgan> it seems the bigger issue is there is no standard way of archiving derivation path usage + metadata
+19:54:15 <gmaxwell> sipa: that needs to be implemented, at least that much would be small.
+19:54:16 <jonasschnelli> But we don't even offer a rescan down to the HD feature birthdate.
+19:54:23 <jonasschnelli> The UX is bad
+19:54:26 <sipa> gmaxwell: it's not easy
+19:54:35 <jonasschnelli> yes. It's pretty complex.
+19:54:42 <sipa> gmaxwell: as we don't have a way to store keys without private key
+19:54:53 <sipa> or rescan would require the passphrase
+19:54:54 <gmaxwell> sipa: we can still mark the right things as used!
+19:54:56 <jonasschnelli> We first need a Wallet record type hdkey
+19:55:01 <sipa> gmaxwell: ah, yes!
+19:55:12 <sipa> jonasschnelli: no we don't
+19:55:31 <gmaxwell> sipa: e.g. rescan, unlock, rescan. not great, but failing to mark things as used is really goofy.
+19:55:45 <gmaxwell> but should also be trivial to fix.
+19:55:51 <sipa> jonasschnelli: just a way to store a key without known private key (with semantics that it will get computed at first unlock)
+19:55:57 <sipa> or not at all, i guess
+19:56:08 <sipa> and always derive it on the fly
+19:56:15 <gmaxwell> sipa: No, we can't.
+19:56:27 <gmaxwell> (keys are hardened because we support export)
+19:56:28 <jonasschnelli> IMO we should just store pubkeys and the according keypath
+19:56:37 <sipa> gmaxwell: oh, right
+19:56:45 <jonasschnelli> maybe the relevant master key (if we support multiple=
+19:56:53 <gmaxwell> and yes, storing the private keys is a bit silly. :P but an optimization.
+19:56:56 <jcorgan> jonasschnelli: agree, if there were a standard way of documenting that
+19:57:19 <sipa> 3 minutes
+19:57:30 <gmaxwell> ( I meant that not storing the private keys is mearly an optimization and not important.)
+19:58:03 <sipa> gmaxwell: we could also stop rescanning whenever the keypool goes below some value, and require unlocking first
+19:58:06 <sipa> or something
+19:58:34 <jtimon> gmaxwell: I still don't know how you solve the problem you described
+19:58:36 <gmaxwell> in any case, IMO low hanging is to correctly do the use-marking, and also increase the default keypool for hdwallets.. 100 is somewhat absurdly small, 1000 would be better.   And getting splitting in.
+19:59:04 <gmaxwell> the last is a path incompatible change unfortunately, :(
+19:59:19 <gmaxwell> but the rest does not need coordination with anything.
+19:59:20 <sipa> we should first split up the keypools into change and non-change, iguess
+19:59:31 <jonasschnelli> Okay. I can work on a patch.
+19:59:39 <jtimon> sipa: oh, I see
+19:59:41 <sipa> then do the use marking (as it will need to mark within each path)
+19:59:43 <jcorgan> jonasschnelli: let's pm after the mtg on that
+19:59:56 <gmaxwell> sipa: the split will make wallets that do that incompatible with older software.
+20:00:09 <sipa> gmaxwell: yes
+20:00:16 <jonasschnelli> gmaxwell: Yes. We just need to support both types
+20:00:34 <jtimon> does the change keypool have its own seed or is it derived?
+20:00:40 <wumpus> #endmeeting
