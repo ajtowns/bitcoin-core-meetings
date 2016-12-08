@@ -1,0 +1,335 @@
+19:00:40 <wumpus> #startmeeting
+19:00:40 <lightningbot> Meeting started Thu Dec  8 19:00:40 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:40 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:23 <wumpus> proposed topics?
+19:02:21 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:24 <instagibbs> here
+19:02:26 <sdaftuar> hi
+19:02:28 <btcdrak> sort of here
+19:02:29 <CodeShark> hello
+19:03:13 <kanzure> hi.
+19:03:22 <gmaxwell> I'd like to briefly talk about #9290
+19:03:24 <gribble> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+19:03:39 <morcos> i'd like to discuss increasing mempool tx expiry time but nto sure if thats a meeting topic
+19:04:39 <wumpus> #topic #9290 Make RelayWalletTransaction attempt to AcceptToMemoryPool
+19:04:41 <gribble> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+19:05:40 <gmaxwell> There was previously a concern expressed (sorry, I forget who); that trying to reaccept to mempool all unconfirmed txn might be a cpu load for some wallet gunked up with unconfirmed transactions.  I made this PR anyways, noting that it doesn't apply to abandoned or known conflicted txn, and I don't believe gunked up wallets exist at any real rate-- if they do, then that is its own problem.. and
+19:05:46 <gmaxwell> they could avoid a performance issue by abandoning.  I hope this is convincing but I haven't had feedback on that point.
+19:06:01 <gmaxwell> Beyond that question, this is a really obvious bugfix for a somewhat embarassing misbehavior.
+19:06:21 <wumpus> well at least it's now possible to get rid of unconfirmed transactions by abandoning them
+19:06:30 <morcos> gmaxwell: that was (at least) me, but i made my mark on your PR..  suhas beat me down into being unable to succesfully argue my position
+19:06:36 <wumpus> there should be no need to have excessive numbers of unconfirmed transactinons
+19:07:10 <sdaftuar> gmaxwell: i agree with the PR and the backport, fwiw
+19:07:11 <gmaxwell> morcos: hah. I missed the was here. okay thats precisely what I was looking for.
+19:07:30 <morcos> but as for backporting...
+19:07:50 <morcos> maybe ok for that one... but i'm not so sure about #9262
+19:07:55 <gmaxwell> I just felt a little uncomfortable doing something I knew someone had expressed concern with; without making sure that we heard if concerns remained.
+19:07:59 <gribble> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+19:08:30 <morcos> i feel like although these are definitely fixing poor behavior... they're also fairly large changes in behavior and it worries me that in a backport, they wont' get enough testing to be sure they don't raise new issues
+19:08:35 <morcos> personally i think we backport too much
+19:08:49 <gmaxwell> Well I think we must backport at least one of 9262 or 9290.  If you backport 9290 I think there is less need to backport 9262 and if we only do one I'd prefer it be 9290.
+19:08:58 <morcos> backports should be for either critical or simple bugs
+19:09:11 <morcos> gmaxwell: why? that behavior has been like that for several major versions no?
+19:09:41 <morcos> do we think it is more of an issue now b/c of occasional mempool backlogs?
+19:09:44 <gmaxwell> The issue that these are collectively fixing are stuck coins in wallets which combined with user error can lead to funds loss.  We are currently having resports from multiple users encountering it.
+19:09:50 <gmaxwell> morcos: ding ding.
+19:09:50 <luke-jr> backporting all bugfixes is fine if we do RCs IMO; critical/simple criteria mainly makes sense for security stuff
+19:09:55 <sdaftuar> i think 9290 is simple, and implements the behavior we all thought was already happening
+19:10:03 <gmaxwell> luke-jr: thats going offtopic but I don't fully agree.
+19:10:11 <morcos> yes, 9290 is pretty simple
+19:10:39 <gmaxwell> for 9262 if 9290 is in place there is an argument that the default behavior should change (don't refuse to create the failing txn.)
+19:10:43 <gmaxwell> which is another question.
+19:10:48 <morcos> i'd feel a bit easier about that one i guess...  , and although i have no idea what might go wrong with 9262, you never know
+19:11:28 <sipa> do we have a patch that deal with ATMP failing in createtransactionm
+19:11:30 <sipa> ?
+19:11:37 <gmaxwell> well as is 9262 adds another reason for a send rpc to fail, which is user visible.  With 9290 there is a lot less reason for that. I felt that that behavior change was not very sutiable for backport which is why I created 9290.
+19:11:40 <morcos> yes, if we can briefly dive into that other question...  one argument for refusing to create a failing tx is that if you try again you might succeed...
+19:11:41 <sipa> that would be much less invasive to backport
+19:11:51 <morcos> but not sure how deterministic the coin selection is
+19:12:10 <michagogo> o/
+19:12:27 <gmaxwell> morcos: since unconfirmed coins are a last resort already your odds are not good. with the rest of 9262 in place... your odds are probably nearly zero.
+19:12:34 <morcos> sipa: 9262 makes it much less likely that you will get to ATMP fail at least for the reason of chains.
+19:12:55 <sipa> morcos: i know, but it is not fully generic
+19:13:16 <morcos> gmaxwell: i disagree i think... since it all depends on how many coins you end up using as inputs, which is not a factor in our logic now
+19:13:18 <instagibbs> fully generic would be something like justCheck ATMP
+19:13:27 <sipa> morcos: i would be much more confortable with something that deals correctly with an occasional failurr, rather than trying our best to avoid failures
+19:13:37 <gmaxwell> The mempool chain limit change is transitory, which is why I believe avoid + rebroadcast is the right solution.
+19:13:53 <morcos> sipa: but as gmaxwell would probably argue, depending ont he reason for your failure you might want to do different things, so its maybe not a simple patch
+19:14:17 <sipa> morcos: well we can still use whatever logic to avoid the failure
+19:14:39 <sipa> but knowing that we don't get into hard-to-recover states would give more peace of mind
+19:14:44 <gmaxwell> morcos: for 9262 I say very low because if it was possible to avoid the failure it likely would have due to the prior selectcoins runs.  the only time where a retry would work is where it couldn't be done with low count coins, could be done with midcount coins and the retry gets lucky.
+19:15:01 <gmaxwell> sipa: transitory failure is not a hard to recover state.
+19:15:17 <gmaxwell> at least not any worse than "I paid too little fee"
+19:15:53 <morcos> gmaxwell: no i don't think so..  some of your low count coins may have ancestors with other descendants.. you may choose a lot of low value low count coins, vs just 1 high value one.. etc..
+19:15:59 <gmaxwell> I believe (someone can correct) that there is now no way to get a failure there except a transitory one. But belt and suspenders could be fine.
+19:16:09 <sipa> gmaxwell: well at least you'd know your transaction was not broadcast immediately
+19:16:27 <sipa> gmaxwell: and i'm talking more generically than chain depth limits
+19:16:35 <morcos> gmaxwell: definitely can get non-transitory failures... i have some wallet that everytime i start the node tries to broadcast a too high fee tx
+19:16:55 <gmaxwell> sipa: you never really know that, since we have no monitoring to tell if the broadcasts were successful.  I think we should seperately track successful broadcasts in the wallet. some lite wallets do this.
+19:16:55 <sipa> gmaxwell: ATMP is complicated
+19:17:10 <morcos> if it wasn't ATMP, then it wasn't broadcast
+19:17:25 <gmaxwell> morcos: yes but it can be ATMP and never broadcast.
+19:17:28 <sipa> gmaxwell: i mean: since we *can* recover from failure to ATMP, we should
+19:17:49 <sdaftuar> perhaps a simple backport would be to return the txid of the failed to ATMP transaction back to the RPC caller, once it's been added to the wallet?
+19:17:51 <MarcoFalke_> I am not against backporting 9290, but if we do, I'd prefer a small section in the release notes. Previously one could just resend the tx and figure out the problem later. Now, it might cause you to fund the same recipient twice.
+19:17:55 <gmaxwell> sipa: "recover", I don't think I agree.  Backing out a send and returning an error is not recovery.
+19:17:58 <sdaftuar> that seems strictly better than prior behavior
+19:18:03 <sdaftuar> and after 9290, semi-reasonable
+19:18:08 <gmaxwell> It just pushes error handling downstream to a caller that likely has none.
+19:18:29 <sipa> are we sure that every ATMP failure is temporary?
+19:18:32 <morcos> to bring it back to what we should backport.. i'd say at most 9290 ..   and lets concentrate on the more robust fix for 0.14
+19:18:37 <gmaxwell> MarcoFalke_: I am confused as to what you believe the effect of 9290 is.
+19:18:45 <instagibbs> sipa, I have some memory of absurd fee issue, but not on hand
+19:19:24 <gmaxwell> sipa: I believed that was the case, though morcos just pointed out something about a too-high-fee txn.
+19:19:41 <gmaxwell> I would agree that returning an error on non-temporary failures would be good.
+19:19:43 <morcos> the high fee code did change, so not sure if that got fixed
+19:19:46 <sdaftuar> morcos: i disagree with just doing 9290.  the rpc situation is a disaster when you get an RPC failure for a created tx
+19:19:58 <sipa> gmaxwell: sendtoaddress can already fail in various ways before even attempting ATMP (for example, tx too large, insufficient funds, ..) that the caller needs to deal with
+19:20:18 <morcos> sdaftuar: its been like that forever though!   i agree we should fix it, but we shouldn't be just now designing a fix to push out in a backport
+19:20:23 <morcos> it will not get sufficient testing
+19:20:48 <gmaxwell> morcos: it hasn't been like that forever because the failures are modulated by network conditions.
+19:20:56 <MarcoFalke_> gmaxwell: 9290 will put tx in your mempool that previously failed to be accepted while running. We did never do that. (only after restart)
+19:21:00 <gmaxwell> some people that never built unconfirmed chains are building them now.
+19:21:47 <morcos> i guess i just think we are close enough to 0.14, that we should concetnrate on a good and well tested fix for that
+19:22:04 <gmaxwell> MarcoFalke_: We did it at every restart. So you couldn't have counted on the behavior. And you also would have had no way of knowing that it failed on the very first try.
+19:22:05 <morcos> i'm always worried about unintended consequences of these things
+19:22:06 <sdaftuar> morcos: what is your objection to my proposal above, of returning the txid of the failed-to-accept-tomempool transaction, that is now in your wallet?
+19:22:37 <sdaftuar> i think that should be a simple change, and just tells the users what is going on
+19:22:51 <wumpus> I tend to agree with morcos - better to focus on a good solution for 0.14, then try to rush something for 0.13.2 last minute
+19:23:09 <gmaxwell> well I don't feel this is rushed. :)
+19:23:10 <sipa> sdaftuar: if we expect every such failure to be temporary, and start retrying automatically, i agree
+19:23:19 <morcos> sdaftuar: maybe nothing, but what do users do with it?  abandon?  (what if they've waited 20 mins and 9290 rebroadcasted it)  i don' tknow it just seems ..  like a band-aid
+19:23:34 <CodeShark> fwiw, in all my stuff I've separated the equivalent of "sendtoaddress" into at least two separate calls
+19:23:37 <wumpus> it's not even merged to master yet, and we're not sure of the consequences
+19:23:40 <wumpus> so yes it feels rushed
+19:23:50 <sipa> CodeShark: yes, so do we in the raw tx api
+19:23:56 <sdaftuar> morcos: right now though users are confused and think their money is gone -- at least this way they can see where it is
+19:24:04 <morcos> sdaftuar: were you proposing that it looks different than if it did get accepted, or you can't tell from the rpc return value
+19:24:08 <MarcoFalke_> gmaxwell: The rpc returns an error if it failed on the very first try, no?
+19:24:09 <sipa> i did not know we did not report a txid if ATMP fails
+19:24:09 <wumpus> simple fixes and things we're really sure about can be merged+backported last minute
+19:24:19 <wumpus> but it doesn't look to be the case here, given this discussion already
+19:24:33 <instagibbs> sipa, it's a very scary and useless message
+19:24:40 <instagibbs> well, now it propagates more
+19:24:43 <morcos> it seems to me you'd want to distinguish between it got ATMP and it didn't
+19:24:43 <instagibbs> but still scary
+19:24:59 <sipa> well i think we should either delete wallet txs that fail to ATMP at creation time, OR report the txid anyway
+19:25:16 <sipa> now people think the tx failed, but they're still rebroadcasting it
+19:25:23 <sdaftuar> sipa: i agree with that, though i'd be nervous about doing the first (delete wallet tx) in a backport
+19:25:24 <wumpus> yes that makes no sense to the user
+19:25:31 <sipa> sdaftuar: agree
+19:25:34 <gmaxwell> sipa: not just that, but it is holding coins up in their wallet.
+19:25:54 <wumpus> ideally the API should be atomic, either it succeeds or fails, not fails and still make a transaction
+19:26:09 <sdaftuar> morcos: i agree it'd be better to indicate somehow that the new tx isn't in the mempool,but perhaps we can't change the API like that in a backport... reporting the txid still seems better than current behavior though
+19:26:18 <sdaftuar> no different than if the tx was acepted and then evicted before relay
+19:26:20 <gmaxwell> MarcoFalke_: you're right.
+19:26:24 <wumpus> but it may be too much to fix in a backport in a release that we want out as soon as possible
+19:26:34 <morcos> sdaftuar: but that doesn't work very well for a tx that'll never go anywhere ...
+19:26:43 <sipa> can we do rebroadcast + report txid anyway in a backport?
+19:26:49 <sdaftuar> current behavior is even worse though for a tx that won't go anywhere
+19:27:01 <sdaftuar> you don't even know what tx to inspect/abandon!
+19:27:04 <sipa> and for 0.14 consider long chain avoidance + deletion of failed creations?
+19:27:15 <wumpus> although I'm not entirely sure when we want to do 0.13.2
+19:27:31 <gmaxwell> wumpus: I want to do 0.13.2
+19:27:31 <morcos> i mean if we do think this is such a large problem that it HAS to be addressed in a back port... then i'd argue we should include 9262, because at least if that works right, it means all the other functionality we'll backport will get used much less often
+19:27:43 <wumpus> gmaxwell: I'm asking when, not whether
+19:27:53 <gmaxwell> morcos: that was my thinking.
+19:28:02 <sdaftuar> i lean towards backporting 9262, myself
+19:28:04 <gmaxwell> wumpus: oops, I missed the word when.
+19:28:28 <morcos> i'd rather have a lot less people asking about rpc calls that look like they work but theres no tx in mempool or random rebroadcasts a day later when parts of the chain confirm
+19:28:34 <sipa> imho not reporting the txid of a tx that was added to your wallet is the worat bug here
+19:28:41 <sipa> *worst
+19:28:43 <sdaftuar> sipa: agree!
+19:28:45 <jonasschnelli> Agree
+19:28:55 <jonasschnelli> Reporting the txid seems worth a backport
+19:29:01 <jonasschnelli> And the API change is accaptable
+19:29:06 <wumpus> yes
+19:29:13 <sipa> i don't have much opinion on 9262
+19:29:15 <gmaxwell> morcos: I am unsure of how much reduction it will get. It will be a reduction, but at least 2 out of 3 people I've directly helped in this condition had no other coins in their wallet, as the wallet was created with a single large lump payment.
+19:29:25 <CodeShark> then a separate call to check whether it failed to broadcast?
+19:29:37 <MarcoFalke_> So reporting the txid would hide the fact that ATMP failed?
+19:29:40 <gmaxwell> the third, however, was making large chains pointlessly and their problem would have been avoided by 9262.
+19:30:05 <sipa> CodeShark: we can't make people change the way they use the api
+19:30:13 <sipa> not in the short term
+19:30:18 <jonasschnelli> 9262 is great. But whats the reason for a backport? Is a wallet function, users can and should upgrade to 0.14?
+19:30:22 <CodeShark> imho, sendtoaddress should be deprecated in the long run
+19:30:23 <morcos> realistically speaking what's the date when 13.2 would be out vs 14.0..  and would people be more likely to want 13.2
+19:30:24 <wumpus> not in a backport at least
+19:30:30 <CodeShark> but yeah, nearterm compatibility is important
+19:30:39 <wumpus> CodeShark: we're talking about what to do in a backport
+19:30:43 <sipa> CodeShark: maybe, but that's totally off topic in this discussion
+19:30:45 <gmaxwell> My view on what we should eventually do:  If a failure is perminante we should fail the send, and not save the txn.  If the failure is temporary, we should return the txid and rebroadcast when we can. We should try to avoid creating temporary failures.
+19:30:48 <wumpus> not what to do in the long run
+19:30:51 <CodeShark> right
+19:31:33 <gmaxwell> I was of the view that the case where we will ever create a non-temporary failure now is basically non-existant already.
+19:31:49 <sipa> gmaxwell: it certainly seems infrequent
+19:31:51 <gmaxwell> so I haven't given any thought to the 'not save the txn' branch above.
+19:32:11 <gmaxwell> There may be fringe cases, so belt and suspenders would be good for robustness.
+19:32:25 <jonasschnelli> hmm.. not saving the tx would mean, the wallet rpc functions depend fully on the mempool policy?
+19:32:36 <sipa> so rebroadcast + avoid long chains + report txid anyway... all for 0.13.2?
+19:32:53 <morcos> if its really rare, it might be we just track failures to reaccept and when they hit a cerain number, stop trying and have a way of reproting those txs for manual abandonment
+19:32:54 <wumpus> when do we want to do 0.13.2?
+19:33:03 <wumpus> is it some short term thing or januari?
+19:33:14 <gmaxwell> As far as when 0.13.2 I've personally been spending almost all my recent attention on the remaining things I thought 0.13.2 needed.  I had hoped in december.
+19:33:22 <morcos> sipa: it seems thats what people are arguing for
+19:33:28 <jonasschnelli> wumpus: +1 month after 0.14?
+19:33:31 <wumpus> this sounds like it still needs a lot of work and testing and new things
+19:33:54 <morcos> wumpus: reporting the txid anyway is probably super simple... just a question of thinking about the consequences
+19:33:55 <sipa> jonasschnelli: a new 0.13 after 0.14 makes little sense
+19:33:55 <wumpus> cfields also thought it was this week, he felt guilty he couldn't sign it this week :)
+19:33:59 <gmaxwell> These things (and the open backport PR) are the only things I'm perosnally tracking for 0.13.2  (I made a call in #bitcoin this morning for bugreports against 0.13.1 with an eye towards getting 0.13.2 ready).
+19:34:05 <morcos> so not unheard of that all these things could be merged into master by tomorrow
+19:34:27 <wumpus> morcos: they're not even in master yet, I'm not sure of merging so much new stuff into a backport
+19:35:18 <morcos> wumpus: well neither am i... i personally favor less emphasis on backports..  but i'm saying if we are going to do it, well lets get to it...
+19:35:20 <wumpus> I really think we should make a choice here and solve the worst problems for 0.13.2 instead of trying to rush everything into it
+19:35:21 <gmaxwell> I didn't even know about the rebroadcast behavior that 9290 fixed until discussion about this subject. :(
+19:35:42 <wumpus> could always do a 0.13.3 later
+19:36:34 <wumpus> jonasschnelli: I think the idea was to do it before 0.14. If after, none of these things are a problem
+19:36:45 <gmaxwell> This discussion revealed that we also need the return txid anyways change, that is also a serious bug.
+19:36:45 <morcos> i guess i believe that all or nothing makes sense, simply b/c anything less than the all sipa mentioned still leaves a big problem "rebroadcast + avoid long chains + report txid anyway."
+19:36:52 <jonasschnelli> wumpus: Yes. Right.
+19:37:13 <morcos> i would vote nothing, but i recognize i am outvoted
+19:37:16 <sipa> morcos: i think the long chain avoidance is the least important in that set
+19:37:18 <wumpus> but does the wallet get enough testing on 0.13.2 to warrant this?
+19:37:26 <gmaxwell> I do believe we could leave the avoidance out and at least not be buggy in any risky way. Just potentially creating a needlessly bad performance.
+19:37:30 <wumpus> I sometimes even doubt it gets enough testing on master
+19:37:48 <MarcoFalke_> The rc1 for 0.13.2 should probably happen in Dec, otherwise it will "overlap" with 0.14
+19:37:57 <gmaxwell> wumpus: I think wallet sometimes gets more testing on backport than on master.
+19:38:21 <wumpus> MarcoFalke_: agreed, and people will probably be away lot later this month
+19:38:38 <luke-jr> I think there'd be value in 0.13.x beyond 0.14, but realistically it won't get enough testing, so if we want a well-tested 0.13.x we should aim for before 0.14
+19:38:43 <gmaxwell> wumpus: perhaps we should table this and (1) get the things we have open into master. (2) get a return txid fix.
+19:38:44 <morcos> sipa: my reason for including the avoidance would be to limit the number of people affected by the other two changes..  but i guess i'm not sure how helpful it will be.. sure
+19:39:47 <morcos> it always worries me when we change the behavior
+19:40:04 <morcos> it seems people are always dependent on existing behvaior or using the bitcoind in a way we didn't anticipate
+19:40:11 <CodeShark> why not preserve the current behavior for the existing API call and instead create a new API call that has the desired behavior?
+19:40:32 <jonasschnelli> CodeShark: bugfix with a new feature? :)
+19:40:36 <wumpus> gmaxwell: I suppose what is in 0.13.2 right now is already enough for a release? we could do the wallet stuff in a 0.13.3
+19:40:42 <gmaxwell> Let my summarize the bug and why I think it's important to fix.  Right now normal use of the wallet for some users can suffer inexplicible failures due to creating long transactions. These long transactions will look like the send failed, but it will still go into the wallet and _still_ be broadcast later potentially (After a restart).  Users lose access to their funds and may falsely believe a
+19:40:42 <morcos> the avoidance (if its not buggy) just works magic behind the scenes
+19:40:48 <gmaxwell> wallet is empty. Users may double pay as a result.
+19:40:56 <MarcoFalke_> CodeShark: We'd end with an new API every release. :)
+19:41:06 <CodeShark> lol
+19:41:14 <gmaxwell> These are all serious money losing bugs. And are the most reported issue I've dealt with users for existing software.
+19:41:16 <wumpus> CodeShark: I think the point is fixing the current behavior
+19:41:56 <CodeShark> the current behavior is it still stores the transaction in the wallet even if ATMP fails?
+19:41:57 <sipa> CodeShark: this is all besides the issue. the current behaviour is clearly broken in numerous ways, and it should be fixed
+19:42:17 <gmaxwell> if not for that, I wouldn't bother with wanting any of this backported.
+19:42:18 <sipa> CodeShark: new APIs are possible that avoid some of the pitfalls we've learned about in earlier designs
+19:42:32 <gmaxwell> (not for the fact that people are hitting it and can lose money as a result)
+19:42:47 <Chris_Stewart_5> gmaxwell: 'long chains of txs' or just large txs for inexplicable failures?
+19:43:04 <gmaxwell> Chris_Stewart_5: large transactions will not cause the behavior I described.
+19:43:08 <sipa> CodeShark: yes
+19:43:20 <MarcoFalke_> Chris_Stewart_5: mempool chains.
+19:43:22 <jonasschnelli> Agree with gmaxwell: But I think we must at least offer a way how to detect this on the RPC consumer side and mention it in the release nots
+19:43:23 <gmaxwell> The send mail fail but the failure is clean and won't freeze the users funds and/or send anyways.
+19:43:34 <jonasschnelli> Reporting txid seems to be the sane way for a backport IMO
+19:43:54 <gmaxwell> I think reporting the txid is correct too. I agree.
+19:44:21 <gmaxwell> If its possible that the send will go through we must report the txid. Right now we don't.
+19:44:33 <luke-jr> another potential way to address this particular case, would be to simply toggle the default of -spendzeroconfchange I think?
+19:44:42 <wumpus> yes, if the transaction is added to the wallet it should be reported
+19:44:53 <luke-jr> not the best way, but perhaps good enough to solve the critical part of the issue
+19:45:03 <morcos> I'd rather spend less days arguing about it and more days testing the RC that fixes it...   so can someone add the report txid anyway PR and lets merge that, #9262 and #9290 into master
+19:45:05 <gribble> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+19:45:07 <gribble> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+19:45:09 <gmaxwell> None of the users reporting issues I worked with had been tripped up by the failure to return a txid (at least not that they noticed).
+19:45:12 <wumpus> and that doesn't sound like a very risky or large change
+19:45:22 <MarcoFalke_> #action create report txid patch
+19:45:36 <sipa> MarcoFalke_: already on it
+19:45:42 <jonasschnelli> sipa: nice!
+19:45:49 <jonasschnelli> (just wanted to start) :)
+19:45:59 <morcos> sipa: are you typing one-handed, its taking you a while
+19:46:29 <sipa> morcos: i just switched to my laptop
+19:46:31 <gmaxwell> luke-jr: I think szcc=0 is a huge disruptive and surprising change. :(
+19:46:50 <wumpus> it's throwing out the baby with the bath water too
+19:47:06 <luke-jr> gmaxwell: but it can't result in losing money (I agree a proper fix would be better though)
+19:47:14 <gmaxwell> it's almost like "we could make sendtoaddress always fail." :) yes, that would fix the problem.. but..
+19:47:30 <wumpus> if it is really a critical problem we could consider that
+19:47:57 <gmaxwell> but I suppose I would consider it if we really felt we couldn't do a better fix soon.
+19:47:59 <wumpus> I remember we've done that before, in the time of the malleability problem
+19:48:04 <wumpus> but preferably not, no
+19:48:40 <gmaxwell> but I think we have a collection of better fixes which (with the txid return) will be more than sufficient.
+19:48:50 <gmaxwell> so I'd rather not think about szcc=0. :)
+19:48:54 <luke-jr> k
+19:49:13 <morcos> actually i guess its not as simple as i thought
+19:50:08 <gmaxwell> morcos: returning a txid?
+19:50:10 <bitcoin-git> [13bitcoin] 15sipa opened pull request #9302: Return txid even if ATMP fails for new transaction (06master...06failedtxid) 02https://github.com/bitcoin/bitcoin/pull/9302
+19:50:16 <gmaxwell> I believe thats as simple as
+19:50:35 <gmaxwell> ^ yep, thats the change I imagined.
+19:50:58 <CodeShark> I never thought sendtoaddress was a reliable call as far as error handling so I sort of stopped thinking about how to do the error handling from the app side - not sure what issues people have had because of this behavior
+19:51:03 <morcos> ha ha ha
+19:51:40 <jonasschnelli> sipa: I think you should also change the logprint ("CommitTransaction(): Error: Transaction not valid, %s\n"), but meh, OT.
+19:51:47 <sdaftuar> jonasschnelli: +1 :)
+19:51:55 <sipa> jonasschnelli: we don't know if it's not valid
+19:52:12 <sipa> jonasschnelli: wait, i don't see the change
+19:52:17 <jonasschnelli> "ATMP failed" or something.
+19:52:19 <gmaxwell> sipa: maybe that was the point of jonasschnelli's comment
+19:52:22 <sipa> ah!
+19:52:35 <sipa> i thought you said "change it TO ..."
+19:52:59 <morcos> thanks sipa
+19:53:05 <jonasschnelli> No. Just criticised the current one.
+19:53:07 <jonasschnelli> Yes. Thanks sipa.
+19:53:11 <jonasschnelli> Next time please faster
+19:53:17 <gmaxwell> so: action proposed, 9302, 9290, 9262 and help get them into master.
+19:53:18 <luke-jr> ._.
+19:53:42 <sdaftuar> gmaxwell: concur
+19:53:45 <luke-jr> gmaxwell: sgtm
+19:54:01 <morcos> gmaxwell: i think thats the stable equilibrium... if 9262 seems dicey we can ditch, but i think its good
+19:54:04 <morcos> can we briefly discuss tx expiry if no one else has another unrelated topic
+19:54:18 <gmaxwell> yes, 9262 is the most optional, esp with the first two in.
+19:54:25 <wumpus> at least 9290 and 9302
+19:54:35 <gmaxwell> morcos: I would like to discuss expiry.
+19:54:42 <wumpus> the latter should obv get into master but not sure about 0.13.2
+19:54:46 <MarcoFalke_> #action 9302, 9290, 9262 for master (and backport), 9262 optional backport
+19:55:00 <MarcoFalke_> ^fine this way?
+19:55:08 <wumpus> #topic mempool expiry time increase
+19:55:16 <instagibbs> I still think preferential coin choosing should go in, even if we drop the abort
+19:55:17 <wumpus> 5 minutes to go ^^
+19:55:20 <instagibbs> sorry, continue
+19:55:23 <morcos> i'd like to raise the time to at least 1 week... although we could use a few more heads thinking about whether there are any issues.. obv after 9290, it doesn't matter as much for gtting yhour own txs confirmed
+19:55:48 <gmaxwell> instagibbs: I'd like to default the abort to off, with the rest it won't be needed. We can discuss later.
+19:55:55 <morcos> but i think if we want to be able to fully utilize weekly cycles in the tx volume, then we need to have txs which sit around for a week or more to measure how long it takes them to get confirmed
+19:56:23 <wumpus> morcos: would it make much of a difference in practice? wouldn't the transactions be evicted due to the mempool limit first?
+19:56:26 <luke-jr> morcos: I can't think of any reason this wouldn't be okay. (but haven't given it thought before now)
+19:56:28 <morcos> i'm not really sure that the problems that expiry were meant to protect against are actually any more prevent with 3 days vs say 14
+19:56:33 <gmaxwell> morcos: I do believe I made the argument for a week way back when on this basis.  OTOH, the mempool is simply not large enough to exploit the weekly cycle currently.
+19:56:56 <wumpus> morcos: apart from that I don't see any problems with it
+19:57:05 <morcos> wumpus: no.. any tx with fee rate > 1.5 sat / byte gets evicted b/c of 3 day limit and would otherwise get mined within a week (and usually does b/c of rebroadcast)
+19:57:07 <instagibbs> does the wallet "abort" if it drops from mempool, or does it resubmit
+19:57:12 <sipa> luke-jr: i think the expectation should be that everything in the mempool leaves it either due to accept/conflict or fee based eviction
+19:57:12 <instagibbs> I assume resubmits
+19:57:16 <gmaxwell> My view on the expiration is that it removes high fee cruft that got softforked out but is taking up your mempool.
+19:57:24 <morcos> gmaxwell: its way more than big enough for a week cycle
+19:57:32 <morcos> b/c remember it only has to hodl backlog
+19:57:33 <sipa> luke-jr: expiration is for things that somehow linger much longer
+19:57:58 <morcos> gmaxwell: yeah, but if thats actually happening 3 days is way too long, and is breaking yoru fee estimates already
+19:58:09 <gmaxwell> morcos: okay point so long as it is at least as big as the daily cycle, txn can persist through the week.
+19:58:12 <luke-jr> hmm
+19:58:14 <wumpus> instagibbs: abort right now, the idea of #9290 is to change that and make it reaccept on rebroadcast
+19:58:16 <gribble> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+19:58:50 <morcos> ok, i'd propose 14 days, so we don't have this problem again... and lets just think about whether anyone can think of any problems with it
+19:58:50 <gmaxwell> morcos: in terms of fee estimates, we can address that by using a narrower filter... e.g. only consider transactions which are structurally similar to our own.. but a seperate topic.
+19:59:08 <gmaxwell> also the expiration hardly works now in any case.
+19:59:13 <sdaftuar> there's one other advantage of 3 days versusu a week, which is being able to double-spend a too-low-fee tx.  after fee bumping, i think this reason largely goes away
+19:59:20 <morcos> i don't think we can really take advantage of it until we change fee estimates...  but i'd rather have more of the network behaving similarilyh
+19:59:28 <morcos> and after 9290
+19:59:30 <gmaxwell> if you are connectable there are 'helpful' parties that connect and spam you with a zillion old txn.
+19:59:32 <instagibbs> morcos, that's too weeks of nodes not accepting fee bumps if you mess up and don't do bip125 (not sure how big an issue that is but still)
+19:59:32 <morcos> you have a tiny windo
+19:59:32 <sdaftuar> morcos: good point
+19:59:50 <instagibbs> even with manual bumping*
+20:00:02 <gmaxwell> instagibbs: I think it doesn't matter for replacement.
+20:00:11 <morcos> instagibbs: but after 9290 your tx comes again anyway, you just lose the information that its old
+20:00:19 <gmaxwell> Right now replacement of non-replacable transactions works even a day later fine, due to restarts and fullrbf miners.
+20:00:21 <luke-jr> instagibbs: if the fee is that excessively small though, it will get bumped out by non-conflicting transactions sooner probably
+20:00:22 <morcos> i want to retain that information
+20:00:35 <gmaxwell> instagibbs: also what luke said.
+20:00:46 <morcos> nothing with a fee rate > 1.5 sat / byte as ever been evicted due to low fee rate
+20:00:50 <gmaxwell> morcos: does it need to be 14 days or is 7 sufficient to exploit the weekly cycle?
+20:01:15 <morcos> i don't know... maybe 7.. but maybe you need more data points that are older than that to know things that don't get confirmed in 7 days
+20:01:18 <morcos> which is kind of importnat
+20:01:27 <gmaxwell> oh I see, for the estimator.
+20:02:02 <sipa> very short announcement: github now supports listing reviewers for your PR... always feel free to list me
+20:02:04 <morcos> anyway, all i wanted to do is raise the topic, so other people cna think of potential problems
+20:02:15 <gmaxwell> morcos: OKAY!
+20:02:27 <gmaxwell> morcos: just open an PR and set sipa as the reviewer. Done.
+20:02:43 <wumpus> #endmeeting

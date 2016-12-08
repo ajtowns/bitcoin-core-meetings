@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:40</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Dec  8 19:00:40 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:40</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:23</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-5"></a><span class="tm">19:02:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-6"></a><span class="tm">19:02:24</span><span class="nk"> &lt;instagibbs&gt;</span> here
+<a name="l-7"></a><span class="tm">19:02:26</span><span class="nk"> &lt;sdaftuar&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:02:28</span><span class="nk"> &lt;btcdrak&gt;</span> sort of here
+<a name="l-9"></a><span class="tm">19:02:29</span><span class="nk"> &lt;CodeShark&gt;</span> hello
+<a name="l-10"></a><span class="tm">19:03:13</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-11"></a><span class="tm">19:03:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd like to briefly talk about #9290
+<a name="l-12"></a><span class="tm">19:03:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+<a name="l-13"></a><span class="tm">19:03:39</span><span class="nk"> &lt;morcos&gt;</span> i'd like to discuss increasing mempool tx expiry time but nto sure if thats a meeting topic
+<a name="l-14"></a><span class="tm">19:04:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">#9290 Make RelayWalletTransaction attempt to AcceptToMemoryPool</span>
+<a name="l-15"></a><span class="tm">19:04:41</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+<a name="l-16"></a><span class="tm">19:05:40</span><span class="nk"> &lt;gmaxwell&gt;</span> There was previously a concern expressed (sorry, I forget who); that trying to reaccept to mempool all unconfirmed txn might be a cpu load for some wallet gunked up with unconfirmed transactions.  I made this PR anyways, noting that it doesn't apply to abandoned or known conflicted txn, and I don't believe gunked up wallets exist at any real rate-- if they do, then that is its own problem.. and
+<a name="l-17"></a><span class="tm">19:05:46</span><span class="nk"> &lt;gmaxwell&gt;</span> they could avoid a performance issue by abandoning.  I hope this is convincing but I haven't had feedback on that point.
+<a name="l-18"></a><span class="tm">19:06:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Beyond that question, this is a really obvious bugfix for a somewhat embarassing misbehavior.
+<a name="l-19"></a><span class="tm">19:06:21</span><span class="nk"> &lt;wumpus&gt;</span> well at least it's now possible to get rid of unconfirmed transactions by abandoning them
+<a name="l-20"></a><span class="tm">19:06:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> that was (at least) me, but i made my mark on your PR..  suhas beat me down into being unable to succesfully argue my position
+<a name="l-21"></a><span class="tm">19:06:36</span><span class="nk"> &lt;wumpus&gt;</span> there should be no need to have excessive numbers of unconfirmed transactinons
+<a name="l-22"></a><span class="tm">19:07:10</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i agree with the PR and the backport, fwiw
+<a name="l-23"></a><span class="tm">19:07:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> hah. I missed the was here. okay thats precisely what I was looking for.
+<a name="l-24"></a><span class="tm">19:07:30</span><span class="nk"> &lt;morcos&gt;</span> but as for backporting...
+<a name="l-25"></a><span class="tm">19:07:50</span><span class="nk"> &lt;morcos&gt;</span> maybe ok for that one... but i'm not so sure about #9262
+<a name="l-26"></a><span class="tm">19:07:55</span><span class="nk"> &lt;gmaxwell&gt;</span> I just felt a little uncomfortable doing something I knew someone had expressed concern with; without making sure that we heard if concerns remained.
+<a name="l-27"></a><span class="tm">19:07:59</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+<a name="l-28"></a><span class="tm">19:08:30</span><span class="nk"> &lt;morcos&gt;</span> i feel like although these are definitely fixing poor behavior... they're also fairly large changes in behavior and it worries me that in a backport, they wont' get enough testing to be sure they don't raise new issues
+<a name="l-29"></a><span class="tm">19:08:35</span><span class="nk"> &lt;morcos&gt;</span> personally i think we backport too much
+<a name="l-30"></a><span class="tm">19:08:49</span><span class="nk"> &lt;gmaxwell&gt;</span> Well I think we must backport at least one of 9262 or 9290.  If you backport 9290 I think there is less need to backport 9262 and if we only do one I'd prefer it be 9290.
+<a name="l-31"></a><span class="tm">19:08:58</span><span class="nk"> &lt;morcos&gt;</span> backports should be for either critical or simple bugs
+<a name="l-32"></a><span class="tm">19:09:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> why? that behavior has been like that for several major versions no?
+<a name="l-33"></a><span class="tm">19:09:41</span><span class="nk"> &lt;morcos&gt;</span> do we think it is more of an issue now b/c of occasional mempool backlogs?
+<a name="l-34"></a><span class="tm">19:09:44</span><span class="nk"> &lt;gmaxwell&gt;</span> The issue that these are collectively fixing are stuck coins in wallets which combined with user error can lead to funds loss.  We are currently having resports from multiple users encountering it.
+<a name="l-35"></a><span class="tm">19:09:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> ding ding.
+<a name="l-36"></a><span class="tm">19:09:50</span><span class="nk"> &lt;luke-jr&gt;</span> backporting all bugfixes is fine if we do RCs IMO; critical/simple criteria mainly makes sense for security stuff
+<a name="l-37"></a><span class="tm">19:09:55</span><span class="nk"> &lt;sdaftuar&gt;</span> i think 9290 is simple, and implements the behavior we all thought was already happening
+<a name="l-38"></a><span class="tm">19:10:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> thats going offtopic but I don't fully agree.
+<a name="l-39"></a><span class="tm">19:10:11</span><span class="nk"> &lt;morcos&gt;</span> yes, 9290 is pretty simple
+<a name="l-40"></a><span class="tm">19:10:39</span><span class="nk"> &lt;gmaxwell&gt;</span> for 9262 if 9290 is in place there is an argument that the default behavior should change (don't refuse to create the failing txn.)
+<a name="l-41"></a><span class="tm">19:10:43</span><span class="nk"> &lt;gmaxwell&gt;</span> which is another question.
+<a name="l-42"></a><span class="tm">19:10:48</span><span class="nk"> &lt;morcos&gt;</span> i'd feel a bit easier about that one i guess...  , and although i have no idea what might go wrong with 9262, you never know
+<a name="l-43"></a><span class="tm">19:11:28</span><span class="nk"> &lt;sipa&gt;</span> do we have a patch that deal with ATMP failing in createtransactionm
+<a name="l-44"></a><span class="tm">19:11:30</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-45"></a><span class="tm">19:11:37</span><span class="nk"> &lt;gmaxwell&gt;</span> well as is 9262 adds another reason for a send rpc to fail, which is user visible.  With 9290 there is a lot less reason for that. I felt that that behavior change was not very sutiable for backport which is why I created 9290.
+<a name="l-46"></a><span class="tm">19:11:40</span><span class="nk"> &lt;morcos&gt;</span> yes, if we can briefly dive into that other question...  one argument for refusing to create a failing tx is that if you try again you might succeed...
+<a name="l-47"></a><span class="tm">19:11:41</span><span class="nk"> &lt;sipa&gt;</span> that would be much less invasive to backport
+<a name="l-48"></a><span class="tm">19:11:51</span><span class="nk"> &lt;morcos&gt;</span> but not sure how deterministic the coin selection is
+<a name="l-49"></a><span class="tm">19:12:10</span><span class="nk"> &lt;michagogo&gt;</span> o/
+<a name="l-50"></a><span class="tm">19:12:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> since unconfirmed coins are a last resort already your odds are not good. with the rest of 9262 in place... your odds are probably nearly zero.
+<a name="l-51"></a><span class="tm">19:12:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> 9262 makes it much less likely that you will get to ATMP fail at least for the reason of chains.
+<a name="l-52"></a><span class="tm">19:12:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i know, but it is not fully generic
+<a name="l-53"></a><span class="tm">19:13:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i disagree i think... since it all depends on how many coins you end up using as inputs, which is not a factor in our logic now
+<a name="l-54"></a><span class="tm">19:13:18</span><span class="nk"> &lt;instagibbs&gt;</span> fully generic would be something like justCheck ATMP
+<a name="l-55"></a><span class="tm">19:13:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i would be much more confortable with something that deals correctly with an occasional failurr, rather than trying our best to avoid failures
+<a name="l-56"></a><span class="tm">19:13:37</span><span class="nk"> &lt;gmaxwell&gt;</span> The mempool chain limit change is transitory, which is why I believe avoid + rebroadcast is the right solution.
+<a name="l-57"></a><span class="tm">19:13:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> but as gmaxwell would probably argue, depending ont he reason for your failure you might want to do different things, so its maybe not a simple patch
+<a name="l-58"></a><span class="tm">19:14:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> well we can still use whatever logic to avoid the failure
+<a name="l-59"></a><span class="tm">19:14:39</span><span class="nk"> &lt;sipa&gt;</span> but knowing that we don't get into hard-to-recover states would give more peace of mind
+<a name="l-60"></a><span class="tm">19:14:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> for 9262 I say very low because if it was possible to avoid the failure it likely would have due to the prior selectcoins runs.  the only time where a retry would work is where it couldn't be done with low count coins, could be done with midcount coins and the retry gets lucky.
+<a name="l-61"></a><span class="tm">19:15:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> transitory failure is not a hard to recover state.
+<a name="l-62"></a><span class="tm">19:15:17</span><span class="nk"> &lt;gmaxwell&gt;</span> at least not any worse than "I paid too little fee"
+<a name="l-63"></a><span class="tm">19:15:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> no i don't think so..  some of your low count coins may have ancestors with other descendants.. you may choose a lot of low value low count coins, vs just 1 high value one.. etc..
+<a name="l-64"></a><span class="tm">19:15:59</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe (someone can correct) that there is now no way to get a failure there except a transitory one. But belt and suspenders could be fine.
+<a name="l-65"></a><span class="tm">19:16:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> well at least you'd know your transaction was not broadcast immediately
+<a name="l-66"></a><span class="tm">19:16:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> and i'm talking more generically than chain depth limits
+<a name="l-67"></a><span class="tm">19:16:35</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> definitely can get non-transitory failures... i have some wallet that everytime i start the node tries to broadcast a too high fee tx
+<a name="l-68"></a><span class="tm">19:16:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> you never really know that, since we have no monitoring to tell if the broadcasts were successful.  I think we should seperately track successful broadcasts in the wallet. some lite wallets do this.
+<a name="l-69"></a><span class="tm">19:16:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ATMP is complicated
+<a name="l-70"></a><span class="tm">19:17:10</span><span class="nk"> &lt;morcos&gt;</span> if it wasn't ATMP, then it wasn't broadcast
+<a name="l-71"></a><span class="tm">19:17:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes but it can be ATMP and never broadcast.
+<a name="l-72"></a><span class="tm">19:17:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i mean: since we *can* recover from failure to ATMP, we should
+<a name="l-73"></a><span class="tm">19:17:49</span><span class="nk"> &lt;sdaftuar&gt;</span> perhaps a simple backport would be to return the txid of the failed to ATMP transaction back to the RPC caller, once it's been added to the wallet?
+<a name="l-74"></a><span class="tm">19:17:51</span><span class="nk"> &lt;MarcoFalke_&gt;</span> I am not against backporting 9290, but if we do, I'd prefer a small section in the release notes. Previously one could just resend the tx and figure out the problem later. Now, it might cause you to fund the same recipient twice.
+<a name="l-75"></a><span class="tm">19:17:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> "recover", I don't think I agree.  Backing out a send and returning an error is not recovery.
+<a name="l-76"></a><span class="tm">19:17:58</span><span class="nk"> &lt;sdaftuar&gt;</span> that seems strictly better than prior behavior
+<a name="l-77"></a><span class="tm">19:18:03</span><span class="nk"> &lt;sdaftuar&gt;</span> and after 9290, semi-reasonable
+<a name="l-78"></a><span class="tm">19:18:08</span><span class="nk"> &lt;gmaxwell&gt;</span> It just pushes error handling downstream to a caller that likely has none.
+<a name="l-79"></a><span class="tm">19:18:29</span><span class="nk"> &lt;sipa&gt;</span> are we sure that every ATMP failure is temporary?
+<a name="l-80"></a><span class="tm">19:18:32</span><span class="nk"> &lt;morcos&gt;</span> to bring it back to what we should backport.. i'd say at most 9290 ..   and lets concentrate on the more robust fix for 0.14
+<a name="l-81"></a><span class="tm">19:18:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke_:</span> I am confused as to what you believe the effect of 9290 is.
+<a name="l-82"></a><span class="tm">19:18:45</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, I have some memory of absurd fee issue, but not on hand
+<a name="l-83"></a><span class="tm">19:19:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I believed that was the case, though morcos just pointed out something about a too-high-fee txn.
+<a name="l-84"></a><span class="tm">19:19:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I would agree that returning an error on non-temporary failures would be good.
+<a name="l-85"></a><span class="tm">19:19:43</span><span class="nk"> &lt;morcos&gt;</span> the high fee code did change, so not sure if that got fixed
+<a name="l-86"></a><span class="tm">19:19:46</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> i disagree with just doing 9290.  the rpc situation is a disaster when you get an RPC failure for a created tx
+<a name="l-87"></a><span class="tm">19:19:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> sendtoaddress can already fail in various ways before even attempting ATMP (for example, tx too large, insufficient funds, ..) that the caller needs to deal with
+<a name="l-88"></a><span class="tm">19:20:18</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> its been like that forever though!   i agree we should fix it, but we shouldn't be just now designing a fix to push out in a backport
+<a name="l-89"></a><span class="tm">19:20:23</span><span class="nk"> &lt;morcos&gt;</span> it will not get sufficient testing
+<a name="l-90"></a><span class="tm">19:20:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> it hasn't been like that forever because the failures are modulated by network conditions.
+<a name="l-91"></a><span class="tm">19:20:56</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="hi">gmaxwell:</span> 9290 will put tx in your mempool that previously failed to be accepted while running. We did never do that. (only after restart)
+<a name="l-92"></a><span class="tm">19:21:00</span><span class="nk"> &lt;gmaxwell&gt;</span> some people that never built unconfirmed chains are building them now.
+<a name="l-93"></a><span class="tm">19:21:47</span><span class="nk"> &lt;morcos&gt;</span> i guess i just think we are close enough to 0.14, that we should concetnrate on a good and well tested fix for that
+<a name="l-94"></a><span class="tm">19:22:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke_:</span> We did it at every restart. So you couldn't have counted on the behavior. And you also would have had no way of knowing that it failed on the very first try.
+<a name="l-95"></a><span class="tm">19:22:05</span><span class="nk"> &lt;morcos&gt;</span> i'm always worried about unintended consequences of these things
+<a name="l-96"></a><span class="tm">19:22:06</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> what is your objection to my proposal above, of returning the txid of the failed-to-accept-tomempool transaction, that is now in your wallet?
+<a name="l-97"></a><span class="tm">19:22:37</span><span class="nk"> &lt;sdaftuar&gt;</span> i think that should be a simple change, and just tells the users what is going on
+<a name="l-98"></a><span class="tm">19:22:51</span><span class="nk"> &lt;wumpus&gt;</span> I tend to agree with morcos - better to focus on a good solution for 0.14, then try to rush something for 0.13.2 last minute
+<a name="l-99"></a><span class="tm">19:23:09</span><span class="nk"> &lt;gmaxwell&gt;</span> well I don't feel this is rushed. :)
+<a name="l-100"></a><span class="tm">19:23:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> if we expect every such failure to be temporary, and start retrying automatically, i agree
+<a name="l-101"></a><span class="tm">19:23:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> maybe nothing, but what do users do with it?  abandon?  (what if they've waited 20 mins and 9290 rebroadcasted it)  i don' tknow it just seems ..  like a band-aid
+<a name="l-102"></a><span class="tm">19:23:34</span><span class="nk"> &lt;CodeShark&gt;</span> fwiw, in all my stuff I've separated the equivalent of "sendtoaddress" into at least two separate calls
+<a name="l-103"></a><span class="tm">19:23:37</span><span class="nk"> &lt;wumpus&gt;</span> it's not even merged to master yet, and we're not sure of the consequences
+<a name="l-104"></a><span class="tm">19:23:40</span><span class="nk"> &lt;wumpus&gt;</span> so yes it feels rushed
+<a name="l-105"></a><span class="tm">19:23:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> yes, so do we in the raw tx api
+<a name="l-106"></a><span class="tm">19:23:56</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> right now though users are confused and think their money is gone -- at least this way they can see where it is
+<a name="l-107"></a><span class="tm">19:24:04</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> were you proposing that it looks different than if it did get accepted, or you can't tell from the rpc return value
+<a name="l-108"></a><span class="tm">19:24:08</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="hi">gmaxwell:</span> The rpc returns an error if it failed on the very first try, no?
+<a name="l-109"></a><span class="tm">19:24:09</span><span class="nk"> &lt;sipa&gt;</span> i did not know we did not report a txid if ATMP fails
+<a name="l-110"></a><span class="tm">19:24:09</span><span class="nk"> &lt;wumpus&gt;</span> simple fixes and things we're really sure about can be merged+backported last minute
+<a name="l-111"></a><span class="tm">19:24:19</span><span class="nk"> &lt;wumpus&gt;</span> but it doesn't look to be the case here, given this discussion already
+<a name="l-112"></a><span class="tm">19:24:33</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, it's a very scary and useless message
+<a name="l-113"></a><span class="tm">19:24:40</span><span class="nk"> &lt;instagibbs&gt;</span> well, now it propagates more
+<a name="l-114"></a><span class="tm">19:24:43</span><span class="nk"> &lt;morcos&gt;</span> it seems to me you'd want to distinguish between it got ATMP and it didn't
+<a name="l-115"></a><span class="tm">19:24:43</span><span class="nk"> &lt;instagibbs&gt;</span> but still scary
+<a name="l-116"></a><span class="tm">19:24:59</span><span class="nk"> &lt;sipa&gt;</span> well i think we should either delete wallet txs that fail to ATMP at creation time, OR report the txid anyway
+<a name="l-117"></a><span class="tm">19:25:16</span><span class="nk"> &lt;sipa&gt;</span> now people think the tx failed, but they're still rebroadcasting it
+<a name="l-118"></a><span class="tm">19:25:23</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i agree with that, though i'd be nervous about doing the first (delete wallet tx) in a backport
+<a name="l-119"></a><span class="tm">19:25:24</span><span class="nk"> &lt;wumpus&gt;</span> yes that makes no sense to the user
+<a name="l-120"></a><span class="tm">19:25:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> agree
+<a name="l-121"></a><span class="tm">19:25:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> not just that, but it is holding coins up in their wallet.
+<a name="l-122"></a><span class="tm">19:25:54</span><span class="nk"> &lt;wumpus&gt;</span> ideally the API should be atomic, either it succeeds or fails, not fails and still make a transaction
+<a name="l-123"></a><span class="tm">19:26:09</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> i agree it'd be better to indicate somehow that the new tx isn't in the mempool,but perhaps we can't change the API like that in a backport... reporting the txid still seems better than current behavior though
+<a name="l-124"></a><span class="tm">19:26:18</span><span class="nk"> &lt;sdaftuar&gt;</span> no different than if the tx was acepted and then evicted before relay
+<a name="l-125"></a><span class="tm">19:26:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke_:</span> you're right.
+<a name="l-126"></a><span class="tm">19:26:24</span><span class="nk"> &lt;wumpus&gt;</span> but it may be too much to fix in a backport in a release that we want out as soon as possible
+<a name="l-127"></a><span class="tm">19:26:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> but that doesn't work very well for a tx that'll never go anywhere ...
+<a name="l-128"></a><span class="tm">19:26:43</span><span class="nk"> &lt;sipa&gt;</span> can we do rebroadcast + report txid anyway in a backport?
+<a name="l-129"></a><span class="tm">19:26:49</span><span class="nk"> &lt;sdaftuar&gt;</span> current behavior is even worse though for a tx that won't go anywhere
+<a name="l-130"></a><span class="tm">19:27:01</span><span class="nk"> &lt;sdaftuar&gt;</span> you don't even know what tx to inspect/abandon!
+<a name="l-131"></a><span class="tm">19:27:04</span><span class="nk"> &lt;sipa&gt;</span> and for 0.14 consider long chain avoidance + deletion of failed creations?
+<a name="l-132"></a><span class="tm">19:27:15</span><span class="nk"> &lt;wumpus&gt;</span> although I'm not entirely sure when we want to do 0.13.2
+<a name="l-133"></a><span class="tm">19:27:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I want to do 0.13.2
+<a name="l-134"></a><span class="tm">19:27:31</span><span class="nk"> &lt;morcos&gt;</span> i mean if we do think this is such a large problem that it HAS to be addressed in a back port... then i'd argue we should include 9262, because at least if that works right, it means all the other functionality we'll backport will get used much less often
+<a name="l-135"></a><span class="tm">19:27:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm asking when, not whether
+<a name="l-136"></a><span class="tm">19:27:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> that was my thinking.
+<a name="l-137"></a><span class="tm">19:28:02</span><span class="nk"> &lt;sdaftuar&gt;</span> i lean towards backporting 9262, myself
+<a name="l-138"></a><span class="tm">19:28:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> oops, I missed the word when.
+<a name="l-139"></a><span class="tm">19:28:28</span><span class="nk"> &lt;morcos&gt;</span> i'd rather have a lot less people asking about rpc calls that look like they work but theres no tx in mempool or random rebroadcasts a day later when parts of the chain confirm
+<a name="l-140"></a><span class="tm">19:28:34</span><span class="nk"> &lt;sipa&gt;</span> imho not reporting the txid of a tx that was added to your wallet is the worat bug here
+<a name="l-141"></a><span class="tm">19:28:41</span><span class="nk"> &lt;sipa&gt;</span> *worst
+<a name="l-142"></a><span class="tm">19:28:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> agree!
+<a name="l-143"></a><span class="tm">19:28:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree
+<a name="l-144"></a><span class="tm">19:28:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Reporting the txid seems worth a backport
+<a name="l-145"></a><span class="tm">19:29:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> And the API change is accaptable
+<a name="l-146"></a><span class="tm">19:29:06</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-147"></a><span class="tm">19:29:13</span><span class="nk"> &lt;sipa&gt;</span> i don't have much opinion on 9262
+<a name="l-148"></a><span class="tm">19:29:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I am unsure of how much reduction it will get. It will be a reduction, but at least 2 out of 3 people I've directly helped in this condition had no other coins in their wallet, as the wallet was created with a single large lump payment.
+<a name="l-149"></a><span class="tm">19:29:25</span><span class="nk"> &lt;CodeShark&gt;</span> then a separate call to check whether it failed to broadcast?
+<a name="l-150"></a><span class="tm">19:29:37</span><span class="nk"> &lt;MarcoFalke_&gt;</span> So reporting the txid would hide the fact that ATMP failed?
+<a name="l-151"></a><span class="tm">19:29:40</span><span class="nk"> &lt;gmaxwell&gt;</span> the third, however, was making large chains pointlessly and their problem would have been avoided by 9262.
+<a name="l-152"></a><span class="tm">19:30:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> we can't make people change the way they use the api
+<a name="l-153"></a><span class="tm">19:30:13</span><span class="nk"> &lt;sipa&gt;</span> not in the short term
+<a name="l-154"></a><span class="tm">19:30:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> 9262 is great. But whats the reason for a backport? Is a wallet function, users can and should upgrade to 0.14?
+<a name="l-155"></a><span class="tm">19:30:22</span><span class="nk"> &lt;CodeShark&gt;</span> imho, sendtoaddress should be deprecated in the long run
+<a name="l-156"></a><span class="tm">19:30:23</span><span class="nk"> &lt;morcos&gt;</span> realistically speaking what's the date when 13.2 would be out vs 14.0..  and would people be more likely to want 13.2
+<a name="l-157"></a><span class="tm">19:30:24</span><span class="nk"> &lt;wumpus&gt;</span> not in a backport at least
+<a name="l-158"></a><span class="tm">19:30:30</span><span class="nk"> &lt;CodeShark&gt;</span> but yeah, nearterm compatibility is important
+<a name="l-159"></a><span class="tm">19:30:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> we're talking about what to do in a backport
+<a name="l-160"></a><span class="tm">19:30:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> maybe, but that's totally off topic in this discussion
+<a name="l-161"></a><span class="tm">19:30:45</span><span class="nk"> &lt;gmaxwell&gt;</span> My view on what we should eventually do:  If a failure is perminante we should fail the send, and not save the txn.  If the failure is temporary, we should return the txid and rebroadcast when we can. We should try to avoid creating temporary failures.
+<a name="l-162"></a><span class="tm">19:30:48</span><span class="nk"> &lt;wumpus&gt;</span> not what to do in the long run
+<a name="l-163"></a><span class="tm">19:30:51</span><span class="nk"> &lt;CodeShark&gt;</span> right
+<a name="l-164"></a><span class="tm">19:31:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I was of the view that the case where we will ever create a non-temporary failure now is basically non-existant already.
+<a name="l-165"></a><span class="tm">19:31:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> it certainly seems infrequent
+<a name="l-166"></a><span class="tm">19:31:51</span><span class="nk"> &lt;gmaxwell&gt;</span> so I haven't given any thought to the 'not save the txn' branch above.
+<a name="l-167"></a><span class="tm">19:32:11</span><span class="nk"> &lt;gmaxwell&gt;</span> There may be fringe cases, so belt and suspenders would be good for robustness.
+<a name="l-168"></a><span class="tm">19:32:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> hmm.. not saving the tx would mean, the wallet rpc functions depend fully on the mempool policy?
+<a name="l-169"></a><span class="tm">19:32:36</span><span class="nk"> &lt;sipa&gt;</span> so rebroadcast + avoid long chains + report txid anyway... all for 0.13.2?
+<a name="l-170"></a><span class="tm">19:32:53</span><span class="nk"> &lt;morcos&gt;</span> if its really rare, it might be we just track failures to reaccept and when they hit a cerain number, stop trying and have a way of reproting those txs for manual abandonment
+<a name="l-171"></a><span class="tm">19:32:54</span><span class="nk"> &lt;wumpus&gt;</span> when do we want to do 0.13.2?
+<a name="l-172"></a><span class="tm">19:33:03</span><span class="nk"> &lt;wumpus&gt;</span> is it some short term thing or januari?
+<a name="l-173"></a><span class="tm">19:33:14</span><span class="nk"> &lt;gmaxwell&gt;</span> As far as when 0.13.2 I've personally been spending almost all my recent attention on the remaining things I thought 0.13.2 needed.  I had hoped in december.
+<a name="l-174"></a><span class="tm">19:33:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> it seems thats what people are arguing for
+<a name="l-175"></a><span class="tm">19:33:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> +1 month after 0.14?
+<a name="l-176"></a><span class="tm">19:33:31</span><span class="nk"> &lt;wumpus&gt;</span> this sounds like it still needs a lot of work and testing and new things
+<a name="l-177"></a><span class="tm">19:33:54</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> reporting the txid anyway is probably super simple... just a question of thinking about the consequences
+<a name="l-178"></a><span class="tm">19:33:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> a new 0.13 after 0.14 makes little sense
+<a name="l-179"></a><span class="tm">19:33:55</span><span class="nk"> &lt;wumpus&gt;</span> cfields also thought it was this week, he felt guilty he couldn't sign it this week :)
+<a name="l-180"></a><span class="tm">19:33:59</span><span class="nk"> &lt;gmaxwell&gt;</span> These things (and the open backport PR) are the only things I'm perosnally tracking for 0.13.2  (I made a call in #bitcoin this morning for bugreports against 0.13.1 with an eye towards getting 0.13.2 ready).
+<a name="l-181"></a><span class="tm">19:34:05</span><span class="nk"> &lt;morcos&gt;</span> so not unheard of that all these things could be merged into master by tomorrow
+<a name="l-182"></a><span class="tm">19:34:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> they're not even in master yet, I'm not sure of merging so much new stuff into a backport
+<a name="l-183"></a><span class="tm">19:35:18</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> well neither am i... i personally favor less emphasis on backports..  but i'm saying if we are going to do it, well lets get to it...
+<a name="l-184"></a><span class="tm">19:35:20</span><span class="nk"> &lt;wumpus&gt;</span> I really think we should make a choice here and solve the worst problems for 0.13.2 instead of trying to rush everything into it
+<a name="l-185"></a><span class="tm">19:35:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I didn't even know about the rebroadcast behavior that 9290 fixed until discussion about this subject. :(
+<a name="l-186"></a><span class="tm">19:35:42</span><span class="nk"> &lt;wumpus&gt;</span> could always do a 0.13.3 later
+<a name="l-187"></a><span class="tm">19:36:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I think the idea was to do it before 0.14. If after, none of these things are a problem
+<a name="l-188"></a><span class="tm">19:36:45</span><span class="nk"> &lt;gmaxwell&gt;</span> This discussion revealed that we also need the return txid anyways change, that is also a serious bug.
+<a name="l-189"></a><span class="tm">19:36:45</span><span class="nk"> &lt;morcos&gt;</span> i guess i believe that all or nothing makes sense, simply b/c anything less than the all sipa mentioned still leaves a big problem "rebroadcast + avoid long chains + report txid anyway."
+<a name="l-190"></a><span class="tm">19:36:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. Right.
+<a name="l-191"></a><span class="tm">19:37:13</span><span class="nk"> &lt;morcos&gt;</span> i would vote nothing, but i recognize i am outvoted
+<a name="l-192"></a><span class="tm">19:37:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i think the long chain avoidance is the least important in that set
+<a name="l-193"></a><span class="tm">19:37:18</span><span class="nk"> &lt;wumpus&gt;</span> but does the wallet get enough testing on 0.13.2 to warrant this?
+<a name="l-194"></a><span class="tm">19:37:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I do believe we could leave the avoidance out and at least not be buggy in any risky way. Just potentially creating a needlessly bad performance.
+<a name="l-195"></a><span class="tm">19:37:30</span><span class="nk"> &lt;wumpus&gt;</span> I sometimes even doubt it gets enough testing on master
+<a name="l-196"></a><span class="tm">19:37:48</span><span class="nk"> &lt;MarcoFalke_&gt;</span> The rc1 for 0.13.2 should probably happen in Dec, otherwise it will "overlap" with 0.14
+<a name="l-197"></a><span class="tm">19:37:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I think wallet sometimes gets more testing on backport than on master.
+<a name="l-198"></a><span class="tm">19:38:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke_:</span> agreed, and people will probably be away lot later this month
+<a name="l-199"></a><span class="tm">19:38:38</span><span class="nk"> &lt;luke-jr&gt;</span> I think there'd be value in 0.13.x beyond 0.14, but realistically it won't get enough testing, so if we want a well-tested 0.13.x we should aim for before 0.14
+<a name="l-200"></a><span class="tm">19:38:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> perhaps we should table this and (1) get the things we have open into master. (2) get a return txid fix.
+<a name="l-201"></a><span class="tm">19:38:44</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> my reason for including the avoidance would be to limit the number of people affected by the other two changes..  but i guess i'm not sure how helpful it will be.. sure
+<a name="l-202"></a><span class="tm">19:39:47</span><span class="nk"> &lt;morcos&gt;</span> it always worries me when we change the behavior
+<a name="l-203"></a><span class="tm">19:40:04</span><span class="nk"> &lt;morcos&gt;</span> it seems people are always dependent on existing behvaior or using the bitcoind in a way we didn't anticipate
+<a name="l-204"></a><span class="tm">19:40:11</span><span class="nk"> &lt;CodeShark&gt;</span> why not preserve the current behavior for the existing API call and instead create a new API call that has the desired behavior?
+<a name="l-205"></a><span class="tm">19:40:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">CodeShark:</span> bugfix with a new feature? :)
+<a name="l-206"></a><span class="tm">19:40:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I suppose what is in 0.13.2 right now is already enough for a release? we could do the wallet stuff in a 0.13.3
+<a name="l-207"></a><span class="tm">19:40:42</span><span class="nk"> &lt;gmaxwell&gt;</span> Let my summarize the bug and why I think it's important to fix.  Right now normal use of the wallet for some users can suffer inexplicible failures due to creating long transactions. These long transactions will look like the send failed, but it will still go into the wallet and _still_ be broadcast later potentially (After a restart).  Users lose access to their funds and may falsely believe a
+<a name="l-208"></a><span class="tm">19:40:42</span><span class="nk"> &lt;morcos&gt;</span> the avoidance (if its not buggy) just works magic behind the scenes
+<a name="l-209"></a><span class="tm">19:40:48</span><span class="nk"> &lt;gmaxwell&gt;</span> wallet is empty. Users may double pay as a result.
+<a name="l-210"></a><span class="tm">19:40:56</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="hi">CodeShark:</span> We'd end with an new API every release. :)
+<a name="l-211"></a><span class="tm">19:41:06</span><span class="nk"> &lt;CodeShark&gt;</span> lol
+<a name="l-212"></a><span class="tm">19:41:14</span><span class="nk"> &lt;gmaxwell&gt;</span> These are all serious money losing bugs. And are the most reported issue I've dealt with users for existing software.
+<a name="l-213"></a><span class="tm">19:41:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> I think the point is fixing the current behavior
+<a name="l-214"></a><span class="tm">19:41:56</span><span class="nk"> &lt;CodeShark&gt;</span> the current behavior is it still stores the transaction in the wallet even if ATMP fails?
+<a name="l-215"></a><span class="tm">19:41:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> this is all besides the issue. the current behaviour is clearly broken in numerous ways, and it should be fixed
+<a name="l-216"></a><span class="tm">19:42:17</span><span class="nk"> &lt;gmaxwell&gt;</span> if not for that, I wouldn't bother with wanting any of this backported.
+<a name="l-217"></a><span class="tm">19:42:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> new APIs are possible that avoid some of the pitfalls we've learned about in earlier designs
+<a name="l-218"></a><span class="tm">19:42:32</span><span class="nk"> &lt;gmaxwell&gt;</span> (not for the fact that people are hitting it and can lose money as a result)
+<a name="l-219"></a><span class="tm">19:42:47</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> <span class="hi">gmaxwell:</span> 'long chains of txs' or just large txs for inexplicable failures?
+<a name="l-220"></a><span class="tm">19:43:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">Chris_Stewart_5:</span> large transactions will not cause the behavior I described.
+<a name="l-221"></a><span class="tm">19:43:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> yes
+<a name="l-222"></a><span class="tm">19:43:20</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="hi">Chris_Stewart_5:</span> mempool chains.
+<a name="l-223"></a><span class="tm">19:43:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree with gmaxwell: But I think we must at least offer a way how to detect this on the RPC consumer side and mention it in the release nots
+<a name="l-224"></a><span class="tm">19:43:23</span><span class="nk"> &lt;gmaxwell&gt;</span> The send mail fail but the failure is clean and won't freeze the users funds and/or send anyways.
+<a name="l-225"></a><span class="tm">19:43:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Reporting txid seems to be the sane way for a backport IMO
+<a name="l-226"></a><span class="tm">19:43:54</span><span class="nk"> &lt;gmaxwell&gt;</span> I think reporting the txid is correct too. I agree.
+<a name="l-227"></a><span class="tm">19:44:21</span><span class="nk"> &lt;gmaxwell&gt;</span> If its possible that the send will go through we must report the txid. Right now we don't.
+<a name="l-228"></a><span class="tm">19:44:33</span><span class="nk"> &lt;luke-jr&gt;</span> another potential way to address this particular case, would be to simply toggle the default of -spendzeroconfchange I think?
+<a name="l-229"></a><span class="tm">19:44:42</span><span class="nk"> &lt;wumpus&gt;</span> yes, if the transaction is added to the wallet it should be reported
+<a name="l-230"></a><span class="tm">19:44:53</span><span class="nk"> &lt;luke-jr&gt;</span> not the best way, but perhaps good enough to solve the critical part of the issue
+<a name="l-231"></a><span class="tm">19:45:03</span><span class="nk"> &lt;morcos&gt;</span> I'd rather spend less days arguing about it and more days testing the RC that fixes it...   so can someone add the report txid anyway PR and lets merge that, #9262 and #9290 into master
+<a name="l-232"></a><span class="tm">19:45:05</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+<a name="l-233"></a><span class="tm">19:45:07</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+<a name="l-234"></a><span class="tm">19:45:09</span><span class="nk"> &lt;gmaxwell&gt;</span> None of the users reporting issues I worked with had been tripped up by the failure to return a txid (at least not that they noticed).
+<a name="l-235"></a><span class="tm">19:45:12</span><span class="nk"> &lt;wumpus&gt;</span> and that doesn't sound like a very risky or large change
+<a name="l-236"></a><span class="tm">19:45:22</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="cmd">#action </span><span class="cmdline">create report txid patch</span>
+<a name="l-237"></a><span class="tm">19:45:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">MarcoFalke_:</span> already on it
+<a name="l-238"></a><span class="tm">19:45:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> nice!
+<a name="l-239"></a><span class="tm">19:45:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> (just wanted to start) :)
+<a name="l-240"></a><span class="tm">19:45:59</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> are you typing one-handed, its taking you a while
+<a name="l-241"></a><span class="tm">19:46:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i just switched to my laptop
+<a name="l-242"></a><span class="tm">19:46:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I think szcc=0 is a huge disruptive and surprising change. :(
+<a name="l-243"></a><span class="tm">19:46:50</span><span class="nk"> &lt;wumpus&gt;</span> it's throwing out the baby with the bath water too
+<a name="l-244"></a><span class="tm">19:47:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> but it can't result in losing money (I agree a proper fix would be better though)
+<a name="l-245"></a><span class="tm">19:47:14</span><span class="nk"> &lt;gmaxwell&gt;</span> it's almost like "we could make sendtoaddress always fail." :) yes, that would fix the problem.. but..
+<a name="l-246"></a><span class="tm">19:47:30</span><span class="nk"> &lt;wumpus&gt;</span> if it is really a critical problem we could consider that
+<a name="l-247"></a><span class="tm">19:47:57</span><span class="nk"> &lt;gmaxwell&gt;</span> but I suppose I would consider it if we really felt we couldn't do a better fix soon.
+<a name="l-248"></a><span class="tm">19:47:59</span><span class="nk"> &lt;wumpus&gt;</span> I remember we've done that before, in the time of the malleability problem
+<a name="l-249"></a><span class="tm">19:48:04</span><span class="nk"> &lt;wumpus&gt;</span> but preferably not, no
+<a name="l-250"></a><span class="tm">19:48:40</span><span class="nk"> &lt;gmaxwell&gt;</span> but I think we have a collection of better fixes which (with the txid return) will be more than sufficient.
+<a name="l-251"></a><span class="tm">19:48:50</span><span class="nk"> &lt;gmaxwell&gt;</span> so I'd rather not think about szcc=0. :)
+<a name="l-252"></a><span class="tm">19:48:54</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-253"></a><span class="tm">19:49:13</span><span class="nk"> &lt;morcos&gt;</span> actually i guess its not as simple as i thought
+<a name="l-254"></a><span class="tm">19:50:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> returning a txid?
+<a name="l-255"></a><span class="tm">19:50:10</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15sipa opened pull request #9302: Return txid even if ATMP fails for new transaction (06master...06failedtxid) 02https://github.com/bitcoin/bitcoin/pull/9302
+<a name="l-256"></a><span class="tm">19:50:16</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe thats as simple as
+<a name="l-257"></a><span class="tm">19:50:35</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ yep, thats the change I imagined.
+<a name="l-258"></a><span class="tm">19:50:58</span><span class="nk"> &lt;CodeShark&gt;</span> I never thought sendtoaddress was a reliable call as far as error handling so I sort of stopped thinking about how to do the error handling from the app side - not sure what issues people have had because of this behavior
+<a name="l-259"></a><span class="tm">19:51:03</span><span class="nk"> &lt;morcos&gt;</span> ha ha ha
+<a name="l-260"></a><span class="tm">19:51:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> I think you should also change the logprint ("CommitTransaction(): Error: Transaction not valid, %s\n"), but meh, OT.
+<a name="l-261"></a><span class="tm">19:51:47</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> +1 :)
+<a name="l-262"></a><span class="tm">19:51:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> we don't know if it's not valid
+<a name="l-263"></a><span class="tm">19:52:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> wait, i don't see the change
+<a name="l-264"></a><span class="tm">19:52:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> "ATMP failed" or something.
+<a name="l-265"></a><span class="tm">19:52:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> maybe that was the point of jonasschnelli's comment
+<a name="l-266"></a><span class="tm">19:52:22</span><span class="nk"> &lt;sipa&gt;</span> ah!
+<a name="l-267"></a><span class="tm">19:52:35</span><span class="nk"> &lt;sipa&gt;</span> i thought you said "change it TO ..."
+<a name="l-268"></a><span class="tm">19:52:59</span><span class="nk"> &lt;morcos&gt;</span> thanks sipa
+<a name="l-269"></a><span class="tm">19:53:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> No. Just criticised the current one.
+<a name="l-270"></a><span class="tm">19:53:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Thanks sipa.
+<a name="l-271"></a><span class="tm">19:53:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Next time please faster
+<a name="l-272"></a><span class="tm">19:53:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">so:</span> action proposed, 9302, 9290, 9262 and help get them into master.
+<a name="l-273"></a><span class="tm">19:53:18</span><span class="nk"> &lt;luke-jr&gt;</span> ._.
+<a name="l-274"></a><span class="tm">19:53:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> concur
+<a name="l-275"></a><span class="tm">19:53:45</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> sgtm
+<a name="l-276"></a><span class="tm">19:54:01</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i think thats the stable equilibrium... if 9262 seems dicey we can ditch, but i think its good
+<a name="l-277"></a><span class="tm">19:54:04</span><span class="nk"> &lt;morcos&gt;</span> can we briefly discuss tx expiry if no one else has another unrelated topic
+<a name="l-278"></a><span class="tm">19:54:18</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, 9262 is the most optional, esp with the first two in.
+<a name="l-279"></a><span class="tm">19:54:25</span><span class="nk"> &lt;wumpus&gt;</span> at least 9290 and 9302
+<a name="l-280"></a><span class="tm">19:54:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I would like to discuss expiry.
+<a name="l-281"></a><span class="tm">19:54:42</span><span class="nk"> &lt;wumpus&gt;</span> the latter should obv get into master but not sure about 0.13.2
+<a name="l-282"></a><span class="tm">19:54:46</span><span class="nk"> &lt;MarcoFalke_&gt;</span> <span class="cmd">#action </span><span class="cmdline">9302, 9290, 9262 for master (and backport), 9262 optional backport</span>
+<a name="l-283"></a><span class="tm">19:55:00</span><span class="nk"> &lt;MarcoFalke_&gt;</span> ^fine this way?
+<a name="l-284"></a><span class="tm">19:55:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">mempool expiry time increase</span>
+<a name="l-285"></a><span class="tm">19:55:16</span><span class="nk"> &lt;instagibbs&gt;</span> I still think preferential coin choosing should go in, even if we drop the abort
+<a name="l-286"></a><span class="tm">19:55:17</span><span class="nk"> &lt;wumpus&gt;</span> 5 minutes to go ^^
+<a name="l-287"></a><span class="tm">19:55:20</span><span class="nk"> &lt;instagibbs&gt;</span> sorry, continue
+<a name="l-288"></a><span class="tm">19:55:23</span><span class="nk"> &lt;morcos&gt;</span> i'd like to raise the time to at least 1 week... although we could use a few more heads thinking about whether there are any issues.. obv after 9290, it doesn't matter as much for gtting yhour own txs confirmed
+<a name="l-289"></a><span class="tm">19:55:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> I'd like to default the abort to off, with the rest it won't be needed. We can discuss later.
+<a name="l-290"></a><span class="tm">19:55:55</span><span class="nk"> &lt;morcos&gt;</span> but i think if we want to be able to fully utilize weekly cycles in the tx volume, then we need to have txs which sit around for a week or more to measure how long it takes them to get confirmed
+<a name="l-291"></a><span class="tm">19:56:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> would it make much of a difference in practice? wouldn't the transactions be evicted due to the mempool limit first?
+<a name="l-292"></a><span class="tm">19:56:26</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> I can't think of any reason this wouldn't be okay. (but haven't given it thought before now)
+<a name="l-293"></a><span class="tm">19:56:28</span><span class="nk"> &lt;morcos&gt;</span> i'm not really sure that the problems that expiry were meant to protect against are actually any more prevent with 3 days vs say 14
+<a name="l-294"></a><span class="tm">19:56:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I do believe I made the argument for a week way back when on this basis.  OTOH, the mempool is simply not large enough to exploit the weekly cycle currently.
+<a name="l-295"></a><span class="tm">19:56:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> apart from that I don't see any problems with it
+<a name="l-296"></a><span class="tm">19:57:05</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> no.. any tx with fee rate &gt; 1.5 sat / byte gets evicted b/c of 3 day limit and would otherwise get mined within a week (and usually does b/c of rebroadcast)
+<a name="l-297"></a><span class="tm">19:57:07</span><span class="nk"> &lt;instagibbs&gt;</span> does the wallet "abort" if it drops from mempool, or does it resubmit
+<a name="l-298"></a><span class="tm">19:57:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i think the expectation should be that everything in the mempool leaves it either due to accept/conflict or fee based eviction
+<a name="l-299"></a><span class="tm">19:57:12</span><span class="nk"> &lt;instagibbs&gt;</span> I assume resubmits
+<a name="l-300"></a><span class="tm">19:57:16</span><span class="nk"> &lt;gmaxwell&gt;</span> My view on the expiration is that it removes high fee cruft that got softforked out but is taking up your mempool.
+<a name="l-301"></a><span class="tm">19:57:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> its way more than big enough for a week cycle
+<a name="l-302"></a><span class="tm">19:57:32</span><span class="nk"> &lt;morcos&gt;</span> b/c remember it only has to hodl backlog
+<a name="l-303"></a><span class="tm">19:57:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> expiration is for things that somehow linger much longer
+<a name="l-304"></a><span class="tm">19:57:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yeah, but if thats actually happening 3 days is way too long, and is breaking yoru fee estimates already
+<a name="l-305"></a><span class="tm">19:58:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> okay point so long as it is at least as big as the daily cycle, txn can persist through the week.
+<a name="l-306"></a><span class="tm">19:58:12</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-307"></a><span class="tm">19:58:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> abort right now, the idea of #9290 is to change that and make it reaccept on rebroadcast
+<a name="l-308"></a><span class="tm">19:58:16</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9290 | Make RelayWalletTransaction attempt to AcceptToMemoryPool. by gmaxwell · Pull Request #9290 · bitcoin/bitcoin · GitHub
+<a name="l-309"></a><span class="tm">19:58:50</span><span class="nk"> &lt;morcos&gt;</span> ok, i'd propose 14 days, so we don't have this problem again... and lets just think about whether anyone can think of any problems with it
+<a name="l-310"></a><span class="tm">19:58:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> in terms of fee estimates, we can address that by using a narrower filter... e.g. only consider transactions which are structurally similar to our own.. but a seperate topic.
+<a name="l-311"></a><span class="tm">19:59:08</span><span class="nk"> &lt;gmaxwell&gt;</span> also the expiration hardly works now in any case.
+<a name="l-312"></a><span class="tm">19:59:13</span><span class="nk"> &lt;sdaftuar&gt;</span> there's one other advantage of 3 days versusu a week, which is being able to double-spend a too-low-fee tx.  after fee bumping, i think this reason largely goes away
+<a name="l-313"></a><span class="tm">19:59:20</span><span class="nk"> &lt;morcos&gt;</span> i don't think we can really take advantage of it until we change fee estimates...  but i'd rather have more of the network behaving similarilyh
+<a name="l-314"></a><span class="tm">19:59:28</span><span class="nk"> &lt;morcos&gt;</span> and after 9290
+<a name="l-315"></a><span class="tm">19:59:30</span><span class="nk"> &lt;gmaxwell&gt;</span> if you are connectable there are 'helpful' parties that connect and spam you with a zillion old txn.
+<a name="l-316"></a><span class="tm">19:59:32</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, that's too weeks of nodes not accepting fee bumps if you mess up and don't do bip125 (not sure how big an issue that is but still)
+<a name="l-317"></a><span class="tm">19:59:32</span><span class="nk"> &lt;morcos&gt;</span> you have a tiny windo
+<a name="l-318"></a><span class="tm">19:59:32</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> good point
+<a name="l-319"></a><span class="tm">19:59:50</span><span class="nk"> &lt;instagibbs&gt;</span> even with manual bumping*
+<a name="l-320"></a><span class="tm">20:00:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> I think it doesn't matter for replacement.
+<a name="l-321"></a><span class="tm">20:00:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> but after 9290 your tx comes again anyway, you just lose the information that its old
+<a name="l-322"></a><span class="tm">20:00:19</span><span class="nk"> &lt;gmaxwell&gt;</span> Right now replacement of non-replacable transactions works even a day later fine, due to restarts and fullrbf miners.
+<a name="l-323"></a><span class="tm">20:00:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">instagibbs:</span> if the fee is that excessively small though, it will get bumped out by non-conflicting transactions sooner probably
+<a name="l-324"></a><span class="tm">20:00:22</span><span class="nk"> &lt;morcos&gt;</span> i want to retain that information
+<a name="l-325"></a><span class="tm">20:00:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> also what luke said.
+<a name="l-326"></a><span class="tm">20:00:46</span><span class="nk"> &lt;morcos&gt;</span> nothing with a fee rate &gt; 1.5 sat / byte as ever been evicted due to low fee rate
+<a name="l-327"></a><span class="tm">20:00:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> does it need to be 14 days or is 7 sufficient to exploit the weekly cycle?
+<a name="l-328"></a><span class="tm">20:01:15</span><span class="nk"> &lt;morcos&gt;</span> i don't know... maybe 7.. but maybe you need more data points that are older than that to know things that don't get confirmed in 7 days
+<a name="l-329"></a><span class="tm">20:01:18</span><span class="nk"> &lt;morcos&gt;</span> which is kind of importnat
+<a name="l-330"></a><span class="tm">20:01:27</span><span class="nk"> &lt;gmaxwell&gt;</span> oh I see, for the estimator.
+<a name="l-331"></a><span class="tm">20:02:02</span><span class="nk"> &lt;sipa&gt;</span> very short announcement: github now supports listing reviewers for your PR... always feel free to list me
+<a name="l-332"></a><span class="tm">20:02:04</span><span class="nk"> &lt;morcos&gt;</span> anyway, all i wanted to do is raise the topic, so other people cna think of potential problems
+<a name="l-333"></a><span class="tm">20:02:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> OKAY!
+<a name="l-334"></a><span class="tm">20:02:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> just open an PR and set sipa as the reviewer. Done.
+<a name="l-335"></a><span class="tm">20:02:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
