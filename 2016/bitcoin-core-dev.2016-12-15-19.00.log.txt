@@ -1,0 +1,228 @@
+19:00:42 <wumpus> #startmeeting
+19:00:42 <lightningbot> Meeting started Thu Dec 15 19:00:42 2016 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:42 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:48 <jonasschnelli> here
+19:00:52 <wumpus> proposed topics?
+19:01:03 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:01:08 <sdaftuar> hi
+19:01:15 <wumpus> + jl2012
+19:01:24 <gmaxwell> I was going to talk about some backlog but almost all of it got merged.
+19:01:28 <instagibbs> oh right
+19:01:31 * gmaxwell looks
+19:01:44 <cfields> sick and useless, but here
+19:02:28 <BlueMatt> cfields: ouch you got it now, too?
+19:02:44 <cfields> BlueMatt: mine was nice enough to wait until the flight home :\
+19:02:47 <wumpus> #9322 seems to need discussion
+19:02:49 <gribble> https://github.com/bitcoin/bitcoin/issues/9322 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:02:58 <phantomcircuit> hi
+19:03:01 <instagibbs> interesting issue
+19:03:04 <wumpus> "Don't set unknown rpcserialversion"
+19:03:12 <gmaxwell> #9322
+19:03:14 <gribble> https://github.com/bitcoin/bitcoin/issues/9322 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:03:16 <BlueMatt> #9352 needs to move forward quickly for fibre/some current network issues
+19:03:18 <gribble> https://github.com/bitcoin/bitcoin/issues/9352 | Attempt reconstruction from all compact block announcements by sdaftuar · Pull Request #9352 · bitcoin/bitcoin · GitHub
+19:03:34 <wumpus> looks like there is disagreement about whether it should be done at all
+19:04:04 <BlueMatt> wumpus: on which?
+19:04:08 <wumpus> the one I just mentioned
+19:05:11 <gmaxwell> I don't see the disagreement on 9332?
+19:05:31 <instagibbs> luke-jr seemingly does
+19:05:34 <wumpus> #9352 is 21 hours old, that could hardly be called backlog
+19:05:36 <gribble> https://github.com/bitcoin/bitcoin/issues/9352 | Attempt reconstruction from all compact block announcements by sdaftuar · Pull Request #9352 · bitcoin/bitcoin · GitHub
+19:05:41 <gmaxwell> The purpose of the change is to return an error if you ask for seralization version 9 on software that supports 0/1.
+19:05:52 <BlueMatt> wumpus: didnt say backlog, said critical to address current ongoing network issues
+19:05:54 <instagibbs> yes I think that's well understood
+19:06:01 <gmaxwell> we can talk about that next.
+19:06:18 <wumpus> would have been useful if luke-jr was here
+19:06:32 <kanzure> hi. late.
+19:06:37 <gmaxwell> oh missed his comment.
+19:06:41 <phantomcircuit> #9332
+19:06:43 <gribble> https://github.com/bitcoin/bitcoin/issues/9332 | Let wallet importmulti RPC accept labels for standard scriptPubKeys (on top of #9331) by ryanofsky · Pull Request #9332 · bitcoin/bitcoin · GitHub
+19:07:10 <gmaxwell> I read luke's comment as saying he wanted a "max you support" version.
+19:07:12 <phantomcircuit> you mean 9322?
+19:07:42 <gmaxwell> and the response was that this was expected to be the default. Or at least thats my understanding.
+19:07:46 <jtimon> is luke's comment related to https://github.com/bitcoin/bitcoin/pull/9322/files#r92147938 ?
+19:08:19 <gmaxwell> I agree that being able to ask for a max possible is fine. (though 9999 isn't an especially good number for it. :P)
+19:08:26 <instagibbs> I think #9262 is ready, but some disagreement over default value?
+19:08:28 <gribble> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+19:08:39 <jtimon> do we have a topic?
+19:08:46 <gmaxwell> jtimon: pr backlog
+19:09:03 <wumpus> gmaxwell: in any case that doesn't have to be done in that pull, so we can just go ahead and merge it
+19:09:16 <gmaxwell> ACK
+19:10:01 <gmaxwell> in 9262 I don't believe this should default to on, for the same reason that spending unconfirmed coins is enabled by default.
+19:10:27 <gmaxwell> The transactions will be queued in the wallet and periodically rebroadcast (due to other fixes) and go out once they're no longer overlimit.
+19:10:43 <gmaxwell> the meat of the change was avoiding those cases (sometimes) when it could.
+19:10:54 <cfields> #9289 is holding up the next round of changes, and I believe the linked issue is unrelated
+19:10:56 <gribble> https://github.com/bitcoin/bitcoin/issues/9289 | net: drop boost::thread_group by theuni · Pull Request #9289 · bitcoin/bitcoin · GitHub
+19:10:58 <instagibbs> with other fixes I'm completely comfortable with it off by default.
+19:10:59 <bitcoin-git> [13bitcoin] 15laanwj pushed 3 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/756374c522c4...c9e00591cd3f
+19:11:00 <bitcoin-git> 13bitcoin/06master 1480d073c 15Pieter Wuille: Complain when unknown rpcserialversion is specified
+19:11:00 <bitcoin-git> 13bitcoin/06master 14fa615d3 15MarcoFalke: [qa] Don't set unknown rpcserialversion
+19:11:01 <bitcoin-git> 13bitcoin/06master 14c9e0059 15Wladimir J. van der Laan: Merge #9322: [qa] Don't set unknown rpcserialversion...
+19:11:06 <cfields> (though maybe #9212 deserves a topic of its own)
+19:11:07 <gribble> https://github.com/bitcoin/bitcoin/issues/9212 | Assertion failed: (nSendVersion != 0), function GetSendVersion, file ./net.h, line 775. · Issue #9212 · bitcoin/bitcoin · GitHub
+19:11:12 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #9292: Complain when unknown rpcserialversion is specified (06master...06nofutureserial) 02https://github.com/bitcoin/bitcoin/pull/9292
+19:11:53 <wumpus> cfields: agreed
+19:12:58 <wumpus> ok, so #9262 off by default? should it still be backported then?
+19:13:01 <gribble> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+19:13:14 <BlueMatt> cfields/wumpus: I think there is a fix commit for 9212 on the issue page at the bottom (I havent pr'ed yet because testing, but I think it'd work)
+19:13:28 <gmaxwell> wumpus: yes, it should, the main thing in the change is that it avoids creating those poorly propagating transactions when it's possible.
+19:13:42 <gmaxwell> (My opinion)
+19:13:44 <sipa> wumpus: 9262 does 2 things 1) avoid long chains 2) pre-reject created wallet transactions that would exceed limits
+19:13:51 <wumpus> gmaxwell: so it still does something even if it's disabled? okay
+19:13:52 <sipa> wumpus: only 2 is optional
+19:13:59 <wumpus> okay, right, that wasn't clear to me
+19:14:19 <wumpus> BlueMatt: ok, will test that too
+19:14:38 <instagibbs> yes so with default off it will simply try harder to pick coins that have shorter chain length
+19:14:44 <instagibbs> rather than blindly
+19:15:06 <sipa> which won't have an effect if you're always sending your full change
+19:15:10 <sipa> but better is better
+19:15:32 <cfields> BlueMatt: the reason I didn't do that is that it hides the previous behavior. The current asserts point out issues that need to be backported to 0.13
+19:15:43 <cfields> (which admittedly should've been loud errors rather than asserts)
+19:15:46 <gmaxwell> The original suggestion to create that change was (1) based on me actually encountering users that could have avoided the long chains.
+19:16:11 <btcdrak> here
+19:16:39 <wumpus> cfields: critical issues? or nothing that needs to hold up 0.13.2?
+19:16:51 <gmaxwell> cfields: I had a node go down with-- we think-- that assert.. but can't tell where it was triggered from.
+19:16:59 <sipa> cfields: do they really need backporting?
+19:17:03 <cfields> wumpus: likely nothing critical, just possible data leaks
+19:17:20 <wumpus> so if I get this right there are now two remaining unmerged pulls that need backport to 0.13.2 https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.13.2
+19:17:26 <BlueMatt> cfields: why are those data leaks? anyway, I think we previously discussed not using nVersion != 0 for this check
+19:17:38 <wumpus> just one I mean, the other *is* a a backport
+19:17:41 <sipa> cfields: i'd say that such issues are things where we're certainly violating some of our own assumptions about how the p2p implementation works, but unlikely things that cause issues in interaction with other nodes
+19:18:14 <cfields> any assert represents some case where we should be disconnected, but instead are still sending/responding.
+19:18:25 <jtimon> #8855 could need rebase if there's new uses of Params(std::string), but if there are, they won't necessarily cause git conflicts
+19:18:35 <BlueMatt> cfields: no, in this case it means we are sending, but havent yet sent version message
+19:19:00 <gmaxwell> wumpus: I believe #9352 will be tagged for backport-- but it's too green to comment on it for the moment.
+19:19:25 <wumpus> gmaxwell: that's too bad, I hoped we could finally get this over with this week
+19:19:41 <cfields> BlueMatt: right, which specifically here means that we've refused the connection due to missing connection flags, but we're still sending/responding
+19:19:47 <wumpus> gmaxwell: can't it wait for 0.13.3?
+19:19:48 <sdaftuar> gmaxwell: should i go ahead and open the backport version of #9352?
+19:19:58 <BlueMatt> wumpus: its a relatively simple patch, I'm hopeful we still can :)
+19:20:09 <instagibbs> I will review asap
+19:20:58 <cfields> BlueMatt: let's take it up after the meeting
+19:21:03 <BlueMatt> cfields: sure
+19:23:22 <wumpus> okay, any other topics to discuss?
+19:23:32 <gmaxwell> sdaftuar: I think that would be useful.
+19:23:49 <gmaxwell> wumpus: I really want 0.13.2 in RC ASAP. just have some specific conerns about needing that. We'll work through it.
+19:24:12 <MarcoFalke> Could 9262 delay the rc?
+19:24:20 <MarcoFalke> Is it well tested?
+19:24:20 <jtimon> #8498 has been in the backlog for a while too (before that, #6445 was waiting for #6526/#6625/#6557 and friends, which were merged or closed long ago)
+19:24:35 <gmaxwell> MarcoFalke: I've tested the heck out of it. dunno about others.
+19:24:35 <MarcoFalke> (Note that it was not yet merged into master)
+19:24:49 <MarcoFalke> (I haven't really looked at it)
+19:24:56 <cfields> wumpus: regarding the assertion backports, nothing would be a regression from 0.13, so no need to delay, only a bonus if we get fixes in.
+19:25:08 <btcdrak> sdaftuar: ack on backport #9352
+19:25:28 <gmaxwell> MarcoFalke: it's the oldest of thes long-chain wallet fixes, just last to merge. as it had lots of oppturnities for shed painting and resulted in deciding to fix the other issues. :)
+19:25:39 <wumpus> MarcoFalke: there was at least the discussion to disable the setting by default, but after that change I don't know why it should hold up anything
+19:25:56 <wumpus> MarcoFalke: I don't think there's any critical concerns with it left
+19:26:05 <gmaxwell> with the default off it only changes 'non-determinstic' behavior.
+19:26:19 <gmaxwell> (selectcoins)
+19:26:27 <sipa> the patch always had the setting off by default - i was the one arguing that it should be on by default instead (and it seems few people agree, fine)
+19:26:36 <instagibbs> Hm? it was on before
+19:26:42 <instagibbs> but this is pre other 2 changes
+19:26:45 <sipa> oh? maybe before i looked at it :)
+19:27:22 <wumpus> let's just settle on having it disabled by default in the initial merge and the backport, it can always be set to be enabled by default later...
+19:27:24 <gmaxwell> sipa: you could argue for that in 0.14 later.
+19:27:31 <gmaxwell> that.
+19:27:32 <MarcoFalke> Agree wumpus
+19:28:06 <wumpus> there's no need to fix everything in one pull, or one version for that matter, sometimes things are held up too long on minor discussion points
+19:28:18 <instagibbs> better is better
+19:28:22 <wumpus> right.
+19:28:26 <MarcoFalke> morcos: gmaxwell: Do you have a strong opinion about the fLimitFree flag in the #9290
+19:28:28 <MarcoFalke> backport?
+19:28:33 <gmaxwell> sometimes better is worse, there is totally like an essay on this. :P
+19:28:47 <jtimon> sipa: just said fine on not having it on by default, didn't he?
+19:29:15 <wumpus> yes he did, I meant in general
+19:29:17 <sipa> jtimon: yes, i'm fine with it being off
+19:29:54 <wumpus> MarcoFalke: ah yes that's an important point
+19:29:55 <gmaxwell> MarcoFalke: Didn't see your question until now. will evaluate.
+19:30:13 <wumpus> so this is about this comment: https://github.com/bitcoin/bitcoin/pull/9347#discussion_r92503011
+19:30:22 <MarcoFalke> Imo it should not matter too much, but I'd rather have a second opinion
+19:30:25 <bitcoin-git> [13bitcoin] 15sdaftuar opened pull request #9357: [0.13 backport] Attempt reconstruction from all compact block announcements (060.13...06backport-optimistic-cb) 02https://github.com/bitcoin/bitcoin/pull/9357
+19:32:06 <MarcoFalke> I haven't checked if it caused issues with txes evicted from the pool due to low fee.
+19:32:53 <gmaxwell> I need to look into it carefully to make a decision on my view, not going to manage it during the meeting.
+19:33:10 <MarcoFalke> ok, other topics?
+19:34:02 <morcos> MarcoFalke: I hadn't seen the flimitFree thing before now, I'll take a look and get back to you after...  (same as gmaxwell)
+19:34:18 <MarcoFalke> great, thx
+19:34:31 <gmaxwell> We could talk about the compact block announcement stuff not the backports but the change; just so people know what the change is about.
+19:34:54 <wumpus> #topic compact block announcement stuff
+19:35:13 <gmaxwell> Right now, if someone sends us a header, we request a block and mark the block in flight. If a compact block (e.g. from a HB mode sender that sends unsolicited ones) shows up while we're waiting.. we just ignore it, instead of trying to reconstruct the block.
+19:35:55 <gmaxwell> This means that if a peer is broken and slowly transmits or fails to reply, the HB mode will fail to work around it.
+19:36:44 <gmaxwell> There is a deep rabbit hole we can go down towards optimal behavior, but what is proposed right now is a super minimal change where even if a block is in flight, we'll still see if we can recover the whole block from just the compact block. And if we can, we take it, and mark the block as complete.
+19:37:16 <wumpus> sounds sensible
+19:37:42 <gmaxwell> greater than 2/3rs of all blocks can be recovered from just the compact block (varries a lot based on miner/network behavior) so even this small improvement should be a pretty big help.
+19:37:44 <wumpus> there seems some potential for race conditions though
+19:37:46 <BlueMatt> this is especially important with prefill, where, if your peer upgrades to prefill txn in the announcement you can recover the block somtimes and recover from stalling without yourself upgrading
+19:38:25 <wumpus> what if the compact block is reconstructed, and then the inflight block comes in?
+19:38:39 <gmaxwell> wumpus: yes, though we don't count on the in-flight to protect against that, and if a full block shows up right now we'll accept it.
+19:38:54 <sdaftuar> wumpus: should not be a problem.  there's generally no downside to receiving a block you already have.
+19:38:58 <gmaxwell> wumpus: then its just like someone sending us an unsolicited full block, which we'll process if it's not best already.
+19:40:02 <wumpus> sdaftuar: in general there's no downside, just thought it'd be a potential edge case, but if that's handled that's ok
+19:40:44 <gmaxwell> In any case, I think that summarizes where that is, I have several nodes testing live right now.. obviously will need review and testing.. but I just wanted everyone to know what was going on there.
+19:44:01 <jtimon> thanks, I assume more questions about this or other topics?
+19:46:14 <achow101> when are we planning to start rc'ing for 0.13.2
+19:47:22 <wumpus> dunno, yesterday if it was up to me :p
+19:48:04 <wumpus> in any case there's still a few things open and you can help by testing and reviewing: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.13.2
+19:49:40 <wumpus> bah looks like the build is broken
+19:50:51 <wumpus> any other topics? if not we'll close the meeting early
+19:51:14 <sipa> very short report: gmaxwell and i have been experimenting with a per-txout utxo cache approach
+19:51:15 <gmaxwell> Close meeting early and make 0.13.2 great again ACK.
+19:51:25 <sipa> so far results don't look too promising
+19:51:27 <wumpus> heh
+19:51:42 <morcos> sipa: yeah i haven't looked at that yet
+19:51:46 <morcos> i'm surprised!
+19:51:56 <morcos> i was super optimistic
+19:52:00 <sipa> me too
+19:52:05 <wumpus> sipa: so grouping the utxos per transaction turns out to have been a good optimization? I'm surprised too
+19:52:12 <gmaxwell> Well when it's operating totally in memory it's 15% faster even though sipa has not exploited the new structure for better cache intelligence (so its still doing the same dumb flush thing). But when leveldb came into the picture it ate dirt.
+19:52:21 <morcos> 15% is for babies
+19:52:34 <instagibbs> what level are you on morcos :)
+19:52:52 <sdaftuar> i'm going to give a cheers for the sigcache cuckoocache merge now!
+19:53:05 <jtimon> mhm, haven't looked at the branch, are the utxo's catched per txout but stored per-tx?
+19:53:23 <sipa> jtimon: both per txout
+19:53:23 <gmaxwell> Assuming the issue isn't extra debugging sipa added, the downside is perhaps that it is just much harder on leveldb and writes a lot more traffic to the leveldb log.
+19:53:24 <BlueMatt> gmaxwell: seems like something where you can per-utxo in memory and per-tx on disk?
+19:53:46 <wumpus> BlueMatt: yes I was about to suggest that too
+19:53:51 <gmaxwell> The real gains from the change would come from making the cache smarter, so I thought 15% was great news.. since that likely came from reduced malloc traffic.
+19:53:52 <BlueMatt> i mean might lose all the performance on the boundary, but its worth a shot
+19:54:01 <jtimon> sipa: thanks. mhmm, yeah, this is surprising then
+19:54:05 <sipa> BlueMatt: that doesn't solve the O(n^2) issue with large transactions
+19:54:10 <gmaxwell> BlueMatt: yes, I made that observation too.... but it means that read modify write cycles would be needed.
+19:54:28 <wumpus> gmaxwell: yeah that would be bad...
+19:54:48 <wumpus> lookups are slow, if you need read-modify-write cycles it's not going to help performance
+19:54:55 <sipa> the O(n^2) issue is that a tx with many outputs on every spend needs to write n-i outputs to the database
+19:55:19 <gmaxwell> wumpus: yes, though it might pay for itself by the cache being much more effective. I guess we won't know until after more testing.
+19:55:19 <cfields> sdaftuar: +1. Still catching up, didn't see that got merged. Great to see :)
+19:56:08 <gmaxwell> the other negative is that it looks like this change will require a chainstate reindex. making it compatible with undo files seems really hard.
+19:56:44 <sipa> basically my reason for wanting per-txout cache is that the current behaviour may be good on average, but it's terrible for big transactions
+19:56:48 <jtimon> maybe somehow writting txouts in batches could help? (thinking out loud, may be a stupid thought)
+19:56:59 <wumpus> requiring everyone to do a chainstate reindex would be bad too :/
+19:57:05 <sipa> jtimon: we're already batching _all_ writes from many blocks
+19:57:37 <jtimon> sipa: I see, it was a stupid thought
+19:57:47 <sipa> anyway, just reporting on an experiment - nothing more at this point
+19:57:50 <morcos> gmaxwell: i'm not sure what you mean about making the cache smarter
+19:58:02 <gmaxwell> wumpus: right now everyone's chainstate is corrupted... to at some point we'll need to do something about that.  (TXversions)
+19:58:09 <wumpus> writes are pretty fast with leveldb, it's lookups/reads are slow, especially on slow disks
+19:58:09 <sipa> morcos: not wiping the cache after a write
+19:58:13 <morcos> in my view once its only keeping utxos that were actually accessed and not the rest that tagged along with the tx, then thats as smart as it gets
+19:58:29 <Chris_Stewart_5> Are we thinking txs are going to become larger in terms of inputs/outputs as Bitcoin grows? UTXO size is constantly growing right?
+19:58:34 <morcos> sipa: sure but you still have to do something when you hit memory limits
+19:58:43 <sipa> Chris_Stewart_5: i wish it were not growing at all
+19:59:01 <wumpus> batching writes more is not going to help, and batches are already huge in memory
+19:59:02 <morcos> you can save the things that are in blocks from the top of your mempool, but thats really small... small enough that it can be done pretty effectively with the existing model
+19:59:03 <sipa> Chris_Stewart_5: http://bitcoin.sipa.be/utxo_size.png
+19:59:05 <gmaxwell> morcos: yes the right thing to do is to expire only the oldest entrties at that point. Which is much cleaner when there is no such thing as entry mutation.
+19:59:12 <Chris_Stewart_5> I guess it is just interesting to hear the tidbit about terrible performance of large txs.
+19:59:14 <wumpus> gmaxwell: requiring everyone to reindex at the same time is not an acceptable solution though :)
+19:59:26 <morcos> ah, oldest, yes ok, but that requires extra state
+19:59:30 <wumpus> gmaxwell: maybe it could support two database versions for a while
+19:59:42 <sipa> Chris_Stewart_5: in general, we need to optimize worst-case performance, not average performance
+19:59:44 <wumpus> gmaxwell: new reindexes/syncs would use the new format
+20:00:01 <wumpus> in any acsae, thanks for trying this experiment
+20:00:08 <sipa> Chris_Stewart_5: as a large difference between worst-case and average means we could be missing DoS opportunities where an attacker can force us into the worsr
+20:00:10 <gmaxwell> wumpus: if it made it N fold faster, than reindex on a new version... might be something we could have happen. I think perhaps we'd want to finish your snapshooting work and other things at the same time. ... in any case it's just an expirement now.
+20:00:16 <wumpus> even if it turns out it's not better it's good to know this for sure
+20:00:37 <gmaxwell> it also has resulted in some other optimizations, e.g. the flushing optimization PR that we have right now.
+20:00:41 <sipa> Chris_Stewart_5: but it's really sad when you need to decrease your average performance in order to improve the worst case... because people don't observe the worst case
+20:00:51 <wumpus> gmaxwell: if it was possible to convert the old database to the new database without a reindex (e.g. just rewriting) then an upgrade process would be acceptable. But a full reindex? no
+20:01:02 <gmaxwell> Good, the meeting has run over, so all is well with the world. :)
+20:01:08 <wumpus> #endmeeting
