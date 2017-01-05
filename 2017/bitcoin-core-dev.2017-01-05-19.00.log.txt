@@ -1,0 +1,383 @@
+19:00:15 <wumpus> #startmeeting
+19:00:15 <lightningbot> Meeting started Thu Jan  5 19:00:15 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:15 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:17 <jl2012> may I propose a topic first? need to sleep
+19:00:22 <petertodd> hi
+19:00:26 <BlueMatt> jl2012: go
+19:00:39 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:00:44 <jonasschnelli> Hi
+19:00:49 <jl2012> proposed topic: repair the fork warning system: https://github.com/bitcoin/bitcoin/pull/9443
+19:01:00 <wumpus> #topic  repair the fork warning system
+19:01:09 <sipa> concept ack on fixing it if it's broken!
+19:01:17 <BlueMatt> concept ack 100%
+19:01:22 <wumpus> haha yes concept ack. Haven't looked at the code yet.
+19:01:28 <sipa> i haven't had time to look at the details... 0.14 is getting close
+19:01:28 <jl2012> but this is more than just fixing it
+19:01:37 <BlueMatt> but we've fucked that up several times already, so needs careful review, I think
+19:01:44 <instagibbs_> here
+19:01:56 <sipa> jl2012: elaborate?
+19:02:04 <jl2012> it also stores invalid headers
+19:02:07 <morcos> jl2012: are you trying to say you think it NEEDS to be in 0.14
+19:02:43 <phantomcircuit> huh what
+19:02:43 <jtimon> oh, meeting, wasn't planning on attending today, but really nothing to do until one hour from now...
+19:02:45 <phantomcircuit> oh
+19:02:47 <jl2012> specifically, it stores valid headers under an invalid block
+19:03:00 <kanzure> hi.
+19:03:01 <jl2012> also, headers with invalid nVersion are stored
+19:03:10 <sipa> jl2012: but those do have valid PoW?
+19:03:14 <jl2012> yes
+19:03:22 <jl2012> and valid nTime
+19:03:23 <sipa> iirc that is our only invariant for the storage of headers
+19:03:30 <BlueMatt> jl2012: do we need to store them or can we just store them in memory?
+19:03:38 <BlueMatt> but, I'm fine either way
+19:04:03 <BlueMatt> looking at invalid headers with valid pow for user-warnings sounds good to me
+19:04:09 <wumpus> stored headers are forever, both on disk and in memory, unfortunately
+19:04:10 <sipa> there may be some DoS avenues that open up due to it, if they get accepted for chains that fork off early on
+19:04:14 <luke-jr> jl2012: does this do anything to address that nodes sending us such chains will be DoS banned
+19:04:15 <luke-jr> ?
+19:04:29 <jl2012> won't be banned
+19:04:34 <sipa> (but i shouldn't comment on that before looking at code)
+19:04:38 <gmaxwell> I feel pretty blah about the utlity of that warning system, and warnings in general. I think we've burned people out with false warnings, and they weren't used usefully by most to begin with. :(
+19:04:58 <wumpus> the alternative to fixing it would be to just disable the system, at least for 0.14
+19:05:04 <BlueMatt> gmaxwell: having reliable warning messages is the first step towards fixing that trust :)
+19:05:04 <luke-jr> jl2012: so this removes the DoS banning for invalid blocks?
+19:05:21 <jl2012> luke-jr: just for valid header
+19:05:31 <wumpus> shipping it broken, especially with risk of false positives, indeed isn't going to do anything good
+19:05:41 <jl2012> if the block content is invalid (e.g. invalid script), still banned
+19:06:00 <gmaxwell> There is currently no false positive risk from it AFAIK.
+19:06:03 <luke-jr> jl2012: which will lead to you not getting future headers
+19:06:07 <petertodd> jl2012: to be clear, if the block is too large it will be banned as well?
+19:06:09 <wumpus> having to store more data forever just to be able to warn seems a bit inefficient to me though
+19:06:27 <jtimon> mhmm, the block is still invalid here, no? https://github.com/bitcoin/bitcoin/pull/9443/files#diff-24efdb00bfbe56b140fb006b562cc70bR3038
+19:06:29 <wumpus> the block headers are never pruned, and all loaded into memory at start
+19:06:30 <BlueMatt> petertodd: i dont think it changes anything wrt consensus code? the way I read it
+19:06:33 <gmaxwell> petertodd: we can't even deseralize it if its too large so how would we even know if the contet were invalid.
+19:06:35 <jl2012> petertodd: should be, I don't change that part
+19:06:37 <BlueMatt> petertodd: /any/ consensus logic
+19:06:42 <sipa> i wonder if we need a detection of internal consensus errors (database corruption, CPU overheating, ...)
+19:06:54 <petertodd> gmaxwell: we can deserialize if it's only a little bit too large though IIRC
+19:06:58 <sipa> because 99.999% of all fork warning that are seen in practice as just broken nodes
+19:07:03 <gmaxwell> An invarient we have right now is that we depnd on banning to make sure all our connection slots are not consumed by peers that are on an incompatible blockchain.
+19:07:23 <gmaxwell> sipa: I think we do.
+19:07:53 <gmaxwell> sipa: which ultimately should be used to trigger recovery from chainstate backup automatically. (I think)
+19:07:55 <sipa> but i don't know how without having a thread in the background that computes Pi or so :p
+19:08:15 <morcos> jl2012: i'd like to understand the context of the discussion, is that about the change in general or whether it shoudl be in 0.14.   Is the current status of master somehow worse than 13.1/2?
+19:08:25 <wumpus> detecting database corruption on disk is pretty easy as everything is CRC-ed, CPU overheating or memory corruption on the other hand...
+19:09:01 <jl2012> morcos: I think that has broken for a few versions
+19:09:22 <gmaxwell> Broken just means that it won't trigger in all cases it might trigger, right?
+19:09:23 <wumpus> good to know, yes, if it's been broken for a few versions there's no hurry to fix it for 0.14
+19:09:25 <jl2012> so you may consider it as a new feature
+19:09:33 <jl2012> gmaxwell: yes
+19:09:35 <sipa> well it can be considered for 0.14.1 or so
+19:09:43 <sipa> if it's a bugfix (which i think it is)
+19:10:00 <wumpus> I wonder if it can be done without storing more headers though
+19:10:02 <luke-jr> but it doesn't sounds like this PR will actually fix it, and fixing it may be more complicated than it seems due to the point gmaxwell raised
+19:10:17 <gmaxwell> My understanding is that there are cases where invalid blocks make us ignore later headers (normally a good thing) which will prevent them from triggering the warning.
+19:10:35 <wumpus> I really don't like storing otherwise unnecessary data forever
+19:10:42 <BlueMatt> wumpus: store only headers required to prove to yourself upon restart that you should display a warning, and prune the (separate) storage for that?
+19:10:49 <sipa> we could prune old header chains
+19:10:54 <sipa> (both from disk and memory)
+19:10:59 <BlueMatt> or that
+19:11:03 <BlueMatt> from memory....sounds hard
+19:11:08 <wumpus> we could, sure, but right now we don't, so should be careful not to store more than necessary
+19:11:09 <BlueMatt> on-disk/restart-only sounds doable
+19:11:14 <petertodd> wumpus: provided theres a reasonable minimum PoW to storing it, it'll never be all *that* much extra data given it's just headers
+19:11:14 <jtimon> re: invariant for storage of headers: remind you that matt moved the nTime check from CheckBlockHeader() to ContextualCheckBlockHeader()
+19:11:15 <sipa> yeah, on restart it trivial
+19:11:25 <wumpus> yes on startup would be good enough
+19:11:33 <morcos> I think it would be wise to use our limited time to concentrate on things people think are really important for 0.14, it doesn't sound like anyone is making that argument about this change?
+19:11:47 <sipa> agree
+19:11:49 <jl2012> ok, please move on
+19:11:54 <gmaxwell> I'd like improvements here, but I don't think it's 0.14 critical.
+19:12:00 <wumpus> other proposed topics?
+19:12:10 <BlueMatt> 0.14 prs-to-review...
+19:12:14 <luke-jr> morcos: this change is mostly useful to plan for a future hardfork, but I don't think it's critical it's in 0.14
+19:12:20 <wumpus> BlueMatt: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.14.0
+19:12:35 <BlueMatt> wumpus: many of those are almost certainly not gonna make it
+19:12:38 <morcos> luke-jr: heh, ok, i'll put tha ton my hard-fork planning list, i have it handy right here
+19:12:55 <wumpus> BlueMatt: that's a chicken-egg problem though as it depends on who reviews it
+19:13:00 <BlueMatt> true
+19:13:13 <sipa> so the topic here for the discussion should be what to prioritize for review
+19:13:16 <wumpus> I agree, though
+19:13:29 <BlueMatt> well if we're short for topics parallel processmessages...if folks think they will not have time to review it, then I'll skip it, but I have one based on cory's current net pr at https://github.com/theuni/bitcoin/compare/connman-locks...TheBlueMatt:2017-01-parallel-processmessages?expand=1
+19:13:31 <cfields> agree with sipa
+19:13:47 <BlueMatt> and think it would be a huge improvement for some use-cases
+19:13:49 <wumpus> I just meant that the lis is already very long, so let's at least try not to add much more
+19:13:53 <sipa> so open question: what would people like to see in 0.14, if review effort wasn't a bottleneck
+19:14:01 <wumpus> named arguments
+19:14:03 <BlueMatt> or, what is the priority
+19:14:03 <gmaxwell> I really feel uncomfortable with last minute concurrency changes.
+19:14:06 <jtimon> proposed topic: custom blockchains for 0.14 (ie how realistic it is to hope to get https://github.com/bitcoin/bitcoin/pull/8994 merged for 0.14 ? )
+19:14:13 <luke-jr> there was some desire for #8775 #8694 #7533 in 0.14, but they're not tagged as such
+19:14:15 <gribble> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+19:14:17 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:14:19 <gribble> https://github.com/bitcoin/bitcoin/issues/7533 | RPC: sendrawtransaction: Allow the user to ignore/override specific rejections by luke-jr · Pull Request #7533 · bitcoin/bitcoin · GitHub
+19:14:21 <jtimon> custom chainparams really
+19:14:23 <BlueMatt> gmaxwell: it tries very hard to limit concurrency changes - its whitelisted on messages, plus other things
+19:14:39 <wumpus> gmaxwell: same
+19:14:54 <morcos> i'd like to see the improvements to block relay #9375, #9441, #9447 and possibly parallel ProcessMessages
+19:14:56 <BlueMatt> gmaxwell: no open prs of mine make any significant concurrency changes
+19:14:57 <gribble> https://github.com/bitcoin/bitcoin/issues/9375 | Relay compact block messages prior to full block connection by TheBlueMatt · Pull Request #9375 · bitcoin/bitcoin · GitHub
+19:14:59 <gribble> https://github.com/bitcoin/bitcoin/issues/9441 | Net: Massive speedup. Net locks overhaul by theuni · Pull Request #9441 · bitcoin/bitcoin · GitHub
+19:15:00 <gribble> https://github.com/bitcoin/bitcoin/issues/9447 | Allow 2 simultaneous block downloads by morcos · Pull Request #9447 · bitcoin/bitcoin · GitHub
+19:15:08 <BlueMatt> gmaxwell: or at least they try hard not to
+19:15:14 <BlueMatt> s/not//
+19:15:18 <cfields> wumpus: +1 for named arguments. Will re-review.
+19:15:31 <gmaxwell> BlueMatt: we really have inadequate testing there, as cfield's version assert has shown us.
+19:15:35 <morcos> +1 on named arguments as well... will amke future PR's easier/better
+19:15:49 <BlueMatt> gmaxwell: helgrind works well, it turns out :), but, agreed
+19:16:03 <gmaxwell> BlueMatt: only if you actually execute the codepaths.
+19:16:15 <BlueMatt> sure
+19:16:29 <gmaxwell> Where are we with the multiwallet support?
+19:16:35 <cfields> BlueMatt: maybe you could briefly describe what you're hoping to immediately improve?
+19:16:46 <instagibbs_> gmaxwell: there's one refactor outsanding I believe
+19:16:59 <luke-jr> gmaxwell: 3 PRs left, 9375 and 9441
+19:17:15 <sipa> 9441? sure?
+19:17:21 <luke-jr> err
+19:17:23 <instagibbs_> 8775
+19:17:26 <luke-jr> 8775 8694*
+19:17:35 <gmaxwell> I had been hoping for that and the utxo scriptpubkey index (#8660) in 0.14, but it looks like the latter has been abandoned by its requester.
+19:17:37 <gribble> https://github.com/bitcoin/bitcoin/issues/8660 | txoutsbyaddress index (take 2) by djpnewton · Pull Request #8660 · bitcoin/bitcoin · GitHub
+19:18:01 <wumpus> gmaxwell: yes, that's unfortunate
+19:18:39 <sipa> i'd like to see #9441 in to get the performance benefit
+19:18:39 <BlueMatt> cfields: specifically, because many miners rely on bitcoind submitblock -> p2p network latency to relay their blocks out, this ends up being pretty important for miners in several ways, so speeding up the relay (hopefully without introducing a ton of new concurrency outside of cmpctblock/getblocktxn/blocktxn message processing) would be a massive win for many miners
+19:18:41 <gribble> https://github.com/bitcoin/bitcoin/issues/9441 | Net: Massive speedup. Net locks overhaul by theuni · Pull Request #9441 · bitcoin/bitcoin · GitHub
+19:18:44 <jtimon> for efficiency, maybe https://github.com/bitcoin/bitcoin/pull/8498 helps, but nobody has found the time to benchmark that in years...
+19:19:02 <BlueMatt> yes, so multiwallet and at least the currently-open net prs are review focus
+19:19:03 <gmaxwell> wumpus: I think it's suffered less attention than it would have recieved because it's poorly labled and people keep thinking its a blockchain index.
+19:19:19 <morcos> ok well if i had to pick one, i think 9375 makes a huge difference
+19:19:42 <wumpus> gmaxwell: looks like droark might pick it up
+19:20:04 <gmaxwell> BlueMatt: well I had a PR that removed the biggest source of submitblock latency-- it's a couple lines changes,  I assume its functionality has been duplicated in one of cfields overlapping PRs that I closed that one in favor of.
+19:20:22 <morcos> if nothing else the caching of the block/cmpctblock that you are about to send to all your peers reduces the time per per from 25ms to <1ms
+19:20:58 <BlueMatt> gmaxwell: yes, its in the "Net: Massive speedup" one, but the validation time cost (which the parallel getblocktxn/processmessages stuff + the fast relay stuff fixes)
+19:21:23 <BlueMatt> gmaxwell: for current-tip you really want both, but the net stuff you're referring to isnt the only thing here
+19:21:25 <gmaxwell> I am going to be irritated if 9441 misses 0.14.  I had an alternative PR that resulted in the same speedup which I think was much less invasive, but I closed it because cfields prefered the other change because it serviced his overall refactor planning.
+19:22:01 <BlueMatt> I think that one is pretty far along, its gotten a lot of eyes even if not so much acks
+19:22:42 <BlueMatt> <BlueMatt> yes, so multiwallet and at least the currently-open net prs are review focus <-- any other things to add to that list
+19:22:44 <BlueMatt> ?
+19:22:54 <wumpus> gmaxwell: let's focus on making that one get in then (I do think there's some regression risk, as it's a pretty invasive change to do last minute)
+19:22:59 <sipa> i'll focus on the net locks overhault, named args, early compact block relay
+19:23:01 <morcos> gmaxwell: so 9441 doesn't count as concurrency changes you are worried about merging now
+19:23:12 <gmaxwell> wumpus: that was my feeling too but yea.
+19:23:18 <morcos> +1 sipa's list
+19:23:27 <gmaxwell> morcos: right, I think it's invasive but it shouldn't be meaningfully creating new concurrency.
+19:23:41 <wumpus> sgtm
+19:23:44 <wumpus> #action focus on the net locks overhault, named args, early compact block relay
+19:23:46 <BlueMatt> sip, ok, named args it is, also multi-wallet?
+19:24:10 <BlueMatt> a
+19:24:11 <gmaxwell> The caching improvements as part of early compact block are nice. One option is if we feel uncomfortable about early compact blocks is that we disable that part and just take the caching.
+19:24:11 <BlueMatt> sipa
+19:24:16 <instagibbs_> luke-jr: might make sense to split out QT stuff for time
+19:24:29 <luke-jr> instagibbs_: planning to do so, once 8775 is merged
+19:24:33 <wumpus> multi-wallet may be still too many PRs away for 0.14 , dunno how realistic it is to get that in, though we certainly can make progress with the refactors
+19:24:35 <jtimon> which pr is named args?
+19:24:48 <sipa> jtimon: #8811
+19:24:51 <gribble> https://github.com/bitcoin/bitcoin/issues/8811 | rpc: Add support for JSON-RPC named arguments by laanwj · Pull Request #8811 · bitcoin/bitcoin · GitHub
+19:24:51 <morcos> Obviously I think 9138 (improve fee estimation) needs to be merged, but i think its ACK'ed enough (excpet it had some rebases)
+19:24:54 <BlueMatt> gmaxwell: the fast-relay stuff there has been /super/ scaled back...at this point its only a) if its the first thing you're annoucing at that height, and b) if its built directly on your tip
+19:25:00 <BlueMatt> gmaxwell: so hopefully its easier to be comfortable with it
+19:25:02 <gmaxwell> On the remaining multiwallet, I felt one of the outstanding refactor PRs introduced a fair amount of not very C++ish code, but who am I to judge? and I didn't know what to recommend instead, so I asked sipa to look at it but I doubt he's had a chance yet.
+19:25:08 <luke-jr> instagibbs_: although Qt stuff ties in with RPC stuff for the debug window
+19:25:11 <wumpus> morcos: if something is ready for merge you should let me know :)
+19:25:33 <morcos> well at this point, my judgement isn't to be trusted.. :)
+19:25:53 <gmaxwell> BlueMatt: remaining concerns are things like "are we going to accidentally DOS attack our peers by announcing something and then reorging" and things like that.
+19:26:08 <jonasschnelli> Multiwallet: I think need to rebase this one: #8764
+19:26:10 <gribble> https://github.com/bitcoin/bitcoin/issues/8764 | [Wallet] get rid of pwalletMain, add simple CWallets infrastructure by jonasschnelli · Pull Request #8764 · bitcoin/bitcoin · GitHub
+19:26:13 <BlueMatt> gmaxwell: yes, hence scaling it back...been discussing it a bunch with folks in the past few days
+19:26:28 <luke-jr> jonasschnelli: that kinda conflicts with the current multiwallet stuff
+19:26:29 <jonasschnelli> Maybe https://github.com/bitcoin/bitcoin/projects/2 needs update
+19:27:09 <jtimon> maybe https://github.com/bitcoin/bitcoin/projects/6 needs to be...closed?
+19:27:32 <luke-jr> might be more efficient to do 8764 after the basic parts are in
+19:28:51 <gmaxwell> For 0.14 I really want to see the second pass through createtransaction change from morcos in... fixes some concerning fee overpayment corner case.
+19:29:01 <gmaxwell> I don't know why #9312 isn't merged yet.
+19:29:03 <gribble> https://github.com/bitcoin/bitcoin/issues/9312 | Increase mempool expiry time to 2 weeks by morcos · Pull Request #9312 · bitcoin/bitcoin · GitHub
+19:29:22 <morcos> #9404 is super easy now, although needs rebase after #9465 is merged
+19:29:24 <gribble> https://github.com/bitcoin/bitcoin/issues/9404 | Smarter coordination of change and fee in CreateTransaction. by morcos · Pull Request #9404 · bitcoin/bitcoin · GitHub
+19:29:25 <gribble> https://github.com/bitcoin/bitcoin/issues/9465 | [Wallet] Do not perform ECDSA signing in the fee calculation inner loop. by gmaxwell · Pull Request #9465 · bitcoin/bitcoin · GitHub
+19:29:45 <sipa> i read a few things about accidental extreme fee
+19:30:32 <jtimon> maybe related to estimate fee for the very next block now disabled? (no idea, just thinking out loud)
+19:30:39 <sipa> is that related to 9138 ?
+19:30:41 <wumpus> gmaxwell: same holds for you, if something is ready for merging you should let me know
+19:30:49 <sipa> or 9404?
+19:31:01 <gmaxwell> #9404 though I really want it in, I haven't actually reviewed the code becuase I know it'll be simpler after 9465. (the story there is a user reported an issue that might be that fee bug, I went go fix it, realized it would be easier to fix after factoring out the signing.. did that.. then realized your preexisting patch was already the fix I wanted. :P )
+19:31:02 <gribble> https://github.com/bitcoin/bitcoin/issues/9404 | Smarter coordination of change and fee in CreateTransaction. by morcos · Pull Request #9404 · bitcoin/bitcoin · GitHub
+19:31:12 <wumpus> 9312 clearly is
+19:31:21 <morcos> sipa: both, well disabling fee estimates for 1 already went in, not part of 9138
+19:31:24 <luke-jr> jtimon: https://www.reddit.com/r/Bitcoin/comments/5ltw5n/bitcoin_core_v0131_sends_enormously_high_fee/
+19:31:35 <luke-jr> perhaps ^ should be our next topic
+19:31:35 <morcos> but both could cause high fees
+19:31:37 <wumpus> I think I stopped paying attention there when a certain person started trolling then lost track of it.
+19:31:39 <sipa> can someone explain what causes this?
+19:31:46 <sipa> (i don't visit reddit)
+19:31:49 <morcos> yes
+19:31:55 <BlueMatt> ^ that
+19:32:00 <kanzure> luke-jr: see 9404, i think
+19:32:04 <gmaxwell> luke-jr: I believe its fixed by 9404.  Of course, I can't know for sure, not enough info.
+19:32:39 <sipa> oh, is it change unnecessarily converted to fee?
+19:32:40 <instagibbs_> gmaxwell: so it's wallet-related code, not estimation
+19:32:41 <morcos> the 9404 case is caused when you select coins to pay for a tx, calculate fee and realize you dont' have enough, so you have to go and reselect coins.  you end up selecting many fewer for whatever reason, and now you have enough fee of course, and you end up paying the fee you calculated for the prior iteration
+19:32:46 <luke-jr> gmaxwell: well, OP's post there said he's using estimatefee :/
+19:32:57 <morcos> gmaxwell: 9404 is already rebased on 9465 as of this morning, so easy peasy to review now
+19:32:59 <gmaxwell> But the user seemed to be reporting that it payed several times the fee estimator figures (at least thats my read on it), which supports 9404 over 9138  though 9138 needs to go in too.
+19:33:07 <gmaxwell> morcos: oh missed that, will review.
+19:33:22 <jonasschnelli> #9294 should also go into 0.14 (needs overhaul, my turn) and some form of a HD rescan would be great.
+19:33:24 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:33:41 <bitcoin-git> [13bitcoin] 15laanwj pushed 2 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/ce43630d1e97...a72f76ca3d5d
+19:33:41 <bitcoin-git> 13bitcoin/06master 145f0e27f 15Alex Morcos: Increase mempool expiry time to 2 weeks
+19:33:42 <bitcoin-git> 13bitcoin/06master 14a72f76c 15Wladimir J. van der Laan: Merge #9312: Increase mempool expiry time to 2 weeks...
+19:33:42 <luke-jr> gmaxwell: he sent you the debug log, did that indicate anything useful?
+19:33:56 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #9312: Increase mempool expiry time to 2 weeks (06master...06longerexpiry) 02https://github.com/bitcoin/bitcoin/pull/9312
+19:34:07 <gmaxwell> jonasschnelli:  do we still have nothing that removes key from the keypool when they show up in transactions out of order, so that a rescan while unlocked would successfully find everything?
+19:34:20 <gmaxwell> luke-jr: no. unfortunately.
+19:34:43 <gmaxwell> well it didn't suggest that the known ways that estimatefee could be high weren't being hit.
+19:34:45 <jonasschnelli> gmaxwell: we don't. But I'm working on it. Got distracted with SPV/BFD and 2016 visualisation.
+19:35:10 <gmaxwell> jonasschnelli: okay, I'll do it if you don't have time; I just figured you are much more recently familar with that code than I. Sorry to nag.
+19:35:11 <morcos> sipa: its also possible that fee estimation could temporarily be very high..  was MUCH more likely for estimatefee 1 though, which has already been disabled
+19:35:22 <sipa> morcos: ok
+19:35:28 <jonasschnelli> gmaxwell: I'm happy if you do it.
+19:35:30 <sipa> let's get those fixes in
+19:36:10 <jonasschnelli> gmaxwell: maybe use some prework form https://github.com/bitcoin/bitcoin/pull/9370
+19:36:14 <gmaxwell> TBH I knew about the issue fied by 9404 long ago, but I thought it had since been fixed... :(
+19:37:14 <gmaxwell> jonasschnelli: oh I thought I'd acked the fundraw reuse fix.. will review.
+19:37:36 <jonasschnelli> The correct one is: https://github.com/bitcoin/bitcoin/pull/9377
+19:38:06 <jonasschnelli> The one above is an older try that could be useful for hd restore.
+19:38:41 <jonasschnelli> Fun topic: 2016 Git Visualisation: I'd created a draft video, need feedback to overhaul it and place it on the bitcoincore.org website.
+19:38:47 <jonasschnelli> https://vimeo.com/198242328
+19:38:51 <jonasschnelli> Password coredev
+19:38:57 <jonasschnelli> (will be there for a couple of mins)
+19:39:14 <jonasschnelli> (sorry to spam the meeting)
+19:39:27 <gmaxwell> okay I concept acked, well I'll complete the review.
+19:40:04 <luke-jr> jonasschnelli: why password protect it and post the password in public? :P
+19:40:16 <jonasschnelli> Security by obscurity.
+19:40:18 <petertodd> luke-jr: MILITARY LEVEL BLOCKCHAIN SECURITY
+19:40:24 <jonasschnelli> heh
+19:40:41 <wumpus> hehe
+19:41:06 <petertodd> anyway, I think that constitutes an "effective access control" under the DMCA...
+19:41:22 <gmaxwell> Who called this meeting?
+19:41:28 <sipa> jonasschnelli: short comment: overuse of capitalization (why are Day and Commit capitalized) and dashes (Code-contributors should be written with a space in between)
+19:41:47 <jonasschnelli> sipa: Thanks, will adapt
+19:41:58 <instagibbs_> any other topics?
+19:42:50 <wumpus> apparently not!
+19:42:58 <instagibbs_> everyone's watching the video
+19:43:08 <kanzure> chainparams?
+19:43:20 <wumpus> looks like we'll close the first meeting of 2017 early
+19:43:29 <kanzure> 8994
+19:43:30 <wumpus> what is there to discuss about chainparams?
+19:43:46 <kanzure> for 0.14, i think.
+19:43:53 <BlueMatt> final list of things to focus for review? multi-wallet, currently-open net prs, fee ones, what else?
+19:44:07 <BlueMatt> oh, and multiargs
+19:44:14 <BlueMatt> rpcarg thing
+19:44:17 <jonasschnelli> and hd chain-split/rstore
+19:44:23 <jtimon> wumpus, on my part #8994
+19:44:25 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:44:39 <gmaxwell> I think that is really a lot less important than everything else listed.
+19:44:58 <gmaxwell> (as people using that are also probably using git master)
+19:44:58 <morcos> are we really trying to get all these wallet changes in?
+19:45:03 <wumpus> yes it doesn't seem to make a lot of sense to focus last-minute review attention on that
+19:45:04 <jtimon> sure, feedback is still welcomed though
+19:45:08 <morcos> should we focus on some over others?
+19:45:11 <BlueMatt> morcos: yea, I think thats more than will make it, but that was the list
+19:45:11 <gmaxwell> (so merging it after 14 means just weeks of delay for someone who wants to use it)
+19:45:20 <gmaxwell> jtimon: fair enough.
+19:45:24 <wumpus> morcos: the fee fixes obviously have priority
+19:45:44 <jtimon> I doubt it will get to 0.14 that's why I asked "how realistic..."
+19:45:45 <wumpus> anything that can cause users to spend unnecessary coins should be first priority
+19:45:52 <morcos> well i guess i meant between hd-chain/split and multiwallet
+19:45:59 <BlueMatt> i think maybe multi-wallet is less likely so maybe less priority, but maybe others disagree since that would be a super nice user-facing feature
+19:46:07 <instagibbs_> I think multiwallet would be great... lots of demand for something like that
+19:46:14 <gmaxwell> I would prioritize fee fixes, net/relay things, hd/rescan improvements, multiwallet, the thousand other open PRs.
+19:46:17 <instagibbs_> but yes bigger changes
+19:46:26 <morcos> gmaxwell: in order?
+19:46:34 <gmaxwell> There is a lot of demand for multiwallet and I feel like if we don't get it done it'll continue to slip.
+19:46:35 <morcos> don't forget named args?
+19:46:38 <gmaxwell> morcos: yes that was an order.
+19:46:39 <instagibbs_> >thousand other open PRs
+19:46:50 <jonasschnelli> gmaxwell: Would multiwallet in 0.14 include the GUI?
+19:47:07 <wumpus> I think 0.14 multiwallet is too late - better to merge it as first thing for 0.15, then improve it in master
+19:47:08 <jonasschnelli> Have we already discussed how to select the wallet over RPC?
+19:47:09 <luke-jr> multiwallet is in Knots already, so may be less important in that sense (since users who want it can get it); stuff like HD split can't really go in Knots without being more final
+19:47:13 <wumpus> it will need a lot of last-minute fixes Im sure
+19:47:26 <luke-jr> jonasschnelli: a number of times :p
+19:47:30 <wumpus> a big feature like that is not done once it's merged
+19:47:53 <luke-jr> wumpus: it's not actually that big at this point
+19:48:14 <gmaxwell> At least on my earlier review it seemed like most of it was the refactors.
+19:48:17 <gmaxwell> Which helps.
+19:48:20 <luke-jr> 99% of it is renaming pwalletMain to pwallet in rpc files
+19:48:36 <jonasschnelli> But we need to be careful. Running with many wallets needs some testing.
+19:48:42 <morcos> sorry i'm not trying to be a downer, but both 9375 (fast compact block relay) and 9441 (net speedup) are big heavy review changes, so we shouldn't spread ourselves too thin if we realyl want those in
+19:48:43 <wumpus> in any case there are plenty of PRs to focus on, as said before they can't make it all in
+19:48:45 <jonasschnelli> Even if it's code-wise trivial
+19:49:16 <luke-jr> overall, I think multiwallet can be delayed in Core if other things need time
+19:49:21 <wumpus> if we can't make any choices to postpone things, either 0.13 will slip incredibly (I'd hate that) or we'll have to randomly drop things last minute
+19:49:31 <wumpus> agree with morcos
+19:49:39 <sipa> 0.13 slipping now would indeed be terrible!
+19:49:44 <luke-jr> heh
+19:49:48 <sipa> ;)
+19:49:49 <gmaxwell> hah
+19:50:22 <wumpus> lol
+19:50:47 <gmaxwell> wumpus: if we slip it we slip it, but if people are active on review and testing I think we don't need to.  I really wish the net changes were less invasive but thats water under the bridge now.
+19:51:07 <gmaxwell> I do believe the release will be delayed from fixes for just the things we already have in now.
+19:51:16 <luke-jr> am I likely to be of any help reviewing the net stuff if I'm not up to speed on the net refactoring so far?
+19:51:21 <wumpus> gmaxwell: I don't want to let it slip on features in any case, on bugfixes is more acceptable
+19:51:27 <BlueMatt> note: we have at least 4 regressions in master which are 0.14-blocking which do not yet have prs open to fix them
+19:51:30 <wumpus> so it's clear what to focus on then
+19:51:30 <BlueMatt> so....thats a thing
+19:51:43 <gmaxwell> wumpus: right, well ... you could just merge everything outstanding and then all slips are bugfix related! :P
+19:51:46 <instagibbs_> BlueMatt: there a list?
+19:51:47 <BlueMatt> oh, sorry, 1 has an open pr
+19:52:02 <wumpus> BlueMatt: are the issues tagged appropriately?
+19:52:09 <BlueMatt> yes, tagged 0.14, i believe
+19:52:13 <wumpus> ok
+19:52:28 <gmaxwell> AFAIK we are not actually waiting on the competion of any feature changes. (except perhaps some rescan improvements).. E.g. almost everything I think we might have in 0.14 has a PR already open.
+19:52:32 <cfields> to reviewers, don't let the amount of commits in 9441 scare you. Almost all of them are very tiny, explicitly to make review easier
+19:52:46 <BlueMatt> at least #9479, #9027, #9148 and #9212
+19:52:48 <gribble> https://github.com/bitcoin/bitcoin/issues/9479 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:52:48 <BlueMatt> maybe others
+19:52:48 <gribble> https://github.com/bitcoin/bitcoin/issues/9027 | Unbounded reorg memory usage · Issue #9027 · bitcoin/bitcoin · GitHub
+19:52:49 <sipa> confirming what cfields said
+19:52:49 <gribble> https://github.com/bitcoin/bitcoin/issues/9148 | Wallet RPCs can return stale info due to ProcessNewBlock Race · Issue #9148 · bitcoin/bitcoin · GitHub
+19:52:50 <gribble> https://github.com/bitcoin/bitcoin/issues/9212 | Assertion failed: (nSendVersion != 0), function GetSendVersion, file ./net.h, line 775. · Issue #9212 · bitcoin/bitcoin · GitHub
+19:52:51 <morcos> oh shit, yeah sorry, one is mine..  , lets quickly decide which direction we want to take on that.  Do we revert #9240 or do we not care about the notifications?  I think #9371 is too late for 0.14
+19:52:52 <gmaxwell> completion*
+19:52:53 <gribble> https://github.com/bitcoin/bitcoin/issues/9240 | Remove txConflicted by morcos · Pull Request #9240 · bitcoin/bitcoin · GitHub
+19:52:54 <gribble> https://github.com/bitcoin/bitcoin/issues/9371 | Notify on removal by morcos · Pull Request #9371 · bitcoin/bitcoin · GitHub
+19:53:27 <sipa> morcos: if 9371 is too late, we need to revert 9240... but maybe that is not something we need to know now?
+19:53:32 <sipa> a revert can be do at the last minute
+19:53:39 <sipa> *done
+19:53:42 <morcos> If we're reverting #9240, it'll conflict, definitely with 9138 and probably already, so let me know and I'll make a revert PR
+19:53:43 <BlueMatt> yea, we can revert on the 0.14 branch at that point?
+19:53:44 <gribble> https://github.com/bitcoin/bitcoin/issues/9240 | Remove txConflicted by morcos · Pull Request #9240 · bitcoin/bitcoin · GitHub
+19:53:51 * jtimon reiterates his dissapointment on not having removed checkpoints for everything except progress estimation, that doesn't have a PR...
+19:54:35 <sipa> jtimon: 9472 removes checkpoints for the purpose of progress estimation
+19:54:39 <morcos> sipa: well i like 9371, but it overlaps a lot with #8549 and we haven't resolved direction
+19:54:40 <sipa> :)
+19:54:40 <jtimon> I mean gmaxwell you had that practically done already
+19:54:41 <gribble> https://github.com/bitcoin/bitcoin/issues/8549 | zmq: mempool notifications by jmcorgan · Pull Request #8549 · bitcoin/bitcoin · GitHub
+19:54:52 <jtimon> sipa: oh, nice, will have a look
+19:55:29 <gmaxwell> jtimon: not going to have one either, not any time soon (1) it requires a consensus change; and I don't have the appetite to carry forward in the adversarial climate of the mailing list (which I am not on for a long time now), and (2)  Sipa disagrees with my one strategy for removing the signature checking dependency, and petertodd disagrees with the other.
+19:55:37 <wumpus> Madars: what I don't like about 9371 is that is that it keeps the list of removed transactions on mempool, instead of an external object listening for signals
+19:55:44 <wumpus> sorry s/Madars/Morcos
+19:56:02 <wumpus> morcos: this means it can only support one client listening for removals at most
+19:56:08 <gmaxwell> (sipa disagrees that we can just check all signatures; petertodd disagrees with the proposal that we use burried by 30 days of work+other conditions)
+19:56:18 <jtimon> gmaxwell: mhmm, I didn't remember a consensus change, must be missing something, but sure, if it needs it, definitely no time to do it for 0.14
+19:56:39 <wumpus> morcos: for the rest I'm ok with it, and it doesn't conflict with 8549 too much
+19:56:58 <sipa> gmaxwell: what about the idea of once crossing a certain amount of work, requiring a higher minimum difficulty?
+19:57:09 <gmaxwell> jtimon: the part of it that didn't either need a consensus change (uppping the minimum difficulty) and didn't change the signature checking,  has already been merged.
+19:57:17 <morcos> wumpus: i was trying to keep notifications from happening while we were locked in reorg..   couldn't we later make it so the mempoolremovaltracker could interface with multiple clients or something
+19:57:22 <sipa> ah, right, consensus change
+19:57:31 <gmaxwell> sipa: it's a consensus change, and I implemented it, and asked for review which jtimon gave some, but... consensus change.
+19:57:52 <wumpus> morcos: I just don't like making a notification mechanism stateful, but that may be a personal thing
+19:58:15 <jtimon> thanks for the info, wasn't up to date on the subject
+19:58:16 <wumpus> morcos: but ok maybe this is the only way to handle reorgs sanely
+19:58:19 <gmaxwell> but I really have no interest in writing a bit and getting treated like shit by zander and voskull or whatever other trolls inhabit the list today.
+19:58:20 <morcos> but isn't that what we've just done on purpose with ConnectTrace?
+19:58:38 <morcos> i guess not quite the same thing... but accomplishes same goal
+19:58:45 <jtimon> maybe in this 2 minutes...should I rebase the super-trivial #9279 ?
+19:58:46 <gribble> https://github.com/bitcoin/bitcoin/issues/9279 | Consensus: Move CFeeRate out of libconsensus by jtimon · Pull Request #9279 · bitcoin/bitcoin · GitHub
+19:59:04 * luke-jr ponders if it would make sense to increase min difficulty to 50% of current difficulty.
+19:59:09 <wumpus> morcos: well at least that's an external object passed in
+19:59:32 <sipa> gmaxwell: maybe you should explain your idea to luke-jr
+19:59:54 <morcos> i know... but so many layers..  anyway, ok we'll see what happens..  i'll make the revert later if i need to
+20:00:04 <gmaxwell> sipa: https://github.com/gmaxwell/bitcoin/commit/2db190b183c5204da23191ca642c7f6cad412ae3
+20:00:06 <instagibbs_> time of meeting has ended
+20:00:11 <wumpus> #endmeeting
