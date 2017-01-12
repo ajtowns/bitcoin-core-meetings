@@ -1,0 +1,338 @@
+19:00:08 <wumpus> #startmeeting
+19:00:08 <lightningbot> Meeting started Thu Jan 12 19:00:08 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:08 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:17 <jonasschnelli> hi
+19:00:37 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:00:44 <kanzure> hi.
+19:01:04 <wumpus> proposed topics?
+19:01:21 <btcdrak> hi
+19:01:25 <michagogo> o/
+19:01:39 <BlueMatt> 0.14 freeze monday, so lock in prs that will go in now and finalize PR/issue tags for 0.14?
+19:01:43 <jonasschnelli> gmaxwell mentioned yesterday that he's traveling.
+19:01:46 <BlueMatt> feature freeze, of course
+19:01:47 <jtimon> here
+19:01:49 <wumpus> anyone working really hard on getting something in before the feature freeze?
+19:02:25 <BlueMatt> my #9499 and #9375 plus cfields' #9441 are massive
+19:02:27 <gribble> https://github.com/bitcoin/bitcoin/issues/9499 | Use recent-rejects, orphans, and recently-replaced txn for compact-block-reconstruction by TheBlueMatt · Pull Request #9499 · bitcoin/bitcoin · GitHub
+19:02:29 <gribble> https://github.com/bitcoin/bitcoin/issues/9375 | Relay compact block messages prior to full block connection by TheBlueMatt · Pull Request #9375 · bitcoin/bitcoin · GitHub
+19:02:29 <BlueMatt> and probably close enough to make it
+19:02:31 <gribble> https://github.com/bitcoin/bitcoin/issues/9441 | Net: Massive speedup. Net locks overhaul by theuni · Pull Request #9441 · bitcoin/bitcoin · GitHub
+19:02:32 <luke-jr> would be nice to get multiwallet in, but it's mostly just waiting on review at this point. if we think we can get it in, I will rebase the final PR(s) as soon as the last pre-MW refactor is merged
+19:02:40 <morcos> +1 BlueMatt's list
+19:02:51 <luke-jr> (but IIRC from last meeting, there were more important things than MW that take precedence)
+19:02:58 <cfields> wumpus: there's qt 5.7 which is probably worth having in.
+19:03:14 <jonasschnelli> cfields: +1... whats missing? Can I help?
+19:03:27 <wumpus> cfields: I don't understand the blocker there
+19:03:50 <BlueMatt> luke-jr's multiwallet would have been nice, but we're at least two prs away...#8775 could probably be merged easily, but the one thereafter hasnt really gotten any review yet :(
+19:03:52 <gribble> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+19:04:00 <wumpus> yes #9441 should be ready for merge really
+19:04:03 <gribble> https://github.com/bitcoin/bitcoin/issues/9441 | Net: Massive speedup. Net locks overhaul by theuni · Pull Request #9441 · bitcoin/bitcoin · GitHub
+19:04:41 <btcdrak> +1 on multiwallet
+19:04:45 <cfields> wumpus: i did some work on a bump+restructure a while back, and fanquake recently bumped but it's a bit broken. We just need to pull the fixes out of mine and into his. Should be quick/easy, it's just the building that takes a while
+19:04:50 <BlueMatt> btcdrak: my point was I dont think thats gonna make it
+19:04:53 <cfields> (re qt 7.1)
+19:04:58 <cfields> er, 5.7. heh.
+19:05:05 <BlueMatt> would have to turn out to get acks without any comments on the final multiwallet pr, I think
+19:05:16 <BlueMatt> unless we decide we super want it and are willing to let it go in post-feature-freeze
+19:05:17 <wumpus> forget about multwallet for 0.14
+19:05:40 <jonasschnelli> Yes. It's probably to late
+19:05:45 <BlueMatt> yup
+19:05:48 <wumpus> it's a pity but let's just merge that stuff after the 0.14 split
+19:05:58 <jonasschnelli> Yes. No hurry.
+19:06:02 <wumpus> then it has ample time to be tested in master, which it needs
+19:06:17 <cfields> jonasschnelli: happy to have help, sure. Let's discuss after meeting.
+19:06:21 <jonasschnelli> ok
+19:06:24 <wumpus> it's not something that is safe to merge last minute before a release and let people figure it out in a rc :)
+19:06:28 <BlueMatt> havent looked at the diff, but I'd call #9519 a bugfix, so should go in post-monday
+19:06:30 <gribble> https://github.com/bitcoin/bitcoin/issues/9519 | Exclude RBF replacement txs from fee estimation by morcos · Pull Request #9519 · bitcoin/bitcoin · GitHub
+19:06:38 <BlueMatt> morcos: should we tag that 0.14?
+19:06:44 <luke-jr> ACK not doing MW in 0.14
+19:06:54 <morcos> Yes I talked about it a while this morning with sdaftuar.  We should do it for 0.14
+19:07:12 <morcos> It's a very minor change
+19:07:21 <wumpus> yes bugfixes can be merged after the feature freeze, will tag it
+19:07:32 <BlueMatt> #9512 is probably a 0.14 bugfix that should be tagged
+19:07:34 <gribble> https://github.com/bitcoin/bitcoin/issues/9512 | Fix various things -fsanitize complains about by sipa · Pull Request #9512 · bitcoin/bitcoin · GitHub
+19:07:47 <achow101> there's also the final alert stuff that's supposed to go in 0.14
+19:08:04 <wumpus> #9512 a bugfix?
+19:08:06 <gribble> https://github.com/bitcoin/bitcoin/issues/9512 | Fix various things -fsanitize complains about by sipa · Pull Request #9512 · bitcoin/bitcoin · GitHub
+19:08:23 <morcos> I think we should merge #9380 for 0.14 as well, or at least the part that breaks out the -dustrelayfee
+19:08:25 <gribble> https://github.com/bitcoin/bitcoin/issues/9380 | Separate different uses of minimum fees by morcos · Pull Request #9380 · bitcoin/bitcoin · GitHub
+19:08:26 <BlueMatt> wumpus: I mean I'd call code correctness bugfixes even if there are no bugs
+19:08:28 <wumpus> I don't really like the perf hit
+19:08:39 <BlueMatt> wumpus: assuming we can fix the performance hit?
+19:08:51 <wumpus> normally I woudln't mind but hashing is very important to bitcoind performance
+19:09:07 <sdaftuar> regarding 9512, sipa just told me (he's walking out the door) that he can make it a very slight performance improvement... but i guess he hasn't pushed that yet
+19:09:12 <BlueMatt> I know gmaxwell wanted #9484 for 0.14, which I think it should be
+19:09:14 <gribble> https://github.com/bitcoin/bitcoin/issues/9484 | Introduce assumevalid setting to skip validation presumed valid scripts. by gmaxwell · Pull Request #9484 · bitcoin/bitcoin · GitHub
+19:09:31 <wumpus> I had hoped to work on platform specific implementations for sha256, but anyhow, that won't make 0.14 and we shouldn't make the default implementation slower than necessary either
+19:09:52 <BlueMatt> wumpus: ok, lets punt on 9512 for now, then
+19:09:58 <BlueMatt> can decide later
+19:10:17 <morcos> Can we discuss briefly the concept of dust being tied to minrelaytxfee
+19:10:23 <wumpus> BlueMatt: yeah unless there's something that introduces an actual bug (I don't even understand all the change in it - e.g. asked about the change from LONG_MAX to 1<<40)
+19:10:34 <BlueMatt> so things that need review before monday: 9484, 9499, 9375, 9441
+19:10:35 <wumpus> morcos: sure, next topic
+19:10:40 <sipa> wumpus: i'm running to catch a bus, but i believe i have a slightly faster-than-master but sanitize-correct version of ReadLE32 etc
+19:10:51 <wumpus> #action review before monday : 9484, 9499, 9375, 9441
+19:10:55 <wumpus> sipa: great!
+19:11:10 <sipa> and by faster i mean 0.025%
+19:11:18 <BlueMatt> heh
+19:11:27 <morcos> I want to motivate why its important to consider #9380 as well.  At least one of the commits there has translation strings..  do we translate debug help?
+19:11:28 <gribble> https://github.com/bitcoin/bitcoin/issues/9380 | Separate different uses of minimum fees by morcos · Pull Request #9380 · bitcoin/bitcoin · GitHub
+19:11:36 <wumpus> well "not slower" would be the goal so anything faster is doubly awesome
+19:11:38 <BlueMatt> wumpus: wait, which PR was the LONG_MAX comment in reference to?
+19:12:09 <wumpus> BlueMatt: #9512 IIRC
+19:12:11 <gribble> https://github.com/bitcoin/bitcoin/issues/9512 | Fix various things -fsanitize complains about by sipa · Pull Request #9512 · bitcoin/bitcoin · GitHub
+19:12:30 <BlueMatt> wumpus: ahh, yea, admittedly I havent read the code there yet, beyond very brief skimming
+19:12:40 <BlueMatt> morcos: go ahead?
+19:12:41 <cfields> yes, it's in the CScriptNum tests
+19:13:43 <morcos> Sorry I was confused as to whether I was waiting for "topic:" or not..  Anyway.  The point is that right now if a miner changes the -minrelaytxfee, this already automatically changes their definition of dust.  This occasionally leads to txs with high feerates not being minable by some portion of miners
+19:13:45 <wumpus> yes https://github.com/bitcoin/bitcoin/pull/9512/files#diff-2513c35abb5ab245137423db2d803628R17
+19:14:02 <MarcoFalke> wumpus: Set topic for morcos?
+19:14:13 <wumpus> morcos: oh yes forgot that - current topic is still what to do before the feature freeze
+19:14:30 <wumpus> #topic  the concept of dust being tied to minrelaytxfee
+19:14:38 <BlueMatt> morcos: ahh, ok, I'd call that a bugfix that we can do post-feature-freeze? but sounds like something that should be fixed
+19:14:46 <BlueMatt> (I assume code is realatively trivial)
+19:14:52 <morcos> BlueMatt: what about the transaltion strings
+19:15:19 <MarcoFalke> morcos: Those are "hidden" features? So no translation string
+19:15:19 <BlueMatt> wumpus: ?
+19:15:37 <MarcoFalke> I'd recommend against exposing -dustfeerate
+19:15:44 <MarcoFalke> to every user
+19:16:02 <MarcoFalke> Maybe not even at all. Just make it a const in the code.
+19:16:12 <wumpus> yes, translation freeze is at the same time as feature freeze
+19:16:19 <morcos> MarcoFalke: ok, in that PR, -blockmintxfee was not hidden, specifically intended to be used by miners...  But yes -dustrelayfee is hidden.  And I agree, it shouldn't be changed by anyone.
+19:16:26 <wumpus> but if it's a debug feature it won't have translation strings, ofc
+19:16:37 <morcos> I suppose if we merge it too late, we can start with all features hidden and expose them next version
+19:17:03 <BlueMatt> ehh, I'd say the diff is pretty trivial, lets just target it for monday?
+19:17:14 <BlueMatt> (at the risk of piling on top of the other 4)
+19:17:23 <morcos> Anyhway there are 2 potential problems:  1, a users txs are stuck for reasons they don't understand, but potentially more seriously it hurts fee estimation...
+19:18:12 <morcos> I actually do agree with luke-jr that ideally fee estimation will be more robust to this...  but considering we dont' see much value in having different nodes have different definitions of dust.  It seems a no-brainer to fix that so it doesn't change anytime someone is trying to avoid spammy low-fee txs
+19:19:02 <luke-jr> morcos: eh, is it based on your own fee, or the relay min fee? I thought the latter
+19:19:58 <morcos> luke-jr: dust is based on minrelayfee, but people change minrelayfee to avoid spam or limit their mempool and inadvently change dust in teh process
+19:20:09 <luke-jr> ah
+19:21:49 <morcos> OK, I'm done..  Just wanted to be sure this was flagged before it was too late... seems like we could merge some version after feature freeze if we had to..  , anyway, someone please tag 9380 for 0.14 as well
+19:22:00 <wumpus> ok
+19:22:09 <BlueMatt> lets add it to the list for monday and if it slips thats ok
+19:22:19 <BlueMatt> wumpus/sdaftuar/morcos should #8456 be un-tagged for 0.14? probably #8501 should be. I dont think we're gonna make #8654 or #8723 or #8755 either
+19:22:24 <gribble> https://github.com/bitcoin/bitcoin/issues/8456 | [RPC] Simplified bumpfee command. by mrbandrews · Pull Request #8456 · bitcoin/bitcoin · GitHub
+19:22:26 <gribble> https://github.com/bitcoin/bitcoin/issues/8501 | Add mempool statistics collector by jonasschnelli · Pull Request #8501 · bitcoin/bitcoin · GitHub
+19:22:28 <gribble> https://github.com/bitcoin/bitcoin/issues/8654 | Reuse sighash computations across evaluation (rebase of #4562) by jl2012 · Pull Request #8654 · bitcoin/bitcoin · GitHub
+19:22:29 <gribble> https://github.com/bitcoin/bitcoin/issues/8723 | [Wallet] Add support for flexible BIP32/HD keypath-scheme by jonasschnelli · Pull Request #8723 · bitcoin/bitcoin · GitHub
+19:22:30 <gribble> https://github.com/bitcoin/bitcoin/issues/8755 | Implement excessive sighashing protection policy with tight sighash estimation by jl2012 · Pull Request #8755 · bitcoin/bitcoin · GitHub
+19:23:02 <jonasschnelli> Yes. We should
+19:23:03 <jl2012> yes, leave 8654 and 8755 for later
+19:23:03 <BlueMatt> jonasschnelli: do you have a strong desire for #9294?
+19:23:05 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:23:06 <morcos> I think 8456 can make it...  The others maybe not
+19:23:20 <jonasschnelli> Yes. 9294 must go in!
+19:23:29 <BlueMatt> morcos: its kinda light on ACKs to get merged this weekend, no?
+19:23:32 <jonasschnelli> Needs review. Has only a single utACK
+19:23:45 <BlueMatt> jonasschnelli: looks like it needs rebase?
+19:23:50 <jonasschnelli> We should also tag #9377
+19:23:51 <gribble> https://github.com/bitcoin/bitcoin/issues/9377 | fundrawtransaction: Keep change-output keys by default, make it optional by jonasschnelli · Pull Request #9377 · bitcoin/bitcoin · GitHub
+19:24:08 <BlueMatt> grrr, this list is a bit long for 4 days incl a weekend...
+19:24:12 <jonasschnelli> Oh. Yes. Needs rebase (since today)
+19:24:20 <wumpus> agree on 8456 may still make it, I think the only discussion there is about the default value for walletrbf and that's unnecessary to decide there
+19:24:21 <luke-jr> maybe we should split up the list between different people?
+19:24:30 <wumpus> yes, it's not going to all make it
+19:24:34 <luke-jr> we don't all have to review the same stuff
+19:24:36 <wumpus> as I've said last week we should really make a choice
+19:24:44 <wumpus> instead of trying to  cram everything in
+19:25:06 <BlueMatt> luke-jr: we dont have enough reviewers for that to work well enough :(
+19:25:07 <jonasschnelli> 9377 is a bugfix and can go in later
+19:25:23 <jonasschnelli> But please review 9294,.. is a sensitive wallet thing
+19:25:24 <BlueMatt> and I think gmaxwell and sipa are on the road, plus I'm avoiding review at least until my cold is a bit better and I can think straight
+19:25:31 <wumpus> especiall for the wallet it seems getting reviewers is really hard
+19:25:31 <luke-jr> :<
+19:25:43 <BlueMatt> yes :(
+19:25:44 <bitcoin-git> [13bitcoin] 15losh11 opened pull request #9534: Statoshi (06master...06master) 02https://github.com/bitcoin/bitcoin/pull/9534
+19:26:06 <bitcoin-git> [13bitcoin] 15losh11 closed pull request #9534: Statoshi (06master...06master) 02https://github.com/bitcoin/bitcoin/pull/9534
+19:26:15 <cfields> that one's done!
+19:26:16 <jtimon> I'm afraid I will prioritize the ones that are easier for me to review either way
+19:26:25 <jonasschnelli> sure
+19:26:30 <luke-jr> wallet needs the most review after consensus-critical changes, too
+19:27:17 <jtimon> jonasschnelli: is the fact that 9377 is a bugfix a good reason to delay it?
+19:27:43 <jonasschnelli> jtimon: delay,.. more priorize because of the freeze.
+19:27:54 <BlueMatt> 9377 needs rebase
+19:27:54 <jonasschnelli> But 9377 fixes a address reuse problem ans should be in 0.14
+19:28:06 <luke-jr> jonasschnelli: how important is it to get 9294 in 0.14 as opposed to 0.15? should I prioritise it over the other reviews?
+19:28:08 <jonasschnelli> It somehow feels that all my PR needs rebase since today.
+19:28:20 <BlueMatt> ok, 9377 looks like a bugfix that can go in after monday...looks like an easy diff too
+19:28:27 <BlueMatt> can someone tag it?
+19:28:36 <luke-jr> jonasschnelli: heh, I rebased something yesterday and had to re-rebase it again today XD
+19:28:38 <jonasschnelli> 9294 should be in 0.14 because we should avoid creating more single-chain HD wallets
+19:28:51 <sipa> made it to the bus!
+19:29:02 <luke-jr> jonasschnelli: can it upgrade single-chain HD wallets?
+19:29:07 <jonasschnelli> No
+19:29:12 <jonasschnelli> That's why it should be in 0.14
+19:29:25 <luke-jr> is there a reason it cannot?
+19:29:39 <jonasschnelli> You can't split the hd chains once you have created change outputs on the external chain...
+19:29:40 <wumpus> jonasschnelli: that's a good point
+19:29:48 <jonasschnelli> well... not with consequences.
+19:29:54 <BlueMatt> sipa: yay!
+19:29:55 <jonasschnelli> like re-seed
+19:29:59 <morcos> and HD isn't released yet?
+19:30:04 <jonasschnelli> it is.
+19:30:06 <instagibbs> HD is already in 0.13
+19:30:06 <wumpus> so from the wallet features we should focus on getting #9294 in
+19:30:07 <jonasschnelli> Since 0.13
+19:30:09 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:30:16 <luke-jr> jonasschnelli: I don't understand why not. Maybe we should discuss this further after the meeting?
+19:30:22 <morcos> Ok so its a matter of not makign it worse then
+19:30:26 <wumpus> yes it is, but uses a single chain, which is inconvenient for reconstruction from a seed
+19:30:38 <jonasschnelli> Yes.
+19:30:39 <sipa> luke-jr: recovery from a seed won't correctly identify change
+19:30:44 <sipa> that's all
+19:30:50 <jonasschnelli> The change is not complex, but also not trivial
+19:31:13 <sipa> are there other wallet related changes we want to see in 0.14
+19:31:15 <sipa> ?
+19:31:28 <sipa> jonasschnelli: ?
+19:31:31 <jonasschnelli> gmaxwell and I like to have the keypool detecting in 0.14
+19:31:38 <jonasschnelli> But not sure if its too late
+19:31:42 <luke-jr> what happens if I try to recover from a seed generated from a current HD wallet? ;)
+19:31:44 <sipa> i think that is too laye
+19:31:51 <jonasschnelli> Yes. It feels like
+19:31:53 <jtimon> jonasschnelli: how #9294 works with #8723 ?
+19:31:55 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:31:57 <gribble> https://github.com/bitcoin/bitcoin/issues/8723 | [Wallet] Add support for flexible BIP32/HD keypath-scheme by jonasschnelli · Pull Request #8723 · bitcoin/bitcoin · GitHub
+19:32:01 <luke-jr> jonasschnelli: that's a bugfix IMO
+19:32:16 <luke-jr> or potentially a bugfix, at least
+19:32:17 <jonasschnelli> 8723 has no reviews.
+19:32:22 <jonasschnelli> To late for 0.14 IMO
+19:32:29 <sdaftuar> jonasschnelli: can you remind us what keypool detecting is?
+19:32:41 <jtimon> but have you thought about how they would combine?
+19:32:44 <instagibbs> luke-jr, we have no direct recovery tools from seed AFAIK
+19:32:50 <sipa> sdaftuar: the wallet marking keys as used once they are seen in a transaction
+19:32:53 <jtimon> independently of which one goes first
+19:32:55 <instagibbs> current flow is ~same as before
+19:32:56 <luke-jr> instagibbs: but presumably we will be adding one
+19:32:58 <jonasschnelli> sdaftuar: if you use an old backup... you want to autodetect keys already been used.
+19:33:08 <instagibbs> luke-jr, indeed, which is why split will be important, right?
+19:33:22 <sdaftuar> got it, thanks
+19:33:30 <jonasschnelli> We need to check the keypool keys during SyncTransaction (each input/output) and mark the key as used when we have a match
+19:33:36 <jonasschnelli> Otherwise you re-use keys.
+19:34:11 <jonasschnelli> (if you don't topup your keypool +1000 and do a rescan before you use your old backup)
+19:34:11 <luke-jr> instagibbs: perhaps. but nothing stops someone from recovering from a pre-split seed?
+19:35:05 <jonasschnelli> luke-jr: yes. But we should at least stop creating wallets with change and normal-addresses on the same chain.
+19:35:32 <luke-jr> jonasschnelli: not disputing that.
+19:35:47 <jonasschnelli> Flexible keypath is nice.. but too late for 0.14.
+19:36:00 <jonasschnelli> The sad thing is, it will be another feature that is not downward compatible.
+19:36:10 <jonasschnelli> 0.13 HD, 0.14 HD/split, 0.15 flex-keypath
+19:36:14 <jonasschnelli> All not backward comp.
+19:36:26 <sipa> meh.
+19:36:31 <jonasschnelli> Yes. Meh.
+19:36:43 <jonasschnelli> That's why I'd like combining the HD split with other stuff.
+19:36:44 <luke-jr> surely at least HD/split can be upgraded to flex-keypath⁇
+19:36:54 <sipa> breaking backward compatibility in major releases is fine
+19:37:25 <instagibbs> Yeah why can't we upgrade to keypath?
+19:37:27 <jonasschnelli> Okay.
+19:37:37 <jonasschnelli> You can upgrade to keypath, but not downgrade
+19:37:38 * instagibbs should have actually reviewed, my bad
+19:37:48 <jonasschnelli> Use a 0.15 wallet in 0.14 as an example
+19:37:56 <jonasschnelli> But maybe its not so bad.
+19:37:58 <luke-jr> upgrade-only is okay. we have -walletupgrade for that
+19:38:08 <wumpus> don't you mean forwards compatible? backwards compatible means that it can use old wallets, which should always be possible
+19:38:29 <jonasschnelli> wumpus: right. My fault.
+19:38:34 <sipa> backward compatible means that old software can use new wallets
+19:38:41 <wumpus> but being able to use  a new wallet with an old major version is not
+19:38:43 <wumpus> huh?
+19:38:51 <jonasschnelli> perspetive thing. :)
+19:38:54 <wumpus> I thought the other way around.
+19:38:56 <jonasschnelli> *perspective
+19:39:01 <sipa> forward compatible is what you normally always have
+19:39:02 <wumpus> I don't understand it anymore then
+19:39:33 <instagibbs> wallet.dat vs Core wallet relativity...
+19:39:34 <sipa> oopz
+19:39:34 <CodeShark> Walllet format vs. Wallet app
+19:39:36 <luke-jr> I think we have more cases than normal
+19:39:42 <sipa> maybe i am wrong too
+19:39:44 <jonasschnelli> Looking at the git history tells me, that we took good care about the fact that you can run a newer wallet on an older bitcoin-core version
+19:39:47 <sipa> i will shut up
+19:39:56 <jonasschnelli> And now we break that in 0.13, 0.14 and probably 0.15.
+19:40:07 <jonasschnelli> But fine for me.
+19:40:13 <instagibbs> jonasschnelli, OTOH, these are the kind of upgrades people desperately want...
+19:40:16 <instagibbs> for future work
+19:40:19 <wumpus> jonasschnelli: well in my opinion that doesn't matter too much. What is important is that if you open a wallet once with the new version you should still be able to downgrade
+19:40:21 <luke-jr> jonasschnelli: there have been cases where -walletupgrade is needed, and then the wallet ceases to work in old versions
+19:40:22 <CodeShark> wallet format is forward compatible, wallet app is backward compatible
+19:40:36 <wumpus> jonasschnelli: however, new wallets created with new versions don't need to be open-able with old versions
+19:40:56 <jonasschnelli> Okay. Seems that we all agree. Good.
+19:40:58 <morcos> wumpus: +1 for those standards
+19:41:14 <wumpus> we're just trying to avoid that *touching* a wallet with a new version automatically makes it incompatible, which would happen when upgrading berkeleydb for example
+19:41:24 <jonasschnelli> Flexible keypath is nice. But we don't want to support BIP44 anyways thats why it's not urgent
+19:41:33 <jtimon> all these backards and forwards compatibility is confusing, softfork and hardforks are much more clear :p
+19:41:43 <petertodd> jtimon: +1
+19:41:44 <luke-jr> we should also avoid making it incompatible unintentionally; only if -walletupgrade is enabled should we bump the feature requirements of a wallet
+19:41:51 <luke-jr> jtimon: lol
+19:42:14 <luke-jr> eg, if someone tries to use the flex-keypath, throw an error instead of upgrading the wallet (unless option is enabled0
+19:45:03 <BlueMatt> ok, list for monday: 9380 (if it slips that ok, but prefer monday), net-related: 9441, 9375, 9499 (can someone tag 9499), 9486. wallet related: 9294, 8456 (are you sure that can make it sdaftuar/morcos?)
+19:45:21 <BlueMatt> well, ok, 9486 is whatever, its trivial
+19:45:24 <sdaftuar> BlueMatt: i think 8456 ought to be done, though it is true that gmaxwell keeps finding small issues
+19:45:36 <CodeShark> Please no use of the terms "evil compatibility" or "backward-forward compatibility"
+19:45:51 <BlueMatt> everything else tagged looks like a bugfix (#9490 is, right?)
+19:45:53 <gribble> https://github.com/bitcoin/bitcoin/issues/9490 | Replace FindLatestBefore used by importmuti with FindEarliestAtLeast. by gmaxwell · Pull Request #9490 · bitcoin/bitcoin · GitHub
+19:46:04 <sdaftuar> yes that is a bugfix
+19:46:04 <sipa> is #9484 on the list?
+19:46:06 <gribble> https://github.com/bitcoin/bitcoin/issues/9484 | Introduce assumevalid setting to skip validation presumed valid scripts. by gmaxwell · Pull Request #9484 · bitcoin/bitcoin · GitHub
+19:46:06 <BlueMatt> jonasschnelli: whats up with #9461?
+19:46:08 <gribble> https://github.com/bitcoin/bitcoin/issues/9461 | [Qt] Improve progress display during headers-sync and peer-finding by jonasschnelli · Pull Request #9461 · bitcoin/bitcoin · GitHub
+19:46:10 <jtimon> lol evil compatibility
+19:46:18 <BlueMatt> sipa: oops, yes, add that to the list
+19:46:24 <jonasschnelli> BlueMatt: simple change. Hope we can get it into 0.14
+19:46:28 <jonasschnelli> Needs review
+19:46:29 <BlueMatt> ok, list for monday: 9380 (if it slips that ok, but prefer monday), 9484, net-related: 9441, 9375, 9499 (can someone tag 9499), 9486. wallet related: 9294, 8456 (are you sure that can make it sdaftuar/morcos?)
+19:46:35 <luke-jr> BlueMatt: do an `action` thing with the final list?
+19:46:49 <instagibbs> someone with the meeting hammer has to do that i think
+19:47:02 <luke-jr> O.o
+19:47:02 <BlueMatt> that list is much too long :(
+19:47:07 <wumpus> I've tagged 9499. Though we should stop tagging more stuff for monday.
+19:47:10 <morcos> BlueMatt: nah... we can do all those
+19:47:13 <BlueMatt> lol
+19:47:23 <wumpus> we're not going to make the current list
+19:47:24 <morcos> I think they are almost all ready for merge except perhaps 9294
+19:47:27 <luke-jr> maybe we should sort the list by priority
+19:47:43 <luke-jr> otherwise we're liable to work on opposite ones first and get none done
+19:47:47 <BlueMatt> i dont think 8456 is gonna make that, either
+19:48:05 <morcos> in 2 hours it'll have 2 ACK's, but if it doesn't make it, thats fine
+19:48:28 <cfields> BlueMatt: what do you think about pulling out your net lock change from #9419 for inclusion? I've been assuming that would make it in in one way or another
+19:48:31 <gribble> https://github.com/bitcoin/bitcoin/issues/9419 | Stop Using cs_main for CNodeState/State() by TheBlueMatt · Pull Request #9419 · bitcoin/bitcoin · GitHub
+19:48:34 * sipa imagines creating a few sockpuppet accounts on github now
+19:48:40 <sipa> *morcos
+19:48:40 <jonasschnelli> heh
+19:48:45 <BlueMatt> wumpus: 9499 was deliberately written to be as easy to review as possible (for 0.14)...there are tons of things to make it better, but they were all left
+19:48:46 <luke-jr> sipa: that'd violate github tos :P
+19:48:49 <cfields> (it belongs in 9441, i just left it out because you already had one)
+19:49:03 <jonasschnelli> luke-jr: depends how many kids you have
+19:49:08 <BlueMatt> cfields: oh fuck I forgot about the cs_vSend split there
+19:49:15 <jtimon> 9380 seems easy to review, more about deciding what to expose now and what to leave for later
+19:49:24 <BlueMatt> argh, well I can open it in its own pr, but that one's gonna be a rush if we want it
+19:49:28 <BlueMatt> it is a huge win, though :/
+19:49:38 <luke-jr> jonasschnelli: account terms #1 You must be 13 years or older to use this Service.
+19:49:39 <gribble> https://github.com/bitcoin/bitcoin/issues/1 | JSON-RPC support for mobile devices ("ultra-lightweight" clients) · Issue #1 · bitcoin/bitcoin · GitHub
+19:49:44 <luke-jr> …
+19:50:18 <sipa> hah
+19:50:20 <jonasschnelli> heh
+19:50:28 <cfields> BlueMatt: indeed. I think it's quite simple, though
+19:51:38 <jtimon> any other topics?
+19:51:41 <jtimon> 10 min
+19:52:04 <bitcoin-git> [13bitcoin] 15TheBlueMatt opened pull request #9535: Split CNode::cs_vSend: message processing and message sending (06master...062017-01-cs-vsend-split) 02https://github.com/bitcoin/bitcoin/pull/9535
+19:52:43 <cfields> BlueMatt: thanks. Will scrutinize.
+19:53:50 <BlueMatt> wumpus: dont kill me, but ^ is kinda worth doing for monday :(
+19:54:10 <wumpus> they're all worth doing, that's not the question
+19:54:14 <luke-jr> it's not the end of the world if we don't have all optimisations in for 0.14 >_<K
+19:54:20 <BlueMatt> true
+19:54:23 <wumpus> agree luke-jr
+19:55:08 <wumpus> let's leave something for 0.15
+19:55:19 <BlueMatt> oh I've got lots for 0.15 already :p
+19:55:41 <wumpus> of which at least half will probably miss 0.15 and only make it to 0.16 :)
+19:55:47 <BlueMatt> oh yea
+19:55:50 <BlueMatt> always do
+19:55:52 <luke-jr> XD
+19:56:06 <luke-jr> it's not like we have 3 years between releases ☺
+19:56:09 <wumpus> that's how it goes, there's no other way if you have time based releases
+19:56:29 <BlueMatt> anyway, so lets call the meeting?
+19:56:37 <wumpus> and without a deadline we'd never agree what to put in a release and never again do a release
+19:56:37 <luke-jr> what's the phone number?
+19:56:49 <BlueMatt> wumpus: ooo, I vote for that one
+19:56:52 <luke-jr> lol
+19:56:54 <wumpus> yes, I think we're out of topics
+19:56:56 <wumpus> #endmeeting
