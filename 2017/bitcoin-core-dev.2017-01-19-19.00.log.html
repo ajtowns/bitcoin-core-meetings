@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:10</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jan 19 19:00:10 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:10</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:14</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> ello
+<a name="l-5"></a><span class="tm">19:00:23</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">cfields:</span> If you need the gitian log for the failing build: https://bitcoin.jonasschnelli.ch/nightlybuilds/2017-01-19/build-win.log
+<a name="l-6"></a><span class="tm">19:00:44</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">MarcoFalke:</span> ah, didn't realize gitian was actually failing. Thanks.
+<a name="l-7"></a><span class="tm">19:00:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs</span>
+<a name="l-8"></a><span class="tm">19:00:54</span><span class="nk"> &lt;morcos&gt;</span> here
+<a name="l-9"></a><span class="tm">19:00:58</span><span class="nk"> &lt;CodeShark&gt;</span> Hi
+<a name="l-10"></a><span class="tm">19:01:11</span><span class="nk"> &lt;instagibbs&gt;</span> prezent
+<a name="l-11"></a><span class="tm">19:01:19</span><span class="nk"> &lt;MarcoFalke&gt;</span> topics?
+<a name="l-12"></a><span class="tm">19:01:20</span><span class="nk"> &lt;jtimon&gt;</span> here
+<a name="l-13"></a><span class="tm">19:01:27</span><span class="nk"> &lt;morcos&gt;</span> suggested topic #9583 and #9584
+<a name="l-14"></a><span class="tm">19:01:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">topic:</span> last-minute merges before feature freeze
+<a name="l-15"></a><span class="tm">19:01:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9583 | Move wallet callbacks into cs_main (this effectively reverts #7946) by TheBlueMatt · Pull Request #9583 · bitcoin/bitcoin · GitHub
+<a name="l-16"></a><span class="tm">19:01:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9584 | Synchronization problems with wallet. · Issue #9584 · bitcoin/bitcoin · GitHub
+<a name="l-17"></a><span class="tm">19:01:35</span><span class="nk"> &lt;instagibbs&gt;</span> Last stuff to shove in before freeze naturally...
+<a name="l-18"></a><span class="tm">19:01:38</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-19"></a><span class="tm">19:01:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess https://github.com/bitcoin/bitcoin/issues/9294 is ready...
+<a name="l-20"></a><span class="tm">19:02:02 </span><span class="nka">* btcdrak</span> <span class="ac">is half here</span>
+<a name="l-21"></a><span class="tm">19:02:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-22"></a><span class="tm">19:02:19</span><span class="nk"> &lt;sipa&gt;</span> any 0.14 milestoned PRs that we don't expect are reasonable to make it?
+<a name="l-23"></a><span class="tm">19:02:27</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic, what's missing to branch 0.14
+<a name="l-24"></a><span class="tm">19:02:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#9535 </span><span class="cmdline">got thourough review from jtimon (and others) and is a big win</span>
+<a name="l-25"></a><span class="tm">19:02:28</span><span class="nk"> &lt;wumpus&gt;</span> do we all agree 9294 is ready?
+<a name="l-26"></a><span class="tm">19:02:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9535 | Split CNode::cs_vSend: message processing and message sending by TheBlueMatt · Pull Request #9535 · bitcoin/bitcoin · GitHub
+<a name="l-27"></a><span class="tm">19:02:39</span><span class="nk"> &lt;instagibbs&gt;</span> any multiwallet stuff isn't going to make it I assume
+<a name="l-28"></a><span class="tm">19:02:46</span><span class="nk"> &lt;BlueMatt&gt;</span> i like 9294, but i think it needs another review
+<a name="l-29"></a><span class="tm">19:02:53</span><span class="nk"> &lt;wumpus&gt;</span> multiwallet was already untagged
+<a name="l-30"></a><span class="tm">19:02:54</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm ok with merge as long as one or two folks give it a postumous ack
+<a name="l-31"></a><span class="tm">19:03:05</span><span class="nk"> &lt;sipa&gt;</span> i have not reviewed 9294, sorry
+<a name="l-32"></a><span class="tm">19:03:12</span><span class="nk"> &lt;gmaxwell&gt;</span> https://github.com/bitcoin/bitcoin/milestone/21
+<a name="l-33"></a><span class="tm">19:03:14</span><span class="nk"> &lt;sipa&gt;</span> (but i plan to, whether it's merged or not)
+<a name="l-34"></a><span class="tm">19:03:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> we can always fix issues after the freeze
+<a name="l-35"></a><span class="tm">19:03:40</span><span class="nk"> &lt;instagibbs&gt;</span> I could give it an updated review, but not sure if that's enough
+<a name="l-36"></a><span class="tm">19:03:43</span><span class="nk"> &lt;luke-jr&gt;</span> there's a pre-MW PR that's probably ready, but not a prioirty
+<a name="l-37"></a><span class="tm">19:04:02</span><span class="nk"> &lt;sipa&gt;</span> pre-mimblewimble?
+<a name="l-38"></a><span class="tm">19:04:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-39"></a><span class="tm">19:04:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I think #9526 should be dropped from that. (perhaps we should do something later, but it shouldn't be tagged #14)
+<a name="l-40"></a><span class="tm">19:04:08</span><span class="nk"> &lt;luke-jr&gt;</span> multiwallet ;)
+<a name="l-41"></a><span class="tm">19:04:09</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9526 | -blocksonly should disable sharing of mempool with dbcache · Issue #9526 · bitcoin/bitcoin · GitHub
+<a name="l-42"></a><span class="tm">19:04:10</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/14 | bitcoin: URI and/or bitcoin-request MIME type for click-to-pay · Issue #14 · bitcoin/bitcoin · GitHub
+<a name="l-43"></a><span class="tm">19:04:36</span><span class="nk"> &lt;btcdrak&gt;</span> issue #14 ?
+<a name="l-44"></a><span class="tm">19:04:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/14 | bitcoin: URI and/or bitcoin-request MIME type for click-to-pay · Issue #14 · bitcoin/bitcoin · GitHub
+<a name="l-45"></a><span class="tm">19:04:41</span><span class="nk"> &lt;BlueMatt&gt;</span> I'd consider 9526 is a bugfix, but i guess i dont care strongly either way
+<a name="l-46"></a><span class="tm">19:04:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="cmd">#8775 </span><span class="cmdline">specifically</span>
+<a name="l-47"></a><span class="tm">19:04:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+<a name="l-48"></a><span class="tm">19:04:50</span><span class="nk"> &lt;sipa&gt;</span> i think 9526 is a bugfix
+<a name="l-49"></a><span class="tm">19:04:59</span><span class="nk"> &lt;luke-jr&gt;</span> but it seems it conflicted again, so I guess less than ready anyway :x
+<a name="l-50"></a><span class="tm">19:05:51</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so to conclude, #9461 and #9294 - 9461 i think is ready-ish (one more look-over, please, its easy?), and 9294 I think we should merge with a few commitments to postumous reviews
+<a name="l-51"></a><span class="tm">19:05:53</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9461 | [Qt] Improve progress display during headers-sync and peer-finding by jonasschnelli · Pull Request #9461 · bitcoin/bitcoin · GitHub
+<a name="l-52"></a><span class="tm">19:05:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-53"></a><span class="tm">19:06:37</span><span class="nk"> &lt;jtimon&gt;</span> I generally dislike that we fork the branch knowing that some fix will be needed in both branches in advance
+<a name="l-54"></a><span class="tm">19:06:40</span><span class="nk"> &lt;BlueMatt&gt;</span> 9377 we agreed previously was bugfix, and 9526, if we merge it for 14, i'd call a bugfix
+<a name="l-55"></a><span class="tm">19:07:04</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jtimon:</span> There won't be a branch today
+<a name="l-56"></a><span class="tm">19:07:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> no, we branch in 2 weeks
+<a name="l-57"></a><span class="tm">19:07:19</span><span class="nk"> &lt;MarcoFalke&gt;</span> We still have next week to fix bugs
+<a name="l-58"></a><span class="tm">19:07:22</span><span class="nk"> &lt;jtimon&gt;</span> the whole "we can merge it after fork, because it's a bugfix" concept
+<a name="l-59"></a><span class="tm">19:07:37</span><span class="nk"> &lt;sipa&gt;</span> the fork is only in 2 weeks
+<a name="l-60"></a><span class="tm">19:07:37</span><span class="nk"> &lt;wumpus&gt;</span> who is talking about a fork?
+<a name="l-61"></a><span class="tm">19:07:45</span><span class="nk"> &lt;sipa&gt;</span> bugfixes can go in in between
+<a name="l-62"></a><span class="tm">19:07:53</span><span class="nk"> &lt;wumpus&gt;</span> bugfixes can be merged, by definition, after the feature freeze
+<a name="l-63"></a><span class="tm">19:07:57</span><span class="nk"> &lt;jtimon&gt;</span> oh, I see, just mean 0.14 git fork, ie just branching
+<a name="l-64"></a><span class="tm">19:07:59</span><span class="nk"> &lt;wumpus&gt;</span> because it's a feature freeze nto a bug fix freeze
+<a name="l-65"></a><span class="tm">19:08:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. And technically 9294 is kind-of-a-fix for the missed HD chain split in 0.13. And there are no things to fix... only stuff to improve
+<a name="l-66"></a><span class="tm">19:08:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> today (or whenever we decide) is the feature freeze. the actual 0.14 branch is only created in 2 weeks
+<a name="l-67"></a><span class="tm">19:08:29</span><span class="nk"> &lt;BlueMatt&gt;</span> 9294 has string changes, so must be today or not at all
+<a name="l-68"></a><span class="tm">19:08:34</span><span class="nk"> &lt;wumpus&gt;</span> the branch is created at rc1 time
+<a name="l-69"></a><span class="tm">19:08:54</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> thanks I mixed feature freeze with branching
+<a name="l-70"></a><span class="tm">19:08:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> Yes. I'm happy to merge it without the Consensus::Params::nPowTargetTimespan change
+<a name="l-71"></a><span class="tm">19:08:56</span><span class="nk"> &lt;wumpus&gt;</span> (so that releases happen from a branch, not from master)
+<a name="l-72"></a><span class="tm">19:09:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> If no objections...
+<a name="l-73"></a><span class="tm">19:09:12</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> open a new pr for that change, and then merge it, I'd say
+<a name="l-74"></a><span class="tm">19:09:25</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jonasschnelli:</span> Agree
+<a name="l-75"></a><span class="tm">19:09:25</span><span class="nk"> &lt;BlueMatt&gt;</span> (merge the one without the Consensus::Params thing, then open a pr to change it)
+<a name="l-76"></a><span class="tm">19:09:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay.
+<a name="l-77"></a><span class="tm">19:09:34</span><span class="nk"> &lt;jtimon&gt;</span> so ideally all the bugfixes we know will be merged before branching, forget about my previous comment then
+<a name="l-78"></a><span class="tm">19:09:50</span><span class="nk"> &lt;morcos&gt;</span> I apologize for not reviewing 9294, but i feel like i never got up to speed enough with the code in question.  I do thik that although it's not critical and isn't already tagged 0.14, #9535 could be merged now and i know cfields wants it too
+<a name="l-79"></a><span class="tm">19:09:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9535 | Split CNode::cs_vSend: message processing and message sending by TheBlueMatt · Pull Request #9535 · bitcoin/bitcoin · GitHub
+<a name="l-80"></a><span class="tm">19:10:11</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jonasschnelli pushed 2 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/2ef52d3cf11b...b25068697fdb
+<a name="l-81"></a><span class="tm">19:10:11</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 1440ec7c7 15Jonas Schnelli: [Qt] Improve progress display during headers-sync and peer-finding
+<a name="l-82"></a><span class="tm">19:10:12</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14b250686 15Jonas Schnelli: Merge #9461: [Qt] Improve progress display during headers-sync and peer-finding...
+<a name="l-83"></a><span class="tm">19:10:17</span><span class="nk"> &lt;wumpus&gt;</span> all the bugfixes we know and can realistically make the release (or are critical enough to delay it) should be merged before rc1, yes, thus before the branch
+<a name="l-84"></a><span class="tm">19:10:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> multiwallet pains me. because darn, such a simple set of changes remaining.  we need to get out of this mode where all the intensity is in the week before feature freeze. :P  (maybe new major version every month. :P )
+<a name="l-85"></a><span class="tm">19:10:20</span><span class="nk"> &lt;sipa&gt;</span> i think 9525 is pretty trivial
+<a name="l-86"></a><span class="tm">19:10:26</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jonasschnelli closed pull request #9461: [Qt] Improve progress display during headers-sync and peer-finding (06master...062017/01/qt_sync) 02https://github.com/bitcoin/bitcoin/pull/9461
+<a name="l-87"></a><span class="tm">19:10:35</span><span class="nk"> &lt;sipa&gt;</span> eh, 9535
+<a name="l-88"></a><span class="tm">19:11:22</span><span class="nk"> &lt;wumpus&gt;</span> all the intensity isn't in the week before feature freeze, we've merged tons of stuff in the last months
+<a name="l-89"></a><span class="tm">19:11:29</span><span class="nk"> &lt;morcos&gt;</span> it's got enough ack's are there any objections to 9535 sipa?
+<a name="l-90"></a><span class="tm">19:11:33</span><span class="nk"> &lt;luke-jr&gt;</span> it's okay
+<a name="l-91"></a><span class="tm">19:11:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ok, so press the button? I'd call jtimon's review pretty thourough (even ignoring all the lock testing I plan on doing in the next 2 weeks)
+<a name="l-92"></a><span class="tm">19:11:53</span><span class="nk"> &lt;wumpus&gt;</span> and some things won't make a release, that's okay
+<a name="l-93"></a><span class="tm">19:12:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> I wouldn't call it complete, but I noted the parts I did not do
+<a name="l-94"></a><span class="tm">19:12:46</span><span class="nk"> &lt;wumpus&gt;</span> priority for 0.14 is solving the nasty remaining issues, like the wallet sync problems
+<a name="l-95"></a><span class="tm">19:12:46</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so we need to figure out what to do about #9294, does anyone have any objections to merging so that we can freeze and getting postumous acks?
+<a name="l-96"></a><span class="tm">19:12:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-97"></a><span class="tm">19:12:56</span><span class="nk"> &lt;morcos&gt;</span> assuming someone is about to press merge on 9535, the only open question is do we hold off the feature freeze for 9294  (what he said)
+<a name="l-98"></a><span class="tm">19:13:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> next topic...lets finalize list of things for freeze today first :p
+<a name="l-99"></a><span class="tm">19:13:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> I agree with the two you mentioned
+<a name="l-100"></a><span class="tm">19:14:01</span><span class="nk"> &lt;cfields&gt;</span> i'm afraid i'm unable to provide meaningful review on 9294. I had a few nits that weren't worth pointing out, but nothing else
+<a name="l-101"></a><span class="tm">19:14:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#9461 </span><span class="cmdline">and #9294</span>
+<a name="l-102"></a><span class="tm">19:14:04</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9461 | [Qt] Improve progress display during headers-sync and peer-finding by jonasschnelli · Pull Request #9461 · bitcoin/bitcoin · GitHub
+<a name="l-103"></a><span class="tm">19:14:07</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-104"></a><span class="tm">19:14:22</span><span class="nk"> &lt;sipa&gt;</span> what about #9519 and #9377. are those bugfixes?
+<a name="l-105"></a><span class="tm">19:14:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> 9461 is merged
+<a name="l-106"></a><span class="tm">19:14:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9519 | Exclude RBF replacement txs from fee estimation by morcos · Pull Request #9519 · bitcoin/bitcoin · GitHub
+<a name="l-107"></a><span class="tm">19:14:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9377 | fundrawtransaction: Keep change-output keys by default, make it optional by jonasschnelli · Pull Request #9377 · bitcoin/bitcoin · GitHub
+<a name="l-108"></a><span class="tm">19:14:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, bugfixes with no translation string changes
+<a name="l-109"></a><span class="tm">19:14:47</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-110"></a><span class="tm">19:14:48</span><span class="nk"> &lt;morcos&gt;</span> 9519 is a bugfix and it's extremely simple
+<a name="l-111"></a><span class="tm">19:14:50</span><span class="nk"> &lt;BlueMatt&gt;</span> (if we decide to merge them, I'm confident in calling both bugfixes)
+<a name="l-112"></a><span class="tm">19:14:55 </span><span class="nka">* jonasschnelli</span> <span class="ac">going to rebase 9377</span>
+<a name="l-113"></a><span class="tm">19:15:18</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">cfields:</span> same for me, I just did concept aCK for #9294
+<a name="l-114"></a><span class="tm">19:15:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-115"></a><span class="tm">19:15:34</span><span class="nk"> &lt;instagibbs&gt;</span> If it helps hd split get in, I promise a tACK after the fact
+<a name="l-116"></a><span class="tm">19:16:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> do you plan on needing to change any behavior or meaning of any options for #9526?
+<a name="l-117"></a><span class="tm">19:16:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9526 | -blocksonly should disable sharing of mempool with dbcache · Issue #9526 · bitcoin/bitcoin · GitHub
+<a name="l-118"></a><span class="tm">19:16:17</span><span class="nk"> &lt;wumpus&gt;</span> ok that leaves #9294 then, let's all review that
+<a name="l-119"></a><span class="tm">19:16:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-120"></a><span class="tm">19:16:28</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so acks on the following for today: hd split (9294), net lock split (9535)
+<a name="l-121"></a><span class="tm">19:16:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">review #9294 asap so it can still make the cut</span>
+<a name="l-122"></a><span class="tm">19:16:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-123"></a><span class="tm">19:16:44</span><span class="nk"> &lt;BlueMatt&gt;</span> then we can move on to next topic
+<a name="l-124"></a><span class="tm">19:17:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Should we touch/chat about the wallet sync issue? https://github.com/bitcoin/bitcoin/pull/9583
+<a name="l-125"></a><span class="tm">19:17:32</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, next topic: wallet inconsistency (revert #7946 for 0.14 is pr 9583), see issue #9584 and #9148
+<a name="l-126"></a><span class="tm">19:17:34</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7946 | Reduce cs_main locks during ConnectTip/SyncWithWallets by jonasschnelli · Pull Request #7946 · bitcoin/bitcoin · GitHub
+<a name="l-127"></a><span class="tm">19:17:34</span><span class="nk"> &lt;BlueMatt&gt;</span> ?
+<a name="l-128"></a><span class="tm">19:17:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9584 | Synchronization problems with wallet. · Issue #9584 · bitcoin/bitcoin · GitHub
+<a name="l-129"></a><span class="tm">19:17:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9148 | Wallet RPCs can return stale info due to ProcessNewBlock Race · Issue #9148 · bitcoin/bitcoin · GitHub
+<a name="l-130"></a><span class="tm">19:17:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">#9583 and #9584 (morcos)</span>
+<a name="l-131"></a><span class="tm">19:17:46</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9583 | Move wallet callbacks into cs_main (this effectively reverts #7946) by TheBlueMatt · Pull Request #9583 · bitcoin/bitcoin · GitHub
+<a name="l-132"></a><span class="tm">19:17:47</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9584 | Synchronization problems with wallet. · Issue #9584 · bitcoin/bitcoin · GitHub
+<a name="l-133"></a><span class="tm">19:18:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> please make sure you see this so you don't complain later that you didn't realize we were sticking everything back into cs_main again
+<a name="l-134"></a><span class="tm">19:18:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> I apologise for 7946,... I wasn't aware that this could cause sync issues
+<a name="l-135"></a><span class="tm">19:18:26</span><span class="nk"> &lt;wumpus&gt;</span> I tagged 9535 for 0.14 (I uess that's the intent?)
+<a name="l-136"></a><span class="tm">19:18:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> ehh, nbd, thats why it was early in a release cycle...sadly no one fixed it before now :(
+<a name="l-137"></a><span class="tm">19:18:47</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes or just merge. i think its ready, but not sure why it hasn't been
+<a name="l-138"></a><span class="tm">19:18:48</span><span class="nk"> &lt;BlueMatt&gt;</span> turns out there is complicated machinery to fix it, eg #9570
+<a name="l-139"></a><span class="tm">19:18:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9570 | Block Wallet RPCs until wallet is synced to our current chain by TheBlueMatt · Pull Request #9570 · bitcoin/bitcoin · GitHub
+<a name="l-140"></a><span class="tm">19:18:50</span><span class="nk"> &lt;BlueMatt&gt;</span> but like x2
+<a name="l-141"></a><span class="tm">19:19:10</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm working on a version of it, but I really dont like that much change this late in cycle
+<a name="l-142"></a><span class="tm">19:19:25</span><span class="nk"> &lt;BlueMatt&gt;</span> so hopefully we can get the changes in super early in 0.15, and get lots of eyes on it through that cylc
+<a name="l-143"></a><span class="tm">19:19:26</span><span class="nk"> &lt;BlueMatt&gt;</span> e
+<a name="l-144"></a><span class="tm">19:19:31</span><span class="nk"> &lt;BlueMatt&gt;</span> ^ this is my recommendation
+<a name="l-145"></a><span class="tm">19:19:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> well it's not tagged for 0.14, so it has been hidden for me as that's what I've been focusing on
+<a name="l-146"></a><span class="tm">19:19:40</span><span class="nk"> &lt;BlueMatt&gt;</span> which is merge 9583
+<a name="l-147"></a><span class="tm">19:20:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> the issue to track this (9148) has been tagged for 14 all along
+<a name="l-148"></a><span class="tm">19:20:11</span><span class="nk"> &lt;CodeShark&gt;</span> What's the target date for 0.15?
+<a name="l-149"></a><span class="tm">19:20:11</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> which is your recommendation? 9538?
+<a name="l-150"></a><span class="tm">19:20:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> yes
+<a name="l-151"></a><span class="tm">19:20:25</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 3 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/b25068697fdb...82274c02ed2d
+<a name="l-152"></a><span class="tm">19:20:25</span><span class="nk"> &lt;cfields&gt;</span> heh, laggy.
+<a name="l-153"></a><span class="tm">19:20:26</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14d7c58ad 15Matt Corallo: Split CNode::cs_vSend: message processing and message sending...
+<a name="l-154"></a><span class="tm">19:20:26</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14376b3c2 15Matt Corallo: Make the cs_sendProcessing a LOCK instead of a TRY_LOCK...
+<a name="l-155"></a><span class="tm">19:20:27</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 1482274c0 15Wladimir J. van der Laan: Merge #9535: Split CNode::cs_vSend: message processing and message sending...
+<a name="l-156"></a><span class="tm">19:20:42</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj closed pull request #9535: Split CNode::cs_vSend: message processing and message sending (06master...062017-01-cs-vsend-split) 02https://github.com/bitcoin/bitcoin/pull/9535
+<a name="l-157"></a><span class="tm">19:21:05</span><span class="nk"> &lt;morcos&gt;</span> Can anyone think of any downside for merging 9583?  Is there any chance we made further changes later that somehow were depending on the fact that we weren't holding cs_main through the wallet updates any more?
+<a name="l-158"></a><span class="tm">19:21:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> sadly, I think I agree. I've been down the rabbit hole today trying to come up with something simple, and it gets more complicated (and I become less comfortable) quickly.
+<a name="l-159"></a><span class="tm">19:21:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">CodeShark:</span> see https://github.com/bitcoin/bitcoin/issues/8719
+<a name="l-160"></a><span class="tm">19:21:33</span><span class="nk"> &lt;morcos&gt;</span> I can't think of anything htat could make sense, but really thats the only downside I could imagine... Otherwise its just not making an improvement that would have been nice to make..
+<a name="l-161"></a><span class="tm">19:22:00</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">wumpus:</span> thx
+<a name="l-162"></a><span class="tm">19:22:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> Yes. Downside is slighly slower sync/rescan
+<a name="l-163"></a><span class="tm">19:22:02</span><span class="nk"> &lt;BlueMatt&gt;</span> (and I do not believe it is (yet) a major performance regression because this is pretty much all called from the single ProcessMessages thread)
+<a name="l-164"></a><span class="tm">19:22:10</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think any design depended on not holding it, varrious testing might have.
+<a name="l-165"></a><span class="tm">19:22:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I don't see how it could result in a slower sync, it's all in one thread.
+<a name="l-166"></a><span class="tm">19:22:41</span><span class="nk"> &lt;gmaxwell&gt;</span> (and the networking thread doesn't itself grab cs_main)
+<a name="l-167"></a><span class="tm">19:23:09</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> isn't there still one site where it gets called without cs_main though?
+<a name="l-168"></a><span class="tm">19:23:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Hmm.. I guess I'm wrong. #7946 didn't and it was acctually a stepping stone for stuff that's not PRed.
+<a name="l-169"></a><span class="tm">19:23:14</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7946 | Reduce cs_main locks during ConnectTip/SyncWithWallets by jonasschnelli · Pull Request #7946 · bitcoin/bitcoin · GitHub
+<a name="l-170"></a><span class="tm">19:23:16</span><span class="nk"> &lt;BlueMatt&gt;</span> my intention for 0.15 is to move these callbacks into a background thread asap
+<a name="l-171"></a><span class="tm">19:24:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> that will not be true after the revert, i think
+<a name="l-172"></a><span class="tm">19:24:40</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> Do you mean after the reversion in 9583?  I don't think so?
+<a name="l-173"></a><span class="tm">19:25:10</span><span class="nk"> &lt;cfields&gt;</span> ok, maybe i traced it wrong. Will do again.
+<a name="l-174"></a><span class="tm">19:25:14</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, if no one has any conceptual objections to 9583, then I dont think there is much to discuss on it now, just note that thoruough review is needed
+<a name="l-175"></a><span class="tm">19:25:49</span><span class="nk"> &lt;wumpus&gt;</span> any other proposed topics?
+<a name="l-176"></a><span class="tm">19:25:56</span><span class="nk"> &lt;sipa&gt;</span> sad, but i accept that 9583 is probably the only viable solution for 0.14
+<a name="l-177"></a><span class="tm">19:26:25</span><span class="nk"> &lt;BlueMatt&gt;</span> indeed
+<a name="l-178"></a><span class="tm">19:26:35</span><span class="nk"> &lt;BlueMatt&gt;</span> one step forward, one step back, but at least we learned something
+<a name="l-179"></a><span class="tm">19:26:39</span><span class="nk"> &lt;BlueMatt&gt;</span> 2 steps forward for 0.15 :)
+<a name="l-180"></a><span class="tm">19:26:43</span><span class="nk"> &lt;luke-jr&gt;</span> ☺
+<a name="l-181"></a><span class="tm">19:27:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> We could wrap it in #ifdef WALLET_ENABLED... *duck*
+<a name="l-182"></a><span class="tm">19:27:26</span><span class="nk"> &lt;BlueMatt&gt;</span> its used in net_processing
+<a name="l-183"></a><span class="tm">19:27:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> I meant the cs_main lock for SyncTransaction, but just kidding.
+<a name="l-184"></a><span class="tm">19:29:52</span><span class="nk"> &lt;wumpus&gt;</span> any other proposed topics?
+<a name="l-185"></a><span class="tm">19:30:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> are we still doing #9501 for 0.14?
+<a name="l-186"></a><span class="tm">19:30:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9501 | Final Alert for 0.14 · Issue #9501 · bitcoin/bitcoin · GitHub
+<a name="l-187"></a><span class="tm">19:30:28</span><span class="nk"> &lt;gmaxwell&gt;</span> AFAIK we are. When should we be sending it to the network?
+<a name="l-188"></a><span class="tm">19:30:39</span><span class="nk"> &lt;sipa&gt;</span> i think this is a good a time as any
+<a name="l-189"></a><span class="tm">19:30:39</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-190"></a><span class="tm">19:30:47</span><span class="nk"> &lt;sipa&gt;</span> *as
+<a name="l-191"></a><span class="tm">19:30:52</span><span class="nk"> &lt;gmaxwell&gt;</span> We can't PR the message send until we're ready for the message to hit the network.
+<a name="l-192"></a><span class="tm">19:31:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic  </span><span class="topicline">Final Alert for 0.14</span>
+<a name="l-193"></a><span class="tm">19:31:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay I can do that today, I don't think we need any delays or announcements given the prior alert.
+<a name="l-194"></a><span class="tm">19:31:10</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> we could PR it without the signature
+<a name="l-195"></a><span class="tm">19:31:14</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ACK
+<a name="l-196"></a><span class="tm">19:31:19</span><span class="nk"> &lt;wumpus&gt;</span> let's just do it
+<a name="l-197"></a><span class="tm">19:31:23</span><span class="nk"> &lt;luke-jr&gt;</span> fine with me
+<a name="l-198"></a><span class="tm">19:31:28</span><span class="nk"> &lt;achow101&gt;</span> ACK
+<a name="l-199"></a><span class="tm">19:31:32</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> &lt;insert meme here&gt;
+<a name="l-200"></a><span class="tm">19:32:26</span><span class="nk"> &lt;gmaxwell&gt;</span> K. well at least we don't have to discuss text for it.
+<a name="l-201"></a><span class="tm">19:33:01</span><span class="nk"> &lt;achow101&gt;</span> I can pr an update to the bitcoin.org post
+<a name="l-202"></a><span class="tm">19:33:01</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-203"></a><span class="tm">19:33:16</span><span class="nk"> &lt;BlueMatt&gt;</span> 9108 needs an 0.14 tag, i believe
+<a name="l-204"></a><span class="tm">19:33:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> not necessarily
+<a name="l-205"></a><span class="tm">19:33:49</span><span class="nk"> &lt;BlueMatt&gt;</span> i vote 9392 gets a non-0.14 tag
+<a name="l-206"></a><span class="tm">19:33:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> it fixes an 0.14-tagged issue
+<a name="l-207"></a><span class="tm">19:34:02</span><span class="nk"> &lt;BlueMatt&gt;</span> so either that or 9034 loses its tag
+<a name="l-208"></a><span class="tm">19:34:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> WatchOnly where always with birthday 0
+<a name="l-209"></a><span class="tm">19:34:13</span><span class="nk"> &lt;sipa&gt;</span> https://cdn.meme.am/cache/instances/folder963/500x/74859963.jpg
+<a name="l-210"></a><span class="tm">19:34:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> indeed
+<a name="l-211"></a><span class="tm">19:34:29</span><span class="nk"> &lt;gmaxwell&gt;</span> There are a number of importmulti serious bugfixes I have queued which I was waiting until after the freeze to finish.
+<a name="l-212"></a><span class="tm">19:35:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack on untag #9034 for 0.14?
+<a name="l-213"></a><span class="tm">19:35:03</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9034 | importmulti does not respect the given timestamp · Issue #9034 · bitcoin/bitcoin · GitHub
+<a name="l-214"></a><span class="tm">19:35:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> tagged
+<a name="l-215"></a><span class="tm">19:35:31</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I assume that is related to #9491?
+<a name="l-216"></a><span class="tm">19:35:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9491 | Importmulti api is confusing in a way that could lead to funds loss. · Issue #9491 · bitcoin/bitcoin · GitHub
+<a name="l-217"></a><span class="tm">19:35:54</span><span class="nk"> &lt;morcos&gt;</span> wait i'm confused...  gmaxwell you don't want those merged before 0.14 or you do?
+<a name="l-218"></a><span class="tm">19:36:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess he don't..
+<a name="l-219"></a><span class="tm">19:36:57</span><span class="nk"> &lt;morcos&gt;</span> nm, BlueMatt confused me...   importmulti fixes should be in 0.14, i think we all agree
+<a name="l-220"></a><span class="tm">19:37:14</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-221"></a><span class="tm">19:37:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ah.. okay. I read it wrong.
+<a name="l-222"></a><span class="tm">19:37:30</span><span class="nk"> &lt;luke-jr&gt;</span> the impression I got is that gmaxwell just has more work to do on them, and was prioritising stuff before it
+<a name="l-223"></a><span class="tm">19:37:38</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-224"></a><span class="tm">19:37:54</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm ok with untagging #9027 for 14 - it was pointed out that we can do a simple fix to address the issue mentioned there, but there are other issues so its nontrivial to *really* fix
+<a name="l-225"></a><span class="tm">19:37:55</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9027 | Unbounded reorg memory usage · Issue #9027 · bitcoin/bitcoin · GitHub
+<a name="l-226"></a><span class="tm">19:39:42</span><span class="nk"> &lt;morcos&gt;</span> so in the category of fixes
+<a name="l-227"></a><span class="tm">19:40:23</span><span class="nk"> &lt;morcos&gt;</span> wumpus and sipa when you get a chance, take a look at #9371...   i think thats the direction you wanted me to go... and if we do 9583.. its pretty clearly no change in behavior from what txConflicted would have done..
+<a name="l-228"></a><span class="tm">19:40:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9371 | Notify on removal by morcos · Pull Request #9371 · bitcoin/bitcoin · GitHub
+<a name="l-229"></a><span class="tm">19:41:42</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15paveljanik opened pull request #9587: Do not shadow local variable named `tx`. (06master...0620170119_Wshadow_net_processing) 02https://github.com/bitcoin/bitcoin/pull/9587
+<a name="l-230"></a><span class="tm">19:42:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> will do
+<a name="l-231"></a><span class="tm">19:45:30</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-232"></a><span class="tm">19:45:39</span><span class="nk"> &lt;sipa&gt;</span> i propose lunch
+<a name="l-233"></a><span class="tm">19:45:39</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm done (finally) :p
+<a name="l-234"></a><span class="tm">19:45:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> too late, already did that
+<a name="l-235"></a><span class="tm">19:46:01</span><span class="nk"> &lt;wumpus&gt;</span> let's end early then
+<a name="l-236"></a><span class="tm">19:46:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
