@@ -1,0 +1,282 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:21</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jan 26 19:00:21 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:21</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:36</span><span class="nk"> &lt;instagibbs&gt;</span> (actually would be a useful optional step in gitian guide)
+<a name="l-6"></a><span class="tm">19:00:37</span><span class="nk"> &lt;wumpus&gt;</span> and yes on thesigning side you do gpg --detach-sign, no need for gitian there at all
+<a name="l-7"></a><span class="tm">19:00:55</span><span class="nk"> &lt;wumpus&gt;</span> yes the gitian guide mentions signing externally but I'm not sure it says how to do that
+<a name="l-8"></a><span class="tm">19:01:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs</span>
+<a name="l-9"></a><span class="tm">19:01:45</span><span class="nk"> &lt;instagibbs&gt;</span> oops, https://github.com/bitcoin/bitcoin/blob/master/doc/gitian-building.md#signing-externally
+<a name="l-10"></a><span class="tm">19:01:51</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, ^^ ok now meeting sorry
+<a name="l-11"></a><span class="tm">19:01:56</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-12"></a><span class="tm">19:01:57</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-13"></a><span class="tm">19:02:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">instagibbs:</span> np, got good answers already
+<a name="l-14"></a><span class="tm">19:02:33</span><span class="nk"> &lt;sipa&gt;</span> if people don't shoot me for it, i'd like to briefly bring up coding style
+<a name="l-15"></a><span class="tm">19:02:40</span><span class="nk"> &lt;wumpus&gt;</span> bleh
+<a name="l-16"></a><span class="tm">19:03:00</span><span class="nk"> &lt;jtimon&gt;</span> if there's no other topic, I don't see why not
+<a name="l-17"></a><span class="tm">19:03:03</span><span class="nk"> &lt;instagibbs&gt;</span> how about just a grazing flesh wound
+<a name="l-18"></a><span class="tm">19:03:38</span><span class="nk"> &lt;wumpus&gt;</span> but yes there's no other proposals so go ahead
+<a name="l-19"></a><span class="tm">19:03:41</span><span class="nk"> &lt;MarcoFalke&gt;</span> If morcos is around, we could make a short topic on how to get the priority patch merged. (Seems to bit rot fast)
+<a name="l-20"></a><span class="tm">19:03:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">coding style</span>
+<a name="l-21"></a><span class="tm">19:04:36</span><span class="nk"> &lt;sipa&gt;</span> it seems that we're not really asking people to stick to particular coding style, and that sometimes leads to unclarities "what style should i use here?"
+<a name="l-22"></a><span class="tm">19:04:38</span><span class="nk"> &lt;BlueMatt&gt;</span> ugh
+<a name="l-23"></a><span class="tm">19:04:55</span><span class="nk"> &lt;morcos&gt;</span> i'm here..  i'm happy to worry about that after 0.14
+<a name="l-24"></a><span class="tm">19:04:57</span><span class="nk"> &lt;MarcoFalke&gt;</span> just use clang-format-diff.py *hides*
+<a name="l-25"></a><span class="tm">19:05:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">MarcoFalke:</span> +1
+<a name="l-26"></a><span class="tm">19:05:12</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, I copy the code around me :P
+<a name="l-27"></a><span class="tm">19:05:14</span><span class="nk"> &lt;jtimon&gt;</span> the answer is https://github.com/bitcoin/bitcoin/blob/master/src/.clang-format no?
+<a name="l-28"></a><span class="tm">19:05:17</span><span class="nk"> &lt;sipa&gt;</span> and i think that the "mimick the surrounding code" advice we've been following is a bad idea
+<a name="l-29"></a><span class="tm">19:05:30</span><span class="nk"> &lt;wumpus&gt;</span> I don't really see the point in spending more energy on this
+<a name="l-30"></a><span class="tm">19:05:34</span><span class="nk"> &lt;sipa&gt;</span> it doesn't actually help in making the codebase converge (which i think is goal)
+<a name="l-31"></a><span class="tm">19:05:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> I once proposed that, but everyone was against that. A CI check for clang style. We can still accept it... and could be something different then travis.
+<a name="l-32"></a><span class="tm">19:05:52</span><span class="nk"> &lt;jtimon&gt;</span> but yeah, since it's not done automatically project wise I often violate it without noticing
+<a name="l-33"></a><span class="tm">19:05:54</span><span class="nk"> &lt;MarcoFalke&gt;</span> Just format the diff on every patch and we will converge eventually.
+<a name="l-34"></a><span class="tm">19:06:03</span><span class="nk"> &lt;sipa&gt;</span> i'm not suggesting we go fix everything at once
+<a name="l-35"></a><span class="tm">19:06:11</span><span class="nk"> &lt;wumpus&gt;</span> I think mimicing the surrounding code is a good thing, usually, as long as you don't introduce really crappy looking lines well I won't hold up merging on a few code style nits
+<a name="l-36"></a><span class="tm">19:06:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i do think it would be nice if we were at least slowly converging on a common code style... i think we are making small progress..  for instance now i know to always brace my if's and i don't mind if someone points out that i forget it
+<a name="l-37"></a><span class="tm">19:06:28</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">MarcoFalke:</span> IIRC there was a python script to do that automatically
+<a name="l-38"></a><span class="tm">19:06:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> I'm opposed to a CI check for clang style...I'm in favor of a bot which auto-opens a pr which fixes clang style on recently-broken PRs
+<a name="l-39"></a><span class="tm">19:06:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes, always using braces makes sense from a security/correctness point of view
+<a name="l-40"></a><span class="tm">19:06:43</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jtimon:</span> Yes I commited those :)
+<a name="l-41"></a><span class="tm">19:06:44</span><span class="nk"> &lt;jtimon&gt;</span> or something similar, but I've never used it
+<a name="l-42"></a><span class="tm">19:06:45</span><span class="nk"> &lt;morcos&gt;</span> what is annoying is when you don't know what you're supposed to do, and then something is pointed out to you and you feel like its just a difference in taaste
+<a name="l-43"></a><span class="tm">19:07:07</span><span class="nk"> &lt;sipa&gt;</span> right - my goal is to make the codebase converge
+<a name="l-44"></a><span class="tm">19:07:10</span><span class="nk"> &lt;wumpus&gt;</span> but some other things, meh
+<a name="l-45"></a><span class="tm">19:07:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, that would be nice
+<a name="l-46"></a><span class="tm">19:07:21</span><span class="nk"> &lt;wumpus&gt;</span> it usually *is* a  difference in taste
+<a name="l-47"></a><span class="tm">19:07:24</span><span class="nk"> &lt;sipa&gt;</span> not necessarily fast, and not necessarily to whatever my own personal preference is
+<a name="l-48"></a><span class="tm">19:07:31</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">MarcoFalke:</span> right, so I think if we all use that, as you say we will eventually converge (or be close enough that is not a big deal to do the remaining stuff all at once)
+<a name="l-49"></a><span class="tm">19:07:38</span><span class="nk"> &lt;sipa&gt;</span> but i'd like to get an agreement that the goal is converging
+<a name="l-50"></a><span class="tm">19:07:50 </span><span class="nka">* BlueMatt</span> <span class="ac">votes for coding-style-recent-pr-fixup bog</span>
+<a name="l-51"></a><span class="tm">19:07:51</span><span class="nk"> &lt;BlueMatt&gt;</span> bot
+<a name="l-52"></a><span class="tm">19:08:04</span><span class="nk"> &lt;wumpus&gt;</span> as I said, I don't really see the point of spending much energy on this. There are tons of real issue
+<a name="l-53"></a><span class="tm">19:08:05</span><span class="nk"> &lt;BlueMatt&gt;</span> that way none of us have to think about it, but it still happens :)
+<a name="l-54"></a><span class="tm">19:08:16</span><span class="nk"> &lt;morcos&gt;</span> i'm +1 on converging to someone's taste.  i don't much care whose, as long as there is an answer that doesn't depend on who you ask
+<a name="l-55"></a><span class="tm">19:08:20</span><span class="nk"> &lt;wumpus&gt;</span> I don't want to see even more 'massage around a few characters idly' pulls
+<a name="l-56"></a><span class="tm">19:08:29</span><span class="nk"> &lt;jtimon&gt;</span> what about just a check in travis or something?
+<a name="l-57"></a><span class="tm">19:08:33</span><span class="nk"> &lt;wumpus&gt;</span> no.
+<a name="l-58"></a><span class="tm">19:08:39</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jtimon:</span> We don't want travis to fail due to style
+<a name="l-59"></a><span class="tm">19:08:39</span><span class="nk"> &lt;paveljanik&gt;</span> I'm in favour of slow non-forced (no-CI) convergence.
+<a name="l-60"></a><span class="tm">19:08:47</span><span class="nk"> &lt;wumpus&gt;</span> travis should check correctness
+<a name="l-61"></a><span class="tm">19:08:53</span><span class="nk"> &lt;instagibbs&gt;</span> Can we at least have a cultural push towards one? I don't care which.
+<a name="l-62"></a><span class="tm">19:08:58</span><span class="nk"> &lt;wumpus&gt;</span> if travis fails due to style, it will always be broken, believe me
+<a name="l-63"></a><span class="tm">19:09:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> +1
+<a name="l-64"></a><span class="tm">19:09:01</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, no travis-says-no-for-garbage-reasons
+<a name="l-65"></a><span class="tm">19:09:14</span><span class="nk"> &lt;MarcoFalke&gt;</span> But we might add a non-voting other-than-travis ci, if that is possible?
+<a name="l-66"></a><span class="tm">19:09:24</span><span class="nk"> &lt;wumpus&gt;</span> I don't want to block pulls on stupid style issues
+<a name="l-67"></a><span class="tm">19:09:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, very much that
+<a name="l-68"></a><span class="tm">19:09:34</span><span class="nk"> &lt;wumpus&gt;</span> there are already enough valid reasons to hold up pulls for months
+<a name="l-69"></a><span class="tm">19:09:37</span><span class="nk"> &lt;wumpus&gt;</span> please
+<a name="l-70"></a><span class="tm">19:09:41</span><span class="nk"> &lt;wumpus&gt;</span> focus on important stuff
+<a name="l-71"></a><span class="tm">19:09:43</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> right, it would be only on style on the newly modified code, but yeah, it seems it could fail when we don't want it to
+<a name="l-72"></a><span class="tm">19:10:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-73"></a><span class="tm">19:10:40</span><span class="nk"> &lt;jtimon&gt;</span> anyway, the bot could just nit open prs instead of fixing things by himself
+<a name="l-74"></a><span class="tm">19:10:42</span><span class="nk"> &lt;BlueMatt&gt;</span> the only coding style issue I'd be ok with travis complaining about is bad indentation
+<a name="l-75"></a><span class="tm">19:10:43</span><span class="nk"> &lt;morcos&gt;</span> sipa, or anyone else that has an opinon on coding style.. if you'd like to get people to move to your style on any specific thing, i think you need to get your request merged to developer-notes
+<a name="l-76"></a><span class="tm">19:10:45</span><span class="nk"> &lt;BlueMatt&gt;</span> because that leads to bugs
+<a name="l-77"></a><span class="tm">19:10:58</span><span class="nk"> &lt;sipa&gt;</span> maybe what i'm after is being able to ask people (as a non-blocking nit, even) to fix style issue, without it being seen as "forcing your personal opinion"
+<a name="l-78"></a><span class="tm">19:11:05</span><span class="nk"> &lt;wumpus&gt;</span> I say if there's use of coding style that is known to introduce bugs (such as unbraced conditionals) there's a point to pointing it out
+<a name="l-79"></a><span class="tm">19:11:18</span><span class="nk"> &lt;morcos&gt;</span> if its in there, i think its fair game for pointing out not meeting it...  if its not in there.. well come on
+<a name="l-80"></a><span class="tm">19:11:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> people already complain about endless nits when they show up for the first time to contribute...I'm ok with my own prs getting that, but not people trying to do one-offs
+<a name="l-81"></a><span class="tm">19:11:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> of course, only for things in the style guide
+<a name="l-82"></a><span class="tm">19:11:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes, it should certainly be documented in that file
+<a name="l-83"></a><span class="tm">19:11:45 </span><span class="nka">* jtimon</span> <span class="ac">wonders if this is the right time to indent CheckTxInputs</span>
+<a name="l-84"></a><span class="tm">19:11:58</span><span class="nk"> &lt;wumpus&gt;</span> if it's not in there there's no basis for pointing it out
+<a name="l-85"></a><span class="tm">19:12:11</span><span class="nk"> &lt;morcos&gt;</span> we are all talking about NEW code...  but jtimon brings up a good point...
+<a name="l-86"></a><span class="tm">19:12:26</span><span class="nk"> &lt;sipa&gt;</span> a move-only commit should probably not change style
+<a name="l-87"></a><span class="tm">19:12:35</span><span class="nk"> &lt;morcos&gt;</span> for instance i have a couple of recent PR's that add braces without changing indentation....
+<a name="l-88"></a><span class="tm">19:12:44</span><span class="nk"> &lt;sipa&gt;</span> about that:
+<a name="l-89"></a><span class="tm">19:12:47</span><span class="nk"> &lt;wumpus&gt;</span> eh, indeed, that makes it harder to check whether it's mov only
+<a name="l-90"></a><span class="tm">19:12:58</span><span class="nk"> &lt;sipa&gt;</span> git diff -w, git blame -w, git show -w, ...
+<a name="l-91"></a><span class="tm">19:13:03</span><span class="nk"> &lt;morcos&gt;</span> i thought thats what people preferred...  but i'm happy to add the indentation if people can figure out how to ignore the white space changes
+<a name="l-92"></a><span class="tm">19:13:05</span><span class="nk"> &lt;gmaxwell&gt;</span> changing style though should result in the same object files.
+<a name="l-93"></a><span class="tm">19:13:16</span><span class="nk"> &lt;sipa&gt;</span> and even github supports whitespace ignoring diffs, add ?w=1 to the URL
+<a name="l-94"></a><span class="tm">19:13:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> definitely
+<a name="l-95"></a><span class="tm">19:13:22</span><span class="nk"> &lt;morcos&gt;</span> ok... good wiht me.. i just thought people wanted differently b/c of similar examples in the codebase
+<a name="l-96"></a><span class="tm">19:13:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> you meant -b
+<a name="l-97"></a><span class="tm">19:13:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that means adding/removing no empty lines though
+<a name="l-98"></a><span class="tm">19:13:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> because line numbers
+<a name="l-99"></a><span class="tm">19:13:53</span><span class="nk"> &lt;instagibbs&gt;</span> do we have a style guide already?
+<a name="l-100"></a><span class="tm">19:13:58</span><span class="nk"> &lt;instagibbs&gt;</span> "if" braces even
+<a name="l-101"></a><span class="tm">19:14:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> you don't know?
+<a name="l-102"></a><span class="tm">19:14:04</span><span class="nk"> &lt;jtimon&gt;</span> yeah, regarding CheckTxInputs I believe I was asked to wait after moving it for indenting ages ago or something, but yeah, didn't know -w and that's more reason not to wait for anything (specially moves that may never happen)
+<a name="l-103"></a><span class="tm">19:14:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I think lots of people dont...
+<a name="l-104"></a><span class="tm">19:14:11</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we should avoid changing indents spairingly. And then fix it not long after.
+<a name="l-105"></a><span class="tm">19:14:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> https://github.com/bitcoin/bitcoin/blob/master/doc/developer-notes.md
+<a name="l-106"></a><span class="tm">19:14:15</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, I'm here to ask the dumb questions
+<a name="l-107"></a><span class="tm">19:15:00</span><span class="nk"> &lt;gmaxwell&gt;</span> the developer nodes style guide isn't much of a style guide (not a complaint), and its more of one recently, but I don't normally consider it the place to go to figure out how to format something. :)
+<a name="l-108"></a><span class="tm">19:15:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> we refer to it in CONTRIBUTING.md, which automatically gets linked if you submit a PR
+<a name="l-109"></a><span class="tm">19:15:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it's not supposed to have a lot of formatting guidelines, just basic ones
+<a name="l-110"></a><span class="tm">19:15:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i'm perfectly fine restricting my style nits to things that are in that file
+<a name="l-111"></a><span class="tm">19:15:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I believe only for issues - I've never seen it for PRs
+<a name="l-112"></a><span class="tm">19:15:47</span><span class="nk"> &lt;BlueMatt&gt;</span> but, ok, fair
+<a name="l-113"></a><span class="tm">19:16:13</span><span class="nk"> &lt;wumpus&gt;</span> it mentions the "always use braces" though
+<a name="l-114"></a><span class="tm">19:16:22</span><span class="nk"> &lt;jtimon&gt;</span> right, I believe we should try to avoid style nits that we don't have documented
+<a name="l-115"></a><span class="tm">19:16:37 </span><span class="nka">* BlueMatt</span> <span class="ac">thinks the endless "add braces here" comments in the past month got kinda annoying for a while</span>
+<a name="l-116"></a><span class="tm">19:16:46</span><span class="nk"> &lt;wumpus&gt;</span> definitely. In general please try to not cloud out serious discussion with lots of style nits
+<a name="l-117"></a><span class="tm">19:16:54</span><span class="nk"> &lt;BlueMatt&gt;</span> agree with them, but annoying
+<a name="l-118"></a><span class="tm">19:16:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> thats a very good point
+<a name="l-119"></a><span class="tm">19:17:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> that's my point ^^
+<a name="l-120"></a><span class="tm">19:17:04</span><span class="nk"> &lt;jtimon&gt;</span> and by documented I'm fine counting https://github.com/bitcoin/bitcoin/blob/master/src/.clang-format
+<a name="l-121"></a><span class="tm">19:17:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, just agreeing, I suppose :)
+<a name="l-122"></a><span class="tm">19:17:28</span><span class="nk"> &lt;MarcoFalke&gt;</span> We should just raise awareness that there is a script to do the formatting for you.
+<a name="l-123"></a><span class="tm">19:17:30</span><span class="nk"> &lt;sipa&gt;</span> yeah, no point in "add braces here" and "and here!" and "and here also!" comments all over the place, i guess
+<a name="l-124"></a><span class="tm">19:17:35</span><span class="nk"> &lt;MarcoFalke&gt;</span> No need to spam pull requests
+<a name="l-125"></a><span class="tm">19:17:39</span><span class="nk"> &lt;gmaxwell&gt;</span> Peopel should say if it bothers them, but my expirence is that small things like that improve moral in development teams.  It's an oppturnity to help each other which is very easy and clear. Not "please totally redesign your patch". :)
+<a name="l-126"></a><span class="tm">19:17:52</span><span class="nk"> &lt;gmaxwell&gt;</span> people*
+<a name="l-127"></a><span class="tm">19:18:12</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">MarcoFalke:</span> right, althought the bot that runs the script for you and complains in your PR sounds like a good idea to me
+<a name="l-128"></a><span class="tm">19:18:21</span><span class="nk"> &lt;gmaxwell&gt;</span> At least I find it gratifying to go, fixed, fixed, fixed, fixed.. and now the patch is awesome hurray and thanks for your help. :)
+<a name="l-129"></a><span class="tm">19:18:27</span><span class="nk"> &lt;sipa&gt;</span> enough said on the topic, as far as i'm concerned
+<a name="l-130"></a><span class="tm">19:18:31</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, feel free to propose a "non blocking, non-nitting" style
+<a name="l-131"></a><span class="tm">19:18:35</span><span class="nk"> &lt;instagibbs&gt;</span> :P
+<a name="l-132"></a><span class="tm">19:18:40</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">PSA Use clang-format-diff.py before submitting a patch, whenever possible.</span>
+<a name="l-133"></a><span class="tm">19:18:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sure, as long as it's not overly pedantic, and doesn't continue time after time. e.g. you're just about to merge something and a new screenful of style nits appears
+<a name="l-134"></a><span class="tm">19:19:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span> is there instructions on that? also does it know about our new brace requirements?
+<a name="l-135"></a><span class="tm">19:19:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> good advice I suppose, should go into CONTRIBUTING.md
+<a name="l-136"></a><span class="tm">19:19:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> so how about treating style always as non-blocking (for the person deciding to merge)
+<a name="l-137"></a><span class="tm">19:19:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">fix clang-format https://github.com/bitcoin/bitcoin/pull/9506#issuecomment-271727718</span>
+<a name="l-138"></a><span class="tm">19:19:45</span><span class="nk"> &lt;jtimon&gt;</span> we can always ignore the bot in certain cases if it makes sense
+<a name="l-139"></a><span class="tm">19:19:52</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">gmaxwell:</span> There should be a doc in /contrib/dev-tools, no?
+<a name="l-140"></a><span class="tm">19:20:13</span><span class="nk"> &lt;wumpus&gt;</span> yes there is documentation on how to use it
+<a name="l-141"></a><span class="tm">19:20:26 </span><span class="nka">* wumpus</span> <span class="ac">wonders if there is still so much differnce between clang versions, for recent versions</span>
+<a name="l-142"></a><span class="tm">19:20:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span>  I dunno, never used that tool before. it's not mentioned in contributing.md.
+<a name="l-143"></a><span class="tm">19:20:37</span><span class="nk"> &lt;wumpus&gt;</span> I mean in how clang-format formats
+<a name="l-144"></a><span class="tm">19:21:04</span><span class="nk"> &lt;jtimon&gt;</span> right, we need to use the same version
+<a name="l-145"></a><span class="tm">19:21:11</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, I'm willing to install a specific version of clang for this-- as most of us should be... but just something to keep in mind for random contributors from the interwebs.
+<a name="l-146"></a><span class="tm">19:21:16</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">wumpus:</span> Last time I checked there were no diffs, but it was a year ago or so.
+<a name="l-147"></a><span class="tm">19:21:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well it's very possible that it stabilized, it's less important for format-patch than when requiring a reformat of the whole source, then it will oscillate :p
+<a name="l-148"></a><span class="tm">19:22:02</span><span class="nk"> &lt;MarcoFalke&gt;</span> But it should not matter for 99.9% of the code.
+<a name="l-149"></a><span class="tm">19:22:36</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, other topics?
+<a name="l-150"></a><span class="tm">19:23:16</span><span class="nk"> &lt;sipa&gt;</span> how are we on 0.14 bugs?
+<a name="l-151"></a><span class="tm">19:23:45</span><span class="nk"> &lt;gmaxwell&gt;</span> All bugs are features, hurray.
+<a name="l-152"></a><span class="tm">19:23:54</span><span class="nk"> &lt;morcos&gt;</span> i have one more that needs tagging 0.14.. and i think sdaftuar has 1-2 coming
+<a name="l-153"></a><span class="tm">19:24:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bug-fixing for 0.14</span>
+<a name="l-154"></a><span class="tm">19:24:18</span><span class="nk"> &lt;morcos&gt;</span> they are all kind of minor fixups for bumpfee or replacement type stuff... mostly edge cases.. nothing serious
+<a name="l-155"></a><span class="tm">19:24:32</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">morcos:</span> I think the one you want to tag is more a feature than a bug fix. At some point we need to draw the line and release.
+<a name="l-156"></a><span class="tm">19:24:40</span><span class="nk"> &lt;morcos&gt;</span> please tag #9615
+<a name="l-157"></a><span class="tm">19:24:43</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+<a name="l-158"></a><span class="tm">19:24:53</span><span class="nk"> &lt;MarcoFalke&gt;</span> But the one that is tagged right now should be merged as bug fix
+<a name="l-159"></a><span class="tm">19:25:09</span><span class="nk"> &lt;achow101&gt;</span> I have a bug-fix (I think) for decoderawtx rpc
+<a name="l-160"></a><span class="tm">19:25:13</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">MarcoFalke:</span> well its a bug fix b/c if we ever do a release without having a more conservative wallet incremental fee, then we are screwed for ever incrementing it
+<a name="l-161"></a><span class="tm">19:25:22</span><span class="nk"> &lt;morcos&gt;</span> this has bit us in the past with dust fees
+<a name="l-162"></a><span class="tm">19:25:24</span><span class="nk"> &lt;wumpus&gt;</span> tagged
+<a name="l-163"></a><span class="tm">19:25:39</span><span class="nk"> &lt;jtimon&gt;</span> reminder, there's currently 6 open prs for 0.14.0: 9638 9626 9622 9609 9589 9108
+<a name="l-164"></a><span class="tm">19:25:39</span><span class="nk"> &lt;morcos&gt;</span> its also really simple
+<a name="l-165"></a><span class="tm">19:26:33</span><span class="nk"> &lt;morcos&gt;</span> i also mention in there that i think we should increase the incremental fee... that coudl be a topic.. but i realize people might not want to do it this close to release, but at least worth discussing it as a general idea and why..
+<a name="l-166"></a><span class="tm">19:26:47 </span><span class="nka">* BlueMatt</span> <span class="ac">is waiting on (needs to review 9609) and then run things in helgrind again...will generate lots of std::atomic changes</span>
+<a name="l-167"></a><span class="tm">19:26:54</span><span class="nk"> &lt;BlueMatt&gt;</span> but they should all be minor/trivial
+<a name="l-168"></a><span class="tm">19:27:07</span><span class="nk"> &lt;gmaxwell&gt;</span> :-/
+<a name="l-169"></a><span class="tm">19:27:12</span><span class="nk"> &lt;morcos&gt;</span> but given that it might already be close to needing to be raised, we have to do 9615
+<a name="l-170"></a><span class="tm">19:27:18</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jonasschnelli closed pull request #9370: Fix fundrawtransactions address-reuse problem (06master...062016/12/fix_frt_cop) 02https://github.com/bitcoin/bitcoin/pull/9370
+<a name="l-171"></a><span class="tm">19:27:33</span><span class="nk"> &lt;MarcoFalke&gt;</span> What if we want to increment it to 6000 satoshis in two years, then 0.14 will "fall off" regardless.
+<a name="l-172"></a><span class="tm">19:27:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> if there are helgrind results I am doubtful that sprinking atomics everywhere is usually the right solution. For some things like flags it can be... but if we're hitting helgrind errors it means we've gotten the locking wrong.
+<a name="l-173"></a><span class="tm">19:28:01</span><span class="nk"> &lt;cfields&gt;</span> whoops, lost track of time. here.
+<a name="l-174"></a><span class="tm">19:28:09</span><span class="nk"> &lt;MarcoFalke&gt;</span> But I get your point, I just think it is not a blocker. It could also go into 0.14.1
+<a name="l-175"></a><span class="tm">19:28:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">MarcoFalke:</span> yes.. but that is something we will keep in mind if ever changing the default... is how many old versions will become less than optimal..  i don't know any better way to do it... there is a tradeoff
+<a name="l-176"></a><span class="tm">19:28:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> shit like CNode::copyStats...should be trivial, is only used in (effectively) debug info, doesnt matter much
+<a name="l-177"></a><span class="tm">19:28:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> but, yes, otherwise agreed
+<a name="l-178"></a><span class="tm">19:28:51</span><span class="nk"> &lt;morcos&gt;</span> but if it goes in 0.14.1 then 0.14.0 could become broken for bumpfee within a few months...  that seems bad!
+<a name="l-179"></a><span class="tm">19:28:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> tend to agree, doesn't seem like making everything atomic is the proper way to solve concurrency issues - it just shuts up the warnings, without addressing the root cause
+<a name="l-180"></a><span class="tm">19:29:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> thats why I never did a pile of PRs to do it :p
+<a name="l-181"></a><span class="tm">19:29:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> oh incremental is just the thing that bumpfee uses but not the acceptance policy (behind on the naming since the split)
+<a name="l-182"></a><span class="tm">19:29:46</span><span class="nk"> &lt;wumpus&gt;</span> that's like putting (unsigned) everywhere to shut up comparisons between signed/unsigned errors without looking at the ranges
+<a name="l-183"></a><span class="tm">19:30:16</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">gmaxwell:</span> Yes, the goal is to split the wallet default and the relay default.
+<a name="l-184"></a><span class="tm">19:30:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes for statistics it seems harmless
+<a name="l-185"></a><span class="tm">19:30:20</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, I didn't expect people to button-mash bumpfee, but maybe I'm wrong on usage patterns
+<a name="l-186"></a><span class="tm">19:30:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> incremental is the policy,  #9615 introduces a wallet incremental which is higher than the default incremental to future-proof...  not configurable, but maxed with actual incremental
+<a name="l-187"></a><span class="tm">19:30:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+<a name="l-188"></a><span class="tm">19:30:40</span><span class="nk"> &lt;gmaxwell&gt;</span> I would agree that bumpfees behavior should be more conservative. (IMO bumpfee should always increase at least multiple of the prior feerate, not just the incremental, in order to give log() bumps at worst)
+<a name="l-189"></a><span class="tm">19:30:46</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> many are net things that have been around forever (CNodeStats). I have some ideas in mind for fixing them post-0.14, but I think the changes will end up being too big for 0.14
+<a name="l-190"></a><span class="tm">19:30:52</span><span class="nk"> &lt;cfields&gt;</span> (re atomics)
+<a name="l-191"></a><span class="tm">19:30:55</span><span class="nk"> &lt;instagibbs&gt;</span> In the case of "I just did it, or est feerate is same, I just want higher" this concern seems real
+<a name="l-192"></a><span class="tm">19:31:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> right
+<a name="l-193"></a><span class="tm">19:31:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> i think its reasonable to expect stuck transaction problems might get considerably worse over the next 6 months...   an improved fee estimation is definitely needed...  but its certainly possible bumpfee will be important.
+<a name="l-194"></a><span class="tm">19:31:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> forgot for a minute that the topic is fixes for 0.14 :)
+<a name="l-195"></a><span class="tm">19:31:51</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> yes, otherwise i'd be yelling about s/int/atomic_int/ too, for sure :)
+<a name="l-196"></a><span class="tm">19:32:14</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> it by default does a new estimatefee...  it just max's that with a multiple of the increment above to make sure it will pass policy
+<a name="l-197"></a><span class="tm">19:33:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> right, I think it should also max with a e.g. 10% increase... so that you don't ever have the issue of needing hundreds of bumps to span a plausable range.  I'm in the weeds here though.
+<a name="l-198"></a><span class="tm">19:33:57</span><span class="nk"> &lt;morcos&gt;</span> this is the first time we're releasing bumpfee... i think we've come up with a lot of minor improvements recently and i know its a lot to keep track of..  but it doesn't make sense to me to release it for the first time with sub-optimal behavior if there are known simple fixes
+<a name="l-199"></a><span class="tm">19:35:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yeah.. maybe..   but that could be an improvement for the future... i just want to make it so the old version doesn't run into a problem where its txs aren't even accepted by peers mempools if we change default policy  (which i think should be another topic)
+<a name="l-200"></a><span class="tm">19:35:43</span><span class="nk"> &lt;wumpus&gt;</span> well, I'm happy that at least we've merged it for 0.14, makes sense to improve it where possible before the release, if we have clear ideas of course
+<a name="l-201"></a><span class="tm">19:35:56</span><span class="nk"> &lt;gmaxwell&gt;</span> (well the observation that a multiplictive increase is necessary and sufficient to span an arbitary range with log() bumps is not a new observation. ... I believe it's mentioned in the RBF FAQ.)
+<a name="l-202"></a><span class="tm">19:36:15</span><span class="nk"> &lt;morcos&gt;</span> yes to be clear i'm not opposed to anyone else doing gmaxwell's idea before release.. i jsut want to do at least what i've suggested
+<a name="l-203"></a><span class="tm">19:36:36</span><span class="nk"> &lt;gmaxwell&gt;</span> Someone should take a look at what green address and electrum are doing here to see if they've caught anything we've missed-- both have bumping in production. I volunteer to check greenaddress.
+<a name="l-204"></a><span class="tm">19:36:47</span><span class="nk"> &lt;morcos&gt;</span> i mean this ties into my other topic
+<a name="l-205"></a><span class="tm">19:37:17</span><span class="nk"> &lt;morcos&gt;</span> when i heard petertodd talking about how he just presses bumpfee in a loop (or maybe he does his own version, but in the future other people might just press bumpfee)
+<a name="l-206"></a><span class="tm">19:37:34</span><span class="nk"> &lt;morcos&gt;</span> it occurred to me we are allowing WAY too much relay for 1 tx being mined
+<a name="l-207"></a><span class="tm">19:38:33</span><span class="nk"> &lt;morcos&gt;</span> so gmaxwell is right that there are 2 ways to improve upon this... 1) raise incremental relay rate required...  and 2) make it so the behavior of our own code doesn't cause this ridiculous relay iteration by default if people want to do periodic bumping to get confirmed
+<a name="l-208"></a><span class="tm">19:39:04</span><span class="nk"> &lt;gmaxwell&gt;</span> minrelayfee is minrealy fee, replacement is orthorgonal--  you can use X bytes of relay for exposing yourself to Y fee either way.
+<a name="l-209"></a><span class="tm">19:39:06</span><span class="nk"> &lt;morcos&gt;</span> i don't know if it's important to do 1 or 2 before 0.14..  i don't care strongly..   but i do think they are probably both needed improvements
+<a name="l-210"></a><span class="tm">19:39:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> that is no longer true (I mean it is in principal, but not in code)
+<a name="l-211"></a><span class="tm">19:39:51</span><span class="nk"> &lt;BlueMatt&gt;</span> min relay fee is min(minRelayFee, minReplacementFee)
+<a name="l-212"></a><span class="tm">19:40:31</span><span class="nk"> &lt;gmaxwell&gt;</span> the fact that my mempool is sitting at 14MB of data right now suggest the relay fee is not too low, though I wish it were.
+<a name="l-213"></a><span class="tm">19:40:49</span><span class="nk"> &lt;morcos&gt;</span> that's only b/c of good behavior
+<a name="l-214"></a><span class="tm">19:41:00</span><span class="nk"> &lt;gmaxwell&gt;</span> uh what? the whole security design of RBF is based on the replacement being the actual in-use min-relay fee.
+<a name="l-215"></a><span class="tm">19:41:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ok, hold on...there is still a min relay fee which is used for bumping, that didnt go away, its just a different CLI flag name now
+<a name="l-216"></a><span class="tm">19:41:45</span><span class="nk"> &lt;morcos&gt;</span> so gmaxwell the new design is that incrementalrelayfee is the number that you feel like should be the minimum cost to relay
+<a name="l-217"></a><span class="tm">19:41:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> the operative question is would increasing it cut of transactions that would otherwise confirm in a not crazy amount of time. And it would, I think?
+<a name="l-218"></a><span class="tm">19:42:01</span><span class="nk"> &lt;morcos&gt;</span> definitely every byte transmitted one way or the other would have to pay at least that
+<a name="l-219"></a><span class="tm">19:42:19</span><span class="nk"> &lt;morcos&gt;</span> minrelaytxfee in initparamaterinteraction has to be at least that.. but could optionally be higher
+<a name="l-220"></a><span class="tm">19:43:26</span><span class="nk"> &lt;morcos&gt;</span> but my point is that number is actually really really low if you compare it to the "useful" relay rate which is much closer to 50 sat/ byte  (as opposed to 1)     and allowing somoene to relay 50 times just to keep bumping from 1 to 50, kind of sucks
+<a name="l-221"></a><span class="tm">19:44:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't see why you're talking about bumping.
+<a name="l-222"></a><span class="tm">19:44:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i mean i guess if we raised it from 1 to 5, then yes some small amount of txs that paid between 2-5 would have to now pay 5...   but raising it to 2 would basically harm nothing  and cut down on the potential to relay lots and lots of times for fun
+<a name="l-223"></a><span class="tm">19:45:35</span><span class="nk"> &lt;gmaxwell&gt;</span> They can also relay 50 transactions, the bumping is orthorgonal.  I would say 50 that probably won't confirm, even avoiding the fee, but thats not actually true.  (or if it's true and I didn't notice, then yes sure we should up the increment)
+<a name="l-224"></a><span class="tm">19:46:07</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, I haven't measured carefully, if 2 is the realistic floor what what gets confirmed then thats what the value should be.
+<a name="l-225"></a><span class="tm">19:46:28</span><span class="nk"> &lt;morcos&gt;</span> btwn 1-2 might not ever confirm.  my best guess is you have 1 chance in 3 ...   &gt;2 would i agree eventually confirm
+<a name="l-226"></a><span class="tm">19:46:51</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds like at a very minimum we should make an estimate now of what will realistically confirm and make the wallet do that.
+<a name="l-227"></a><span class="tm">19:47:40</span><span class="nk"> &lt;morcos&gt;</span> anyway this is the next topic..  (topic: are we charging adequately for relay)  i just wanted to start a discussion about it.   i don't feel it has to be changed for 0.14.      but the fact that its even a consideration is why i want to future-proof the wallet for 0.14  (the change made in #9615)
+<a name="l-228"></a><span class="tm">19:47:42</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+<a name="l-229"></a><span class="tm">19:48:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">are we charging adequately for relay?</span>
+<a name="l-230"></a><span class="tm">19:48:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> we should change wallet behavior in advance of changing relay behavior.
+<a name="l-231"></a><span class="tm">19:49:34</span><span class="nk"> &lt;gmaxwell&gt;</span> so if we think relay behavior should change to 2-3 we should change wallet to that now. these are all insignificant amounts.
+<a name="l-232"></a><span class="tm">19:49:56</span><span class="nk"> &lt;morcos&gt;</span> i think we might be done with that topic too... i think greg's point is if someting close to the low end of relay fee can still get confirmed a non-trivial amount of the time.. then relay cost isn't too high.  i agree this seems to be true.. maybe we could raise from 1 to 2..  but it seems insufficiently motivated to push through now
+<a name="l-233"></a><span class="tm">19:50:34</span><span class="nk"> &lt;gmaxwell&gt;</span> 2s/b is a half cent for a median size txn at $1000/btc.
+<a name="l-234"></a><span class="tm">19:50:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes...  wallet change in 9615 is to pay at least 5 greater than transaction it is replacing... small enough not to hurt but enough to be in advance of future changes
+<a name="l-235"></a><span class="tm">19:52:02 </span><span class="nka">* BlueMatt</span> <span class="ac">got 0.1 s/b confirmed last weekend pretty easily, so I think it is premature to be discussing bumping it</span>
+<a name="l-236"></a><span class="tm">19:52:12</span><span class="nk"> &lt;BlueMatt&gt;</span> (not proposing we lower it, but blocks are very often not full at all)
+<a name="l-237"></a><span class="tm">19:52:17</span><span class="nk"> &lt;gmaxwell&gt;</span> as far as what gets confirmed, I think we have hangover legacy of many miners having turned up minrelay fee before there was mempool limiting and before createnewblock was fast.
+<a name="l-238"></a><span class="tm">19:54:29</span><span class="nk"> &lt;gmaxwell&gt;</span> So it may be prudent to first rename the arguments to cause people to reconsider or go back to the defaults... before concluding that 1s/b will not confirm. doubly so with the fact that segwit may well put the fee behavior back in a disfunctional state (though perhaps thats also an argument to increase the default minimum relay fee in advance of it.)
+<a name="l-239"></a><span class="tm">19:55:15</span><span class="nk"> &lt;instagibbs_&gt;</span> 5 minutes
+<a name="l-240"></a><span class="tm">19:55:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> thats fair
+<a name="l-241"></a><span class="tm">19:55:55</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm not against renaming the relay fee options
+<a name="l-242"></a><span class="tm">19:56:31</span><span class="nk"> &lt;morcos&gt;</span> There is basically no reason to use minrelaytxfee at all anymore...
+<a name="l-243"></a><span class="tm">19:56:44</span><span class="nk"> &lt;morcos&gt;</span> in fact in my remove priority PR i make it so you can set it to 0
+<a name="l-244"></a><span class="tm">19:57:04</span><span class="nk"> &lt;wumpus&gt;</span> no conceptual problems with ti, but it's too late to make option changes for 0.14
+<a name="l-245"></a><span class="tm">19:57:16</span><span class="nk"> &lt;morcos&gt;</span> but incrementalrelayfee controls cost of relay and blockmintxfee controls orphan risk
+<a name="l-246"></a><span class="tm">19:57:42</span><span class="nk"> &lt;morcos&gt;</span> so we can just advise in the 0.14 release notes that it is not a necessary DoS protection to set minrelaytxfee at all any more
+<a name="l-247"></a><span class="tm">19:57:50</span><span class="nk"> &lt;gmaxwell&gt;</span> I doubt its much correlated with orphan risk at all now due to Fibre and BIP152.
+<a name="l-248"></a><span class="tm">19:57:52</span><span class="nk"> &lt;morcos&gt;</span> (not to mention mempool limiting and the mempool min fee)
+<a name="l-249"></a><span class="tm">19:57:57</span><span class="nk"> &lt;instagibbs_&gt;</span> People will have to intervene to turn on walletrbf, I don't think a default tweak is a bridge too far as well.
+<a name="l-250"></a><span class="tm">19:58:24</span><span class="nk"> &lt;gmaxwell&gt;</span> Lets announce in the release notes that the option will be renamed, and encourage people to remove it.
+<a name="l-251"></a><span class="tm">19:58:28</span><span class="nk"> &lt;BlueMatt&gt;</span> if you're using FIBRE (some pools still arent), there is 0 correlation....
+<a name="l-252"></a><span class="tm">19:58:38</span><span class="nk"> &lt;wumpus&gt;</span> +1 gmaxwell
+<a name="l-253"></a><span class="tm">19:58:44</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> sounds good.
+<a name="l-254"></a><span class="tm">19:59:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> not for 0.14 but someone really ought to implement the createnewblock tweak to skip very recently recieved low fee txn.. which does have a relationship to orphan risk. I think doing something fairly dumb would still be a big improvement.
+<a name="l-255"></a><span class="tm">19:59:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

@@ -1,0 +1,255 @@
+19:00:21 <wumpus> #startmeeting
+19:00:21 <lightningbot> Meeting started Thu Jan 26 19:00:21 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:21 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:34 <jonasschnelli> hi
+19:00:36 <instagibbs> (actually would be a useful optional step in gitian guide)
+19:00:37 <wumpus> and yes on thesigning side you do gpg --detach-sign, no need for gitian there at all
+19:00:55 <wumpus> yes the gitian guide mentions signing externally but I'm not sure it says how to do that
+19:01:28 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:01:45 <instagibbs> oops, https://github.com/bitcoin/bitcoin/blob/master/doc/gitian-building.md#signing-externally
+19:01:51 <instagibbs> jtimon, ^^ ok now meeting sorry
+19:01:56 <kanzure> hi.
+19:01:57 <wumpus> proposed topics?
+19:02:15 <jtimon> instagibbs: np, got good answers already
+19:02:33 <sipa> if people don't shoot me for it, i'd like to briefly bring up coding style
+19:02:40 <wumpus> bleh
+19:03:00 <jtimon> if there's no other topic, I don't see why not
+19:03:03 <instagibbs> how about just a grazing flesh wound
+19:03:38 <wumpus> but yes there's no other proposals so go ahead
+19:03:41 <MarcoFalke> If morcos is around, we could make a short topic on how to get the priority patch merged. (Seems to bit rot fast)
+19:03:50 <wumpus> #topic coding style
+19:04:36 <sipa> it seems that we're not really asking people to stick to particular coding style, and that sometimes leads to unclarities "what style should i use here?"
+19:04:38 <BlueMatt> ugh
+19:04:55 <morcos> i'm here..  i'm happy to worry about that after 0.14
+19:04:57 <MarcoFalke> just use clang-format-diff.py *hides*
+19:05:03 <jonasschnelli> MarcoFalke: +1
+19:05:12 <instagibbs> sipa, I copy the code around me :P
+19:05:14 <jtimon> the answer is https://github.com/bitcoin/bitcoin/blob/master/src/.clang-format no?
+19:05:17 <sipa> and i think that the "mimick the surrounding code" advice we've been following is a bad idea
+19:05:30 <wumpus> I don't really see the point in spending more energy on this
+19:05:34 <sipa> it doesn't actually help in making the codebase converge (which i think is goal)
+19:05:43 <jonasschnelli> I once proposed that, but everyone was against that. A CI check for clang style. We can still accept it... and could be something different then travis.
+19:05:52 <jtimon> but yeah, since it's not done automatically project wise I often violate it without noticing
+19:05:54 <MarcoFalke> Just format the diff on every patch and we will converge eventually.
+19:06:03 <sipa> i'm not suggesting we go fix everything at once
+19:06:11 <wumpus> I think mimicing the surrounding code is a good thing, usually, as long as you don't introduce really crappy looking lines well I won't hold up merging on a few code style nits
+19:06:21 <morcos> wumpus: i do think it would be nice if we were at least slowly converging on a common code style... i think we are making small progress..  for instance now i know to always brace my if's and i don't mind if someone points out that i forget it
+19:06:28 <jtimon> MarcoFalke: IIRC there was a python script to do that automatically
+19:06:33 <BlueMatt> jonasschnelli: I'm opposed to a CI check for clang style...I'm in favor of a bot which auto-opens a pr which fixes clang style on recently-broken PRs
+19:06:43 <wumpus> morcos: yes, always using braces makes sense from a security/correctness point of view
+19:06:43 <MarcoFalke> jtimon: Yes I commited those :)
+19:06:44 <jtimon> or something similar, but I've never used it
+19:06:45 <morcos> what is annoying is when you don't know what you're supposed to do, and then something is pointed out to you and you feel like its just a difference in taaste
+19:07:07 <sipa> right - my goal is to make the codebase converge
+19:07:10 <wumpus> but some other things, meh
+19:07:14 <BlueMatt> sipa: yes, that would be nice
+19:07:21 <wumpus> it usually *is* a  difference in taste
+19:07:24 <sipa> not necessarily fast, and not necessarily to whatever my own personal preference is
+19:07:31 <jtimon> MarcoFalke: right, so I think if we all use that, as you say we will eventually converge (or be close enough that is not a big deal to do the remaining stuff all at once)
+19:07:38 <sipa> but i'd like to get an agreement that the goal is converging
+19:07:50 * BlueMatt votes for coding-style-recent-pr-fixup bog
+19:07:51 <BlueMatt> bot
+19:08:04 <wumpus> as I said, I don't really see the point of spending much energy on this. There are tons of real issue
+19:08:05 <BlueMatt> that way none of us have to think about it, but it still happens :)
+19:08:16 <morcos> i'm +1 on converging to someone's taste.  i don't much care whose, as long as there is an answer that doesn't depend on who you ask
+19:08:20 <wumpus> I don't want to see even more 'massage around a few characters idly' pulls
+19:08:29 <jtimon> what about just a check in travis or something?
+19:08:33 <wumpus> no.
+19:08:39 <MarcoFalke> jtimon: We don't want travis to fail due to style
+19:08:39 <paveljanik> I'm in favour of slow non-forced (no-CI) convergence.
+19:08:47 <wumpus> travis should check correctness
+19:08:53 <instagibbs> Can we at least have a cultural push towards one? I don't care which.
+19:08:58 <wumpus> if travis fails due to style, it will always be broken, believe me
+19:09:00 <sipa> instagibbs: +1
+19:09:01 <BlueMatt> yes, no travis-says-no-for-garbage-reasons
+19:09:14 <MarcoFalke> But we might add a non-voting other-than-travis ci, if that is possible?
+19:09:24 <wumpus> I don't want to block pulls on stupid style issues
+19:09:32 <BlueMatt> wumpus: yes, very much that
+19:09:34 <wumpus> there are already enough valid reasons to hold up pulls for months
+19:09:37 <wumpus> please
+19:09:41 <wumpus> focus on important stuff
+19:09:43 <jtimon> wumpus: right, it would be only on style on the newly modified code, but yeah, it seems it could fail when we don't want it to
+19:10:28 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:10:40 <jtimon> anyway, the bot could just nit open prs instead of fixing things by himself
+19:10:42 <BlueMatt> the only coding style issue I'd be ok with travis complaining about is bad indentation
+19:10:43 <morcos> sipa, or anyone else that has an opinon on coding style.. if you'd like to get people to move to your style on any specific thing, i think you need to get your request merged to developer-notes
+19:10:45 <BlueMatt> because that leads to bugs
+19:10:58 <sipa> maybe what i'm after is being able to ask people (as a non-blocking nit, even) to fix style issue, without it being seen as "forcing your personal opinion"
+19:11:05 <wumpus> I say if there's use of coding style that is known to introduce bugs (such as unbraced conditionals) there's a point to pointing it out
+19:11:18 <morcos> if its in there, i think its fair game for pointing out not meeting it...  if its not in there.. well come on
+19:11:27 <BlueMatt> jtimon: people already complain about endless nits when they show up for the first time to contribute...I'm ok with my own prs getting that, but not people trying to do one-offs
+19:11:30 <sipa> morcos: of course, only for things in the style guide
+19:11:40 <wumpus> morcos: yes, it should certainly be documented in that file
+19:11:45 * jtimon wonders if this is the right time to indent CheckTxInputs
+19:11:58 <wumpus> if it's not in there there's no basis for pointing it out
+19:12:11 <morcos> we are all talking about NEW code...  but jtimon brings up a good point...
+19:12:26 <sipa> a move-only commit should probably not change style
+19:12:35 <morcos> for instance i have a couple of recent PR's that add braces without changing indentation....
+19:12:44 <sipa> about that:
+19:12:47 <wumpus> eh, indeed, that makes it harder to check whether it's mov only
+19:12:58 <sipa> git diff -w, git blame -w, git show -w, ...
+19:13:03 <morcos> i thought thats what people preferred...  but i'm happy to add the indentation if people can figure out how to ignore the white space changes
+19:13:05 <gmaxwell> changing style though should result in the same object files.
+19:13:16 <sipa> and even github supports whitespace ignoring diffs, add ?w=1 to the URL
+19:13:18 <wumpus> gmaxwell: definitely
+19:13:22 <morcos> ok... good wiht me.. i just thought people wanted differently b/c of similar examples in the codebase
+19:13:24 <BlueMatt> sipa: you meant -b
+19:13:31 <wumpus> gmaxwell: that means adding/removing no empty lines though
+19:13:36 <wumpus> gmaxwell: because line numbers
+19:13:53 <instagibbs> do we have a style guide already?
+19:13:58 <instagibbs> "if" braces even
+19:14:00 <wumpus> instagibbs: you don't know?
+19:14:04 <jtimon> yeah, regarding CheckTxInputs I believe I was asked to wait after moving it for indenting ages ago or something, but yeah, didn't know -w and that's more reason not to wait for anything (specially moves that may never happen)
+19:14:09 <BlueMatt> wumpus: I think lots of people dont...
+19:14:11 <gmaxwell> I think we should avoid changing indents spairingly. And then fix it not long after.
+19:14:13 <sipa> instagibbs: https://github.com/bitcoin/bitcoin/blob/master/doc/developer-notes.md
+19:14:15 <instagibbs> wumpus, I'm here to ask the dumb questions
+19:15:00 <gmaxwell> the developer nodes style guide isn't much of a style guide (not a complaint), and its more of one recently, but I don't normally consider it the place to go to figure out how to format something. :)
+19:15:14 <wumpus> BlueMatt: we refer to it in CONTRIBUTING.md, which automatically gets linked if you submit a PR
+19:15:38 <wumpus> gmaxwell: it's not supposed to have a lot of formatting guidelines, just basic ones
+19:15:40 <sipa> gmaxwell: i'm perfectly fine restricting my style nits to things that are in that file
+19:15:40 <BlueMatt> wumpus: I believe only for issues - I've never seen it for PRs
+19:15:47 <BlueMatt> but, ok, fair
+19:16:13 <wumpus> it mentions the "always use braces" though
+19:16:22 <jtimon> right, I believe we should try to avoid style nits that we don't have documented
+19:16:37 * BlueMatt thinks the endless "add braces here" comments in the past month got kinda annoying for a while
+19:16:46 <wumpus> definitely. In general please try to not cloud out serious discussion with lots of style nits
+19:16:54 <BlueMatt> agree with them, but annoying
+19:16:58 <jonasschnelli> wumpus: thats a very good point
+19:17:01 <wumpus> BlueMatt: that's my point ^^
+19:17:04 <jtimon> and by documented I'm fine counting https://github.com/bitcoin/bitcoin/blob/master/src/.clang-format
+19:17:10 <BlueMatt> wumpus: yes, just agreeing, I suppose :)
+19:17:28 <MarcoFalke> We should just raise awareness that there is a script to do the formatting for you.
+19:17:30 <sipa> yeah, no point in "add braces here" and "and here!" and "and here also!" comments all over the place, i guess
+19:17:35 <MarcoFalke> No need to spam pull requests
+19:17:39 <gmaxwell> Peopel should say if it bothers them, but my expirence is that small things like that improve moral in development teams.  It's an oppturnity to help each other which is very easy and clear. Not "please totally redesign your patch". :)
+19:17:52 <gmaxwell> people*
+19:18:12 <jtimon> MarcoFalke: right, althought the bot that runs the script for you and complains in your PR sounds like a good idea to me
+19:18:21 <gmaxwell> At least I find it gratifying to go, fixed, fixed, fixed, fixed.. and now the patch is awesome hurray and thanks for your help. :)
+19:18:27 <sipa> enough said on the topic, as far as i'm concerned
+19:18:31 <instagibbs> sipa, feel free to propose a "non blocking, non-nitting" style
+19:18:35 <instagibbs> :P
+19:18:40 <MarcoFalke> #action PSA Use clang-format-diff.py before submitting a patch, whenever possible.
+19:18:58 <wumpus> gmaxwell: sure, as long as it's not overly pedantic, and doesn't continue time after time. e.g. you're just about to merge something and a new screenful of style nits appears
+19:19:08 <gmaxwell> MarcoFalke: is there instructions on that? also does it know about our new brace requirements?
+19:19:25 <wumpus> morcos: good advice I suppose, should go into CONTRIBUTING.md
+19:19:30 <sipa> wumpus: so how about treating style always as non-blocking (for the person deciding to merge)
+19:19:34 <MarcoFalke> #action fix clang-format https://github.com/bitcoin/bitcoin/pull/9506#issuecomment-271727718
+19:19:45 <jtimon> we can always ignore the bot in certain cases if it makes sense
+19:19:52 <MarcoFalke> gmaxwell: There should be a doc in /contrib/dev-tools, no?
+19:20:13 <wumpus> yes there is documentation on how to use it
+19:20:26 * wumpus wonders if there is still so much differnce between clang versions, for recent versions
+19:20:37 <gmaxwell> MarcoFalke:  I dunno, never used that tool before. it's not mentioned in contributing.md.
+19:20:37 <wumpus> I mean in how clang-format formats
+19:21:04 <jtimon> right, we need to use the same version
+19:21:11 <gmaxwell> yea, I'm willing to install a specific version of clang for this-- as most of us should be... but just something to keep in mind for random contributors from the interwebs.
+19:21:16 <MarcoFalke> wumpus: Last time I checked there were no diffs, but it was a year ago or so.
+19:21:56 <wumpus> gmaxwell: well it's very possible that it stabilized, it's less important for format-patch than when requiring a reformat of the whole source, then it will oscillate :p
+19:22:02 <MarcoFalke> But it should not matter for 99.9% of the code.
+19:22:36 <wumpus> anyhow, other topics?
+19:23:16 <sipa> how are we on 0.14 bugs?
+19:23:45 <gmaxwell> All bugs are features, hurray.
+19:23:54 <morcos> i have one more that needs tagging 0.14.. and i think sdaftuar has 1-2 coming
+19:24:13 <wumpus> #topic bug-fixing for 0.14
+19:24:18 <morcos> they are all kind of minor fixups for bumpfee or replacement type stuff... mostly edge cases.. nothing serious
+19:24:32 <MarcoFalke> morcos: I think the one you want to tag is more a feature than a bug fix. At some point we need to draw the line and release.
+19:24:40 <morcos> please tag #9615
+19:24:43 <gribble> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+19:24:53 <MarcoFalke> But the one that is tagged right now should be merged as bug fix
+19:25:09 <achow101> I have a bug-fix (I think) for decoderawtx rpc
+19:25:13 <morcos> MarcoFalke: well its a bug fix b/c if we ever do a release without having a more conservative wallet incremental fee, then we are screwed for ever incrementing it
+19:25:22 <morcos> this has bit us in the past with dust fees
+19:25:24 <wumpus> tagged
+19:25:39 <jtimon> reminder, there's currently 6 open prs for 0.14.0: 9638 9626 9622 9609 9589 9108
+19:25:39 <morcos> its also really simple
+19:26:33 <morcos> i also mention in there that i think we should increase the incremental fee... that coudl be a topic.. but i realize people might not want to do it this close to release, but at least worth discussing it as a general idea and why..
+19:26:47 * BlueMatt is waiting on (needs to review 9609) and then run things in helgrind again...will generate lots of std::atomic changes
+19:26:54 <BlueMatt> but they should all be minor/trivial
+19:27:07 <gmaxwell> :-/
+19:27:12 <morcos> but given that it might already be close to needing to be raised, we have to do 9615
+19:27:18 <bitcoin-git> [13bitcoin] 15jonasschnelli closed pull request #9370: Fix fundrawtransactions address-reuse problem (06master...062016/12/fix_frt_cop) 02https://github.com/bitcoin/bitcoin/pull/9370
+19:27:33 <MarcoFalke> What if we want to increment it to 6000 satoshis in two years, then 0.14 will "fall off" regardless.
+19:27:53 <gmaxwell> BlueMatt: if there are helgrind results I am doubtful that sprinking atomics everywhere is usually the right solution. For some things like flags it can be... but if we're hitting helgrind errors it means we've gotten the locking wrong.
+19:28:01 <cfields> whoops, lost track of time. here.
+19:28:09 <MarcoFalke> But I get your point, I just think it is not a blocker. It could also go into 0.14.1
+19:28:24 <morcos> MarcoFalke: yes.. but that is something we will keep in mind if ever changing the default... is how many old versions will become less than optimal..  i don't know any better way to do it... there is a tradeoff
+19:28:40 <BlueMatt> gmaxwell: shit like CNode::copyStats...should be trivial, is only used in (effectively) debug info, doesnt matter much
+19:28:49 <BlueMatt> gmaxwell: but, yes, otherwise agreed
+19:28:51 <morcos> but if it goes in 0.14.1 then 0.14.0 could become broken for bumpfee within a few months...  that seems bad!
+19:28:55 <wumpus> gmaxwell: tend to agree, doesn't seem like making everything atomic is the proper way to solve concurrency issues - it just shuts up the warnings, without addressing the root cause
+19:29:24 <BlueMatt> wumpus: thats why I never did a pile of PRs to do it :p
+19:29:37 <gmaxwell> morcos: oh incremental is just the thing that bumpfee uses but not the acceptance policy (behind on the naming since the split)
+19:29:46 <wumpus> that's like putting (unsigned) everywhere to shut up comparisons between signed/unsigned errors without looking at the ranges
+19:30:16 <MarcoFalke> gmaxwell: Yes, the goal is to split the wallet default and the relay default.
+19:30:18 <wumpus> BlueMatt: yes for statistics it seems harmless
+19:30:20 <instagibbs> morcos, I didn't expect people to button-mash bumpfee, but maybe I'm wrong on usage patterns
+19:30:22 <morcos> gmaxwell: incremental is the policy,  #9615 introduces a wallet incremental which is higher than the default incremental to future-proof...  not configurable, but maxed with actual incremental
+19:30:24 <gribble> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+19:30:40 <gmaxwell> I would agree that bumpfees behavior should be more conservative. (IMO bumpfee should always increase at least multiple of the prior feerate, not just the incremental, in order to give log() bumps at worst)
+19:30:46 <cfields> wumpus: many are net things that have been around forever (CNodeStats). I have some ideas in mind for fixing them post-0.14, but I think the changes will end up being too big for 0.14
+19:30:52 <cfields> (re atomics)
+19:30:55 <instagibbs> In the case of "I just did it, or est feerate is same, I just want higher" this concern seems real
+19:31:09 <wumpus> cfields: right
+19:31:26 <morcos> instagibbs: i think its reasonable to expect stuck transaction problems might get considerably worse over the next 6 months...   an improved fee estimation is definitely needed...  but its certainly possible bumpfee will be important.
+19:31:28 <wumpus> cfields: forgot for a minute that the topic is fixes for 0.14 :)
+19:31:51 <cfields> wumpus: yes, otherwise i'd be yelling about s/int/atomic_int/ too, for sure :)
+19:32:14 <morcos> gmaxwell: it by default does a new estimatefee...  it just max's that with a multiple of the increment above to make sure it will pass policy
+19:33:49 <gmaxwell> morcos: right, I think it should also max with a e.g. 10% increase... so that you don't ever have the issue of needing hundreds of bumps to span a plausable range.  I'm in the weeds here though.
+19:33:57 <morcos> this is the first time we're releasing bumpfee... i think we've come up with a lot of minor improvements recently and i know its a lot to keep track of..  but it doesn't make sense to me to release it for the first time with sub-optimal behavior if there are known simple fixes
+19:35:07 <morcos> gmaxwell: yeah.. maybe..   but that could be an improvement for the future... i just want to make it so the old version doesn't run into a problem where its txs aren't even accepted by peers mempools if we change default policy  (which i think should be another topic)
+19:35:43 <wumpus> well, I'm happy that at least we've merged it for 0.14, makes sense to improve it where possible before the release, if we have clear ideas of course
+19:35:56 <gmaxwell> (well the observation that a multiplictive increase is necessary and sufficient to span an arbitary range with log() bumps is not a new observation. ... I believe it's mentioned in the RBF FAQ.)
+19:36:15 <morcos> yes to be clear i'm not opposed to anyone else doing gmaxwell's idea before release.. i jsut want to do at least what i've suggested
+19:36:36 <gmaxwell> Someone should take a look at what green address and electrum are doing here to see if they've caught anything we've missed-- both have bumping in production. I volunteer to check greenaddress.
+19:36:47 <morcos> i mean this ties into my other topic
+19:37:17 <morcos> when i heard petertodd talking about how he just presses bumpfee in a loop (or maybe he does his own version, but in the future other people might just press bumpfee)
+19:37:34 <morcos> it occurred to me we are allowing WAY too much relay for 1 tx being mined
+19:38:33 <morcos> so gmaxwell is right that there are 2 ways to improve upon this... 1) raise incremental relay rate required...  and 2) make it so the behavior of our own code doesn't cause this ridiculous relay iteration by default if people want to do periodic bumping to get confirmed
+19:39:04 <gmaxwell> minrelayfee is minrealy fee, replacement is orthorgonal--  you can use X bytes of relay for exposing yourself to Y fee either way.
+19:39:06 <morcos> i don't know if it's important to do 1 or 2 before 0.14..  i don't care strongly..   but i do think they are probably both needed improvements
+19:39:38 <BlueMatt> gmaxwell: that is no longer true (I mean it is in principal, but not in code)
+19:39:51 <BlueMatt> min relay fee is min(minRelayFee, minReplacementFee)
+19:40:31 <gmaxwell> the fact that my mempool is sitting at 14MB of data right now suggest the relay fee is not too low, though I wish it were.
+19:40:49 <morcos> that's only b/c of good behavior
+19:41:00 <gmaxwell> uh what? the whole security design of RBF is based on the replacement being the actual in-use min-relay fee.
+19:41:45 <BlueMatt> gmaxwell: ok, hold on...there is still a min relay fee which is used for bumping, that didnt go away, its just a different CLI flag name now
+19:41:45 <morcos> so gmaxwell the new design is that incrementalrelayfee is the number that you feel like should be the minimum cost to relay
+19:41:56 <gmaxwell> morcos: the operative question is would increasing it cut of transactions that would otherwise confirm in a not crazy amount of time. And it would, I think?
+19:42:01 <morcos> definitely every byte transmitted one way or the other would have to pay at least that
+19:42:19 <morcos> minrelaytxfee in initparamaterinteraction has to be at least that.. but could optionally be higher
+19:43:26 <morcos> but my point is that number is actually really really low if you compare it to the "useful" relay rate which is much closer to 50 sat/ byte  (as opposed to 1)     and allowing somoene to relay 50 times just to keep bumping from 1 to 50, kind of sucks
+19:44:43 <gmaxwell> I don't see why you're talking about bumping.
+19:44:45 <morcos> gmaxwell: i mean i guess if we raised it from 1 to 5, then yes some small amount of txs that paid between 2-5 would have to now pay 5...   but raising it to 2 would basically harm nothing  and cut down on the potential to relay lots and lots of times for fun
+19:45:35 <gmaxwell> They can also relay 50 transactions, the bumping is orthorgonal.  I would say 50 that probably won't confirm, even avoiding the fee, but thats not actually true.  (or if it's true and I didn't notice, then yes sure we should up the increment)
+19:46:07 <gmaxwell> okay, I haven't measured carefully, if 2 is the realistic floor what what gets confirmed then thats what the value should be.
+19:46:28 <morcos> btwn 1-2 might not ever confirm.  my best guess is you have 1 chance in 3 ...   >2 would i agree eventually confirm
+19:46:51 <gmaxwell> sounds like at a very minimum we should make an estimate now of what will realistically confirm and make the wallet do that.
+19:47:40 <morcos> anyway this is the next topic..  (topic: are we charging adequately for relay)  i just wanted to start a discussion about it.   i don't feel it has to be changed for 0.14.      but the fact that its even a consideration is why i want to future-proof the wallet for 0.14  (the change made in #9615)
+19:47:42 <gribble> https://github.com/bitcoin/bitcoin/issues/9615 | Wallet incremental fee by morcos · Pull Request #9615 · bitcoin/bitcoin · GitHub
+19:48:29 <wumpus> #topic are we charging adequately for relay?
+19:48:54 <gmaxwell> morcos: we should change wallet behavior in advance of changing relay behavior.
+19:49:34 <gmaxwell> so if we think relay behavior should change to 2-3 we should change wallet to that now. these are all insignificant amounts.
+19:49:56 <morcos> i think we might be done with that topic too... i think greg's point is if someting close to the low end of relay fee can still get confirmed a non-trivial amount of the time.. then relay cost isn't too high.  i agree this seems to be true.. maybe we could raise from 1 to 2..  but it seems insufficiently motivated to push through now
+19:50:34 <gmaxwell> 2s/b is a half cent for a median size txn at $1000/btc.
+19:50:34 <morcos> gmaxwell: yes...  wallet change in 9615 is to pay at least 5 greater than transaction it is replacing... small enough not to hurt but enough to be in advance of future changes
+19:52:02 * BlueMatt got 0.1 s/b confirmed last weekend pretty easily, so I think it is premature to be discussing bumping it
+19:52:12 <BlueMatt> (not proposing we lower it, but blocks are very often not full at all)
+19:52:17 <gmaxwell> as far as what gets confirmed, I think we have hangover legacy of many miners having turned up minrelay fee before there was mempool limiting and before createnewblock was fast.
+19:54:29 <gmaxwell> So it may be prudent to first rename the arguments to cause people to reconsider or go back to the defaults... before concluding that 1s/b will not confirm. doubly so with the fact that segwit may well put the fee behavior back in a disfunctional state (though perhaps thats also an argument to increase the default minimum relay fee in advance of it.)
+19:55:15 <instagibbs_> 5 minutes
+19:55:47 <BlueMatt> gmaxwell: thats fair
+19:55:55 <BlueMatt> I'm not against renaming the relay fee options
+19:56:31 <morcos> There is basically no reason to use minrelaytxfee at all anymore...
+19:56:44 <morcos> in fact in my remove priority PR i make it so you can set it to 0
+19:57:04 <wumpus> no conceptual problems with ti, but it's too late to make option changes for 0.14
+19:57:16 <morcos> but incrementalrelayfee controls cost of relay and blockmintxfee controls orphan risk
+19:57:42 <morcos> so we can just advise in the 0.14 release notes that it is not a necessary DoS protection to set minrelaytxfee at all any more
+19:57:50 <gmaxwell> I doubt its much correlated with orphan risk at all now due to Fibre and BIP152.
+19:57:52 <morcos> (not to mention mempool limiting and the mempool min fee)
+19:57:57 <instagibbs_> People will have to intervene to turn on walletrbf, I don't think a default tweak is a bridge too far as well.
+19:58:24 <gmaxwell> Lets announce in the release notes that the option will be renamed, and encourage people to remove it.
+19:58:28 <BlueMatt> if you're using FIBRE (some pools still arent), there is 0 correlation....
+19:58:38 <wumpus> +1 gmaxwell
+19:58:44 <morcos> gmaxwell: sounds good.
+19:59:54 <gmaxwell> BlueMatt: not for 0.14 but someone really ought to implement the createnewblock tweak to skip very recently recieved low fee txn.. which does have a relationship to orphan risk. I think doing something fairly dumb would still be a big improvement.
+19:59:55 <wumpus> #endmeeting
