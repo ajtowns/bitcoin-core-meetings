@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:02</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Feb  2 19:00:02 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:02</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:08</span><span class="nk"> &lt;BlueMatt&gt;</span> oh thats today?
+<a name="l-6"></a><span class="tm">19:00:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-7"></a><span class="tm">19:00:29</span><span class="nk"> &lt;sipa&gt;</span> yow.
+<a name="l-8"></a><span class="tm">19:00:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> no, it's fake news.
+<a name="l-9"></a><span class="tm">19:00:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> it's thursday I hope?
+<a name="l-10"></a><span class="tm">19:00:38</span><span class="nk"> &lt;luke-jr&gt;</span> /s
+<a name="l-11"></a><span class="tm">19:00:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> alternative news
+<a name="l-12"></a><span class="tm">19:00:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> alternative facts
+<a name="l-13"></a><span class="tm">19:00:53</span><span class="nk"> &lt;BlueMatt&gt;</span> heh
+<a name="l-14"></a><span class="tm">19:00:59</span><span class="nk"> &lt;sipa&gt;</span> jinx
+<a name="l-15"></a><span class="tm">19:01:28</span><span class="nk"> &lt;sipa&gt;</span> i don't have topics
+<a name="l-16"></a><span class="tm">19:01:32</span><span class="nk"> &lt;wumpus&gt;</span> foremost topic would be what to still include in 0.14, as rc1 release is planned for monday
+<a name="l-17"></a><span class="tm">19:02:09</span><span class="nk"> &lt;gmaxwell&gt;</span> I propose not including any bugs.
+<a name="l-18"></a><span class="tm">19:02:13</span><span class="nk"> &lt;BlueMatt&gt;</span> I think the current list (+#9671) are going to be required for release, sooooo
+<a name="l-19"></a><span class="tm">19:02:15</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9671 | Fix super-unlikely race introduced in 236618061a445d2cb11e72 by TheBlueMatt · Pull Request #9671 · bitcoin/bitcoin · GitHub
+<a name="l-20"></a><span class="tm">19:02:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> These are the issues tagged for 0.14 : https://github.com/bitcoin/bitcoin/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.14.0
+<a name="l-21"></a><span class="tm">19:02:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> I think only remaining is the net stuff?
+<a name="l-22"></a><span class="tm">19:03:02</span><span class="nk"> &lt;cfields&gt;</span> rebasing 9609 now.
+<a name="l-23"></a><span class="tm">19:03:14</span><span class="nk"> &lt;instagibbs&gt;</span> hi
+<a name="l-24"></a><span class="tm">19:03:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">MarcoFalke:</span> we added the signrawtransaction assertion too
+<a name="l-25"></a><span class="tm">19:03:25</span><span class="nk"> &lt;wumpus&gt;</span> do we have a fix for #9027 in the works yet?
+<a name="l-26"></a><span class="tm">19:03:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9027 | Unbounded reorg memory usage · Issue #9027 · bitcoin/bitcoin · GitHub
+<a name="l-27"></a><span class="tm">19:03:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Imo the importmulti fixes can be done after 0.14
+<a name="l-28"></a><span class="tm">19:03:28</span><span class="nk"> &lt;BlueMatt&gt;</span> and importmulti
+<a name="l-29"></a><span class="tm">19:03:30</span><span class="nk"> &lt;cfields&gt;</span> probably a good time to call for release notes additions
+<a name="l-30"></a><span class="tm">19:03:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I vote we push that one
+<a name="l-31"></a><span class="tm">19:03:36</span><span class="nk"> &lt;BlueMatt&gt;</span> (to 0.15)
+<a name="l-32"></a><span class="tm">19:03:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> ok, no problem with that
+<a name="l-33"></a><span class="tm">19:03:55</span><span class="nk"> &lt;BlueMatt&gt;</span> because not-regression, it turns out
+<a name="l-34"></a><span class="tm">19:04:03</span><span class="nk"> &lt;sipa&gt;</span> not regression?
+<a name="l-35"></a><span class="tm">19:04:07</span><span class="nk"> &lt;BlueMatt&gt;</span> slightly worse than it tused to be, but not so massively so that I think we definitely need to fix it asap
+<a name="l-36"></a><span class="tm">19:04:09</span><span class="nk"> &lt;gmaxwell&gt;</span> changing the API in the very next release would be unfortunate.
+<a name="l-37"></a><span class="tm">19:04:24</span><span class="nk"> &lt;achow101&gt;</span> are the three rpc things necessary for this release?
+<a name="l-38"></a><span class="tm">19:04:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> context?
+<a name="l-39"></a><span class="tm">19:04:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> you're the one who decided it wasnt!
+<a name="l-40"></a><span class="tm">19:04:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> importmulti?
+<a name="l-41"></a><span class="tm">19:04:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> fixing 9027 does not need an api change afaik
+<a name="l-42"></a><span class="tm">19:04:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> oh!
+<a name="l-43"></a><span class="tm">19:05:04</span><span class="nk"> &lt;wumpus&gt;</span> we could disable importmulti if it isn't safe in time for the release
+<a name="l-44"></a><span class="tm">19:05:31</span><span class="nk"> &lt;sipa&gt;</span> or leave it undocumented?
+<a name="l-45"></a><span class="tm">19:05:44</span><span class="nk"> &lt;wumpus&gt;</span> depends on whether the issue of #9491 is serious enough
+<a name="l-46"></a><span class="tm">19:05:45</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9491 | Importmulti api is confusing in a way that could lead to funds loss. · Issue #9491 · bitcoin/bitcoin · GitHub
+<a name="l-47"></a><span class="tm">19:05:58</span><span class="nk"> &lt;gmaxwell&gt;</span> fixing the fact that it's very easy to fail to rescan anything, when you thought it was... does.
+<a name="l-48"></a><span class="tm">19:06:22</span><span class="nk"> &lt;wumpus&gt;</span> yes undocumented or could add a "warning: experimental, API will likely change next release" in any case too
+<a name="l-49"></a><span class="tm">19:06:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> Or we just fix 9491... seems not very complex?
+<a name="l-50"></a><span class="tm">19:06:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> Can fix in rc2 if it's to late for monday?
+<a name="l-51"></a><span class="tm">19:07:26</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-52"></a><span class="tm">19:07:36</span><span class="nk"> &lt;wumpus&gt;</span> but there's no guarantee there is a rc2
+<a name="l-53"></a><span class="tm">19:07:40</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, lets see where that goes in the next couple days.
+<a name="l-54"></a><span class="tm">19:07:47</span><span class="nk"> &lt;wumpus&gt;</span> I don't know how hard it is? it seems to have caused quite a discussion but no fix
+<a name="l-55"></a><span class="tm">19:07:50</span><span class="nk"> &lt;luke-jr&gt;</span> importmulti seems akin to importprivkey which shouldn't be used by users anyway?
+<a name="l-56"></a><span class="tm">19:07:57</span><span class="nk"> &lt;gmaxwell&gt;</span> We can hide it right before cutting RC1 if nothing else.
+<a name="l-57"></a><span class="tm">19:08:10</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-58"></a><span class="tm">19:08:19</span><span class="nk"> &lt;gmaxwell&gt;</span> ashame, as it's a nice improvement.
+<a name="l-59"></a><span class="tm">19:08:27</span><span class="nk"> &lt;sipa&gt;</span> i think the fix would be easy?
+<a name="l-60"></a><span class="tm">19:08:43</span><span class="nk"> &lt;gmaxwell&gt;</span> sure, that is why I said lets see.
+<a name="l-61"></a><span class="tm">19:08:52</span><span class="nk"> &lt;BlueMatt&gt;</span> who is working on it?
+<a name="l-62"></a><span class="tm">19:08:53</span><span class="nk"> &lt;achow101&gt;</span> can't you just change the default timestamp to be 0?
+<a name="l-63"></a><span class="tm">19:08:55</span><span class="nk"> &lt;gmaxwell&gt;</span> but we have a fallback if it doesn't get fixed.
+<a name="l-64"></a><span class="tm">19:08:58</span><span class="nk"> &lt;BlueMatt&gt;</span> "lets see" only works if someone does it :p
+<a name="l-65"></a><span class="tm">19:09:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> then there is no easy way to express now.
+<a name="l-66"></a><span class="tm">19:09:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Would a fix where we set the importmulti timestamp to 0 instead of "now" do it for 0.14?
+<a name="l-67"></a><span class="tm">19:09:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> using time() from your OS?
+<a name="l-68"></a><span class="tm">19:09:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> *default timestamp
+<a name="l-69"></a><span class="tm">19:10:04</span><span class="nk"> &lt;achow101&gt;</span> -1 for "now"
+<a name="l-70"></a><span class="tm">19:10:05</span><span class="nk"> &lt;wumpus&gt;</span> or have no default at all and require a time to be specified
+<a name="l-71"></a><span class="tm">19:10:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-72"></a><span class="tm">19:10:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> no default at all is nice since it allows a default to be chosen later
+<a name="l-73"></a><span class="tm">19:10:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0 as timestamp is very inefficient.
+<a name="l-74"></a><span class="tm">19:10:34</span><span class="nk"> &lt;gmaxwell&gt;</span> Lets not hash it out here, there is an issue.
+<a name="l-75"></a><span class="tm">19:10:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Lets comment there. Agree with gmaxwell
+<a name="l-76"></a><span class="tm">19:10:57</span><span class="nk"> &lt;gmaxwell&gt;</span> I agree with jonasschnelli in the sense there that we really have to stop assuming a full rescan is possible.
+<a name="l-77"></a><span class="tm">19:11:28</span><span class="nk"> &lt;wumpus&gt;</span> good point, yes
+<a name="l-78"></a><span class="tm">19:11:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Is also very inefficient if you have pruned or run hybrid SPV
+<a name="l-79"></a><span class="tm">19:11:37</span><span class="nk"> &lt;wumpus&gt;</span> it certainly shouldn't be the default
+<a name="l-80"></a><span class="tm">19:11:37</span><span class="nk"> &lt;gmaxwell&gt;</span> It takes many hours on my normal development system, and is still quite slow even on the fastest hardware available.   But avoiding the rescan takes second seat to surprising the user. :)
+<a name="l-81"></a><span class="tm">19:11:40</span><span class="nk"> &lt;wumpus&gt;</span> it's inefficient and lazy
+<a name="l-82"></a><span class="tm">19:12:37</span><span class="nk"> &lt;gmaxwell&gt;</span> in my view, except for certan recover operations that are infrequently done-- rescan effectively doesn't work anymore (takes more time than converting your entire usage to a third party api...)
+<a name="l-83"></a><span class="tm">19:13:22</span><span class="nk"> &lt;wumpus&gt;</span> users of the API should be encouraged to keep track of key birthdates
+<a name="l-84"></a><span class="tm">19:14:05</span><span class="nk"> &lt;gmaxwell&gt;</span> if we define a new private key format in the not so far future, we should make sure its string clearly integrates a birthdate. :P
+<a name="l-85"></a><span class="tm">19:14:25</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so discuss on the issue....next topic?
+<a name="l-86"></a><span class="tm">19:14:26</span><span class="nk"> &lt;wumpus&gt;</span> a full rescan is indeed only something that should be done for infrequent recovery reasons
+<a name="l-87"></a><span class="tm">19:15:58</span><span class="nk"> &lt;wumpus&gt;</span> no other topics?
+<a name="l-88"></a><span class="tm">19:16:22</span><span class="nk"> &lt;MarcoFalke&gt;</span> shortest meeting ever
+<a name="l-89"></a><span class="tm">19:16:58</span><span class="nk"> &lt;wumpus&gt;</span> I had expected heated debates on what to include last-minute in 0.14 and why to delay the rc, what a disappointment! &lt;/s&gt;
+<a name="l-90"></a><span class="tm">19:17:02</span><span class="nk"> &lt;BlueMatt&gt;</span> great, lets get 0.14 done so I can get back to writing code :)
+<a name="l-91"></a><span class="tm">19:17:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> Heh.
+<a name="l-92"></a><span class="tm">19:17:13</span><span class="nk"> &lt;sdaftuar&gt;</span> let's talk about code style again
+<a name="l-93"></a><span class="tm">19:17:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I vote we push it back a month so we can do all the things we wanted to a month ago :p
+<a name="l-94"></a><span class="tm">19:17:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> lol!
+<a name="l-95"></a><span class="tm">19:17:42</span><span class="nk"> &lt;BlueMatt&gt;</span> wait, i had something to talk about re: cde style
+<a name="l-96"></a><span class="tm">19:17:43</span><span class="nk"> &lt;BlueMatt&gt;</span> hum
+<a name="l-97"></a><span class="tm">19:17:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> die
+<a name="l-98"></a><span class="tm">19:17:55</span><span class="nk"> &lt;sdaftuar&gt;</span> i'll get the baseball bat
+<a name="l-99"></a><span class="tm">19:17:56</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, auto
+<a name="l-100"></a><span class="tm">19:18:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Bumpfee:</span> is there a reason why the logic is in the rpcwallet.cpp and not in wallet.cpp?
+<a name="l-101"></a><span class="tm">19:18:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Makes it really hard to use in the gui...
+<a name="l-102"></a><span class="tm">19:18:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> please move it, agreed
+<a name="l-103"></a><span class="tm">19:18:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it can be moved
+<a name="l-104"></a><span class="tm">19:18:25</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jonasschnelli:</span> i think we can refactor as needed
+<a name="l-105"></a><span class="tm">19:18:29</span><span class="nk"> &lt;luke-jr&gt;</span> in 0.15*
+<a name="l-106"></a><span class="tm">19:18:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> because it's only used in rpcwallet.cpp, if you need it in a more general place move it
+<a name="l-107"></a><span class="tm">19:18:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay.
+<a name="l-108"></a><span class="tm">19:18:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i am strongly in favor of auto.
+<a name="l-109"></a><span class="tm">19:18:59 </span><span class="nka">* sipa</span> <span class="ac">hides</span>
+<a name="l-110"></a><span class="tm">19:19:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> although moving everything to wallet.cpp isn't very nice either, we should refactor the wallet code some day
+<a name="l-111"></a><span class="tm">19:19:03</span><span class="nk"> &lt;luke-jr&gt;</span> I did suggest it earlier, but didn't seem like a blocker for merging
+<a name="l-112"></a><span class="tm">19:19:06</span><span class="nk"> &lt;wumpus&gt;</span> I'm also in favor of auto
+<a name="l-113"></a><span class="tm">19:19:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> it makes certain review much, much harder (I often grep for "everywhere X is used")
+<a name="l-114"></a><span class="tm">19:19:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> well, it's wallet code..
+<a name="l-115"></a><span class="tm">19:19:23</span><span class="nk"> &lt;BlueMatt&gt;</span> and have already missed things as a result
+<a name="l-116"></a><span class="tm">19:19:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> so? not all wallet code needs to be in one file
+<a name="l-117"></a><span class="tm">19:19:35</span><span class="nk"> &lt;wumpus&gt;</span> forbidding auto is just masochism
+<a name="l-118"></a><span class="tm">19:19:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> yes. Thats a good point.
+<a name="l-119"></a><span class="tm">19:19:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> i wasnt voding forbidding it
+<a name="l-120"></a><span class="tm">19:19:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> introduce an incompatible change to the type, and recompile. tadaa, all places it is used
+<a name="l-121"></a><span class="tm">19:19:49</span><span class="nk"> &lt;BlueMatt&gt;</span> only carefully considering its use
+<a name="l-122"></a><span class="tm">19:19:50</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> same. BlueMatt: maybe paste the thread in question?
+<a name="l-123"></a><span class="tm">19:19:56</span><span class="nk"> &lt;luke-jr&gt;</span> I like auto when the type is implied by some other type; eg, instead of xyz::value_type
+<a name="l-124"></a><span class="tm">19:20:05</span><span class="nk"> &lt;jtimon&gt;</span> yeah, but not forbidding it doesn't mean recommending it always either
+<a name="l-125"></a><span class="tm">19:20:10</span><span class="nk"> &lt;BlueMatt&gt;</span> https://github.com/bitcoin/bitcoin/pull/9609#discussion_r98335218
+<a name="l-126"></a><span class="tm">19:20:15</span><span class="nk"> &lt;wumpus&gt;</span> we have a whole src/wallet directory which could have tons of different implementation files for different facets of the wallet, instead of stashing it all into one file
+<a name="l-127"></a><span class="tm">19:20:39</span><span class="nk"> &lt;BlueMatt&gt;</span> (I believe gmaxwell's comment there was intedned for a different line)
+<a name="l-128"></a><span class="tm">19:20:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes. Stuff like coin selection should be more modular
+<a name="l-129"></a><span class="tm">19:21:04</span><span class="nk"> &lt;wumpus&gt;</span> sure, as with any use of any c++ statement, use of auto should be measured
+<a name="l-130"></a><span class="tm">19:21:08</span><span class="nk"> &lt;MarcoFalke&gt;</span> Lets do it after priority removal
+<a name="l-131"></a><span class="tm">19:21:18</span><span class="nk"> &lt;MarcoFalke&gt;</span> Otherwise we step on each others toes
+<a name="l-132"></a><span class="tm">19:21:24</span><span class="nk"> &lt;wumpus&gt;</span> if you have some specific cases where it's bad to use auto, please document them
+<a name="l-133"></a><span class="tm">19:21:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> mostly only things that are /actually/ a mile of text to type, imo
+<a name="l-134"></a><span class="tm">19:21:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> and not needing to change things all over the place when you turn a tuple into a struct
+<a name="l-135"></a><span class="tm">19:22:07</span><span class="nk"> &lt;sipa&gt;</span> or add a wrapper
+<a name="l-136"></a><span class="tm">19:22:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I have no problem reviewing sed-based changes
+<a name="l-137"></a><span class="tm">19:22:16</span><span class="nk"> &lt;BlueMatt&gt;</span> in fact prefer that
+<a name="l-138"></a><span class="tm">19:22:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> there's plenty of those - c++ is overly verbose, auto is a great advancement
+<a name="l-139"></a><span class="tm">19:22:21</span><span class="nk"> &lt;sipa&gt;</span> they're still annoying to fo
+<a name="l-140"></a><span class="tm">19:22:27</span><span class="nk"> &lt;BlueMatt&gt;</span> since I'm gonna go read every single place the change effected anyway
+<a name="l-141"></a><span class="tm">19:22:28</span><span class="nk"> &lt;BlueMatt&gt;</span> to review
+<a name="l-142"></a><span class="tm">19:22:30</span><span class="nk"> &lt;sipa&gt;</span> *to do
+<a name="l-143"></a><span class="tm">19:22:50</span><span class="nk"> &lt;sipa&gt;</span> and of course, let's consider on a case by case basis
+<a name="l-144"></a><span class="tm">19:22:55</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-145"></a><span class="tm">19:22:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> sure, iterators in iterators, np
+<a name="l-146"></a><span class="tm">19:23:03</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, ok, whatever, I'll shut up
+<a name="l-147"></a><span class="tm">19:23:04</span><span class="nk"> &lt;sipa&gt;</span> but in my own preference, that is overwhelmingly the case
+<a name="l-148"></a><span class="tm">19:24:00</span><span class="nk"> &lt;cfields&gt;</span> well the specific case here is for loops. "for (auto&amp; foo : bar)"
+<a name="l-149"></a><span class="tm">19:24:01</span><span class="nk"> &lt;MarcoFalke&gt;</span> Agree with BlueMatt, that auto should not be used unless necessary.
+<a name="l-150"></a><span class="tm">19:24:04</span><span class="nk"> &lt;cfields&gt;</span> any reason not to use auto there?
+<a name="l-151"></a><span class="tm">19:24:04</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> the question is, do you have a general advice on when not to use auto?
+<a name="l-152"></a><span class="tm">19:24:22</span><span class="nk"> &lt;wumpus&gt;</span> it's never *necessary* auto is just nice
+<a name="l-153"></a><span class="tm">19:24:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> yes, so I can grep and review if the type's behavior changes in some way
+<a name="l-154"></a><span class="tm">19:24:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> personally, if the type really, really doesnt matter
+<a name="l-155"></a><span class="tm">19:24:40</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> if it's liable to produce bad results with bar changing under it
+<a name="l-156"></a><span class="tm">19:24:50</span><span class="nk"> &lt;BlueMatt&gt;</span> (which means very rarely use it)
+<a name="l-157"></a><span class="tm">19:24:56</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> I'm afraid "doesn't matter" it's too vague here
+<a name="l-158"></a><span class="tm">19:25:04</span><span class="nk"> &lt;wumpus&gt;</span> I don't think this is going anywhere, too much isagreement
+<a name="l-159"></a><span class="tm">19:25:04</span><span class="nk"> &lt;BlueMatt&gt;</span> eg if you're taking an iterator and passing it through to another function
+<a name="l-160"></a><span class="tm">19:25:08</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-161"></a><span class="tm">19:25:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> function arguments can't use auto, right?
+<a name="l-162"></a><span class="tm">19:25:29</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-163"></a><span class="tm">19:25:50</span><span class="nk"> &lt;sipa&gt;</span> c++14 and later introduce some auto types in lambdas
+<a name="l-164"></a><span class="tm">19:25:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> correct, but eg doing auto it = map.find(thing); if (it != ma.end()) DoThingWith(*it);
+<a name="l-165"></a><span class="tm">19:25:56</span><span class="nk"> &lt;BlueMatt&gt;</span> is like not a problem
+<a name="l-166"></a><span class="tm">19:26:23</span><span class="nk"> &lt;BlueMatt&gt;</span> auto it = map.find(thing); if (it != ma.end()) ILikePonies(it-&gt;second.rainbows); I do not like
+<a name="l-167"></a><span class="tm">19:26:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> how is that different from a for (const auto&amp; x : container) {}
+<a name="l-168"></a><span class="tm">19:27:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> because in the specific case here the thing in the loop is not defined to take a specific type
+<a name="l-169"></a><span class="tm">19:27:12</span><span class="nk"> &lt;BlueMatt&gt;</span> it is templated
+<a name="l-170"></a><span class="tm">19:27:15</span><span class="nk"> &lt;jtimon&gt;</span> my question was, do you have a deductive method for finding the not ok cases instead of an inductive one for the "not a problem cases"?
+<a name="l-171"></a><span class="tm">19:27:21</span><span class="nk"> &lt;sipa&gt;</span> you can see that as an oblivious loop with iterators, and passing *it to a function that is tje body of the loop
+<a name="l-172"></a><span class="tm">19:27:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> &lt;BlueMatt&gt; jtimon: personally, if the type really, really doesnt matter
+<a name="l-173"></a><span class="tm">19:28:12</span><span class="nk"> &lt;sipa&gt;</span> i see your point, but i don't think it weighs up against the benefitd
+<a name="l-174"></a><span class="tm">19:28:14</span><span class="nk"> &lt;sipa&gt;</span> *benefits
+<a name="l-175"></a><span class="tm">19:28:20</span><span class="nk"> &lt;wumpus&gt;</span> if you're iterating over some container, the type of container usually really doesn't matter, unless you make specific assumptions (but then you'd generally not be using a range for loop in the first place)
+<a name="l-176"></a><span class="tm">19:28:41</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> imo if you are ever actually dereferencing the type you should not use auto
+<a name="l-177"></a><span class="tm">19:28:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> your own example dereferences...
+<a name="l-178"></a><span class="tm">19:28:57</span><span class="nk"> &lt;BlueMatt&gt;</span> if you're dereferencing the iterator to eg a pair or just taking the element and passing it to something else, ok
+<a name="l-179"></a><span class="tm">19:29:08</span><span class="nk"> &lt;BlueMatt&gt;</span> but if you're dereferencing it and accessing something inside it, no
+<a name="l-180"></a><span class="tm">19:29:27</span><span class="nk"> &lt;sipa&gt;</span> then we might as well not use it at all, i think
+<a name="l-181"></a><span class="tm">19:29:46</span><span class="nk"> &lt;jtimon&gt;</span> ok, I think I get what you mean by "doesn't matter" now
+<a name="l-182"></a><span class="tm">19:29:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> there are many places where you might do for (auto&amp; thing: list) ActOn(thing);
+<a name="l-183"></a><span class="tm">19:29:55</span><span class="nk"> &lt;BlueMatt&gt;</span> thats reasonable
+<a name="l-184"></a><span class="tm">19:30:08</span><span class="nk"> &lt;sipa&gt;</span> requiring programmers to spell out redundant information just so you can grep for it seems extreme to me
+<a name="l-185"></a><span class="tm">19:30:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> so functions shouldn't have prototypes? :)
+<a name="l-186"></a><span class="tm">19:30:27</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, I didnt expect people to agree with me...I have extreme distaste for auto, personally
+<a name="l-187"></a><span class="tm">19:30:33</span><span class="nk"> &lt;wumpus&gt;</span> yes, that' extreme, and not going tohhappen. Just use smarter tools.
+<a name="l-188"></a><span class="tm">19:30:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> suggestions?
+<a name="l-189"></a><span class="tm">19:31:00 </span><span class="nka">* BlueMatt</span> <span class="ac">would love a grep --allusesoftype thing</span>
+<a name="l-190"></a><span class="tm">19:31:30</span><span class="nk"> &lt;wumpus&gt;</span> it should be fairly easy to implement using clang's parser, would be surprised if it doesn't exist
+<a name="l-191"></a><span class="tm">19:31:50</span><span class="nk"> &lt;gmaxwell&gt;</span> There is another side to it is that auto enables you to write code that acts on a type while having no idea of the type yourself. Which is safe 99% of the time and deadly the rest.
+<a name="l-192"></a><span class="tm">19:32:20</span><span class="nk"> &lt;gmaxwell&gt;</span> because in C++ not all operations which are catgorically unsafe on a type are actually stopped by typechecking. :(
+<a name="l-193"></a><span class="tm">19:33:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I have an auto to a container... and then I extract an auto to an iterator on it and erase things. Is my code guilty of the sin of using an invalidated iterator? It depends on what container was in use, and that was hid by auto...
+<a name="l-194"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> But... that sort of thing is an edge case, I'd love to see a realistic list of where auto is likely to cause problems, just to keep it in mind.
+<a name="l-195"></a><span class="tm">19:34:29</span><span class="nk"> &lt;wumpus&gt;</span> right - just keep it in mind while reviewing
+<a name="l-196"></a><span class="tm">19:34:43</span><span class="nk"> &lt;wumpus&gt;</span> and if there are well-defined cases where auto is dangerous, they should be documented in the developer notes
+<a name="l-197"></a><span class="tm">19:34:57</span><span class="nk"> &lt;BlueMatt&gt;</span> ehh, ok, well I go read all of wallet half the time reviewing wallet changes, i guess I'll just start doing that for net, too :p
+<a name="l-198"></a><span class="tm">19:35:13</span><span class="nk"> &lt;BlueMatt&gt;</span> (not a bad thing, that)
+<a name="l-199"></a><span class="tm">19:35:29</span><span class="nk"> &lt;gmaxwell&gt;</span> unfortunately, auto is most interesting when you have some horrible complex signature.  But those are the cases where it is also more of an issue.
+<a name="l-200"></a><span class="tm">19:36:07</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> for(auto&amp; : foo) doesn't give you an iterator though, just a reference. So imo that should be highly preferred when possible to avoid your example.
+<a name="l-201"></a><span class="tm">19:36:19</span><span class="nk"> &lt;wumpus&gt;</span> well no, it's most interesting for bog-standard loops, 99% of the cases. If you're doing anything horribly complex, that's probably where you should be careful
+<a name="l-202"></a><span class="tm">19:36:32</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> we can agree that auto is totally fine for unittests too, right? :p
+<a name="l-203"></a><span class="tm">19:37:20</span><span class="nk"> &lt;cfields&gt;</span> (preferred over auto foo = bar.begin(), that is)
+<a name="l-204"></a><span class="tm">19:37:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well my point is that stating the type explicitly is just as easy as auto when it's simple and obvious.
+<a name="l-205"></a><span class="tm">19:37:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> when you have some horrid complex type signature, best practice is to introduce a typedef for it... that also results in succint usage, and lacks the review concerns that BlueMatt has i think
+<a name="l-206"></a><span class="tm">19:37:36</span><span class="nk"> &lt;jtimon&gt;</span> I agree it removes clarity some times
+<a name="l-207"></a><span class="tm">19:37:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it's *easy* but the point is to avoid unnecessary verbosity/typing, not so you can forget the type
+<a name="l-208"></a><span class="tm">19:37:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, agreed, also means dont use auto in place, which some people like to do
+<a name="l-209"></a><span class="tm">19:38:10</span><span class="nk"> &lt;jtimon&gt;</span> but I don't have a clear criterion on when to use it like matt
+<a name="l-210"></a><span class="tm">19:38:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I'm generally 100% in favor of extra verbosity
+<a name="l-211"></a><span class="tm">19:38:25</span><span class="nk"> &lt;wumpus&gt;</span> e.g. to avoid having to type std::vector&lt;std::Strring&gt; for the zillionth time
+<a name="l-212"></a><span class="tm">19:38:25</span><span class="nk"> &lt;gmaxwell&gt;</span> fking java programmers. :P
+<a name="l-213"></a><span class="tm">19:38:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> go use java
+<a name="l-214"></a><span class="tm">19:38:28</span><span class="nk"> &lt;BlueMatt&gt;</span> extra verbosity generally means less magic, which makes review easier
+<a name="l-215"></a><span class="tm">19:38:33</span><span class="nk"> &lt;BlueMatt&gt;</span> lol, i expected that....
+<a name="l-216"></a><span class="tm">19:38:36</span><span class="nk"> &lt;gmaxwell&gt;</span> (though on type signatures, I usually also prefer being explicit more often)
+<a name="l-217"></a><span class="tm">19:38:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> that's not categorically true, more verbosity also means more distraction
+<a name="l-218"></a><span class="tm">19:38:51</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-219"></a><span class="tm">19:38:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> well, ok, more verbosity as long as it actually provides information
+<a name="l-220"></a><span class="tm">19:39:05</span><span class="nk"> &lt;sipa&gt;</span> nobody actually looks at what large type definitions contain
+<a name="l-221"></a><span class="tm">19:39:06</span><span class="nk"> &lt;wumpus&gt;</span> having lot's of boilerplate does *not* equal easier review
+<a name="l-222"></a><span class="tm">19:39:11</span><span class="nk"> &lt;BlueMatt&gt;</span> public static void main(String[] args) {} probably doesnt provide more information
+<a name="l-223"></a><span class="tm">19:39:26</span><span class="nk"> &lt;wumpus&gt;</span> anyhow
+<a name="l-224"></a><span class="tm">19:39:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I do!
+<a name="l-225"></a><span class="tm">19:39:35</span><span class="nk"> &lt;wumpus&gt;</span> any other topics? this is going the wrong way
+<a name="l-226"></a><span class="tm">19:39:40</span><span class="nk"> &lt;sipa&gt;</span> haha
+<a name="l-227"></a><span class="tm">19:39:44</span><span class="nk"> &lt;luke-jr&gt;</span> lol
+<a name="l-228"></a><span class="tm">19:40:23</span><span class="nk"> &lt;BlueMatt&gt;</span> soooo...endmeeting?
+<a name="l-229"></a><span class="tm">19:40:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

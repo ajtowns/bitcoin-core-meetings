@@ -1,0 +1,229 @@
+19:00:02 <wumpus> #startmeeting
+19:00:02 <lightningbot> Meeting started Thu Feb  2 19:00:02 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:02 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:07 <jonasschnelli> hi
+19:00:08 <BlueMatt> oh thats today?
+19:00:18 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:29 <sipa> yow.
+19:00:37 <luke-jr> BlueMatt: no, it's fake news.
+19:00:37 <wumpus> BlueMatt: it's thursday I hope?
+19:00:38 <luke-jr> /s
+19:00:49 <sipa> luke-jr: alternative news
+19:00:52 <BlueMatt> wumpus: alternative facts
+19:00:53 <BlueMatt> heh
+19:00:59 <sipa> jinx
+19:01:28 <sipa> i don't have topics
+19:01:32 <wumpus> foremost topic would be what to still include in 0.14, as rc1 release is planned for monday
+19:02:09 <gmaxwell> I propose not including any bugs.
+19:02:13 <BlueMatt> I think the current list (+#9671) are going to be required for release, sooooo
+19:02:15 <gribble> https://github.com/bitcoin/bitcoin/issues/9671 | Fix super-unlikely race introduced in 236618061a445d2cb11e72 by TheBlueMatt · Pull Request #9671 · bitcoin/bitcoin · GitHub
+19:02:25 <jonasschnelli> These are the issues tagged for 0.14 : https://github.com/bitcoin/bitcoin/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.14.0
+19:02:34 <MarcoFalke> I think only remaining is the net stuff?
+19:03:02 <cfields> rebasing 9609 now.
+19:03:14 <instagibbs> hi
+19:03:25 <BlueMatt> MarcoFalke: we added the signrawtransaction assertion too
+19:03:25 <wumpus> do we have a fix for #9027 in the works yet?
+19:03:26 <gribble> https://github.com/bitcoin/bitcoin/issues/9027 | Unbounded reorg memory usage · Issue #9027 · bitcoin/bitcoin · GitHub
+19:03:27 <jonasschnelli> Imo the importmulti fixes can be done after 0.14
+19:03:28 <BlueMatt> and importmulti
+19:03:30 <cfields> probably a good time to call for release notes additions
+19:03:33 <BlueMatt> wumpus: I vote we push that one
+19:03:36 <BlueMatt> (to 0.15)
+19:03:48 <wumpus> BlueMatt: ok, no problem with that
+19:03:55 <BlueMatt> because not-regression, it turns out
+19:04:03 <sipa> not regression?
+19:04:07 <BlueMatt> slightly worse than it tused to be, but not so massively so that I think we definitely need to fix it asap
+19:04:09 <gmaxwell> changing the API in the very next release would be unfortunate.
+19:04:24 <achow101> are the three rpc things necessary for this release?
+19:04:24 <BlueMatt> gmaxwell: context?
+19:04:29 <BlueMatt> sipa: you're the one who decided it wasnt!
+19:04:30 <jonasschnelli> gmaxwell: importmulti?
+19:04:32 <sipa> gmaxwell: fixing 9027 does not need an api change afaik
+19:04:42 <sipa> BlueMatt: oh!
+19:05:04 <wumpus> we could disable importmulti if it isn't safe in time for the release
+19:05:31 <sipa> or leave it undocumented?
+19:05:44 <wumpus> depends on whether the issue of #9491 is serious enough
+19:05:45 <gribble> https://github.com/bitcoin/bitcoin/issues/9491 | Importmulti api is confusing in a way that could lead to funds loss. · Issue #9491 · bitcoin/bitcoin · GitHub
+19:05:58 <gmaxwell> fixing the fact that it's very easy to fail to rescan anything, when you thought it was... does.
+19:06:22 <wumpus> yes undocumented or could add a "warning: experimental, API will likely change next release" in any case too
+19:06:41 <jonasschnelli> Or we just fix 9491... seems not very complex?
+19:06:51 <jonasschnelli> Can fix in rc2 if it's to late for monday?
+19:07:26 <wumpus> sure
+19:07:36 <wumpus> but there's no guarantee there is a rc2
+19:07:40 <gmaxwell> okay, lets see where that goes in the next couple days.
+19:07:47 <wumpus> I don't know how hard it is? it seems to have caused quite a discussion but no fix
+19:07:50 <luke-jr> importmulti seems akin to importprivkey which shouldn't be used by users anyway?
+19:07:57 <gmaxwell> We can hide it right before cutting RC1 if nothing else.
+19:08:10 <wumpus> yes
+19:08:19 <gmaxwell> ashame, as it's a nice improvement.
+19:08:27 <sipa> i think the fix would be easy?
+19:08:43 <gmaxwell> sure, that is why I said lets see.
+19:08:52 <BlueMatt> who is working on it?
+19:08:53 <achow101> can't you just change the default timestamp to be 0?
+19:08:55 <gmaxwell> but we have a fallback if it doesn't get fixed.
+19:08:58 <BlueMatt> "lets see" only works if someone does it :p
+19:09:08 <gmaxwell> achow101: then there is no easy way to express now.
+19:09:29 <jonasschnelli> Would a fix where we set the importmulti timestamp to 0 instead of "now" do it for 0.14?
+19:09:37 <luke-jr> gmaxwell: using time() from your OS?
+19:09:40 <jonasschnelli> *default timestamp
+19:10:04 <achow101> -1 for "now"
+19:10:05 <wumpus> or have no default at all and require a time to be specified
+19:10:14 <jonasschnelli> wumpus: +1
+19:10:19 <luke-jr> wumpus: no default at all is nice since it allows a default to be chosen later
+19:10:31 <jonasschnelli> 0 as timestamp is very inefficient.
+19:10:34 <gmaxwell> Lets not hash it out here, there is an issue.
+19:10:45 <jonasschnelli> Okay. Lets comment there. Agree with gmaxwell
+19:10:57 <gmaxwell> I agree with jonasschnelli in the sense there that we really have to stop assuming a full rescan is possible.
+19:11:28 <wumpus> good point, yes
+19:11:34 <jonasschnelli> Is also very inefficient if you have pruned or run hybrid SPV
+19:11:37 <wumpus> it certainly shouldn't be the default
+19:11:37 <gmaxwell> It takes many hours on my normal development system, and is still quite slow even on the fastest hardware available.   But avoiding the rescan takes second seat to surprising the user. :)
+19:11:40 <wumpus> it's inefficient and lazy
+19:12:37 <gmaxwell> in my view, except for certan recover operations that are infrequently done-- rescan effectively doesn't work anymore (takes more time than converting your entire usage to a third party api...)
+19:13:22 <wumpus> users of the API should be encouraged to keep track of key birthdates
+19:14:05 <gmaxwell> if we define a new private key format in the not so far future, we should make sure its string clearly integrates a birthdate. :P
+19:14:25 <BlueMatt> ok, so discuss on the issue....next topic?
+19:14:26 <wumpus> a full rescan is indeed only something that should be done for infrequent recovery reasons
+19:15:58 <wumpus> no other topics?
+19:16:22 <MarcoFalke> shortest meeting ever
+19:16:58 <wumpus> I had expected heated debates on what to include last-minute in 0.14 and why to delay the rc, what a disappointment! </s>
+19:17:02 <BlueMatt> great, lets get 0.14 done so I can get back to writing code :)
+19:17:10 <jonasschnelli> Heh.
+19:17:13 <sdaftuar> let's talk about code style again
+19:17:15 <BlueMatt> wumpus: I vote we push it back a month so we can do all the things we wanted to a month ago :p
+19:17:25 <wumpus> BlueMatt: lol!
+19:17:42 <BlueMatt> wait, i had something to talk about re: cde style
+19:17:43 <BlueMatt> hum
+19:17:54 <gmaxwell> BlueMatt: die
+19:17:55 <sdaftuar> i'll get the baseball bat
+19:17:56 <BlueMatt> oh, auto
+19:18:02 <jonasschnelli> Bumpfee: is there a reason why the logic is in the rpcwallet.cpp and not in wallet.cpp?
+19:18:13 <jonasschnelli> Makes it really hard to use in the gui...
+19:18:24 <BlueMatt> jonasschnelli: please move it, agreed
+19:18:25 <luke-jr> jonasschnelli: it can be moved
+19:18:25 <sdaftuar> jonasschnelli: i think we can refactor as needed
+19:18:29 <luke-jr> in 0.15*
+19:18:33 <wumpus> jonasschnelli: because it's only used in rpcwallet.cpp, if you need it in a more general place move it
+19:18:40 <jonasschnelli> Okay.
+19:18:54 <sipa> BlueMatt: i am strongly in favor of auto.
+19:18:59 * sipa hides
+19:19:00 <wumpus> jonasschnelli: although moving everything to wallet.cpp isn't very nice either, we should refactor the wallet code some day
+19:19:03 <luke-jr> I did suggest it earlier, but didn't seem like a blocker for merging
+19:19:06 <wumpus> I'm also in favor of auto
+19:19:15 <BlueMatt> sipa: it makes certain review much, much harder (I often grep for "everywhere X is used")
+19:19:15 <luke-jr> wumpus: well, it's wallet code..
+19:19:23 <BlueMatt> and have already missed things as a result
+19:19:24 <wumpus> luke-jr: so? not all wallet code needs to be in one file
+19:19:35 <wumpus> forbidding auto is just masochism
+19:19:41 <jonasschnelli> wumpus: yes. Thats a good point.
+19:19:42 <BlueMatt> wumpus: i wasnt voding forbidding it
+19:19:46 <sipa> BlueMatt: introduce an incompatible change to the type, and recompile. tadaa, all places it is used
+19:19:49 <BlueMatt> only carefully considering its use
+19:19:50 <cfields> sipa: same. BlueMatt: maybe paste the thread in question?
+19:19:56 <luke-jr> I like auto when the type is implied by some other type; eg, instead of xyz::value_type
+19:20:05 <jtimon> yeah, but not forbidding it doesn't mean recommending it always either
+19:20:10 <BlueMatt> https://github.com/bitcoin/bitcoin/pull/9609#discussion_r98335218
+19:20:15 <wumpus> we have a whole src/wallet directory which could have tons of different implementation files for different facets of the wallet, instead of stashing it all into one file
+19:20:39 <BlueMatt> (I believe gmaxwell's comment there was intedned for a different line)
+19:20:44 <jonasschnelli> yes. Stuff like coin selection should be more modular
+19:21:04 <wumpus> sure, as with any use of any c++ statement, use of auto should be measured
+19:21:08 <MarcoFalke> Lets do it after priority removal
+19:21:18 <MarcoFalke> Otherwise we step on each others toes
+19:21:24 <wumpus> if you have some specific cases where it's bad to use auto, please document them
+19:21:27 <BlueMatt> wumpus: mostly only things that are /actually/ a mile of text to type, imo
+19:21:57 <sipa> BlueMatt: and not needing to change things all over the place when you turn a tuple into a struct
+19:22:07 <sipa> or add a wrapper
+19:22:08 <BlueMatt> sipa: I have no problem reviewing sed-based changes
+19:22:16 <BlueMatt> in fact prefer that
+19:22:18 <wumpus> BlueMatt: there's plenty of those - c++ is overly verbose, auto is a great advancement
+19:22:21 <sipa> they're still annoying to fo
+19:22:27 <BlueMatt> since I'm gonna go read every single place the change effected anyway
+19:22:28 <BlueMatt> to review
+19:22:30 <sipa> *to do
+19:22:50 <sipa> and of course, let's consider on a case by case basis
+19:22:55 <wumpus> right
+19:22:56 <BlueMatt> wumpus: sure, iterators in iterators, np
+19:23:03 <BlueMatt> yea, ok, whatever, I'll shut up
+19:23:04 <sipa> but in my own preference, that is overwhelmingly the case
+19:24:00 <cfields> well the specific case here is for loops. "for (auto& foo : bar)"
+19:24:01 <MarcoFalke> Agree with BlueMatt, that auto should not be used unless necessary.
+19:24:04 <cfields> any reason not to use auto there?
+19:24:04 <jtimon> BlueMatt: the question is, do you have a general advice on when not to use auto?
+19:24:22 <wumpus> it's never *necessary* auto is just nice
+19:24:24 <BlueMatt> cfields: yes, so I can grep and review if the type's behavior changes in some way
+19:24:36 <BlueMatt> jtimon: personally, if the type really, really doesnt matter
+19:24:40 <luke-jr> cfields: if it's liable to produce bad results with bar changing under it
+19:24:50 <BlueMatt> (which means very rarely use it)
+19:24:56 <jtimon> BlueMatt: I'm afraid "doesn't matter" it's too vague here
+19:25:04 <wumpus> I don't think this is going anywhere, too much isagreement
+19:25:04 <BlueMatt> eg if you're taking an iterator and passing it through to another function
+19:25:08 <wumpus> any other topics?
+19:25:22 <wumpus> BlueMatt: function arguments can't use auto, right?
+19:25:29 <sipa> indeed
+19:25:50 <sipa> c++14 and later introduce some auto types in lambdas
+19:25:53 <BlueMatt> wumpus: correct, but eg doing auto it = map.find(thing); if (it != ma.end()) DoThingWith(*it);
+19:25:56 <BlueMatt> is like not a problem
+19:26:23 <BlueMatt> auto it = map.find(thing); if (it != ma.end()) ILikePonies(it->second.rainbows); I do not like
+19:26:24 <sipa> BlueMatt: how is that different from a for (const auto& x : container) {}
+19:27:08 <BlueMatt> sipa: because in the specific case here the thing in the loop is not defined to take a specific type
+19:27:12 <BlueMatt> it is templated
+19:27:15 <jtimon> my question was, do you have a deductive method for finding the not ok cases instead of an inductive one for the "not a problem cases"?
+19:27:21 <sipa> you can see that as an oblivious loop with iterators, and passing *it to a function that is tje body of the loop
+19:27:38 <BlueMatt> jtimon: <BlueMatt> jtimon: personally, if the type really, really doesnt matter
+19:28:12 <sipa> i see your point, but i don't think it weighs up against the benefitd
+19:28:14 <sipa> *benefits
+19:28:20 <wumpus> if you're iterating over some container, the type of container usually really doesn't matter, unless you make specific assumptions (but then you'd generally not be using a range for loop in the first place)
+19:28:41 <BlueMatt> wumpus: imo if you are ever actually dereferencing the type you should not use auto
+19:28:56 <sipa> BlueMatt: your own example dereferences...
+19:28:57 <BlueMatt> if you're dereferencing the iterator to eg a pair or just taking the element and passing it to something else, ok
+19:29:08 <BlueMatt> but if you're dereferencing it and accessing something inside it, no
+19:29:27 <sipa> then we might as well not use it at all, i think
+19:29:46 <jtimon> ok, I think I get what you mean by "doesn't matter" now
+19:29:52 <BlueMatt> sipa: there are many places where you might do for (auto& thing: list) ActOn(thing);
+19:29:55 <BlueMatt> thats reasonable
+19:30:08 <sipa> requiring programmers to spell out redundant information just so you can grep for it seems extreme to me
+19:30:27 <gmaxwell> sipa: so functions shouldn't have prototypes? :)
+19:30:27 <BlueMatt> yes, I didnt expect people to agree with me...I have extreme distaste for auto, personally
+19:30:33 <wumpus> yes, that' extreme, and not going tohhappen. Just use smarter tools.
+19:30:42 <BlueMatt> wumpus: suggestions?
+19:31:00 * BlueMatt would love a grep --allusesoftype thing
+19:31:30 <wumpus> it should be fairly easy to implement using clang's parser, would be surprised if it doesn't exist
+19:31:50 <gmaxwell> There is another side to it is that auto enables you to write code that acts on a type while having no idea of the type yourself. Which is safe 99% of the time and deadly the rest.
+19:32:20 <gmaxwell> because in C++ not all operations which are catgorically unsafe on a type are actually stopped by typechecking. :(
+19:33:41 <gmaxwell> I have an auto to a container... and then I extract an auto to an iterator on it and erase things. Is my code guilty of the sin of using an invalidated iterator? It depends on what container was in use, and that was hid by auto...
+19:34:08 <gmaxwell> But... that sort of thing is an edge case, I'd love to see a realistic list of where auto is likely to cause problems, just to keep it in mind.
+19:34:29 <wumpus> right - just keep it in mind while reviewing
+19:34:43 <wumpus> and if there are well-defined cases where auto is dangerous, they should be documented in the developer notes
+19:34:57 <BlueMatt> ehh, ok, well I go read all of wallet half the time reviewing wallet changes, i guess I'll just start doing that for net, too :p
+19:35:13 <BlueMatt> (not a bad thing, that)
+19:35:29 <gmaxwell> unfortunately, auto is most interesting when you have some horrible complex signature.  But those are the cases where it is also more of an issue.
+19:36:07 <cfields> gmaxwell: for(auto& : foo) doesn't give you an iterator though, just a reference. So imo that should be highly preferred when possible to avoid your example.
+19:36:19 <wumpus> well no, it's most interesting for bog-standard loops, 99% of the cases. If you're doing anything horribly complex, that's probably where you should be careful
+19:36:32 <jtimon> BlueMatt: we can agree that auto is totally fine for unittests too, right? :p
+19:37:20 <cfields> (preferred over auto foo = bar.begin(), that is)
+19:37:23 <gmaxwell> wumpus: well my point is that stating the type explicitly is just as easy as auto when it's simple and obvious.
+19:37:29 <sipa> gmaxwell: when you have some horrid complex type signature, best practice is to introduce a typedef for it... that also results in succint usage, and lacks the review concerns that BlueMatt has i think
+19:37:36 <jtimon> I agree it removes clarity some times
+19:37:48 <wumpus> gmaxwell: it's *easy* but the point is to avoid unnecessary verbosity/typing, not so you can forget the type
+19:37:54 <BlueMatt> sipa: yes, agreed, also means dont use auto in place, which some people like to do
+19:38:10 <jtimon> but I don't have a clear criterion on when to use it like matt
+19:38:14 <BlueMatt> wumpus: I'm generally 100% in favor of extra verbosity
+19:38:25 <wumpus> e.g. to avoid having to type std::vector<std::Strring> for the zillionth time
+19:38:25 <gmaxwell> fking java programmers. :P
+19:38:27 <wumpus> BlueMatt: go use java
+19:38:28 <BlueMatt> extra verbosity generally means less magic, which makes review easier
+19:38:33 <BlueMatt> lol, i expected that....
+19:38:36 <gmaxwell> (though on type signatures, I usually also prefer being explicit more often)
+19:38:44 <wumpus> BlueMatt: that's not categorically true, more verbosity also means more distraction
+19:38:51 <sipa> agree
+19:38:58 <BlueMatt> wumpus: well, ok, more verbosity as long as it actually provides information
+19:39:05 <sipa> nobody actually looks at what large type definitions contain
+19:39:06 <wumpus> having lot's of boilerplate does *not* equal easier review
+19:39:11 <BlueMatt> public static void main(String[] args) {} probably doesnt provide more information
+19:39:26 <wumpus> anyhow
+19:39:29 <BlueMatt> sipa: I do!
+19:39:35 <wumpus> any other topics? this is going the wrong way
+19:39:40 <sipa> haha
+19:39:44 <luke-jr> lol
+19:40:23 <BlueMatt> soooo...endmeeting?
+19:40:26 <wumpus> #endmeeting
