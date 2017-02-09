@@ -1,0 +1,131 @@
+19:01:39 <wumpus> #startmeeting
+19:01:39 <lightningbot> Meeting started Thu Feb  9 19:01:39 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:39 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:44 <jonasschnelli> hi
+19:02:27 <wumpus> topic: 0.14, I guess
+19:03:25 <jonasschnelli> What holds the rc1 back? The open PRs with 0.14 tag?
+19:03:35 <wumpus> there are some net issues
+19:04:00 <jonasschnelli> #9698
+19:04:02 <gribble> https://github.com/bitcoin/bitcoin/issues/9698 | net: fix socket close race by theuni · Pull Request #9698 · bitcoin/bitcoin · GitHub
+19:04:31 <wumpus> #9698 #9715 #9720
+19:04:32 <gribble> https://github.com/bitcoin/bitcoin/issues/9698 | net: fix socket close race by theuni · Pull Request #9698 · bitcoin/bitcoin · GitHub
+19:04:34 <gribble> https://github.com/bitcoin/bitcoin/issues/9715 | Disconnect peers which we do not receive VERACKs from within 60 sec by TheBlueMatt · Pull Request #9715 · bitcoin/bitcoin · GitHub
+19:04:36 <gribble> https://github.com/bitcoin/bitcoin/issues/9720 | net: fix banning and disallow sending messages before receiving verack by theuni · Pull Request #9720 · bitcoin/bitcoin · GitHub
+19:04:42 <wumpus> but I'm not sure that's all; cfields here?
+19:04:51 <cfields> and the atomics, or did those go in this morning?
+19:05:28 <cfields> #9708
+19:05:30 <gribble> https://github.com/bitcoin/bitcoin/issues/9708 | Clean Up all known races/platform-specific UB by TheBlueMatt · Pull Request #9708 · bitcoin/bitcoin · GitHub
+19:05:41 <wumpus> you mean the wallet update counter?
+19:05:58 <wumpus> that went in, I don't know about any other atomic changes
+19:06:00 <cfields> wumpus: ^^
+19:06:31 <cfields> not strictly necessary for 0.14, but makes it much easier to test the others
+19:06:57 <wumpus> ok will tag that too
+19:08:30 <wumpus> anything else?
+19:08:39 <cfields> sorry for the last minute issues. For back-story/context, BlueMatt began testing in helgrind, and came up with a list of possible races in the net code. I wrote a quick fuzz tool to try to hit some, and managed to do so in a few cases. Some are new issues, some are long-standing
+19:09:21 <wumpus> well, better to catch these before the release than after atleast :)
+19:09:36 <achow101> besides these net issues there's just the importmulti stuff left, yes?
+19:09:38 <cfields> the above PRs address all known races in the net code. By fixing even the harmless ones, it allows us to start using tools as part of c-i to avoid introducing new ones
+19:09:59 <sipa> do we want to update the static seed IP list for 0.14?
+19:10:11 <jonasschnelli> That would probably be a good idea.
+19:10:24 <wumpus> yes, we usually do that before a major release
+19:10:36 <wumpus> I'll do that
+19:11:15 <cfields> do defaultAssumeValid/nMinimumChainWork get bumps before rc1?
+19:11:17 <bitcoin-git> [13bitcoin] 15jnewbery opened pull request #9732: [Trivial] Remove nonsense #undef foreach (06master...06removeundefforeach) 02https://github.com/bitcoin/bitcoin/pull/9732
+19:11:44 <wumpus> #action update hardcoded seeds
+19:12:07 <sipa> we can update chainTxData (only used for progress estimation) for sure
+19:13:36 <wumpus> ok, do we have a script or something for that? I wouldn't know how to do that
+19:13:55 <MarcoFalke> I propose we do the bumps in the commit prior to branch off. thus we don't need to redo the work for the master branch
+19:14:14 <MarcoFalke> sipa: Is is mentioned in release process.md?
+19:14:19 <sipa> MarcoFalke: i believe not
+19:14:29 <sipa> MarcoFalke: i'll write a script, and add it to contrib/ ?
+19:15:14 <MarcoFalke> Add a note to release-process.md at least, so we don't forget about it in the future.
+19:15:26 <sipa> yeah, that too
+19:15:39 <MarcoFalke> If the script is only for maintainers, you can add it to the maintainer repo
+19:16:18 <sipa> it was updated in #9472, which is very recent, so i don't think it needs much adjusting, but we should have a procedure for it
+19:16:34 <MarcoFalke> I think it helps devs if the main repo is kept lean
+19:16:45 <sipa> ok
+19:17:02 <sipa> unsure what to do about defaultAssumeValid/nMinimumChainWork though
+19:17:23 <gribble> https://github.com/bitcoin/bitcoin/issues/9472 | Disentangle progress estimation from checkpoints and update it by sipa · Pull Request #9472 · bitcoin/bitcoin · GitHub
+19:18:38 <wumpus> yes it'd help to have the process described in any case
+19:19:25 <gmaxwell> sipa: why unsure? there is a process documented in the relase instructions.
+19:19:39 <gmaxwell> follow the process.
+19:19:56 <MarcoFalke> sipa: We want those bumped as well, I guess. Would be nice to do assumevalid in a pull, so that people can review the hash.
+19:20:22 <gmaxwell> (if the process there is somehow insufficent, -- PR's accepted.)
+19:20:30 <sipa> gmaxwell: cool, i remember reviewing those release instructions even, just forgot about them
+19:20:38 <gmaxwell> oh good. :P
+19:21:10 <gmaxwell> There isn't a script but it's trivial enough that I didn't think one was needed. (it's basically 'call getblockchaininfo')
+19:21:37 <sipa> yeah, chainTxData is a bit more complicated as it needs an estimate of the tx/s rate
+19:21:40 <sipa> but i'll PR a release process update
+19:22:06 <MarcoFalke> #action update release process for chainTxData
+19:22:11 <gmaxwell> sipa: thats 'read two updatetip lines' ?
+19:22:13 <wumpus> ideally it'd be automated with a script, especially as it's under "every minor release"
+19:22:40 <gmaxwell> make a RPC that emits a patch. :P
+19:23:18 <wumpus> if it's manual work, it's probably going to be skipped for most minor releases
+19:23:30 <wumpus> heck, weforget to update the version numbers half the time :-)
+19:24:17 <wumpus> anyhow, any other topics?
+19:24:31 <sipa> well what else is on the 0.14 tagged list?
+19:24:58 <sipa> is #9392 going to be fixed?
+19:24:59 <gribble> https://github.com/bitcoin/bitcoin/issues/9392 | Wallet ancestor sanity-check ignores sigops · Issue #9392 · bitcoin/bitcoin · GitHub
+19:25:00 <jonasschnelli> #9108
+19:25:02 <gribble> https://github.com/bitcoin/bitcoin/issues/9108 | Use importmulti timestamp when importing watch only keys by ryanofsky · Pull Request #9108 · bitcoin/bitcoin · GitHub
+19:25:17 <sipa> i don't think 9392 is very high priority
+19:25:43 <gmaxwell> I don't think 9392 is interesting at all.
+19:25:46 <wumpus> ok, let's untag it for 0.14 then, there's enough high priority stuff to worry about
+19:25:51 <gmaxwell> it's not something our wallet can violate.
+19:25:58 <gmaxwell> (I think, or if so it would be super fringe)
+19:26:20 <wumpus> ... it isn't tagged for 0.14
+19:26:39 <wumpus> oh MarcoFalke just did that
+19:26:46 <wumpus> :D
+19:29:36 <MarcoFalke> The other issues tagged for 0.14 have pulls open. I think this concludes the meeting
+19:29:53 <achow101> does anything else need to be added to the release notes?
+19:30:34 <jonasschnelli> Yes. https://github.com/bitcoin/bitcoin/issues/8455
+19:30:36 <gmaxwell> I haven't been following the wiki release notes. Hows that been going?
+19:31:26 <wumpus> from what I remember all the things on the list were done
+19:31:30 <gmaxwell> cool.
+19:31:39 <achow101> I added a ton of stuff a couple of weeks ago
+19:31:46 <wumpus> yes, awesome work achow101
+19:31:57 <sipa> nice
+19:32:28 <jonasschnelli> thanks achow101
+19:33:36 <wumpus> I was planning on merging the release notes from the wiki just before the rc1 branch
+19:34:29 <wumpus> or just after the 0.14 branch-off, in any case there's no reason to have them on master they'll be cleared there anyway
+19:34:34 <MarcoFalke> you mean 0.14 branch or rc1 tag?
+19:34:43 <wumpus> before the rc1 tag
+19:34:44 <MarcoFalke> ok
+19:34:47 <wumpus> or after the 0.14 branch
+19:34:53 <wumpus> doesn't matter much :)
+19:34:59 <achow101> there's only two things on the release notes todo that aren't checked off. I can't write them because I don't understand those topics :(
+19:35:12 <sdaftuar> the release notes currently have a recommendation to run Bitcoin Knots, for miners wishing to retain "priority" sorting for mining.  i don't think recommending other forks of the project is appropriate (as i've brought up in the past)
+19:35:22 <sipa> sdaftuar: agree
+19:35:49 <wumpus> I don't think that makes much sense either
+19:36:03 <jonasschnelli> sdaftuar: definitively.
+19:36:15 <gmaxwell> My concern is different:
+19:36:22 <jtimon> wumpus: if they're cleared on master after the fact, yeah, it doesn't matter
+19:36:43 <gmaxwell> I think it's fine to recommend a compatible fork for a feature we don't care to support. BUT I think we should not be recommending priority, I think it's bad for users of the network.
+19:36:48 <wumpus> jtimon: master will end up with empty release notes to be filled in for 0.15
+19:37:23 <sdaftuar> gmaxwell: my primary concern is that developers on this project have not reviewed other forks.  secondarily, i agree with your concern that we should not be recommending priority
+19:37:30 <gmaxwell> (also, if miners do want to do priority, the best way would be using the rpc and a prioriizing daemon... but see my part (2))
+19:37:40 <wumpus> (and, after 0.14.0 final is released, with the 0.14.0.md in historical release notes)
+19:38:20 <gmaxwell> Part of my answer to luke when he was complaining about priority is that if miners want priority (I think ~none do) they could just use knots. I think that might motivate that release note recommendation.
+19:38:32 <gmaxwell> But me saying "you can use knots" is not the same as the project saying it
+19:38:45 <sdaftuar> gmaxwell: yes, i think it's fine if you or luke individually make that recommendation
+19:38:50 <wumpus> just doesn't make sense to recommend it in the release notes
+19:38:50 <sdaftuar> well, "fine" :)
+19:39:27 <wumpus> would marginally make sense if it was an experimental feature we were expecting to merge in later
+19:39:28 <jtimon> wumpus: I see, I tend to prefer to put as much in master as possible (and if it makes sense), but in this case it really doesn't matter
+19:39:40 <gmaxwell> I could make a post about 'I think you shouldn't use priority, I think ~no one does, but if you want-- there is knots' which might make luke happier. I wouldn't mind doing that personally.
+19:39:42 <jtimon> it's release notes
+19:42:45 <gmaxwell> in any case, +1 for removing that from release notes.
+19:42:51 <achow101> it's gone
+19:42:53 <jtimon> maybe just a question in a faq or something? "we don't recomment using prioirty, but if you miss it, there's knots at..."
+19:43:09 <gmaxwell> jtimon: infrequently asked questions
+19:43:15 <achow101> (jonasschnelli removed it)
+19:43:19 <gmaxwell> never asked questions
+19:43:35 <jtimon> gmaxwell: yeah, in some iaq.html then
+19:46:37 <wumpus> ok, any other topics?
+19:47:28 <wumpus> if not, let's close the meeting
+19:47:37 <gmaxwell> I'm excited to get 0.14 out. It's got lots of great stuff. :)
+19:48:23 <cfields> +1 :)
+19:48:24 <sipa> indeed
+19:48:24 <wumpus> me too, it should be close now, everyone review!: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.14.0
+19:48:28 <jtimon> yep, many optimizations and cleanups
+19:49:42 <wumpus> #endmeeting

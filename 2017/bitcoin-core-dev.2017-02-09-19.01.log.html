@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:39</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Feb  9 19:01:39 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:39</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:02:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">topic:</span> 0.14, I guess
+<a name="l-6"></a><span class="tm">19:03:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> What holds the rc1 back? The open PRs with 0.14 tag?
+<a name="l-7"></a><span class="tm">19:03:35</span><span class="nk"> &lt;wumpus&gt;</span> there are some net issues
+<a name="l-8"></a><span class="tm">19:04:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#9698</span><span class="cmdline"></span>
+<a name="l-9"></a><span class="tm">19:04:02</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9698 | net: fix socket close race by theuni · Pull Request #9698 · bitcoin/bitcoin · GitHub
+<a name="l-10"></a><span class="tm">19:04:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#9698 </span><span class="cmdline">#9715 #9720</span>
+<a name="l-11"></a><span class="tm">19:04:32</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9698 | net: fix socket close race by theuni · Pull Request #9698 · bitcoin/bitcoin · GitHub
+<a name="l-12"></a><span class="tm">19:04:34</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9715 | Disconnect peers which we do not receive VERACKs from within 60 sec by TheBlueMatt · Pull Request #9715 · bitcoin/bitcoin · GitHub
+<a name="l-13"></a><span class="tm">19:04:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9720 | net: fix banning and disallow sending messages before receiving verack by theuni · Pull Request #9720 · bitcoin/bitcoin · GitHub
+<a name="l-14"></a><span class="tm">19:04:42</span><span class="nk"> &lt;wumpus&gt;</span> but I'm not sure that's all; cfields here?
+<a name="l-15"></a><span class="tm">19:04:51</span><span class="nk"> &lt;cfields&gt;</span> and the atomics, or did those go in this morning?
+<a name="l-16"></a><span class="tm">19:05:28</span><span class="nk"> &lt;cfields&gt;</span> <span class="cmd">#9708</span><span class="cmdline"></span>
+<a name="l-17"></a><span class="tm">19:05:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9708 | Clean Up all known races/platform-specific UB by TheBlueMatt · Pull Request #9708 · bitcoin/bitcoin · GitHub
+<a name="l-18"></a><span class="tm">19:05:41</span><span class="nk"> &lt;wumpus&gt;</span> you mean the wallet update counter?
+<a name="l-19"></a><span class="tm">19:05:58</span><span class="nk"> &lt;wumpus&gt;</span> that went in, I don't know about any other atomic changes
+<a name="l-20"></a><span class="tm">19:06:00</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> ^^
+<a name="l-21"></a><span class="tm">19:06:31</span><span class="nk"> &lt;cfields&gt;</span> not strictly necessary for 0.14, but makes it much easier to test the others
+<a name="l-22"></a><span class="tm">19:06:57</span><span class="nk"> &lt;wumpus&gt;</span> ok will tag that too
+<a name="l-23"></a><span class="tm">19:08:30</span><span class="nk"> &lt;wumpus&gt;</span> anything else?
+<a name="l-24"></a><span class="tm">19:08:39</span><span class="nk"> &lt;cfields&gt;</span> sorry for the last minute issues. For back-story/context, BlueMatt began testing in helgrind, and came up with a list of possible races in the net code. I wrote a quick fuzz tool to try to hit some, and managed to do so in a few cases. Some are new issues, some are long-standing
+<a name="l-25"></a><span class="tm">19:09:21</span><span class="nk"> &lt;wumpus&gt;</span> well, better to catch these before the release than after atleast :)
+<a name="l-26"></a><span class="tm">19:09:36</span><span class="nk"> &lt;achow101&gt;</span> besides these net issues there's just the importmulti stuff left, yes?
+<a name="l-27"></a><span class="tm">19:09:38</span><span class="nk"> &lt;cfields&gt;</span> the above PRs address all known races in the net code. By fixing even the harmless ones, it allows us to start using tools as part of c-i to avoid introducing new ones
+<a name="l-28"></a><span class="tm">19:09:59</span><span class="nk"> &lt;sipa&gt;</span> do we want to update the static seed IP list for 0.14?
+<a name="l-29"></a><span class="tm">19:10:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> That would probably be a good idea.
+<a name="l-30"></a><span class="tm">19:10:24</span><span class="nk"> &lt;wumpus&gt;</span> yes, we usually do that before a major release
+<a name="l-31"></a><span class="tm">19:10:36</span><span class="nk"> &lt;wumpus&gt;</span> I'll do that
+<a name="l-32"></a><span class="tm">19:11:15</span><span class="nk"> &lt;cfields&gt;</span> do defaultAssumeValid/nMinimumChainWork get bumps before rc1?
+<a name="l-33"></a><span class="tm">19:11:17</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jnewbery opened pull request #9732: [Trivial] Remove nonsense #undef foreach (06master...06removeundefforeach) 02https://github.com/bitcoin/bitcoin/pull/9732
+<a name="l-34"></a><span class="tm">19:11:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">update hardcoded seeds</span>
+<a name="l-35"></a><span class="tm">19:12:07</span><span class="nk"> &lt;sipa&gt;</span> we can update chainTxData (only used for progress estimation) for sure
+<a name="l-36"></a><span class="tm">19:13:36</span><span class="nk"> &lt;wumpus&gt;</span> ok, do we have a script or something for that? I wouldn't know how to do that
+<a name="l-37"></a><span class="tm">19:13:55</span><span class="nk"> &lt;MarcoFalke&gt;</span> I propose we do the bumps in the commit prior to branch off. thus we don't need to redo the work for the master branch
+<a name="l-38"></a><span class="tm">19:14:14</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">sipa:</span> Is is mentioned in release process.md?
+<a name="l-39"></a><span class="tm">19:14:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">MarcoFalke:</span> i believe not
+<a name="l-40"></a><span class="tm">19:14:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">MarcoFalke:</span> i'll write a script, and add it to contrib/ ?
+<a name="l-41"></a><span class="tm">19:15:14</span><span class="nk"> &lt;MarcoFalke&gt;</span> Add a note to release-process.md at least, so we don't forget about it in the future.
+<a name="l-42"></a><span class="tm">19:15:26</span><span class="nk"> &lt;sipa&gt;</span> yeah, that too
+<a name="l-43"></a><span class="tm">19:15:39</span><span class="nk"> &lt;MarcoFalke&gt;</span> If the script is only for maintainers, you can add it to the maintainer repo
+<a name="l-44"></a><span class="tm">19:16:18</span><span class="nk"> &lt;sipa&gt;</span> it was updated in #9472, which is very recent, so i don't think it needs much adjusting, but we should have a procedure for it
+<a name="l-45"></a><span class="tm">19:16:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> I think it helps devs if the main repo is kept lean
+<a name="l-46"></a><span class="tm">19:16:45</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-47"></a><span class="tm">19:17:02</span><span class="nk"> &lt;sipa&gt;</span> unsure what to do about defaultAssumeValid/nMinimumChainWork though
+<a name="l-48"></a><span class="tm">19:17:23</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9472 | Disentangle progress estimation from checkpoints and update it by sipa · Pull Request #9472 · bitcoin/bitcoin · GitHub
+<a name="l-49"></a><span class="tm">19:18:38</span><span class="nk"> &lt;wumpus&gt;</span> yes it'd help to have the process described in any case
+<a name="l-50"></a><span class="tm">19:19:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> why unsure? there is a process documented in the relase instructions.
+<a name="l-51"></a><span class="tm">19:19:39</span><span class="nk"> &lt;gmaxwell&gt;</span> follow the process.
+<a name="l-52"></a><span class="tm">19:19:56</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">sipa:</span> We want those bumped as well, I guess. Would be nice to do assumevalid in a pull, so that people can review the hash.
+<a name="l-53"></a><span class="tm">19:20:22</span><span class="nk"> &lt;gmaxwell&gt;</span> (if the process there is somehow insufficent, -- PR's accepted.)
+<a name="l-54"></a><span class="tm">19:20:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> cool, i remember reviewing those release instructions even, just forgot about them
+<a name="l-55"></a><span class="tm">19:20:38</span><span class="nk"> &lt;gmaxwell&gt;</span> oh good. :P
+<a name="l-56"></a><span class="tm">19:21:10</span><span class="nk"> &lt;gmaxwell&gt;</span> There isn't a script but it's trivial enough that I didn't think one was needed. (it's basically 'call getblockchaininfo')
+<a name="l-57"></a><span class="tm">19:21:37</span><span class="nk"> &lt;sipa&gt;</span> yeah, chainTxData is a bit more complicated as it needs an estimate of the tx/s rate
+<a name="l-58"></a><span class="tm">19:21:40</span><span class="nk"> &lt;sipa&gt;</span> but i'll PR a release process update
+<a name="l-59"></a><span class="tm">19:22:06</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">update release process for chainTxData</span>
+<a name="l-60"></a><span class="tm">19:22:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> thats 'read two updatetip lines' ?
+<a name="l-61"></a><span class="tm">19:22:13</span><span class="nk"> &lt;wumpus&gt;</span> ideally it'd be automated with a script, especially as it's under "every minor release"
+<a name="l-62"></a><span class="tm">19:22:40</span><span class="nk"> &lt;gmaxwell&gt;</span> make a RPC that emits a patch. :P
+<a name="l-63"></a><span class="tm">19:23:18</span><span class="nk"> &lt;wumpus&gt;</span> if it's manual work, it's probably going to be skipped for most minor releases
+<a name="l-64"></a><span class="tm">19:23:30</span><span class="nk"> &lt;wumpus&gt;</span> heck, weforget to update the version numbers half the time :-)
+<a name="l-65"></a><span class="tm">19:24:17</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, any other topics?
+<a name="l-66"></a><span class="tm">19:24:31</span><span class="nk"> &lt;sipa&gt;</span> well what else is on the 0.14 tagged list?
+<a name="l-67"></a><span class="tm">19:24:58</span><span class="nk"> &lt;sipa&gt;</span> is #9392 going to be fixed?
+<a name="l-68"></a><span class="tm">19:24:59</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9392 | Wallet ancestor sanity-check ignores sigops · Issue #9392 · bitcoin/bitcoin · GitHub
+<a name="l-69"></a><span class="tm">19:25:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#9108</span><span class="cmdline"></span>
+<a name="l-70"></a><span class="tm">19:25:02</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9108 | Use importmulti timestamp when importing watch only keys by ryanofsky · Pull Request #9108 · bitcoin/bitcoin · GitHub
+<a name="l-71"></a><span class="tm">19:25:17</span><span class="nk"> &lt;sipa&gt;</span> i don't think 9392 is very high priority
+<a name="l-72"></a><span class="tm">19:25:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think 9392 is interesting at all.
+<a name="l-73"></a><span class="tm">19:25:46</span><span class="nk"> &lt;wumpus&gt;</span> ok, let's untag it for 0.14 then, there's enough high priority stuff to worry about
+<a name="l-74"></a><span class="tm">19:25:51</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not something our wallet can violate.
+<a name="l-75"></a><span class="tm">19:25:58</span><span class="nk"> &lt;gmaxwell&gt;</span> (I think, or if so it would be super fringe)
+<a name="l-76"></a><span class="tm">19:26:20</span><span class="nk"> &lt;wumpus&gt;</span> ... it isn't tagged for 0.14
+<a name="l-77"></a><span class="tm">19:26:39</span><span class="nk"> &lt;wumpus&gt;</span> oh MarcoFalke just did that
+<a name="l-78"></a><span class="tm">19:26:46</span><span class="nk"> &lt;wumpus&gt;</span> :D
+<a name="l-79"></a><span class="tm">19:29:36</span><span class="nk"> &lt;MarcoFalke&gt;</span> The other issues tagged for 0.14 have pulls open. I think this concludes the meeting
+<a name="l-80"></a><span class="tm">19:29:53</span><span class="nk"> &lt;achow101&gt;</span> does anything else need to be added to the release notes?
+<a name="l-81"></a><span class="tm">19:30:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. https://github.com/bitcoin/bitcoin/issues/8455
+<a name="l-82"></a><span class="tm">19:30:36</span><span class="nk"> &lt;gmaxwell&gt;</span> I haven't been following the wiki release notes. Hows that been going?
+<a name="l-83"></a><span class="tm">19:31:26</span><span class="nk"> &lt;wumpus&gt;</span> from what I remember all the things on the list were done
+<a name="l-84"></a><span class="tm">19:31:30</span><span class="nk"> &lt;gmaxwell&gt;</span> cool.
+<a name="l-85"></a><span class="tm">19:31:39</span><span class="nk"> &lt;achow101&gt;</span> I added a ton of stuff a couple of weeks ago
+<a name="l-86"></a><span class="tm">19:31:46</span><span class="nk"> &lt;wumpus&gt;</span> yes, awesome work achow101
+<a name="l-87"></a><span class="tm">19:31:57</span><span class="nk"> &lt;sipa&gt;</span> nice
+<a name="l-88"></a><span class="tm">19:32:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> thanks achow101
+<a name="l-89"></a><span class="tm">19:33:36</span><span class="nk"> &lt;wumpus&gt;</span> I was planning on merging the release notes from the wiki just before the rc1 branch
+<a name="l-90"></a><span class="tm">19:34:29</span><span class="nk"> &lt;wumpus&gt;</span> or just after the 0.14 branch-off, in any case there's no reason to have them on master they'll be cleared there anyway
+<a name="l-91"></a><span class="tm">19:34:34</span><span class="nk"> &lt;MarcoFalke&gt;</span> you mean 0.14 branch or rc1 tag?
+<a name="l-92"></a><span class="tm">19:34:43</span><span class="nk"> &lt;wumpus&gt;</span> before the rc1 tag
+<a name="l-93"></a><span class="tm">19:34:44</span><span class="nk"> &lt;MarcoFalke&gt;</span> ok
+<a name="l-94"></a><span class="tm">19:34:47</span><span class="nk"> &lt;wumpus&gt;</span> or after the 0.14 branch
+<a name="l-95"></a><span class="tm">19:34:53</span><span class="nk"> &lt;wumpus&gt;</span> doesn't matter much :)
+<a name="l-96"></a><span class="tm">19:34:59</span><span class="nk"> &lt;achow101&gt;</span> there's only two things on the release notes todo that aren't checked off. I can't write them because I don't understand those topics :(
+<a name="l-97"></a><span class="tm">19:35:12</span><span class="nk"> &lt;sdaftuar&gt;</span> the release notes currently have a recommendation to run Bitcoin Knots, for miners wishing to retain "priority" sorting for mining.  i don't think recommending other forks of the project is appropriate (as i've brought up in the past)
+<a name="l-98"></a><span class="tm">19:35:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> agree
+<a name="l-99"></a><span class="tm">19:35:49</span><span class="nk"> &lt;wumpus&gt;</span> I don't think that makes much sense either
+<a name="l-100"></a><span class="tm">19:36:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sdaftuar:</span> definitively.
+<a name="l-101"></a><span class="tm">19:36:15</span><span class="nk"> &lt;gmaxwell&gt;</span> My concern is different:
+<a name="l-102"></a><span class="tm">19:36:22</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> if they're cleared on master after the fact, yeah, it doesn't matter
+<a name="l-103"></a><span class="tm">19:36:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's fine to recommend a compatible fork for a feature we don't care to support. BUT I think we should not be recommending priority, I think it's bad for users of the network.
+<a name="l-104"></a><span class="tm">19:36:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> master will end up with empty release notes to be filled in for 0.15
+<a name="l-105"></a><span class="tm">19:37:23</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> my primary concern is that developers on this project have not reviewed other forks.  secondarily, i agree with your concern that we should not be recommending priority
+<a name="l-106"></a><span class="tm">19:37:30</span><span class="nk"> &lt;gmaxwell&gt;</span> (also, if miners do want to do priority, the best way would be using the rpc and a prioriizing daemon... but see my part (2))
+<a name="l-107"></a><span class="tm">19:37:40</span><span class="nk"> &lt;wumpus&gt;</span> (and, after 0.14.0 final is released, with the 0.14.0.md in historical release notes)
+<a name="l-108"></a><span class="tm">19:38:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Part of my answer to luke when he was complaining about priority is that if miners want priority (I think ~none do) they could just use knots. I think that might motivate that release note recommendation.
+<a name="l-109"></a><span class="tm">19:38:32</span><span class="nk"> &lt;gmaxwell&gt;</span> But me saying "you can use knots" is not the same as the project saying it
+<a name="l-110"></a><span class="tm">19:38:45</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yes, i think it's fine if you or luke individually make that recommendation
+<a name="l-111"></a><span class="tm">19:38:50</span><span class="nk"> &lt;wumpus&gt;</span> just doesn't make sense to recommend it in the release notes
+<a name="l-112"></a><span class="tm">19:38:50</span><span class="nk"> &lt;sdaftuar&gt;</span> well, "fine" :)
+<a name="l-113"></a><span class="tm">19:39:27</span><span class="nk"> &lt;wumpus&gt;</span> would marginally make sense if it was an experimental feature we were expecting to merge in later
+<a name="l-114"></a><span class="tm">19:39:28</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I see, I tend to prefer to put as much in master as possible (and if it makes sense), but in this case it really doesn't matter
+<a name="l-115"></a><span class="tm">19:39:40</span><span class="nk"> &lt;gmaxwell&gt;</span> I could make a post about 'I think you shouldn't use priority, I think ~no one does, but if you want-- there is knots' which might make luke happier. I wouldn't mind doing that personally.
+<a name="l-116"></a><span class="tm">19:39:42</span><span class="nk"> &lt;jtimon&gt;</span> it's release notes
+<a name="l-117"></a><span class="tm">19:42:45</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, +1 for removing that from release notes.
+<a name="l-118"></a><span class="tm">19:42:51</span><span class="nk"> &lt;achow101&gt;</span> it's gone
+<a name="l-119"></a><span class="tm">19:42:53</span><span class="nk"> &lt;jtimon&gt;</span> maybe just a question in a faq or something? "we don't recomment using prioirty, but if you miss it, there's knots at..."
+<a name="l-120"></a><span class="tm">19:43:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> infrequently asked questions
+<a name="l-121"></a><span class="tm">19:43:15</span><span class="nk"> &lt;achow101&gt;</span> (jonasschnelli removed it)
+<a name="l-122"></a><span class="tm">19:43:19</span><span class="nk"> &lt;gmaxwell&gt;</span> never asked questions
+<a name="l-123"></a><span class="tm">19:43:35</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> yeah, in some iaq.html then
+<a name="l-124"></a><span class="tm">19:46:37</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-125"></a><span class="tm">19:47:28</span><span class="nk"> &lt;wumpus&gt;</span> if not, let's close the meeting
+<a name="l-126"></a><span class="tm">19:47:37</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm excited to get 0.14 out. It's got lots of great stuff. :)
+<a name="l-127"></a><span class="tm">19:48:23</span><span class="nk"> &lt;cfields&gt;</span> +1 :)
+<a name="l-128"></a><span class="tm">19:48:24</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-129"></a><span class="tm">19:48:24</span><span class="nk"> &lt;wumpus&gt;</span> me too, it should be close now, everyone review!: https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.14.0
+<a name="l-130"></a><span class="tm">19:48:28</span><span class="nk"> &lt;jtimon&gt;</span> yep, many optimizations and cleanups
+<a name="l-131"></a><span class="tm">19:49:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
