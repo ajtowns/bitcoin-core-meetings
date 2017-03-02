@@ -1,0 +1,204 @@
+19:01:32 <wumpus> #startmeeting
+19:01:32 <lightningbot> Meeting started Thu Mar  2 19:01:32 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:32 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:02 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt
+19:02:02 <wumpus> instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:02:08 <sdaftuar> hi
+19:02:09 <kanzure> hi.
+19:02:23 <BlueMatt> topics?
+19:02:48 * BlueMatt would like to discuss the lack of unicorns 'round here
+19:03:01 <sdaftuar> topic suggestion: any open items for 0.14?
+19:03:08 <wumpus> BlueMatt: +1
+19:03:34 <wumpus> any new issues with rc3?
+19:04:16 <gmaxwell> I have an issue.
+19:04:40 <gmaxwell> It isn't released yet. :P
+19:04:46 <sipa> ha.
+19:05:01 <wumpus> hehe
+19:05:09 <BlueMatt> yup
+19:05:39 <BlueMatt> rc3 was posted yesterday, so release is next tuesday if nothing else comes up, I believe?
+19:06:17 <sipa> seems reasonable
+19:06:24 <gmaxwell> I saw some positive comments on Bitcoin talk.
+19:06:30 <BlueMatt> dont we normally do a week after rc?
+19:06:38 <wumpus> yup, that's how it useually goes yes, BlueMatt
+19:08:07 <MarcoFalke> #action plan to release next tuesday if nothing else comes up
+19:08:38 <morcos> i'd like to briefly discuss the timing of merging #9602..  b/c assuming we are going to do it, it would be nice to get it out of the way so its not a rebase/review nightmare.  i also have a ton of fee estimation changes built on top
+19:08:42 <gribble> https://github.com/bitcoin/bitcoin/issues/9602 | Remove coin age priority and free transactions - implementation by morcos · Pull Request #9602 · bitcoin/bitcoin · GitHub
+19:08:58 <BlueMatt> morcos: will finish review soon, but so far lgtm
+19:09:05 <BlueMatt> would agree it should merge fast
+19:09:25 <wumpus> #topic discuss the timing of merging #9602
+19:09:27 <gribble> https://github.com/bitcoin/bitcoin/issues/9602 | Remove coin age priority and free transactions - implementation by morcos · Pull Request #9602 · bitcoin/bitcoin · GitHub
+19:09:37 <sdaftuar> +1 for merging sooner rather than later
+19:10:22 <wumpus> well if it is ready for merge it should be merged
+19:10:22 <sdaftuar> i'm also working on some mining tweaks that i'd rather just build on top of 9602
+19:10:48 <BlueMatt> wumpus: I believe it needs review and morcos is asking for fast-review because its a pita to rebase constantly
+19:11:04 <morcos> wumpus: oh ok, i just wanted to coordinate so people were reviewing at the same time frame... thats when the rebases get annoying, when ppl have reviewed different versions.  and now it seems people have started reviewing
+19:11:13 <morcos> so anyone else that is interested, sooner is better than later
+19:11:30 <gmaxwell> Sounds fine to me, a related subject is that there are a number of other features (like multiwallet) that just missed 0.14 which we should try to get in early rather than later.
+19:12:04 <wumpus> yes
+19:12:22 <BlueMatt> yes, I imagine luke's dont-use-pwalletMin thing is a pita to rebase as well
+19:13:06 <BlueMatt> that would be #8775
+19:13:09 <gribble> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+19:13:18 <gmaxwell> it's also an issue that if these things drag on until late in the cycle they'll miss again.
+19:14:04 <wumpus> right, so all review multiwallet pulls
+19:14:48 <wumpus> #8775 should probably go in first
+19:14:51 <gribble> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+19:15:13 <MarcoFalke> They don't conflict according to git merge, so no strict order required
+19:15:18 <gmaxwell> It might be useful, not in this meeting, but for people to think about what they'd like the big features of 0.15 to be and make sure we make progress early enough on those things so that they can actually be there. :) I feel like there were things that at least I personally wanted in 0.14 but didn't give them enough attention until too late.
+19:16:02 <morcos> 1 major feature thats in the back of my mind, but a bit complicated so might require some discussion as to whether we want it and when is automated fee-bumping
+19:16:40 <wumpus> well at least there should be time for features again in 0.15. 0.14 time was mostly spent on segwit
+19:16:53 <sipa> famous last words :)
+19:16:56 <sipa> but i agree
+19:17:23 <gmaxwell> morcos: I would replace 'automated fee bumping' with 'precomputed fee bumping'  E.g. when you sign, presign all the bumps, locktimed... so they don't interfear with the wallet encryption.. and could even be handed off to someone if you go offline.
+19:17:29 <wumpus> well I don't know of any large upcoming softfork projects monopolizing everyone at least?
+19:17:45 <gmaxwell> wumpus: everything like that is on hold for segwit!
+19:18:03 <wumpus> so hopefully for 0.16 again then :)
+19:18:33 <wumpus> anyhow, it means for 0.15 we can focus on software features instead of network/consensus features
+19:18:37 <morcos> gmaxwell: do we not have any suggested SF's that aren't built off segwit in the queue?  lets take advantage of BIP 9!
+19:19:11 <sipa> raise min difficulty, optional utxo commitments, ...
+19:19:12 <gmaxwell> on that subject, we should reconsider some things around how segwit works: that we won't mine once segwit is active without the flag set,  and we don't set the versionbit without the flag... Both of these are foolish IMO.
+19:20:34 <sipa> oh, by flag you mean whether the GBT client indicates support?
+19:20:45 <gmaxwell> by 'don't set the versionbit without the flag-- if the GBT client doesn't signal segwit support we don't set the BIP 9 bit. Which is stupid, since we'll happily enforce the rules.
+19:20:48 <sdaftuar> we do that so that segwit can't activate without the miners actually mining segwit transactions
+19:20:59 <BlueMatt> sdaftuar: I'm not too worried about that
+19:21:19 <gmaxwell> sdaftuar: yea but I think that is an error. So what if they don't? Then there is just less capacity for segwit txn initially until they upgrade, and they'll lose out on fees.
+19:21:27 <BlueMatt> I prefer for miners to be able to mine and just lose out on fee revenue than stop mining
+19:21:44 <wumpus> #action review and merge #8775 and #9602 as soon as possible, they are prone to turning into rebase/merge nightmares
+19:21:47 <gribble> https://github.com/bitcoin/bitcoin/issues/8775 | RPC refactoring: Access wallet using new GetWalletForJSONRPCRequest by luke-jr · Pull Request #8775 · bitcoin/bitcoin · GitHub
+19:21:49 <gribble> https://github.com/bitcoin/bitcoin/issues/9602 | Remove coin age priority and free transactions - implementation by morcos · Pull Request #9602 · bitcoin/bitcoin · GitHub
+19:21:54 <sdaftuar> gmaxwell: my concern (before we got to the point we're at now) was that segwit could have activated with 0 miners mining
+19:22:00 <sdaftuar> and then mempools could be attacekd with transactions that wouldn't confirm
+19:22:05 <morcos> gmaxwell: agreed, as long as we know that SOME miners are mining them..  which seems we're at that poin tnow
+19:22:05 <sdaftuar> perhaps now we can relax it
+19:22:07 <gmaxwell> sdaftuar: Yes, I agree. That would be silly. But we're not there now. :)
+19:22:34 <gmaxwell> I didn't protest at the time because of that. (well actually on the stops mining thing, I thought we fixed that)
+19:22:52 <sipa> suggested topic: CNB calling TBV or not, and CNB caching
+19:23:12 <gmaxwell> (My misunderstanding was that I thought we stopped mining without the gbt-flag entirely once the code had support for it.. and I saw that wasn't the case)
+19:24:07 <gmaxwell> We need to get TBV out of the critical path. I do not really agree with lightswords view on it though-- I think it's important that we have some process that tests that blocks were handing out to mine. It does not need to be in the critical path.
+19:24:41 <wumpus> #topic CNB calling TBV or not, and CNB caching
+19:24:45 <sipa> i believe that what the code does for an actual miners doesn't matter
+19:24:53 <morcos> gmaxwell: sipa: i think the downside of leaving it in the critical path is an extra 150ms of mining with an empty block
+19:25:00 <sipa> yes, that's obvious
+19:25:05 <sipa> and there are various solutions
+19:25:08 <gmaxwell> morcos: or worse.
+19:25:12 <sipa> an easy one (just get rid of the test)
+19:25:22 <sipa> or a hard one (background validation, caching, ...)
+19:25:46 <gmaxwell> The challenge with backgrounding it is that test holds cs_main for a long time.
+19:25:55 <morcos> hmm, i guess i was wrong
+19:25:55 <gmaxwell> I have suggested making the validation it does interruptable.
+19:26:15 <BlueMatt> gmaxwell: I have suggested that many times :)
+19:26:17 <morcos> if you want to build on a prior header, you can't have TBV in the critical path, b/c you might not be even able to do it if you dont' have prior block
+19:26:33 <gmaxwell> E.g. an atomic checked between each transaction which can abort a test validation. This would also be useful for the block proposal validations.
+19:27:00 <gmaxwell> then an incoming block will set the atomic and then block on acquiring cs_main.
+19:27:08 <sipa> morcos: well building on a prior header is easy... i'm sure we can build an empty block that's valid
+19:27:30 <gmaxwell> the background thread would just go to sleep and try again later. Block proposals would just sleep for a bit then try again (while the RPC caller waited)
+19:27:45 <morcos> yes but we have to have a way of skipping TBV on that block don't we? or some really hacking version that calls TBV on a fake chain active
+19:28:38 <sipa> an alternative is just having a background process that every so often runs CNB and caches the result
+19:28:47 <sipa> and then validates it after storing in the cache
+19:28:56 <gmaxwell> Well my thought would be we'd just have a background loop, running even if you don't mine, that TBVs once a minute or so.. and it can get interrupted. and if its interrupted it just gives up until the next minute.
+19:29:03 <morcos> it only needs to be out of the criticial path when there is a new tip... when its just updating the block, it doesn't matter if you wait for it
+19:29:04 <sipa> then GBT can check whether the cached block still builds on top of the best header, and if not, return an empty block
+19:29:24 <gmaxwell> okay if doing what sipa suggests a minute is a bit slow!
+19:29:40 <sipa> and a new tip would obviously wake the background thread
+19:29:50 <gmaxwell> but sounds like we were thinking of similar-ish things.
+19:30:08 <sipa> however, we wouldn't want such a background CNB for normal nodes
+19:30:26 <gmaxwell> I dunno, at a low enough frequency it would be fine and would create a lot more in-field testing.
+19:30:36 <morcos> the good thing about going down that road is you can be smarter about waking the CNB thread to wait until you have new high fee txs that are at least n seconds old or what have you
+19:30:52 <sdaftuar> morcos: are you going to PR something that calls CNB to keep pcoinsTip warm?
+19:31:00 <sipa> and it would keep the sigcache warm with what we expect to be mined
+19:31:01 <morcos> running TBV on slow hardware over and over is probably bad
+19:31:16 <gmaxwell> One thing I suggested previously is that calling GBT pump the refresh of the cache... so it runs more often if you're calling GBT than otherwise.
+19:31:31 <sipa> gmaxwell: seems reasonable
+19:31:41 <morcos> sdaftuar: i don't remember....   but i think the version i had, only ran it once after a flush
+19:31:54 <sipa> this not only takes TBV out of the critical path, but also CNB
+19:31:55 <gmaxwell> morcos: once a minute? it wouldn't be horrible. Once every 10 minutes? 20 minutes?  I think there is a number where its harmless and we would avoid having code that runs only on a very small number of nodes thus gets inadequate operaiton to expose bugs.
+19:32:36 <morcos> honestly i think a more important direction to go would be to start by replacing GBT with a better framework
+19:32:40 <morcos> and then making that work optimally
+19:32:48 <sipa> morcos: i think this may be orthogonal work
+19:32:56 <gmaxwell> I think this is more or less orthorgonal to GBT. In that anything else will still need to create a block template. :)
+19:32:57 <sipa> it'd just be a wrapper around CNB
+19:33:21 <morcos> i agree its mostly orthogonal.. but one still probably has to occupy our attention first
+19:33:42 <sipa> well GBT replacement needs a lot of external discussion
+19:33:50 <gmaxwell> Well there are design considerations in the 'better thing' that hinge really on how fast CNB is ... and the spectrum of options we want to hand out when we can't give an answer fast.
+19:35:06 <morcos> gmaxwell: hmm.. yes... perhaps what i mean is we should design the better thing so it informs what we want out of CNB/TBV.  and document the design so we dont' forget..  even if we don't do it yet
+19:36:02 <gmaxwell> I think right now I don't have a lot of appetite for major inititavies that we can't just do within the project. But if someone wants to undertake a big coordination effort, that shouldn't slow them down.
+19:36:13 <gmaxwell> Okay, well an expirement is not something we need permission for... :)
+19:36:41 <morcos> ok no argument here
+19:37:08 <morcos> i guess this all hinges on making the TBV code (and maybe even CNB) interruptible
+19:37:19 <sipa> i think that's relatively easy
+19:38:45 <morcos> yeah thinking about it, they both are pretty trivial
+19:39:20 <gmaxwell> Tightly related to this question is the question of bypassing validation for things in our template. As you may be aware some people have been using in-mempoolness as a proxy for validity. This seems rather sketchy to me, though it should be a pretty substantial latency improvement.  The assumption that makes ditching TBV okay also makes doing that okay, I believe.  And there is an open alternat
+19:39:26 <gmaxwell> ive which is potentially more safe, if a transaction is in our template cache for this height, which we've already verified, then its validation could be skipped.
+19:40:18 <morcos> i'm basically opposed to that
+19:40:55 <sipa> relying on the template-validation-cache to be correct seems less risky than relying on the mempool itself to be correct
+19:41:03 <gmaxwell> And if it results in users not using this software but software written by people who don't even know enough to oppose that?
+19:41:07 <sipa> but it does make TBV consensus critical
+19:41:09 <morcos> i do think we could do these things while waiting for validation
+19:41:18 <gmaxwell> In any case, just a thought.
+19:41:25 <luke-jr> TBV is already consensus-critical, more or less
+19:41:30 <luke-jr> the code for it anyhow
+19:41:33 <gmaxwell> (that using a tested template is safer than the mempool)
+19:41:58 <sipa> luke-jr: well it uses most of ConnectBlock, which definitely is consensus critical
+19:42:03 <morcos> e.g.  get a new block from the network... -> assume valid -> mark all txs in mempool as potentially used -> CNB from remaining -> have not yet validated new tip or TBV new template, and if we find a block, so be it...
+19:42:04 <sipa> luke-jr: that overlap is what makes it less risky
+19:42:27 <gmaxwell> morcos: that is also interesting.
+19:42:35 <gmaxwell> so fast for mining but nothing else.
+19:42:38 <morcos> gmaxwell: i guess its not QUITE that easy
+19:43:10 <gmaxwell> morcos: but in that case you would extend an invalid block, bad.
+19:43:45 <morcos> gmaxwell: yes but only for a couple hundred ms...  you still immediately validate and switch work if there was a problem
+19:44:04 <gmaxwell> (very bad to have miners extending invalid blocks, even for relatively brief intervals, massively amplifies risk for lite clients-- especially since devices may stay on old work for tens of seconds)
+19:44:22 <sipa> plan: 1) make TBV interruptible 2) add background thread that caches CNB results 3) make GBT return an empty block if the cache does not build on your tip
+19:44:27 <gmaxwell> (and I got flamed to death when I suggested a singaling mechenism for lite clients to ignore confirmations constructed that way)
+19:44:45 <gmaxwell> sipa: that plan sounds good.
+19:44:51 <morcos> well we can't make our plans based on what you get flamed for can we?  :)
+19:44:56 <BlueMatt> gmaxwell: I'm more a fan of not relying on validation being fast - mine empty blocks for the 100ms it takes to get a blocktemplate, and relay blocks during validation
+19:44:58 <BlueMatt> problem solved :)
+19:45:03 <sipa> agree
+19:45:34 <sipa> where did you get flamed?
+19:45:38 <gmaxwell> BlueMatt: you still need to validate a block before extending it. To not do so is toxic to lite clients which strongly trust that you have.
+19:45:41 <gmaxwell> bitcoin-dev
+19:45:53 <morcos> sipa: ha ha ha, that was a funny
+19:46:22 <BlueMatt> gmaxwell: oh? every time I've discussed it with anyone in person they're like "yea, do that, sounds good" :)
+19:46:28 <gmaxwell> I wrote a spec for signaling that you've not validated the prior block. So that lite clients could just ignore those blocks as confirmations.
+19:46:43 <sipa> morcos: it was an honest question - i can remember gmaxwell bringing it up in here a few times, i didn't know there was more to it
+19:47:24 <gmaxwell> I wrote a BIP, draft-maxwell-flagverify
+19:47:24 <BlueMatt> gmaxwell: and I think we should implement that when we go to return empty blocks :)
+19:47:33 <BlueMatt> I'm happy to go implement it in lite clients, too
+19:49:26 <gmaxwell> I also think the rise in fees is such that it's increasingly less interesting to produce empty blocks.
+19:50:03 <BlueMatt> true, but 12.5 BTC is sitll > 0 BTC :P
+19:50:05 <luke-jr> should GBT return partial blocks, as the background thread fills it?
+19:50:15 <gmaxwell> lightsword isn't here now it seems but previously he has pointed out that returning an empty template is often bad because the downstream software stack doesn't know to try again immediately and so will mine on it for a long time.
+19:50:22 <BlueMatt> there is just more pressure to limit the time you're spending mining empty blocks :)
+19:50:43 <BlueMatt> Lightsword: yes he is
+19:51:11 <luke-jr> gmaxwell: what Eloipool does to solve that, is return a longpollid which is triggered as soon as the full template is available
+19:51:28 <gmaxwell> BlueMatt: yes but that isn't the tradeoff. Assuming you mine on the template for --say-- 30 seconds, it's 13.4 BTC expected (13.5 - 100ms of mining) vs 12.5.  or whatnot.
+19:52:27 <sipa> well, we could optionally also make GBT return a partial block and/or block until the full block is available (but not yet TBVed)
+19:52:39 <gmaxwell> e.g. current fees pay for 100ms of delay easily.
+19:52:45 <BlueMatt> gmaxwell: oh? I believe most pools can push a "hard update" or whatever its called
+19:52:52 <BlueMatt> that will force the asic to switch
+19:52:52 <sipa> moving the actual construction to the background won't hurt
+19:52:56 <BlueMatt> there is a flag in stratum for it
+19:53:16 <BlueMatt> (to flush workqueue in asic)
+19:53:18 <gmaxwell> BlueMatt: for some hardware retargeting causes misbehavior/loss of performance.
+19:53:50 <gmaxwell> In any case, it isn't so simple.
+19:53:55 <BlueMatt> fair
+19:54:09 <BlueMatt> I assume most modern hardware supports it, though
+19:54:13 <BlueMatt> given that most pools do this
+19:54:19 <BlueMatt> incl pools run by the hardware mfgrs
+19:54:19 <gmaxwell> Do not assume that.
+19:54:29 <BlueMatt> ok, fair
+19:54:40 <sipa> we're running out of time
+19:54:44 <sipa> any other topics?
+19:54:49 <gmaxwell> quick, empty messages
+19:54:52 <sipa> 
+19:54:54 <luke-jr> 
+19:55:05 <wumpus> 
+19:55:22 <gmaxwell> 
+19:55:31 <luke-jr> inb4 trolls use this as proof we obey gmaxwell
+19:55:37 <gwillen> 
+19:56:07 <BlueMatt> lulwut
+19:56:21 <wumpus> #topic
+19:56:26 <sipa> it's "lolwut", BlueMatt.
+19:56:38 <BlueMatt> lulzwutz
+19:56:49 <wumpus> cleared the topic, too, now we can cleanly exit the meeting
+19:56:50 <gmaxwell> We should appoint a subcommittee to investigate the spelling of lolwut/lulwut.
+19:56:59 <wumpus> #endmeeting
