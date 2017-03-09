@@ -1,0 +1,157 @@
+19:00:43 <wumpus> #startmeeting
+19:00:43 <lightningbot> Meeting started Thu Mar  9 19:00:43 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:43 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:47 <jonasschnelli> hi
+19:01:02 <sipa> short topic: great work on 0.14 all!
+19:01:07 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt
+19:01:08 <wumpus> instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:01:20 <wumpus> yes! congrats all on another great release
+19:01:37 <btcdrak> +1
+19:02:08 * BlueMatt has seen really great results for miners that have upgraded to 0.14 =D
+19:02:08 <morcos> yes i feel like we did a good job getting most of the major things we wanted into it!
+19:02:16 <BlueMatt> net seems to have really helped a lot
+19:02:50 <achow101> hi
+19:03:02 <wumpus> proposed topic: disclosure of alert key (https://github.com/bitcoin-dot-org/bitcoin.org/pull/1534 reminded me)
+19:03:16 <gmaxwell> Hi.
+19:03:49 <gmaxwell> There are DOS vulnerablities in older verions that the final alert does not block. :(
+19:03:55 <wumpus> #topic alert key disclosure timeline
+19:04:05 <sipa> gmaxwell: below what version?
+19:04:12 <gmaxwell> (unfortunately the old code is stupid)
+19:04:18 <achow101> what kind of DOS vulns?
+19:04:21 <gmaxwell> All versions. They're worse in older ones.
+19:04:38 <gmaxwell> (obviously all versions with alerts enabled)
+19:04:51 <sipa> when was that changed?
+19:04:53 <wumpus> yes, what kind? just a slowdown, or a crash, or potential remote code execution?
+19:05:00 <sipa> OOM
+19:05:04 <gmaxwell> No RCE, just OOM.
+19:05:41 <btcdrak> so versions <0.12.0 affected?
+19:05:52 <wumpus> well. some versions have already been marked as "insecure" on bitcoin.org due to other bugs. Let me see what the threshold is.
+19:06:09 <sipa> when was the alert feature disabled by default?
+19:06:16 <achow101> 0.12.1
+19:06:29 <btcdrak> oh
+19:06:39 <BlueMatt> wumpus: we have a list somewhere?
+19:06:46 <sipa> are there any major altcoins forked before 0.12 that did not change the alaert key?
+19:07:00 <wumpus> https://bitcoin.org/bin/insecure/
+19:07:01 <gmaxwell> All the 0.14 nodes sending final alerts constantly is somewhat protective, but unforuntately not absoltely protective.
+19:07:22 <gmaxwell> sipa: already looked for that, there were no major ones, but some obscure & dead ones that have been nagged.
+19:07:40 <gmaxwell> There are also funds paid to the alert key in the network, I believe 0.01 BTC or so. :P
+19:08:18 <wumpus> heheh
+19:08:25 <cfields> heh
+19:08:27 <gmaxwell> in any case, one possibility would be to not worry too much about it, announce again that version <0.12.1 are vulnerable (there is a lot else they're vulnerable too, I think).
+19:08:29 <wumpus> surprised no one ever swiped that
+19:08:46 <btcdrak> sipa: most altcoins are on <0.12 codebase, and many never changed the alter key
+19:08:53 <gmaxwell> btcdrak: not so.
+19:09:08 <wumpus> from what I've seen, altcoins generally do change the alert key, at least from the bitcoin one
+19:09:15 <gmaxwell> btcdrak: (didn't change the _litecoin_ alert key, yes, but I searched extensively for this already, months ago.)
+19:09:17 <wumpus> many have the litecoin or feathercoin key
+19:09:20 <wumpus> yes :)
+19:09:43 <sipa> ah
+19:09:47 <btcdrak> ah yes, most coins forked from litecoin (and didnt change the network magic either)
+19:09:59 <morcos> remind me again what the advantage is of disclosing the key?
+19:10:23 <achow101> morcos: making the alert system entirely unreliable (as if it weren't already)
+19:10:25 <gmaxwell> to not be responsible for someone else abusing it, among other things.
+19:10:41 <gmaxwell> we don't believe the key is actually secure right now in any case.
+19:10:54 <sipa> there is no hurry in disclosing it either
+19:11:11 <sipa> just a nice to have to close that chapter
+19:11:18 <wumpus> to force people to not use it anymore
+19:11:24 <btcdrak> they key is useless now anyway that final alert is out.
+19:11:25 <wumpus> and also for sake of history
+19:11:26 <paveljanik> We can make people upgrade because of the planned alert key discolsure...
+19:11:37 <luke-jr> not sure how litecoin alerts are affects if they use a different key
+19:11:42 <gmaxwell> we can't make anyone upgrade, and even if we could we wouldn't. :)
+19:11:43 <morcos> yes but if there is even nuisance harm that can be done with it.. i think we should announce that its not considred secure but that we're not going to aid people doing nuisance with it by publicly disclosing it until a) we see nuisance or b) some predetermine future point
+19:11:52 <wumpus> litecoin is not affected luke-jr - what they do is up to them
+19:12:13 <btcdrak> wumpus: they also removed the alert system, but there's a lot on 0.10.x nodes in litecoin
+19:12:24 <gmaxwell> morcos: well we're at the predetermined future point now, we announced.. 6 months ago we'd do this after 0.14. The issue there is on careful review of the old code I found several DOS vulnerablities.
+19:12:37 <wumpus> yes, this was announced on a timeline
+19:12:56 <morcos> right, so change the predetermined point to be further out...  the risk is only that someone blames us for nuisance right?
+19:13:02 <achow101> maybe just push back the date even further until <0.12.1 nodes are even fewer?
+19:13:25 <BlueMatt> yea, I would vote push another release given old 0.12.0 isnt otherwise insecure?
+19:13:32 <wumpus> right, if anyone abuses the key now, they may blame us. If it is public knowledge not so much.
+19:13:35 <gmaxwell> It's fine with me, we should emphasize that those older versions are insecure.  If someone dosses them later it's not the end of the world.
+19:13:52 <morcos> Except of course we will be blamed if we make it public and someone creates nuisance with it!
+19:14:02 <gmaxwell> BlueMatt: I believe it is otherwise insecure at a greater magnitude than the alert DOS attacks.
+19:14:06 <paveljanik> gmaxwell, yes, and by emphasizing it, maybe people update...
+19:14:26 <gmaxwell> Well anything that has alerts is displaying the hardcoded final alert now...
+19:14:33 <achow101> what version did BU remove the alert system? If it is in their 0.12.1, people could dos them, and I don't think they would take kindly to that (drama and FUD and all that)
+19:14:42 <btcdrak> so let's announce the vulnerability first that should motivate more people to upgrade old systems or disable the alert system.
+19:14:43 <gmaxwell> which says something like (allcaps) warning alert key compromised! upgrade required!.
+19:14:53 <jtimon> ACK "<sipa> there is no hurry in disclosing it either"
+19:15:34 <luke-jr> gmaxwell: can you get a CVE assigned for one or more of the old DoS?
+19:15:38 <gmaxwell> I think some of you are underestimating the cost of this thing... but sure, no rush required.
+19:15:44 <wumpus> anyhow, everyone with the alert key could disclose it, even anonymously
+19:16:12 <wumpus> don't even know who has it exactly so...
+19:16:14 <luke-jr> yes, nobody can be blamed individually if nobody knows who disclosed it
+19:16:39 <wumpus> anyhow, any other topics?
+19:17:27 <luke-jr> FWIW, ignoring alert keys, I see 539 vulnerable nodes (0.94%)
+19:17:28 <gmaxwell> Can we get a clear plan of action here? We'll CVE old versions and remind people these old things are insecure? should we review other fixes and determine if we want to set a higher bar for holy-shit-dont-run-that than 0.12.1?
+19:18:02 <luke-jr> updating http://luke.dashjr.org/programs/bitcoin/files/charts/security.html to consider <0.12.1 vulnerable, that goes to 2606 vulnerable nodes (4.54%)
+19:18:37 <wumpus> you can't be entirely sure that all of them are vulnerable, they may have patched the code to remove the alert system
+19:18:48 <luke-jr> sure, but that's unlikely
+19:18:53 <gmaxwell> I think 5% dropping offline would be inconsequential, so avoiding the dos is just a politeness to the users to avoid disrupting other things they may have going on.
+19:19:02 <wumpus> many are running old versions to be able to run their own (outdated) patches on top
+19:19:25 <achow101> gmaxwell: how about CVE the dos vulns you found, post messages an all forums about vulnerable nodes, and then release the key a few weeks later?
+19:19:32 <luke-jr> if we're really worried, we could release a 0.12.2 with just those exploits fixed
+19:19:41 <luke-jr> or maybe simply disabling alerts
+19:19:49 <gmaxwell> luke-jr: 0.12.1 has them disabled.
+19:19:52 <achow101> luke-jr: 0.12.1 already disabled alrets
+19:19:54 <morcos> if it was me, i wouldn't do any of it...  lets put our effort where it matters.. 0.15
+19:19:55 <luke-jr> oh, duh
+19:20:09 <luke-jr> so why wouldn't people held back by patches just rebase?
+19:20:13 <luke-jr> to 0.12.1
+19:20:24 <wumpus> 0.12.0 can easily upgrad to 0.12.1, 0.11.x maybe less so
+19:20:47 <btcdrak> considering there's an alert message broadcasting to all those vulnerable nodes right now saying they should upgrade, I think we've probably done enough.
+19:20:55 <wumpus> not going to do a new 0.11.x release though
+19:21:55 <luke-jr> get and publish a CVE, then 2 weeks later publish the key
+19:21:57 <luke-jr> ?
+19:22:23 <wumpus> I guess we could push a patch to the 0.11 branch that disables the alert system
+19:22:33 <gmaxwell> it's a trivial patch.
+19:22:40 <wumpus> yes
+19:22:42 <achow101> luke-jr: +1
+19:23:08 <gmaxwell> nothing before 0.8 still works at all, and the 0.9x nodes I have looked at are all fake.
+19:23:21 <gmaxwell> 0.10 / 0.11 are probably still running in practice.
+19:23:56 <gmaxwell> luke-jr: okay fine with CVE and we can patch the old branch. thats enough plan for me for now.
+19:24:11 <wumpus> it's a one-line patch, could even do a tag, just not going to build executables for them anymore
+19:25:55 <gmaxwell> Thanks.
+19:26:44 <sipa> sgtm
+19:27:10 <achow101> I suppose the bitcoin.org alert page should be updated with that info then
+19:27:11 <jtimon> I'm happy to review any backports for an alert patch, even if they're old, won't go below 0.8, sorry
+19:28:29 <btcdrak> everything from 0.10 and below is EOL https://bitcoincore.org/en/lifecycle/#schedule
+19:29:06 <sipa> btcdrak: 0.14 should be added to that page
+19:29:29 <btcdrak> sipa: https://github.com/bitcoin-core/bitcoincore.org/pull/347
+19:29:45 <gmaxwell> what other subjects?
+19:30:54 <cfields> Is there a timeline for 0.14.1? Or just when deemed necessary?
+19:31:07 <achow101> it seems that 0.10 is the only one that needs an alert disabling patch. 0.11 already has it, just not tagged
+19:31:22 <wumpus> cfields: eh not really; any pressing reason you'd want one right away?
+19:32:05 <wumpus> the more-than-8-addnode hang at shutdown problem is annoying but not enough to warrant an immediate release
+19:32:10 <gmaxwell> I don't see a reason one couldn't wait a few weeks, though we do have material for one.
+19:32:17 <cfields> wumpus: nope, just couldn't remember if we usually set a date or just wing it
+19:32:29 <wumpus> no, we never set dates in advance for minor releases
+19:32:46 <wumpus> for 0.15 I've posted the release schedule: https://github.com/bitcoin/bitcoin/issues/9961
+19:33:09 <gmaxwell> I'm sure that some more things will show up for 0.14.1 in not too long as people start using some of the new features.
+19:33:35 <wumpus> yes
+19:33:36 <achow101> I feel like those should have been caught during RCs..
+19:33:47 <wumpus> 'should have been'
+19:33:54 <BlueMatt> #9959 and #9955 are interesting for 0.14.1
+19:33:56 <gribble> https://github.com/bitcoin/bitcoin/issues/9959 | Mining: Prevent slowdown in CreateNewBlock on large mempools by sdaftuar · Pull Request #9959 · bitcoin/bitcoin · GitHub
+19:33:57 <gribble> https://github.com/bitcoin/bitcoin/issues/9955 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:34:33 <wumpus> there's always issues in major releases that only get found when the final is tagged, it's a fact of life
+19:34:42 <gmaxwell> achow101: any kind of bug that requires special configuration to find is much less likely to get caught, this is why you hear groans when people propose solving problems with more config options. :)
+19:34:46 <wumpus> no number of rcs can solve that
+19:34:46 <luke-jr> 9955 is more of a new feature IMO, but I don't care if people want to backport it
+19:34:58 <morcos> agreed, we should tag those for 0.14 or backport or whatever we say, but not cause for expedited minor release
+19:35:08 <wumpus> ok tagging them
+19:36:13 <cfields> wumpus: 0.15 schedule sgtm.
+19:36:36 <luke-jr> note that backporting 9955 is likely a hazard since priority mining doesn't pay attention to fIncludeWitness I think
+19:36:38 <wumpus> cfields: thanks, good to know
+19:37:03 <luke-jr> should be a trivial thing to fix, but might not conflict
+19:37:43 <achow101> are we going to do the release notes wiki thing again?
+19:38:03 <wumpus> yes, at the end of the 0.15 release cycle
+19:38:22 <achow101> ok
+19:38:42 <sdaftuar> priority mining did pay attention to fIncludeWitness, so i think it would be fine, but i haven't tested
+19:39:33 <wumpus> achow101: I think it worked quite well; the only problem that came up is merging it with that is in the tree. So better to leave it until the end when people start caring about writing release notes, and until then leave it up to pulls to add something there
+19:39:47 <luke-jr> oh, it's tested in a different place, okay
+19:41:48 <achow101> anything else?
+19:43:25 <sipa> seems not
+19:44:31 <wumpus> I don't think so
+19:44:45 <wumpus> #endmeeting

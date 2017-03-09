@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:43</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Mar  9 19:00:43 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:43</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:02</span><span class="nk"> &lt;sipa&gt;</span> short topic: great work on 0.14 all!
+<a name="l-6"></a><span class="tm">19:01:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt</span>
+<a name="l-7"></a><span class="tm">19:01:08</span><span class="nk"> &lt;wumpus&gt;</span> instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+<a name="l-8"></a><span class="tm">19:01:20</span><span class="nk"> &lt;wumpus&gt;</span> yes! congrats all on another great release
+<a name="l-9"></a><span class="tm">19:01:37</span><span class="nk"> &lt;btcdrak&gt;</span> +1
+<a name="l-10"></a><span class="tm">19:02:08 </span><span class="nka">* BlueMatt</span> <span class="ac">has seen really great results for miners that have upgraded to 0.14 =D</span>
+<a name="l-11"></a><span class="tm">19:02:08</span><span class="nk"> &lt;morcos&gt;</span> yes i feel like we did a good job getting most of the major things we wanted into it!
+<a name="l-12"></a><span class="tm">19:02:16</span><span class="nk"> &lt;BlueMatt&gt;</span> net seems to have really helped a lot
+<a name="l-13"></a><span class="tm">19:02:50</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-14"></a><span class="tm">19:03:02</span><span class="nk"> &lt;wumpus&gt;</span> proposed topic: disclosure of alert key (https://github.com/bitcoin-dot-org/bitcoin.org/pull/1534 reminded me)
+<a name="l-15"></a><span class="tm">19:03:16</span><span class="nk"> &lt;gmaxwell&gt;</span> Hi.
+<a name="l-16"></a><span class="tm">19:03:49</span><span class="nk"> &lt;gmaxwell&gt;</span> There are DOS vulnerablities in older verions that the final alert does not block. :(
+<a name="l-17"></a><span class="tm">19:03:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">alert key disclosure timeline</span>
+<a name="l-18"></a><span class="tm">19:04:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> below what version?
+<a name="l-19"></a><span class="tm">19:04:12</span><span class="nk"> &lt;gmaxwell&gt;</span> (unfortunately the old code is stupid)
+<a name="l-20"></a><span class="tm">19:04:18</span><span class="nk"> &lt;achow101&gt;</span> what kind of DOS vulns?
+<a name="l-21"></a><span class="tm">19:04:21</span><span class="nk"> &lt;gmaxwell&gt;</span> All versions. They're worse in older ones.
+<a name="l-22"></a><span class="tm">19:04:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (obviously all versions with alerts enabled)
+<a name="l-23"></a><span class="tm">19:04:51</span><span class="nk"> &lt;sipa&gt;</span> when was that changed?
+<a name="l-24"></a><span class="tm">19:04:53</span><span class="nk"> &lt;wumpus&gt;</span> yes, what kind? just a slowdown, or a crash, or potential remote code execution?
+<a name="l-25"></a><span class="tm">19:05:00</span><span class="nk"> &lt;sipa&gt;</span> OOM
+<a name="l-26"></a><span class="tm">19:05:04</span><span class="nk"> &lt;gmaxwell&gt;</span> No RCE, just OOM.
+<a name="l-27"></a><span class="tm">19:05:41</span><span class="nk"> &lt;btcdrak&gt;</span> so versions &lt;0.12.0 affected?
+<a name="l-28"></a><span class="tm">19:05:52</span><span class="nk"> &lt;wumpus&gt;</span> well. some versions have already been marked as "insecure" on bitcoin.org due to other bugs. Let me see what the threshold is.
+<a name="l-29"></a><span class="tm">19:06:09</span><span class="nk"> &lt;sipa&gt;</span> when was the alert feature disabled by default?
+<a name="l-30"></a><span class="tm">19:06:16</span><span class="nk"> &lt;achow101&gt;</span> 0.12.1
+<a name="l-31"></a><span class="tm">19:06:29</span><span class="nk"> &lt;btcdrak&gt;</span> oh
+<a name="l-32"></a><span class="tm">19:06:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> we have a list somewhere?
+<a name="l-33"></a><span class="tm">19:06:46</span><span class="nk"> &lt;sipa&gt;</span> are there any major altcoins forked before 0.12 that did not change the alaert key?
+<a name="l-34"></a><span class="tm">19:07:00</span><span class="nk"> &lt;wumpus&gt;</span> https://bitcoin.org/bin/insecure/
+<a name="l-35"></a><span class="tm">19:07:01</span><span class="nk"> &lt;gmaxwell&gt;</span> All the 0.14 nodes sending final alerts constantly is somewhat protective, but unforuntately not absoltely protective.
+<a name="l-36"></a><span class="tm">19:07:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> already looked for that, there were no major ones, but some obscure &amp; dead ones that have been nagged.
+<a name="l-37"></a><span class="tm">19:07:40</span><span class="nk"> &lt;gmaxwell&gt;</span> There are also funds paid to the alert key in the network, I believe 0.01 BTC or so. :P
+<a name="l-38"></a><span class="tm">19:08:18</span><span class="nk"> &lt;wumpus&gt;</span> heheh
+<a name="l-39"></a><span class="tm">19:08:25</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-40"></a><span class="tm">19:08:27</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, one possibility would be to not worry too much about it, announce again that version &lt;0.12.1 are vulnerable (there is a lot else they're vulnerable too, I think).
+<a name="l-41"></a><span class="tm">19:08:29</span><span class="nk"> &lt;wumpus&gt;</span> surprised no one ever swiped that
+<a name="l-42"></a><span class="tm">19:08:46</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> most altcoins are on &lt;0.12 codebase, and many never changed the alter key
+<a name="l-43"></a><span class="tm">19:08:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> not so.
+<a name="l-44"></a><span class="tm">19:09:08</span><span class="nk"> &lt;wumpus&gt;</span> from what I've seen, altcoins generally do change the alert key, at least from the bitcoin one
+<a name="l-45"></a><span class="tm">19:09:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">btcdrak:</span> (didn't change the _litecoin_ alert key, yes, but I searched extensively for this already, months ago.)
+<a name="l-46"></a><span class="tm">19:09:17</span><span class="nk"> &lt;wumpus&gt;</span> many have the litecoin or feathercoin key
+<a name="l-47"></a><span class="tm">19:09:20</span><span class="nk"> &lt;wumpus&gt;</span> yes :)
+<a name="l-48"></a><span class="tm">19:09:43</span><span class="nk"> &lt;sipa&gt;</span> ah
+<a name="l-49"></a><span class="tm">19:09:47</span><span class="nk"> &lt;btcdrak&gt;</span> ah yes, most coins forked from litecoin (and didnt change the network magic either)
+<a name="l-50"></a><span class="tm">19:09:59</span><span class="nk"> &lt;morcos&gt;</span> remind me again what the advantage is of disclosing the key?
+<a name="l-51"></a><span class="tm">19:10:23</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> making the alert system entirely unreliable (as if it weren't already)
+<a name="l-52"></a><span class="tm">19:10:25</span><span class="nk"> &lt;gmaxwell&gt;</span> to not be responsible for someone else abusing it, among other things.
+<a name="l-53"></a><span class="tm">19:10:41</span><span class="nk"> &lt;gmaxwell&gt;</span> we don't believe the key is actually secure right now in any case.
+<a name="l-54"></a><span class="tm">19:10:54</span><span class="nk"> &lt;sipa&gt;</span> there is no hurry in disclosing it either
+<a name="l-55"></a><span class="tm">19:11:11</span><span class="nk"> &lt;sipa&gt;</span> just a nice to have to close that chapter
+<a name="l-56"></a><span class="tm">19:11:18</span><span class="nk"> &lt;wumpus&gt;</span> to force people to not use it anymore
+<a name="l-57"></a><span class="tm">19:11:24</span><span class="nk"> &lt;btcdrak&gt;</span> they key is useless now anyway that final alert is out.
+<a name="l-58"></a><span class="tm">19:11:25</span><span class="nk"> &lt;wumpus&gt;</span> and also for sake of history
+<a name="l-59"></a><span class="tm">19:11:26</span><span class="nk"> &lt;paveljanik&gt;</span> We can make people upgrade because of the planned alert key discolsure...
+<a name="l-60"></a><span class="tm">19:11:37</span><span class="nk"> &lt;luke-jr&gt;</span> not sure how litecoin alerts are affects if they use a different key
+<a name="l-61"></a><span class="tm">19:11:42</span><span class="nk"> &lt;gmaxwell&gt;</span> we can't make anyone upgrade, and even if we could we wouldn't. :)
+<a name="l-62"></a><span class="tm">19:11:43</span><span class="nk"> &lt;morcos&gt;</span> yes but if there is even nuisance harm that can be done with it.. i think we should announce that its not considred secure but that we're not going to aid people doing nuisance with it by publicly disclosing it until a) we see nuisance or b) some predetermine future point
+<a name="l-63"></a><span class="tm">19:11:52</span><span class="nk"> &lt;wumpus&gt;</span> litecoin is not affected luke-jr - what they do is up to them
+<a name="l-64"></a><span class="tm">19:12:13</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">wumpus:</span> they also removed the alert system, but there's a lot on 0.10.x nodes in litecoin
+<a name="l-65"></a><span class="tm">19:12:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> well we're at the predetermined future point now, we announced.. 6 months ago we'd do this after 0.14. The issue there is on careful review of the old code I found several DOS vulnerablities.
+<a name="l-66"></a><span class="tm">19:12:37</span><span class="nk"> &lt;wumpus&gt;</span> yes, this was announced on a timeline
+<a name="l-67"></a><span class="tm">19:12:56</span><span class="nk"> &lt;morcos&gt;</span> right, so change the predetermined point to be further out...  the risk is only that someone blames us for nuisance right?
+<a name="l-68"></a><span class="tm">19:13:02</span><span class="nk"> &lt;achow101&gt;</span> maybe just push back the date even further until &lt;0.12.1 nodes are even fewer?
+<a name="l-69"></a><span class="tm">19:13:25</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, I would vote push another release given old 0.12.0 isnt otherwise insecure?
+<a name="l-70"></a><span class="tm">19:13:32</span><span class="nk"> &lt;wumpus&gt;</span> right, if anyone abuses the key now, they may blame us. If it is public knowledge not so much.
+<a name="l-71"></a><span class="tm">19:13:35</span><span class="nk"> &lt;gmaxwell&gt;</span> It's fine with me, we should emphasize that those older versions are insecure.  If someone dosses them later it's not the end of the world.
+<a name="l-72"></a><span class="tm">19:13:52</span><span class="nk"> &lt;morcos&gt;</span> Except of course we will be blamed if we make it public and someone creates nuisance with it!
+<a name="l-73"></a><span class="tm">19:14:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I believe it is otherwise insecure at a greater magnitude than the alert DOS attacks.
+<a name="l-74"></a><span class="tm">19:14:06</span><span class="nk"> &lt;paveljanik&gt;</span> gmaxwell, yes, and by emphasizing it, maybe people update...
+<a name="l-75"></a><span class="tm">19:14:26</span><span class="nk"> &lt;gmaxwell&gt;</span> Well anything that has alerts is displaying the hardcoded final alert now...
+<a name="l-76"></a><span class="tm">19:14:33</span><span class="nk"> &lt;achow101&gt;</span> what version did BU remove the alert system? If it is in their 0.12.1, people could dos them, and I don't think they would take kindly to that (drama and FUD and all that)
+<a name="l-77"></a><span class="tm">19:14:42</span><span class="nk"> &lt;btcdrak&gt;</span> so let's announce the vulnerability first that should motivate more people to upgrade old systems or disable the alert system.
+<a name="l-78"></a><span class="tm">19:14:43</span><span class="nk"> &lt;gmaxwell&gt;</span> which says something like (allcaps) warning alert key compromised! upgrade required!.
+<a name="l-79"></a><span class="tm">19:14:53</span><span class="nk"> &lt;jtimon&gt;</span> ACK "&lt;sipa&gt; there is no hurry in disclosing it either"
+<a name="l-80"></a><span class="tm">19:15:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> can you get a CVE assigned for one or more of the old DoS?
+<a name="l-81"></a><span class="tm">19:15:38</span><span class="nk"> &lt;gmaxwell&gt;</span> I think some of you are underestimating the cost of this thing... but sure, no rush required.
+<a name="l-82"></a><span class="tm">19:15:44</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, everyone with the alert key could disclose it, even anonymously
+<a name="l-83"></a><span class="tm">19:16:12</span><span class="nk"> &lt;wumpus&gt;</span> don't even know who has it exactly so...
+<a name="l-84"></a><span class="tm">19:16:14</span><span class="nk"> &lt;luke-jr&gt;</span> yes, nobody can be blamed individually if nobody knows who disclosed it
+<a name="l-85"></a><span class="tm">19:16:39</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, any other topics?
+<a name="l-86"></a><span class="tm">19:17:27</span><span class="nk"> &lt;luke-jr&gt;</span> FWIW, ignoring alert keys, I see 539 vulnerable nodes (0.94%)
+<a name="l-87"></a><span class="tm">19:17:28</span><span class="nk"> &lt;gmaxwell&gt;</span> Can we get a clear plan of action here? We'll CVE old versions and remind people these old things are insecure? should we review other fixes and determine if we want to set a higher bar for holy-shit-dont-run-that than 0.12.1?
+<a name="l-88"></a><span class="tm">19:18:02</span><span class="nk"> &lt;luke-jr&gt;</span> updating http://luke.dashjr.org/programs/bitcoin/files/charts/security.html to consider &lt;0.12.1 vulnerable, that goes to 2606 vulnerable nodes (4.54%)
+<a name="l-89"></a><span class="tm">19:18:37</span><span class="nk"> &lt;wumpus&gt;</span> you can't be entirely sure that all of them are vulnerable, they may have patched the code to remove the alert system
+<a name="l-90"></a><span class="tm">19:18:48</span><span class="nk"> &lt;luke-jr&gt;</span> sure, but that's unlikely
+<a name="l-91"></a><span class="tm">19:18:53</span><span class="nk"> &lt;gmaxwell&gt;</span> I think 5% dropping offline would be inconsequential, so avoiding the dos is just a politeness to the users to avoid disrupting other things they may have going on.
+<a name="l-92"></a><span class="tm">19:19:02</span><span class="nk"> &lt;wumpus&gt;</span> many are running old versions to be able to run their own (outdated) patches on top
+<a name="l-93"></a><span class="tm">19:19:25</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> how about CVE the dos vulns you found, post messages an all forums about vulnerable nodes, and then release the key a few weeks later?
+<a name="l-94"></a><span class="tm">19:19:32</span><span class="nk"> &lt;luke-jr&gt;</span> if we're really worried, we could release a 0.12.2 with just those exploits fixed
+<a name="l-95"></a><span class="tm">19:19:41</span><span class="nk"> &lt;luke-jr&gt;</span> or maybe simply disabling alerts
+<a name="l-96"></a><span class="tm">19:19:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> 0.12.1 has them disabled.
+<a name="l-97"></a><span class="tm">19:19:52</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> 0.12.1 already disabled alrets
+<a name="l-98"></a><span class="tm">19:19:54</span><span class="nk"> &lt;morcos&gt;</span> if it was me, i wouldn't do any of it...  lets put our effort where it matters.. 0.15
+<a name="l-99"></a><span class="tm">19:19:55</span><span class="nk"> &lt;luke-jr&gt;</span> oh, duh
+<a name="l-100"></a><span class="tm">19:20:09</span><span class="nk"> &lt;luke-jr&gt;</span> so why wouldn't people held back by patches just rebase?
+<a name="l-101"></a><span class="tm">19:20:13</span><span class="nk"> &lt;luke-jr&gt;</span> to 0.12.1
+<a name="l-102"></a><span class="tm">19:20:24</span><span class="nk"> &lt;wumpus&gt;</span> 0.12.0 can easily upgrad to 0.12.1, 0.11.x maybe less so
+<a name="l-103"></a><span class="tm">19:20:47</span><span class="nk"> &lt;btcdrak&gt;</span> considering there's an alert message broadcasting to all those vulnerable nodes right now saying they should upgrade, I think we've probably done enough.
+<a name="l-104"></a><span class="tm">19:20:55</span><span class="nk"> &lt;wumpus&gt;</span> not going to do a new 0.11.x release though
+<a name="l-105"></a><span class="tm">19:21:55</span><span class="nk"> &lt;luke-jr&gt;</span> get and publish a CVE, then 2 weeks later publish the key
+<a name="l-106"></a><span class="tm">19:21:57</span><span class="nk"> &lt;luke-jr&gt;</span> ?
+<a name="l-107"></a><span class="tm">19:22:23</span><span class="nk"> &lt;wumpus&gt;</span> I guess we could push a patch to the 0.11 branch that disables the alert system
+<a name="l-108"></a><span class="tm">19:22:33</span><span class="nk"> &lt;gmaxwell&gt;</span> it's a trivial patch.
+<a name="l-109"></a><span class="tm">19:22:40</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-110"></a><span class="tm">19:22:42</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> +1
+<a name="l-111"></a><span class="tm">19:23:08</span><span class="nk"> &lt;gmaxwell&gt;</span> nothing before 0.8 still works at all, and the 0.9x nodes I have looked at are all fake.
+<a name="l-112"></a><span class="tm">19:23:21</span><span class="nk"> &lt;gmaxwell&gt;</span> 0.10 / 0.11 are probably still running in practice.
+<a name="l-113"></a><span class="tm">19:23:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> okay fine with CVE and we can patch the old branch. thats enough plan for me for now.
+<a name="l-114"></a><span class="tm">19:24:11</span><span class="nk"> &lt;wumpus&gt;</span> it's a one-line patch, could even do a tag, just not going to build executables for them anymore
+<a name="l-115"></a><span class="tm">19:25:55</span><span class="nk"> &lt;gmaxwell&gt;</span> Thanks.
+<a name="l-116"></a><span class="tm">19:26:44</span><span class="nk"> &lt;sipa&gt;</span> sgtm
+<a name="l-117"></a><span class="tm">19:27:10</span><span class="nk"> &lt;achow101&gt;</span> I suppose the bitcoin.org alert page should be updated with that info then
+<a name="l-118"></a><span class="tm">19:27:11</span><span class="nk"> &lt;jtimon&gt;</span> I'm happy to review any backports for an alert patch, even if they're old, won't go below 0.8, sorry
+<a name="l-119"></a><span class="tm">19:28:29</span><span class="nk"> &lt;btcdrak&gt;</span> everything from 0.10 and below is EOL https://bitcoincore.org/en/lifecycle/#schedule
+<a name="l-120"></a><span class="tm">19:29:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">btcdrak:</span> 0.14 should be added to that page
+<a name="l-121"></a><span class="tm">19:29:29</span><span class="nk"> &lt;btcdrak&gt;</span> <span class="hi">sipa:</span> https://github.com/bitcoin-core/bitcoincore.org/pull/347
+<a name="l-122"></a><span class="tm">19:29:45</span><span class="nk"> &lt;gmaxwell&gt;</span> what other subjects?
+<a name="l-123"></a><span class="tm">19:30:54</span><span class="nk"> &lt;cfields&gt;</span> Is there a timeline for 0.14.1? Or just when deemed necessary?
+<a name="l-124"></a><span class="tm">19:31:07</span><span class="nk"> &lt;achow101&gt;</span> it seems that 0.10 is the only one that needs an alert disabling patch. 0.11 already has it, just not tagged
+<a name="l-125"></a><span class="tm">19:31:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> eh not really; any pressing reason you'd want one right away?
+<a name="l-126"></a><span class="tm">19:32:05</span><span class="nk"> &lt;wumpus&gt;</span> the more-than-8-addnode hang at shutdown problem is annoying but not enough to warrant an immediate release
+<a name="l-127"></a><span class="tm">19:32:10</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't see a reason one couldn't wait a few weeks, though we do have material for one.
+<a name="l-128"></a><span class="tm">19:32:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> nope, just couldn't remember if we usually set a date or just wing it
+<a name="l-129"></a><span class="tm">19:32:29</span><span class="nk"> &lt;wumpus&gt;</span> no, we never set dates in advance for minor releases
+<a name="l-130"></a><span class="tm">19:32:46</span><span class="nk"> &lt;wumpus&gt;</span> for 0.15 I've posted the release schedule: https://github.com/bitcoin/bitcoin/issues/9961
+<a name="l-131"></a><span class="tm">19:33:09</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm sure that some more things will show up for 0.14.1 in not too long as people start using some of the new features.
+<a name="l-132"></a><span class="tm">19:33:35</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-133"></a><span class="tm">19:33:36</span><span class="nk"> &lt;achow101&gt;</span> I feel like those should have been caught during RCs..
+<a name="l-134"></a><span class="tm">19:33:47</span><span class="nk"> &lt;wumpus&gt;</span> 'should have been'
+<a name="l-135"></a><span class="tm">19:33:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#9959 </span><span class="cmdline">and #9955 are interesting for 0.14.1</span>
+<a name="l-136"></a><span class="tm">19:33:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9959 | Mining: Prevent slowdown in CreateNewBlock on large mempools by sdaftuar · Pull Request #9959 · bitcoin/bitcoin · GitHub
+<a name="l-137"></a><span class="tm">19:33:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9955 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+<a name="l-138"></a><span class="tm">19:34:33</span><span class="nk"> &lt;wumpus&gt;</span> there's always issues in major releases that only get found when the final is tagged, it's a fact of life
+<a name="l-139"></a><span class="tm">19:34:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> any kind of bug that requires special configuration to find is much less likely to get caught, this is why you hear groans when people propose solving problems with more config options. :)
+<a name="l-140"></a><span class="tm">19:34:46</span><span class="nk"> &lt;wumpus&gt;</span> no number of rcs can solve that
+<a name="l-141"></a><span class="tm">19:34:46</span><span class="nk"> &lt;luke-jr&gt;</span> 9955 is more of a new feature IMO, but I don't care if people want to backport it
+<a name="l-142"></a><span class="tm">19:34:58</span><span class="nk"> &lt;morcos&gt;</span> agreed, we should tag those for 0.14 or backport or whatever we say, but not cause for expedited minor release
+<a name="l-143"></a><span class="tm">19:35:08</span><span class="nk"> &lt;wumpus&gt;</span> ok tagging them
+<a name="l-144"></a><span class="tm">19:36:13</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> 0.15 schedule sgtm.
+<a name="l-145"></a><span class="tm">19:36:36</span><span class="nk"> &lt;luke-jr&gt;</span> note that backporting 9955 is likely a hazard since priority mining doesn't pay attention to fIncludeWitness I think
+<a name="l-146"></a><span class="tm">19:36:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> thanks, good to know
+<a name="l-147"></a><span class="tm">19:37:03</span><span class="nk"> &lt;luke-jr&gt;</span> should be a trivial thing to fix, but might not conflict
+<a name="l-148"></a><span class="tm">19:37:43</span><span class="nk"> &lt;achow101&gt;</span> are we going to do the release notes wiki thing again?
+<a name="l-149"></a><span class="tm">19:38:03</span><span class="nk"> &lt;wumpus&gt;</span> yes, at the end of the 0.15 release cycle
+<a name="l-150"></a><span class="tm">19:38:22</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-151"></a><span class="tm">19:38:42</span><span class="nk"> &lt;sdaftuar&gt;</span> priority mining did pay attention to fIncludeWitness, so i think it would be fine, but i haven't tested
+<a name="l-152"></a><span class="tm">19:39:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> I think it worked quite well; the only problem that came up is merging it with that is in the tree. So better to leave it until the end when people start caring about writing release notes, and until then leave it up to pulls to add something there
+<a name="l-153"></a><span class="tm">19:39:47</span><span class="nk"> &lt;luke-jr&gt;</span> oh, it's tested in a different place, okay
+<a name="l-154"></a><span class="tm">19:41:48</span><span class="nk"> &lt;achow101&gt;</span> anything else?
+<a name="l-155"></a><span class="tm">19:43:25</span><span class="nk"> &lt;sipa&gt;</span> seems not
+<a name="l-156"></a><span class="tm">19:44:31</span><span class="nk"> &lt;wumpus&gt;</span> I don't think so
+<a name="l-157"></a><span class="tm">19:44:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
