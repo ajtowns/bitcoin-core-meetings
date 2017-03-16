@@ -1,0 +1,333 @@
+19:01:26 <wumpus> #startmeeting
+19:01:26 <lightningbot> Meeting started Thu Mar 16 19:01:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:26 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:02 <jnewbery> suggested topic: running rpc tests as part of `make check`
+19:02:11 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:28 <cfields> hi
+19:02:35 <jonasschnelli> hi
+19:02:36 <instagibbs> hello
+19:02:49 <sipa> oi
+19:02:58 <wumpus> proposed topics?
+19:03:04 <jtimon> mhmm
+19:03:11 <morcos> i haven't been reading channel last few days but was there discussion on 10015 (just above)
+19:03:19 <wumpus> #10015
+19:03:20 <gribble> https://github.com/bitcoin/bitcoin/issues/10015 | Wallet should reject long chains by default by jnewbery · Pull Request #10015 · bitcoin/bitcoin · GitHub
+19:03:21 <morcos> i felt like we discussed that ad nauseum the first time around
+19:03:30 * instagibbs wimpers
+19:03:32 <instagibbs> yes
+19:03:42 <sipa> i don't remmeber the reason for it not being default
+19:03:52 <wumpus> yes I remember we already had long discussions about that
+19:04:14 <jnewbery> #9262
+19:04:15 <instagibbs> The idea being that now that we actually rebroadcast normally, and return txid, it wasn't required in general.
+19:04:18 <gribble> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+19:04:30 <morcos> sipa: the reasoning is its a very reasonable use case that you'd just want the tx to go out as soon as some of its parents get confirmed..
+19:04:53 <morcos> it seems somewhat likely that it would be tricky to have anything smarter than that happen manually anyway
+19:04:54 <sipa> but the resulting behaviour seems very unexpected to users
+19:05:00 <gmaxwell> I don't see the reason for rejecting. Seems like a useless loss of functionality in most cases.
+19:05:14 <morcos> but the solution to that could be better informing them of the new behaviour
+19:05:18 <jnewbery> I can understand the use case, but user experience is terrible (hence already two issues opened by different users)
+19:05:26 <gmaxwell> What does it matter to you if your transaction 20 steps deep hasn't actually been announced yet? it will be announced when it can.
+19:05:27 <sipa> many reports of people who see their balance going down
+19:05:46 <sipa> and get scared
+19:05:49 <gmaxwell> Their balance is going down.
+19:05:56 <morcos> hmm...
+19:06:14 <sipa> gmaxwell: it is, but don't you think it's better to reject by default, so they know why it is going down?
+19:06:19 <morcos> gmaxwell: i assume he means they have a 10 BTC input, they spend 0.1 BTC and their balance goes down by 10
+19:06:33 <sipa> so they can re-enable it when they understand the effect
+19:06:42 <morcos> b/c the change isn't in mempool so it doesn't count towards balance
+19:06:49 <gmaxwell> morcos: okay now that is a bad effect, I didn't reaize it was doing that.
+19:07:01 <gmaxwell> realize*
+19:07:04 <jnewbery> see #10004 for good description of what the user sees
+19:07:06 <gribble> https://github.com/bitcoin/bitcoin/issues/10004 | After max chain of unconfirmed change transactions, last tx is missing from memory until rescan · Issue #10004 · bitcoin/bitcoin · GitHub
+19:07:16 <gmaxwell> jnewbery: or  #9752 for the alternative
+19:07:18 <gribble> https://github.com/bitcoin/bitcoin/issues/9752 | Max unconfirmed chainlength · Issue #9752 · bitcoin/bitcoin · GitHub
+19:07:18 <morcos> i briefly recall discussing that but i agree its bad so don't know why we just left it that way.. maybe b/c its not easy to do anything smarter?
+19:07:43 <gmaxwell> The balance being goofy is an issue, but I think that should be considered a seperate issue.
+19:08:01 <gmaxwell> I agree it shouldn't be left with the balance doing inexplicable things.
+19:08:05 <sipa> gmaxwell: you think we should include txn crediting the wallet that are not in the mempool?
+19:08:18 <sipa> gmaxwell: that would bring back all malleability craziness
+19:08:30 <gmaxwell> sipa: if it's the users own output? I think so.
+19:08:45 <gmaxwell> (and it's not conflicted.)
+19:08:59 <morcos> perhaps there needs to be a new category of pending txs
+19:08:59 <sipa> the conflict can be outside of the mempool
+19:09:06 <sipa> s/mempool/wallet/
+19:09:40 <morcos> The pending balance can include both the debit and the credit
+19:10:01 <morcos> But could get complicated
+19:10:17 <jonasschnelli> I tend to like this approach.
+19:10:27 <sipa> which approach?
+19:10:36 <jonasschnelli> pending txs cat
+19:11:07 <sipa> morcos: it's very hard to not double count things in the pending balance if they're spending from malleated versions of the same transaction
+19:11:37 <gmaxwell> I am dubious that your own mempool is actually that strong a protection here.
+19:12:32 <jnewbery> my view: simplest experience is best. Default should be to reject too-long-chain transaction from wallet and mempool. If the user wants to have long chains in wallet, that's fine but:
+19:12:32 <jnewbery> - it should be behind an explicit option
+19:12:32 <jnewbery> - user should understand that it could have unexpected impacts on things like getbalance()
+19:13:11 <gmaxwell> Transactions simply failing to create due to inexplicable internal things that the user does not understand and cannot easily understand is not a good expirence at all.
+19:13:16 <morcos> well look, this thing is an option, so its kind of ridiculous to spend this much time discussing the default.  The solution no matter whether we change the default or not is more announcing of the effects in either case
+19:13:36 <gmaxwell> We were already getting complaints about inexplicable failures before.
+19:13:56 <gmaxwell> Many people do not have adequate error handling to deal with a sendtoaddress failing when the balance was sufficient.
+19:13:57 <morcos> But too long a chain, try again later is explicable
+19:14:13 <sipa> gmaxwell: i think seeing your balance going down inexplicably is worse than inexplicably failing to create a transaction (at least there can be an explanation message)
+19:14:32 <gmaxwell> I agree the balance is screwed up. But _that_ is the issue, not the rest.
+19:14:45 <jnewbery> take this discussion offline? I'm happy to receive feedback in #10015
+19:14:45 <instagibbs> Either way we can buff up the error messages to be far less scary, especially in this case.
+19:14:47 <gribble> https://github.com/bitcoin/bitcoin/issues/10015 | Wallet should reject long chains by default by jnewbery · Pull Request #10015 · bitcoin/bitcoin · GitHub
+19:15:15 <gmaxwell> sipa: how about we remove all ability to sends funds entirely, then there never will be balance confusion?
+19:15:20 <sipa> gmaxwell: come on
+19:15:24 <morcos> well i wasn't implying we shouldn't discuss here, its kind of hard to have this discussion on a PR
+19:16:00 <morcos> gmaxwell: the balance issue is not easy to solve
+19:16:32 <sipa> sure, if balance was redefined completely we may be able to avoid that issue, but i don't even know where to start
+19:16:45 <morcos> i just see both choices as non-optimal and i think we should pick one and try to make it as clear to users as possible
+19:16:53 <gmaxwell> This is a sign that our current definition is just broken. It should not be so tightly coupled to the mempool.
+19:16:57 <morcos> i thought that previously we had picked, and maybe failed at the making it clear
+19:17:19 <jonasschnelli> I'd say lets pick what serves more user... and the default = true seems to be the better choice...but I don't have numbers to proof that.
+19:17:21 <bsm1175322> One could create a RBF replacement transaction instead of a chain...
+19:17:35 <gmaxwell> (like how is the software even supposted to be usable to people that don't have a mempool? -- this is a supported configuration!)
+19:17:37 <sipa> gmaxwell: even if it is not tightly coupled with the mempool, we need a means of estimating whether it could confirm
+19:17:47 <morcos> yep, our time would be better spent extending bumpfee to work on chains
+19:18:13 <gmaxwell> or finding a way to eliminate the chain limit.
+19:18:25 <jnewbery> morcos: if the default is false (accept long chains) then it's very difficult to communicate to the user what the problem is. If we reject long chains then at least we can send a helpful error to the user
+19:18:31 <sipa> gmaxwell: i'm not convinced the chain limit itself is the only problem here
+19:18:35 <morcos> i suppose i do agree with gmaxwell thought that i always just took our balance calculation as gospel, but maybe it is kind of silly
+19:19:12 <gmaxwell> sipa: clearly not, because apparently we'll report a balance way off if you don't have a mempool! :)
+19:19:15 <jtimon> suggested topic: what's the current state on finally removing accounts?
+19:19:16 <luke-jr> bsm1175322: +1
+19:19:31 <gmaxwell> (er it's clearly not the only problem!)
+19:20:18 <sipa> gmaxwell: if you don't rely on the mempool, it's not that hard i think to make the wallet double count
+19:20:56 <wumpus> right, the wallet can't detect conflicting transactions itself
+19:20:56 <sipa> that would be great to fix, but i don't know how
+19:21:08 <gmaxwell> good thing there aren't any wallets in the bitcoin system without mempools.
+19:21:21 <wumpus> so if it sends a transaction, and someone malleates it and it would receive the malleated version back, it'd count that double
+19:21:22 <morcos> sipa: but a better balance calculation would be to evaluate net changes on a per tx basis
+19:21:28 <sipa> gmaxwell: wallets that don't spend unconfirmed change don't have this problem
+19:21:30 <morcos> and not consider the debits and credits separately
+19:21:32 <wumpus> it would work if it wouldn't count unconfirmed transactions
+19:21:46 <sipa> morcos: oh, you mean like the account system? *ducks*
+19:21:54 <wumpus> exactly, we have an option for that already
+19:22:01 <gmaxwell> sipa: no such wallet exists in the wild. (beyond bitcoin core users who have changed their settings and a few industrial users)
+19:23:08 <morcos> sipa: sigh.. no i mean properly..  there is no reason to assume a sent tx not in your mempool should debit your input but not credit your change output.  thats just broken.
+19:23:13 <morcos> at worst it should do both
+19:23:21 <morcos> only gets complicated if its a mixed debit tx
+19:23:59 <gmaxwell> well it's showing a worse case balance, which is a thing you can rationally choose to do... but it's confusing to users esp with no other information available elsewhere.
+19:24:05 <sipa> gmaxwell: i don't know how to give an accurate unconfirmed balance without a mempool
+19:24:09 <morcos> actually, maybe gmaxwell is right.. maybe we can just fix that in our existing system?
+19:24:32 <morcos> gmaxwell: how is that worst case, how is that balance even achievable?
+19:24:38 <gmaxwell> Unfortunately, malleablity is still a thing.
+19:25:16 <gmaxwell> morcos: It's not achievable. But the estimation pattern of including non-mempool debits but not credits is a worst case estimator generally.
+19:25:17 <morcos> yes, but you can't end up with the debit and not the credit.. you can end up with the debit and you're momentarily confused how to spend the credit, but it's still your credit
+19:25:19 <sipa> without malleability maybe this problem becomes easier
+19:25:31 <gmaxwell> sometimes you have a non-mempool debit which will still go through.
+19:25:50 <luke-jr> sipa: are you including the wallet's storage of txs as "mempool"?
+19:25:56 <sipa> luke-jr: no
+19:26:29 <gmaxwell> I think any change estimation issue goes away if you assume non-malleablity and no concurrent use of the same keys.
+19:26:43 <gmaxwell> er balance estimation.
+19:27:20 <sipa> luke-jr: i mean a mempool which is kept consistent with the block chain - i guess you can simulate that inside the wallet, but it risks missing things that depend on unconfirmed transactions which don't involve you
+19:27:33 <gmaxwell> I find it hard to believe that the current behavior won't cause wildly wrong balances in other cases.  In particular, what happens to your balance when you pay something that falls out of the mempool due to low fees? same deal.
+19:27:52 <gmaxwell> Chaning the behavior for long chains will do nothing for that, just covers up the fundimentally bad behavior.
+19:28:35 <sipa> right, the expected behaviour there is that you use abandontx to correct the balance
+19:28:38 <gmaxwell> maybe it's not reasonably possible to fix completely in the presence of malleablity. The best thing with malleablity still around might be presenting a pending balance.
+19:28:41 <jtimon> sipa: but there will still be malleability for old txs, no? I don't undesrtand the discussion well enough...
+19:29:11 <sipa> gmaxwell: maybe people just don't hit the "falls out of mempool" case, and only hit chain length limits
+19:29:16 <gmaxwell> sipa: well you can use abandon in this case too. (though thats a pretty bad expirence, spend a cent, then hours later 100 btc vanishes from your balance? )
+19:29:28 <jonasschnelli> jtimon: The main user issue is described here: #9752
+19:29:29 <gribble> https://github.com/bitcoin/bitcoin/issues/9752 | Max unconfirmed chainlength · Issue #9752 · bitcoin/bitcoin · GitHub
+19:29:37 <sipa> maybe we should have some form of automatic abandoning...
+19:29:46 <morcos> sipa: noooooooooooo
+19:29:48 <gmaxwell> sipa: we previously had reports about txn falling out of the mempool.
+19:29:55 <sipa> or at least automatically stop counting as debit at some point
+19:29:56 <gmaxwell> sipa: AutoFraud(tm)
+19:30:26 <jonasschnelli> I agree with sipa, especially the non sendto* (or Qt) ones.
+19:30:39 <wumpus> fee bump is a better alternative to abandoning
+19:30:48 <gmaxwell> wumpus++
+19:31:03 <jonasschnelli> wumpus: yes. but adding new outputs would be a requirement then.
+19:31:12 <sipa> but if you stop counting as debit, while still excluding from unspent outputs, you risk even worse unexpected behaviour
+19:31:16 <BlueMatt> yes, better to not auto-abandon and do what other wallets are doing now - if you try to send with too low a fee, nag the user really loudly to make it rbf-able
+19:31:19 <morcos> i'd be happy to discuss another time whether we can make some slight improvements to our balance estimation..  i guess i think it wouldn't be that hard... next time i have time i'll look closer
+19:31:33 <gmaxwell> BlueMatt: yes, what electrum does is reasonable there.
+19:31:52 <wumpus> abandoning is dangerous, there is no guarantee that everyone forgot the transaction, so the user may send the tx again with different outputs and then it goes through twice oops
+19:32:22 <jonasschnelli> The reminds me of the problem that BIP125 doesn't explicit mention a recommended nSequence nr. Electrum was using 0, Core intmax-2. (privacy)
+19:32:29 <sipa> right, i take back my suggestion to auto-abandom
+19:32:47 <BlueMatt> auto-bump, otoh.....
+19:32:54 <sipa> yeah...
+19:33:07 <wumpus> sipa: from a viewpoint of the user it's what they want, for the transaction to 'just disappear', bitcoin just makes that very difficult
+19:33:16 <morcos> yeah auto bump should be 0.15 priority
+19:33:29 <gmaxwell> precomputed bumps with locktimes were always an idea I liked... doesn't really do great with spending unconfirmed change.
+19:33:38 <jonasschnelli> morcos: with plenty of pre-signed transactions?
+19:34:18 <morcos> spending unconfirmed change is doable i think...  complicated, but you just stop bumping the first and start bumping the 2nd with CPFP calculations
+19:34:22 <BlueMatt> esp given miners can freely malleate it out from under you
+19:34:42 <gmaxwell> without malleablity basically none of these change handling issues would exist, I think.
+19:35:05 <gmaxwell> as you'd never have a case where you might double count your own funds.
+19:35:32 <wumpus> unfortunately we're stuck with malleability
+19:35:42 <morcos> not if we use flextrans
+19:35:49 <morcos> (sorry)
+19:35:49 <sipa> right, no from-self transaction in your wallet could credit you without you having signed for it
+19:35:51 <gmaxwell> hah
+19:35:55 <jonasschnelli> heh
+19:35:58 <wumpus> flextrans, lol
+19:36:06 <BlueMatt> trolol
+19:36:09 <gmaxwell> morcos: I made the remove all sending ability quip above!
+19:36:48 <gmaxwell> well we really haven't pushed to get malleablity fixed as a group... just put the fix out there.
+19:37:06 * sipa casually mentions segwit
+19:37:23 <morcos> ok... we're going off the rails. now.. maybe next topic.. and we revisit this in a week after thinking through both avenues
+19:37:27 <sipa> ok
+19:37:30 <BlueMatt> ack
+19:37:31 <gmaxwell> Sounds great.
+19:37:35 <jnewbery> yep
+19:37:42 <jonasschnelli> While we are touching the wallet... can we make progress on #9294?
+19:37:43 <wumpus> #topic status of removal of account system
+19:37:46 <gmaxwell> Sorry for being a PITA. :)
+19:37:46 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:37:53 <jonasschnelli> wumpus: okay.
+19:37:55 <wumpus> can be really short there: no advances since last time we've discussed that
+19:38:06 <BlueMatt> jonasschnelli: that sounds like a should-review-this-week
+19:38:08 <wumpus> I should really pick up https://github.com/bitcoin/bitcoin/pull/7729
+19:38:23 <BlueMatt> wumpus: yes, this should definitely happen for 0.15, imo
+19:38:26 <gmaxwell> jonasschnelli: do we have a project setup to track things that change the wallet format in incompatible ways?
+19:38:34 <wumpus> as we need a label API first before even thinking about deprecating accounts
+19:38:45 <jonasschnelli> gmaxwell: not yet.
+19:38:47 <wumpus> BlueMatt: I agree, though multiwallet has higher priority for me
+19:39:03 <gmaxwell> multiwallet++++++++++++++++++++++++++++++divide by zero error
+19:39:05 <wumpus> I intended to pick up multiwallet this week, but eh shit happened
+19:39:18 <BlueMatt> ok, so lets list reviews to prioritize this week?
+19:39:33 <sipa> my focus will be leveldb mempool reduction
+19:39:44 <BlueMatt> jonasschnelli: mentioned 9294, I'm still super blocked on 9725
+19:40:10 <wumpus> #8694
+19:40:13 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:40:15 <sipa> #9294 #9725
+19:40:18 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:40:18 <jonasschnelli> 9294 would need direction if the performance drawback is acceptable. IMO yes.
+19:40:20 <gribble> https://github.com/bitcoin/bitcoin/issues/9725 | CValidationInterface Cleanups by TheBlueMatt · Pull Request #9725 · bitcoin/bitcoin · GitHub
+19:40:23 <BlueMatt> yea, was just looking for that one wumpus
+19:40:38 <wumpus> that's the next step toward multiwallet, though luke-jr and I have some disagreement about specifics about implementation
+19:40:39 <stevenroose> My btcd testnet node recently got a softfork deployment on versionbit 28. Is that this dummy deployment from bitcoind?
+19:40:40 <stevenroose> v
+19:40:40 <gmaxwell> sipa: you mean the "make defaults work on odroid c2 again" problem?
+19:40:41 <stevenroose> https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp#L190
+19:40:42 <jonasschnelli> I'd like to continue with HD restore... but 9294 seems to be required first
+19:40:45 <wumpus> but that it needs to happen is clear
+19:41:01 <jtimon> wumpus: oh, right, we need 7729 first
+19:41:05 <sipa> gmaxwell: no, i mean fix the silly continuous allocation of leveldb memory
+19:41:14 <gmaxwell> stevenroose: that is likely doofsus still signling 'bip 109' on testnet. (even though nothing implements it anymore)
+19:41:43 <wumpus> jonasschnelli: yes the HD chain split *defnitely* needs to be in 0.15
+19:41:48 <gmaxwell> sipa: so memory reduction not mempool reduction.
+19:41:50 <wumpus> jonasschnelli: it's sad it missed 0.14
+19:42:06 <jonasschnelli> wumpus: merging sooner should allow more perofmance improvemnts before 0.15.
+19:42:06 <sipa> gmaxwell: lol. yes
+19:42:21 <jonasschnelli> *performance improvements
+19:42:22 <gmaxwell> jonasschnelli: you can still implement lookahead scanning without the split.
+19:42:29 <wumpus> jonasschnelli: agree, will take a look at it
+19:42:32 <stevenroose> gmaxwell, yeah I read about bip109 as well when I googled the versionbit. So that means that 95% of testnett blocks the last few weeks were mined by people trolling about bip109?
+19:42:40 <jonasschnelli> gmaxwell: Yes. But I don't want to go to the rebase-hell. :)
+19:42:47 <wumpus> jonasschnelli: at some point we should merge something so that it can be improved
+19:43:06 <wumpus> right, it's frustrating to keep non-trivial things up to date with all the code churn
+19:43:25 <luke-jr> wumpus: I don't necessarily disagree with your points, just that they're factoring unrelated to multiwallet itself IMO
+19:43:26 <achow101> stevenroose: not now or here. ask in #bitcoin-dev, there's a meeting going on here right now
+19:43:28 <jtimon> I wouldn't mind some re-reviews on #8855 (previously #6907), it's simple
+19:43:30 <gmaxwell> stevenroose: no, it got 'activated' eons ago. then the miner signaling it mined BIP109 invalid blocks (because their implementation was broken) and forked classic off (until classic ripped out 109)
+19:43:30 <gribble> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+19:43:30 <jonasschnelli> But multiwallet will be also my prio for 0.15. I start reviewing more soon.
+19:43:33 <gribble> https://github.com/bitcoin/bitcoin/issues/6907 | Chainparams: Use a regular factory for creating chainparams by jtimon · Pull Request #6907 · bitcoin/bitcoin · GitHub
+19:43:42 <jonasschnelli> The whole Qt part is unsolved IMO.
+19:44:00 <jonasschnelli> The general concept of switching/opening/closing/creating wallets
+19:44:06 <stevenroose> achow101, my apologies
+19:44:07 <luke-jr> jonasschnelli: no, I have a branch for that
+19:44:10 <wumpus> jonasschnelli: I'd be happy to have it in JSONRPC already
+19:44:11 <luke-jr> jonasschnelli: it's 2 PRs away
+19:44:19 <wumpus> jonasschnelli: no need to block anything on GUI support
+19:44:23 <jonasschnelli> luke-jr: great!
+19:44:30 <jonasschnelli> wumpus: Sure...
+19:44:48 <jonasschnelli> But in general the low level stuff should conceptually fits the UI goals
+19:44:55 <wumpus> even small steps forward are worthwhile in this regard
+19:44:58 <wumpus> jonasschnelli: sure
+19:45:13 <jonasschnelli> Yes. Multiwallet was hold back long enought... I'm happy with every simple babystep
+19:45:18 <luke-jr> jonasschnelli: Knots has actually included multiwallet since 0.13, FWIW
+19:45:35 <jonasschnelli> luke-jr: Never used Knots. I probably should try it at least.
+19:46:46 <wumpus> ok, other topics?
+19:47:01 <jnewbery> running python rpc tests from `make check`?
+19:47:07 <kanzure> was someone asking about nulldummy versionbit?
+19:47:21 <luke-jr> isn't nulldummy deployed with segwit?
+19:47:34 <sipa> yes
+19:48:24 <achow101> I've been getting some reports about people's nodes running out of memory. perhaps we need to publish a "minimum spec" so people know what to expect if they don't meet that
+19:48:34 <cfields> jnewbery: +1. we were discussing this a few min ago. That makes "make check" dependent on python3 though (apparently). Not sure if wumpus is ok with that
+19:48:47 <wumpus> cfields: I don't mind
+19:49:03 <wumpus> cfields: the only thing I worry about is the slowness of the RPC tests
+19:49:43 <jonasschnelli> What's the benefits of adding the rpc's to `make check`?
+19:49:46 <wumpus> 'make check' should ideally do fairly quick checks, some of the RPC tests classify as that, but the whole suite takes maybe too long
+19:49:57 <gmaxwell> make check is currently not quick at all.
+19:50:08 <gmaxwell> I think on my system it actually takes similar time to the whole rpc checks.
+19:50:09 <wumpus> gmaxwell: secp256k1 is part of that :p
+19:50:18 <gmaxwell> let me revise.
+19:50:21 <cfields> wumpus: same. But lately I've been coming around to gmaxwell's point that they're a bulk of our tests, so it's kinda a disservice for people to assume that "make check" and all is good
+19:50:32 <gmaxwell> the unit tests themselves take almost as long as the rpc tests.
+19:50:36 <gmaxwell> and are _far_ less useful.
+19:50:36 <jonasschnelli> Indeed. Adding another 20min rpc test will result in nobody running make check anymore
+19:50:38 <wumpus> it does the extensive tests for secp256k1, which take quite a while
+19:50:48 <gmaxwell> jonasschnelli: Does anyone but us run make check now? :P
+19:50:49 <wumpus> gmaxwell: that's certainly not true here
+19:50:50 <cfields> wumpus: also, this would parallelize the tests. So the boost tests and rpc would run at the same time
+19:50:51 <jtimon> jnewbery: I would prefer a diferent target, you could still do make check tests, or only make check or only make tests
+19:50:55 <luke-jr> I'd rather `make check` be comprehensive than quick tbh. the default RPC test suite seems like an okay compromise.
+19:50:57 <wumpus> yes, I run make check a lot
+19:51:00 <jonasschnelli> gmaxwell: I hope so... but i doubt.
+19:51:12 <wumpus> cfields: ok that's pretty cool
+19:51:15 <gmaxwell> wumpus: the secp256k1 tests are adjustable and can basically take as little or as much time as you like, we could make it arbitarily fast.
+19:51:28 <jnewbery> I could select a subset of fast rpc tests if you think the standard list is too slow
+19:51:39 <jonasschnelli> I guess not even the gitian system runs make check
+19:51:42 <gmaxwell> wumpus: though I'd like to move some more of the secp256k1 tests to runtime, it isn't like distributors actually make check. :(
+19:51:47 <wumpus> gmaxwell: I dont think running the secp256k1 tests thoroughly is a bad idea at all
+19:51:53 <wumpus> gmaxwell: helps catch compiler bugs and such
+19:51:55 <jonasschnelli> though a bit more complex because of the platforms.
+19:51:56 <jtimon> wumpus: maybe the tests to run with make should be all but excluding prunning.py?
+19:52:13 <gmaxwell> yes, I think they're important, though we could move some of that to simple startup time. The most critical checks are very fast.
+19:52:37 <wumpus> e.g. broken signing is very, very bad
+19:52:43 <gmaxwell> I worry a lot about compiler bugs, our current make check is woefully inadequate (except the libsecp256k1 part, granted. :P )
+19:52:51 <jtimon> cfields: but the unittests themelseves don't run in parallel like the rpc/py tests, right?
+19:53:07 <gmaxwell> wumpus: (similar to how I nagged you to make those rng tests runtime and you did...)
+19:53:10 <jonasschnelli> jtimon: not that i know
+19:53:11 <gmaxwell> (thank you)
+19:53:21 <wumpus> jtimon: parallelism at multiple levels doesn't make much sense, there's only so many cores to go around
+19:53:24 <jtimon> also, make check tests -j10 should pass -j10 down to the rpc-tester, right?
+19:53:35 <cfields> jtimon: correct, we'd never survive that
+19:53:39 <gmaxwell> wumpus: we could probably define a subset of rpc tests that are fast and more useful than the unit tests.
+19:53:42 <cfields> jtimon: ooh yes, that'd be really nice
+19:54:00 <wumpus> gmaxwell: yup. don't know if you saw the clang fsafe-stack issue that messes up deterministic signing
+19:54:04 <jtimon> wumpus: well, current make check could be faster, I compile very fast, but then it gests stuck at 1 core running the tests
+19:54:25 <jtimon> half the time I wait more for the unittests than to compile
+19:54:40 <gmaxwell> wumpus: I didn't.
+19:54:44 <wumpus> jtimon: but cfields proposes running (some of) the qa tests at the same time
+19:54:47 <wumpus> gmaxwell: let me dig it up
+19:54:57 <gmaxwell> Has anyone recently 'profiled' the tests to see where time is being spent?
+19:55:12 <gmaxwell> I bet we have cases where 20% of the time is checking if addition works or something. :P
+19:55:14 <jonasschnelli> gmaxwell: unit or rpc?
+19:55:16 <jnewbery> gmaxwell: unit tests or rpc tests
+19:55:16 <wumpus> gmaxwell: https://github.com/bitcoin-core/secp256k1/issues/445
+19:55:19 <gmaxwell> jnewbery: both.
+19:55:33 <jnewbery> I've profiled rpc tests. A lot of time is spent in stopnode()
+19:55:38 <gmaxwell> wumpus: holy fuck!
+19:55:53 <wumpus> both frameworks measure the time spent in every test, so profiling at that level is easy
+19:55:58 <jtimon> wumpus: well, I suggest a different target, but if they don't depend on each other, I guess they would run "at the same time"
+19:56:06 <gmaxwell> wumpus: good for tests. (but as I said, we should make some of those runtime too)
+19:56:08 <wumpus> I don't remember by heart which ones, though
+19:56:12 <morcos> i believe the rpc tests could also be made faster if tx relay had a different poisson distribution for regtest or something... i seem to remember that being an issue
+19:56:17 <cfields> wumpus: whoa. Isn't that default for clang now? Or proposed, at least?
+19:56:51 <gmaxwell> regardless of the specific example, compiler bugs are a real thing.
+19:57:05 <wumpus> cfields: I think it's going to be more widely enabled, yes, though AFAIK not yet. I only caught it because cloudabi already has it as default
+19:57:06 <cfields> jnewbery: i'd be interested in your findings there
+19:57:06 <gmaxwell> (though seeing them in rather boring C code is depressing)
+19:57:48 <gmaxwell> wumpus: in any case thats the best news all day! I've complained many times that our tests must suck because we've not found any miscompliation bugs.
+19:57:49 <wumpus> (test_bitcoin -log_level=test_suite shows which unit tsts take so long. most are really fast! )
+19:58:10 <gmaxwell> wumpus: finally some evidence that our tests are potentially okay. :P
+19:58:12 <wumpus> gmaxwell: heh
+19:58:32 <jnewbery> ok, sounds like there's no fundamental objection to at least doing some rpc tests in make check. I'll open a PR and we can continue discussion there.
+19:58:53 <wumpus> gmaxwell: and yes doing some quick secp256k1 tests at runtime would make a lot of sense
+19:59:03 <wumpus> gmaxwell: basic sanity is fairly easy to check
+19:59:07 <gmaxwell> jnewbery: yes, and we should look at time measurements and rebalance the tests to be more useful.
+19:59:12 <jnewbery> also, once 9956 is merged we can stop calling them rpc tests!
+19:59:27 <gmaxwell> wumpus: I have a branch somewhere that adds some runtime selftests, but I think I got a bit carried away and put it aside. :P
+19:59:28 <jonasschnelli> jnewbery: Yes. I'd like to see that merged.
+19:59:31 <wumpus> jnewbery: no, no fundamental objection. Just about speed but that doesn't depend on the language/framework
+19:59:40 <wumpus> jnewbery: +1
+20:00:01 <jtimon> jnewbery: I still heard no reason against adding a new target instead of reusing check
+20:00:10 <wumpus> some of the qa tests are really fast, some of the unit tests really slow, indeed should rebalance testing bang for buck
+20:00:19 <gmaxwell> https://github.com/bitcoin-core/secp256k1/pull/217  (but I'd probably toss that and take a somewhat different approach now)
+20:00:22 <wumpus> it's time
+20:00:27 <wumpus> #endmeeting

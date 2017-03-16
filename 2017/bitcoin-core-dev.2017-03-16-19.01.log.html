@@ -1,0 +1,360 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:26</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Mar 16 19:01:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:26</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:02</span><span class="nk"> &lt;jnewbery&gt;</span> suggested topic: running rpc tests as part of `make check`
+<a name="l-5"></a><span class="tm">19:02:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-6"></a><span class="tm">19:02:28</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:02:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:02:36</span><span class="nk"> &lt;instagibbs&gt;</span> hello
+<a name="l-9"></a><span class="tm">19:02:49</span><span class="nk"> &lt;sipa&gt;</span> oi
+<a name="l-10"></a><span class="tm">19:02:58</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-11"></a><span class="tm">19:03:04</span><span class="nk"> &lt;jtimon&gt;</span> mhmm
+<a name="l-12"></a><span class="tm">19:03:11</span><span class="nk"> &lt;morcos&gt;</span> i haven't been reading channel last few days but was there discussion on 10015 (just above)
+<a name="l-13"></a><span class="tm">19:03:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#10015</span><span class="cmdline"></span>
+<a name="l-14"></a><span class="tm">19:03:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10015 | Wallet should reject long chains by default by jnewbery · Pull Request #10015 · bitcoin/bitcoin · GitHub
+<a name="l-15"></a><span class="tm">19:03:21</span><span class="nk"> &lt;morcos&gt;</span> i felt like we discussed that ad nauseum the first time around
+<a name="l-16"></a><span class="tm">19:03:30 </span><span class="nka">* instagibbs</span> <span class="ac">wimpers</span>
+<a name="l-17"></a><span class="tm">19:03:32</span><span class="nk"> &lt;instagibbs&gt;</span> yes
+<a name="l-18"></a><span class="tm">19:03:42</span><span class="nk"> &lt;sipa&gt;</span> i don't remmeber the reason for it not being default
+<a name="l-19"></a><span class="tm">19:03:52</span><span class="nk"> &lt;wumpus&gt;</span> yes I remember we already had long discussions about that
+<a name="l-20"></a><span class="tm">19:04:14</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="cmd">#9262</span><span class="cmdline"></span>
+<a name="l-21"></a><span class="tm">19:04:15</span><span class="nk"> &lt;instagibbs&gt;</span> The idea being that now that we actually rebroadcast normally, and return txid, it wasn't required in general.
+<a name="l-22"></a><span class="tm">19:04:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9262 | Prefer coins that have fewer ancestors, sanity check txn before ATMP by instagibbs · Pull Request #9262 · bitcoin/bitcoin · GitHub
+<a name="l-23"></a><span class="tm">19:04:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> the reasoning is its a very reasonable use case that you'd just want the tx to go out as soon as some of its parents get confirmed..
+<a name="l-24"></a><span class="tm">19:04:53</span><span class="nk"> &lt;morcos&gt;</span> it seems somewhat likely that it would be tricky to have anything smarter than that happen manually anyway
+<a name="l-25"></a><span class="tm">19:04:54</span><span class="nk"> &lt;sipa&gt;</span> but the resulting behaviour seems very unexpected to users
+<a name="l-26"></a><span class="tm">19:05:00</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't see the reason for rejecting. Seems like a useless loss of functionality in most cases.
+<a name="l-27"></a><span class="tm">19:05:14</span><span class="nk"> &lt;morcos&gt;</span> but the solution to that could be better informing them of the new behaviour
+<a name="l-28"></a><span class="tm">19:05:18</span><span class="nk"> &lt;jnewbery&gt;</span> I can understand the use case, but user experience is terrible (hence already two issues opened by different users)
+<a name="l-29"></a><span class="tm">19:05:26</span><span class="nk"> &lt;gmaxwell&gt;</span> What does it matter to you if your transaction 20 steps deep hasn't actually been announced yet? it will be announced when it can.
+<a name="l-30"></a><span class="tm">19:05:27</span><span class="nk"> &lt;sipa&gt;</span> many reports of people who see their balance going down
+<a name="l-31"></a><span class="tm">19:05:46</span><span class="nk"> &lt;sipa&gt;</span> and get scared
+<a name="l-32"></a><span class="tm">19:05:49</span><span class="nk"> &lt;gmaxwell&gt;</span> Their balance is going down.
+<a name="l-33"></a><span class="tm">19:05:56</span><span class="nk"> &lt;morcos&gt;</span> hmm...
+<a name="l-34"></a><span class="tm">19:06:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> it is, but don't you think it's better to reject by default, so they know why it is going down?
+<a name="l-35"></a><span class="tm">19:06:19</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i assume he means they have a 10 BTC input, they spend 0.1 BTC and their balance goes down by 10
+<a name="l-36"></a><span class="tm">19:06:33</span><span class="nk"> &lt;sipa&gt;</span> so they can re-enable it when they understand the effect
+<a name="l-37"></a><span class="tm">19:06:42</span><span class="nk"> &lt;morcos&gt;</span> b/c the change isn't in mempool so it doesn't count towards balance
+<a name="l-38"></a><span class="tm">19:06:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> okay now that is a bad effect, I didn't reaize it was doing that.
+<a name="l-39"></a><span class="tm">19:07:01</span><span class="nk"> &lt;gmaxwell&gt;</span> realize*
+<a name="l-40"></a><span class="tm">19:07:04</span><span class="nk"> &lt;jnewbery&gt;</span> see #10004 for good description of what the user sees
+<a name="l-41"></a><span class="tm">19:07:06</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10004 | After max chain of unconfirmed change transactions, last tx is missing from memory until rescan · Issue #10004 · bitcoin/bitcoin · GitHub
+<a name="l-42"></a><span class="tm">19:07:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> or  #9752 for the alternative
+<a name="l-43"></a><span class="tm">19:07:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9752 | Max unconfirmed chainlength · Issue #9752 · bitcoin/bitcoin · GitHub
+<a name="l-44"></a><span class="tm">19:07:18</span><span class="nk"> &lt;morcos&gt;</span> i briefly recall discussing that but i agree its bad so don't know why we just left it that way.. maybe b/c its not easy to do anything smarter?
+<a name="l-45"></a><span class="tm">19:07:43</span><span class="nk"> &lt;gmaxwell&gt;</span> The balance being goofy is an issue, but I think that should be considered a seperate issue.
+<a name="l-46"></a><span class="tm">19:08:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I agree it shouldn't be left with the balance doing inexplicable things.
+<a name="l-47"></a><span class="tm">19:08:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you think we should include txn crediting the wallet that are not in the mempool?
+<a name="l-48"></a><span class="tm">19:08:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> that would bring back all malleability craziness
+<a name="l-49"></a><span class="tm">19:08:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> if it's the users own output? I think so.
+<a name="l-50"></a><span class="tm">19:08:45</span><span class="nk"> &lt;gmaxwell&gt;</span> (and it's not conflicted.)
+<a name="l-51"></a><span class="tm">19:08:59</span><span class="nk"> &lt;morcos&gt;</span> perhaps there needs to be a new category of pending txs
+<a name="l-52"></a><span class="tm">19:08:59</span><span class="nk"> &lt;sipa&gt;</span> the conflict can be outside of the mempool
+<a name="l-53"></a><span class="tm">19:09:06</span><span class="nk"> &lt;sipa&gt;</span> s/mempool/wallet/
+<a name="l-54"></a><span class="tm">19:09:40</span><span class="nk"> &lt;morcos&gt;</span> The pending balance can include both the debit and the credit
+<a name="l-55"></a><span class="tm">19:10:01</span><span class="nk"> &lt;morcos&gt;</span> But could get complicated
+<a name="l-56"></a><span class="tm">19:10:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> I tend to like this approach.
+<a name="l-57"></a><span class="tm">19:10:27</span><span class="nk"> &lt;sipa&gt;</span> which approach?
+<a name="l-58"></a><span class="tm">19:10:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> pending txs cat
+<a name="l-59"></a><span class="tm">19:11:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> it's very hard to not double count things in the pending balance if they're spending from malleated versions of the same transaction
+<a name="l-60"></a><span class="tm">19:11:37</span><span class="nk"> &lt;gmaxwell&gt;</span> I am dubious that your own mempool is actually that strong a protection here.
+<a name="l-61"></a><span class="tm">19:12:32</span><span class="nk"> &lt;jnewbery&gt;</span> my view: simplest experience is best. Default should be to reject too-long-chain transaction from wallet and mempool. If the user wants to have long chains in wallet, that's fine but:
+<a name="l-62"></a><span class="tm">19:12:32</span><span class="nk"> &lt;jnewbery&gt;</span> - it should be behind an explicit option
+<a name="l-63"></a><span class="tm">19:12:32</span><span class="nk"> &lt;jnewbery&gt;</span> - user should understand that it could have unexpected impacts on things like getbalance()
+<a name="l-64"></a><span class="tm">19:13:11</span><span class="nk"> &lt;gmaxwell&gt;</span> Transactions simply failing to create due to inexplicable internal things that the user does not understand and cannot easily understand is not a good expirence at all.
+<a name="l-65"></a><span class="tm">19:13:16</span><span class="nk"> &lt;morcos&gt;</span> well look, this thing is an option, so its kind of ridiculous to spend this much time discussing the default.  The solution no matter whether we change the default or not is more announcing of the effects in either case
+<a name="l-66"></a><span class="tm">19:13:36</span><span class="nk"> &lt;gmaxwell&gt;</span> We were already getting complaints about inexplicable failures before.
+<a name="l-67"></a><span class="tm">19:13:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Many people do not have adequate error handling to deal with a sendtoaddress failing when the balance was sufficient.
+<a name="l-68"></a><span class="tm">19:13:57</span><span class="nk"> &lt;morcos&gt;</span> But too long a chain, try again later is explicable
+<a name="l-69"></a><span class="tm">19:14:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i think seeing your balance going down inexplicably is worse than inexplicably failing to create a transaction (at least there can be an explanation message)
+<a name="l-70"></a><span class="tm">19:14:32</span><span class="nk"> &lt;gmaxwell&gt;</span> I agree the balance is screwed up. But _that_ is the issue, not the rest.
+<a name="l-71"></a><span class="tm">19:14:45</span><span class="nk"> &lt;jnewbery&gt;</span> take this discussion offline? I'm happy to receive feedback in #10015
+<a name="l-72"></a><span class="tm">19:14:45</span><span class="nk"> &lt;instagibbs&gt;</span> Either way we can buff up the error messages to be far less scary, especially in this case.
+<a name="l-73"></a><span class="tm">19:14:47</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10015 | Wallet should reject long chains by default by jnewbery · Pull Request #10015 · bitcoin/bitcoin · GitHub
+<a name="l-74"></a><span class="tm">19:15:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> how about we remove all ability to sends funds entirely, then there never will be balance confusion?
+<a name="l-75"></a><span class="tm">19:15:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> come on
+<a name="l-76"></a><span class="tm">19:15:24</span><span class="nk"> &lt;morcos&gt;</span> well i wasn't implying we shouldn't discuss here, its kind of hard to have this discussion on a PR
+<a name="l-77"></a><span class="tm">19:16:00</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> the balance issue is not easy to solve
+<a name="l-78"></a><span class="tm">19:16:32</span><span class="nk"> &lt;sipa&gt;</span> sure, if balance was redefined completely we may be able to avoid that issue, but i don't even know where to start
+<a name="l-79"></a><span class="tm">19:16:45</span><span class="nk"> &lt;morcos&gt;</span> i just see both choices as non-optimal and i think we should pick one and try to make it as clear to users as possible
+<a name="l-80"></a><span class="tm">19:16:53</span><span class="nk"> &lt;gmaxwell&gt;</span> This is a sign that our current definition is just broken. It should not be so tightly coupled to the mempool.
+<a name="l-81"></a><span class="tm">19:16:57</span><span class="nk"> &lt;morcos&gt;</span> i thought that previously we had picked, and maybe failed at the making it clear
+<a name="l-82"></a><span class="tm">19:17:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd say lets pick what serves more user... and the default = true seems to be the better choice...but I don't have numbers to proof that.
+<a name="l-83"></a><span class="tm">19:17:21</span><span class="nk"> &lt;bsm1175322&gt;</span> One could create a RBF replacement transaction instead of a chain...
+<a name="l-84"></a><span class="tm">19:17:35</span><span class="nk"> &lt;gmaxwell&gt;</span> (like how is the software even supposted to be usable to people that don't have a mempool? -- this is a supported configuration!)
+<a name="l-85"></a><span class="tm">19:17:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> even if it is not tightly coupled with the mempool, we need a means of estimating whether it could confirm
+<a name="l-86"></a><span class="tm">19:17:47</span><span class="nk"> &lt;morcos&gt;</span> yep, our time would be better spent extending bumpfee to work on chains
+<a name="l-87"></a><span class="tm">19:18:13</span><span class="nk"> &lt;gmaxwell&gt;</span> or finding a way to eliminate the chain limit.
+<a name="l-88"></a><span class="tm">19:18:25</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">morcos:</span> if the default is false (accept long chains) then it's very difficult to communicate to the user what the problem is. If we reject long chains then at least we can send a helpful error to the user
+<a name="l-89"></a><span class="tm">19:18:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i'm not convinced the chain limit itself is the only problem here
+<a name="l-90"></a><span class="tm">19:18:35</span><span class="nk"> &lt;morcos&gt;</span> i suppose i do agree with gmaxwell thought that i always just took our balance calculation as gospel, but maybe it is kind of silly
+<a name="l-91"></a><span class="tm">19:19:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> clearly not, because apparently we'll report a balance way off if you don't have a mempool! :)
+<a name="l-92"></a><span class="tm">19:19:15</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic: what's the current state on finally removing accounts?
+<a name="l-93"></a><span class="tm">19:19:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">bsm1175322:</span> +1
+<a name="l-94"></a><span class="tm">19:19:31</span><span class="nk"> &lt;gmaxwell&gt;</span> (er it's clearly not the only problem!)
+<a name="l-95"></a><span class="tm">19:20:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> if you don't rely on the mempool, it's not that hard i think to make the wallet double count
+<a name="l-96"></a><span class="tm">19:20:56</span><span class="nk"> &lt;wumpus&gt;</span> right, the wallet can't detect conflicting transactions itself
+<a name="l-97"></a><span class="tm">19:20:56</span><span class="nk"> &lt;sipa&gt;</span> that would be great to fix, but i don't know how
+<a name="l-98"></a><span class="tm">19:21:08</span><span class="nk"> &lt;gmaxwell&gt;</span> good thing there aren't any wallets in the bitcoin system without mempools.
+<a name="l-99"></a><span class="tm">19:21:21</span><span class="nk"> &lt;wumpus&gt;</span> so if it sends a transaction, and someone malleates it and it would receive the malleated version back, it'd count that double
+<a name="l-100"></a><span class="tm">19:21:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> but a better balance calculation would be to evaluate net changes on a per tx basis
+<a name="l-101"></a><span class="tm">19:21:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> wallets that don't spend unconfirmed change don't have this problem
+<a name="l-102"></a><span class="tm">19:21:30</span><span class="nk"> &lt;morcos&gt;</span> and not consider the debits and credits separately
+<a name="l-103"></a><span class="tm">19:21:32</span><span class="nk"> &lt;wumpus&gt;</span> it would work if it wouldn't count unconfirmed transactions
+<a name="l-104"></a><span class="tm">19:21:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> oh, you mean like the account system? *ducks*
+<a name="l-105"></a><span class="tm">19:21:54</span><span class="nk"> &lt;wumpus&gt;</span> exactly, we have an option for that already
+<a name="l-106"></a><span class="tm">19:22:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> no such wallet exists in the wild. (beyond bitcoin core users who have changed their settings and a few industrial users)
+<a name="l-107"></a><span class="tm">19:23:08</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> sigh.. no i mean properly..  there is no reason to assume a sent tx not in your mempool should debit your input but not credit your change output.  thats just broken.
+<a name="l-108"></a><span class="tm">19:23:13</span><span class="nk"> &lt;morcos&gt;</span> at worst it should do both
+<a name="l-109"></a><span class="tm">19:23:21</span><span class="nk"> &lt;morcos&gt;</span> only gets complicated if its a mixed debit tx
+<a name="l-110"></a><span class="tm">19:23:59</span><span class="nk"> &lt;gmaxwell&gt;</span> well it's showing a worse case balance, which is a thing you can rationally choose to do... but it's confusing to users esp with no other information available elsewhere.
+<a name="l-111"></a><span class="tm">19:24:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i don't know how to give an accurate unconfirmed balance without a mempool
+<a name="l-112"></a><span class="tm">19:24:09</span><span class="nk"> &lt;morcos&gt;</span> actually, maybe gmaxwell is right.. maybe we can just fix that in our existing system?
+<a name="l-113"></a><span class="tm">19:24:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> how is that worst case, how is that balance even achievable?
+<a name="l-114"></a><span class="tm">19:24:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Unfortunately, malleablity is still a thing.
+<a name="l-115"></a><span class="tm">19:25:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> It's not achievable. But the estimation pattern of including non-mempool debits but not credits is a worst case estimator generally.
+<a name="l-116"></a><span class="tm">19:25:17</span><span class="nk"> &lt;morcos&gt;</span> yes, but you can't end up with the debit and not the credit.. you can end up with the debit and you're momentarily confused how to spend the credit, but it's still your credit
+<a name="l-117"></a><span class="tm">19:25:19</span><span class="nk"> &lt;sipa&gt;</span> without malleability maybe this problem becomes easier
+<a name="l-118"></a><span class="tm">19:25:31</span><span class="nk"> &lt;gmaxwell&gt;</span> sometimes you have a non-mempool debit which will still go through.
+<a name="l-119"></a><span class="tm">19:25:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> are you including the wallet's storage of txs as "mempool"?
+<a name="l-120"></a><span class="tm">19:25:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> no
+<a name="l-121"></a><span class="tm">19:26:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I think any change estimation issue goes away if you assume non-malleablity and no concurrent use of the same keys.
+<a name="l-122"></a><span class="tm">19:26:43</span><span class="nk"> &lt;gmaxwell&gt;</span> er balance estimation.
+<a name="l-123"></a><span class="tm">19:27:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i mean a mempool which is kept consistent with the block chain - i guess you can simulate that inside the wallet, but it risks missing things that depend on unconfirmed transactions which don't involve you
+<a name="l-124"></a><span class="tm">19:27:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I find it hard to believe that the current behavior won't cause wildly wrong balances in other cases.  In particular, what happens to your balance when you pay something that falls out of the mempool due to low fees? same deal.
+<a name="l-125"></a><span class="tm">19:27:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Chaning the behavior for long chains will do nothing for that, just covers up the fundimentally bad behavior.
+<a name="l-126"></a><span class="tm">19:28:35</span><span class="nk"> &lt;sipa&gt;</span> right, the expected behaviour there is that you use abandontx to correct the balance
+<a name="l-127"></a><span class="tm">19:28:38</span><span class="nk"> &lt;gmaxwell&gt;</span> maybe it's not reasonably possible to fix completely in the presence of malleablity. The best thing with malleablity still around might be presenting a pending balance.
+<a name="l-128"></a><span class="tm">19:28:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> but there will still be malleability for old txs, no? I don't undesrtand the discussion well enough...
+<a name="l-129"></a><span class="tm">19:29:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> maybe people just don't hit the "falls out of mempool" case, and only hit chain length limits
+<a name="l-130"></a><span class="tm">19:29:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> well you can use abandon in this case too. (though thats a pretty bad expirence, spend a cent, then hours later 100 btc vanishes from your balance? )
+<a name="l-131"></a><span class="tm">19:29:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> The main user issue is described here: #9752
+<a name="l-132"></a><span class="tm">19:29:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9752 | Max unconfirmed chainlength · Issue #9752 · bitcoin/bitcoin · GitHub
+<a name="l-133"></a><span class="tm">19:29:37</span><span class="nk"> &lt;sipa&gt;</span> maybe we should have some form of automatic abandoning...
+<a name="l-134"></a><span class="tm">19:29:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> noooooooooooo
+<a name="l-135"></a><span class="tm">19:29:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> we previously had reports about txn falling out of the mempool.
+<a name="l-136"></a><span class="tm">19:29:55</span><span class="nk"> &lt;sipa&gt;</span> or at least automatically stop counting as debit at some point
+<a name="l-137"></a><span class="tm">19:29:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> AutoFraud(tm)
+<a name="l-138"></a><span class="tm">19:30:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> I agree with sipa, especially the non sendto* (or Qt) ones.
+<a name="l-139"></a><span class="tm">19:30:39</span><span class="nk"> &lt;wumpus&gt;</span> fee bump is a better alternative to abandoning
+<a name="l-140"></a><span class="tm">19:30:48</span><span class="nk"> &lt;gmaxwell&gt;</span> wumpus++
+<a name="l-141"></a><span class="tm">19:31:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> yes. but adding new outputs would be a requirement then.
+<a name="l-142"></a><span class="tm">19:31:12</span><span class="nk"> &lt;sipa&gt;</span> but if you stop counting as debit, while still excluding from unspent outputs, you risk even worse unexpected behaviour
+<a name="l-143"></a><span class="tm">19:31:16</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, better to not auto-abandon and do what other wallets are doing now - if you try to send with too low a fee, nag the user really loudly to make it rbf-able
+<a name="l-144"></a><span class="tm">19:31:19</span><span class="nk"> &lt;morcos&gt;</span> i'd be happy to discuss another time whether we can make some slight improvements to our balance estimation..  i guess i think it wouldn't be that hard... next time i have time i'll look closer
+<a name="l-145"></a><span class="tm">19:31:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> yes, what electrum does is reasonable there.
+<a name="l-146"></a><span class="tm">19:31:52</span><span class="nk"> &lt;wumpus&gt;</span> abandoning is dangerous, there is no guarantee that everyone forgot the transaction, so the user may send the tx again with different outputs and then it goes through twice oops
+<a name="l-147"></a><span class="tm">19:32:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> The reminds me of the problem that BIP125 doesn't explicit mention a recommended nSequence nr. Electrum was using 0, Core intmax-2. (privacy)
+<a name="l-148"></a><span class="tm">19:32:29</span><span class="nk"> &lt;sipa&gt;</span> right, i take back my suggestion to auto-abandom
+<a name="l-149"></a><span class="tm">19:32:47</span><span class="nk"> &lt;BlueMatt&gt;</span> auto-bump, otoh.....
+<a name="l-150"></a><span class="tm">19:32:54</span><span class="nk"> &lt;sipa&gt;</span> yeah...
+<a name="l-151"></a><span class="tm">19:33:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> from a viewpoint of the user it's what they want, for the transaction to 'just disappear', bitcoin just makes that very difficult
+<a name="l-152"></a><span class="tm">19:33:16</span><span class="nk"> &lt;morcos&gt;</span> yeah auto bump should be 0.15 priority
+<a name="l-153"></a><span class="tm">19:33:29</span><span class="nk"> &lt;gmaxwell&gt;</span> precomputed bumps with locktimes were always an idea I liked... doesn't really do great with spending unconfirmed change.
+<a name="l-154"></a><span class="tm">19:33:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> with plenty of pre-signed transactions?
+<a name="l-155"></a><span class="tm">19:34:18</span><span class="nk"> &lt;morcos&gt;</span> spending unconfirmed change is doable i think...  complicated, but you just stop bumping the first and start bumping the 2nd with CPFP calculations
+<a name="l-156"></a><span class="tm">19:34:22</span><span class="nk"> &lt;BlueMatt&gt;</span> esp given miners can freely malleate it out from under you
+<a name="l-157"></a><span class="tm">19:34:42</span><span class="nk"> &lt;gmaxwell&gt;</span> without malleablity basically none of these change handling issues would exist, I think.
+<a name="l-158"></a><span class="tm">19:35:05</span><span class="nk"> &lt;gmaxwell&gt;</span> as you'd never have a case where you might double count your own funds.
+<a name="l-159"></a><span class="tm">19:35:32</span><span class="nk"> &lt;wumpus&gt;</span> unfortunately we're stuck with malleability
+<a name="l-160"></a><span class="tm">19:35:42</span><span class="nk"> &lt;morcos&gt;</span> not if we use flextrans
+<a name="l-161"></a><span class="tm">19:35:49</span><span class="nk"> &lt;morcos&gt;</span> (sorry)
+<a name="l-162"></a><span class="tm">19:35:49</span><span class="nk"> &lt;sipa&gt;</span> right, no from-self transaction in your wallet could credit you without you having signed for it
+<a name="l-163"></a><span class="tm">19:35:51</span><span class="nk"> &lt;gmaxwell&gt;</span> hah
+<a name="l-164"></a><span class="tm">19:35:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-165"></a><span class="tm">19:35:58</span><span class="nk"> &lt;wumpus&gt;</span> flextrans, lol
+<a name="l-166"></a><span class="tm">19:36:06</span><span class="nk"> &lt;BlueMatt&gt;</span> trolol
+<a name="l-167"></a><span class="tm">19:36:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I made the remove all sending ability quip above!
+<a name="l-168"></a><span class="tm">19:36:48</span><span class="nk"> &lt;gmaxwell&gt;</span> well we really haven't pushed to get malleablity fixed as a group... just put the fix out there.
+<a name="l-169"></a><span class="tm">19:37:06 </span><span class="nka">* sipa</span> <span class="ac">casually mentions segwit</span>
+<a name="l-170"></a><span class="tm">19:37:23</span><span class="nk"> &lt;morcos&gt;</span> ok... we're going off the rails. now.. maybe next topic.. and we revisit this in a week after thinking through both avenues
+<a name="l-171"></a><span class="tm">19:37:27</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-172"></a><span class="tm">19:37:30</span><span class="nk"> &lt;BlueMatt&gt;</span> ack
+<a name="l-173"></a><span class="tm">19:37:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Sounds great.
+<a name="l-174"></a><span class="tm">19:37:35</span><span class="nk"> &lt;jnewbery&gt;</span> yep
+<a name="l-175"></a><span class="tm">19:37:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> While we are touching the wallet... can we make progress on #9294?
+<a name="l-176"></a><span class="tm">19:37:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">status of removal of account system</span>
+<a name="l-177"></a><span class="tm">19:37:46</span><span class="nk"> &lt;gmaxwell&gt;</span> Sorry for being a PITA. :)
+<a name="l-178"></a><span class="tm">19:37:46</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-179"></a><span class="tm">19:37:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> okay.
+<a name="l-180"></a><span class="tm">19:37:55</span><span class="nk"> &lt;wumpus&gt;</span> can be really short there: no advances since last time we've discussed that
+<a name="l-181"></a><span class="tm">19:38:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> that sounds like a should-review-this-week
+<a name="l-182"></a><span class="tm">19:38:08</span><span class="nk"> &lt;wumpus&gt;</span> I should really pick up https://github.com/bitcoin/bitcoin/pull/7729
+<a name="l-183"></a><span class="tm">19:38:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, this should definitely happen for 0.15, imo
+<a name="l-184"></a><span class="tm">19:38:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> do we have a project setup to track things that change the wallet format in incompatible ways?
+<a name="l-185"></a><span class="tm">19:38:34</span><span class="nk"> &lt;wumpus&gt;</span> as we need a label API first before even thinking about deprecating accounts
+<a name="l-186"></a><span class="tm">19:38:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> not yet.
+<a name="l-187"></a><span class="tm">19:38:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> I agree, though multiwallet has higher priority for me
+<a name="l-188"></a><span class="tm">19:39:03</span><span class="nk"> &lt;gmaxwell&gt;</span> multiwallet++++++++++++++++++++++++++++++divide by zero error
+<a name="l-189"></a><span class="tm">19:39:05</span><span class="nk"> &lt;wumpus&gt;</span> I intended to pick up multiwallet this week, but eh shit happened
+<a name="l-190"></a><span class="tm">19:39:18</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so lets list reviews to prioritize this week?
+<a name="l-191"></a><span class="tm">19:39:33</span><span class="nk"> &lt;sipa&gt;</span> my focus will be leveldb mempool reduction
+<a name="l-192"></a><span class="tm">19:39:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> mentioned 9294, I'm still super blocked on 9725
+<a name="l-193"></a><span class="tm">19:40:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#8694</span><span class="cmdline"></span>
+<a name="l-194"></a><span class="tm">19:40:13</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+<a name="l-195"></a><span class="tm">19:40:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#9294 </span><span class="cmdline">#9725</span>
+<a name="l-196"></a><span class="tm">19:40:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+<a name="l-197"></a><span class="tm">19:40:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> 9294 would need direction if the performance drawback is acceptable. IMO yes.
+<a name="l-198"></a><span class="tm">19:40:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9725 | CValidationInterface Cleanups by TheBlueMatt · Pull Request #9725 · bitcoin/bitcoin · GitHub
+<a name="l-199"></a><span class="tm">19:40:23</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, was just looking for that one wumpus
+<a name="l-200"></a><span class="tm">19:40:38</span><span class="nk"> &lt;wumpus&gt;</span> that's the next step toward multiwallet, though luke-jr and I have some disagreement about specifics about implementation
+<a name="l-201"></a><span class="tm">19:40:39</span><span class="nk"> &lt;stevenroose&gt;</span> My btcd testnet node recently got a softfork deployment on versionbit 28. Is that this dummy deployment from bitcoind?
+<a name="l-202"></a><span class="tm">19:40:40</span><span class="nk"> &lt;stevenroose&gt;</span> v
+<a name="l-203"></a><span class="tm">19:40:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> you mean the "make defaults work on odroid c2 again" problem?
+<a name="l-204"></a><span class="tm">19:40:41</span><span class="nk"> &lt;stevenroose&gt;</span> https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp#L190
+<a name="l-205"></a><span class="tm">19:40:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd like to continue with HD restore... but 9294 seems to be required first
+<a name="l-206"></a><span class="tm">19:40:45</span><span class="nk"> &lt;wumpus&gt;</span> but that it needs to happen is clear
+<a name="l-207"></a><span class="tm">19:41:01</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> oh, right, we need 7729 first
+<a name="l-208"></a><span class="tm">19:41:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> no, i mean fix the silly continuous allocation of leveldb memory
+<a name="l-209"></a><span class="tm">19:41:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">stevenroose:</span> that is likely doofsus still signling 'bip 109' on testnet. (even though nothing implements it anymore)
+<a name="l-210"></a><span class="tm">19:41:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes the HD chain split *defnitely* needs to be in 0.15
+<a name="l-211"></a><span class="tm">19:41:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> so memory reduction not mempool reduction.
+<a name="l-212"></a><span class="tm">19:41:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> it's sad it missed 0.14
+<a name="l-213"></a><span class="tm">19:42:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> merging sooner should allow more perofmance improvemnts before 0.15.
+<a name="l-214"></a><span class="tm">19:42:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> lol. yes
+<a name="l-215"></a><span class="tm">19:42:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> *performance improvements
+<a name="l-216"></a><span class="tm">19:42:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> you can still implement lookahead scanning without the split.
+<a name="l-217"></a><span class="tm">19:42:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> agree, will take a look at it
+<a name="l-218"></a><span class="tm">19:42:32</span><span class="nk"> &lt;stevenroose&gt;</span> gmaxwell, yeah I read about bip109 as well when I googled the versionbit. So that means that 95% of testnett blocks the last few weeks were mined by people trolling about bip109?
+<a name="l-219"></a><span class="tm">19:42:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. But I don't want to go to the rebase-hell. :)
+<a name="l-220"></a><span class="tm">19:42:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> at some point we should merge something so that it can be improved
+<a name="l-221"></a><span class="tm">19:43:06</span><span class="nk"> &lt;wumpus&gt;</span> right, it's frustrating to keep non-trivial things up to date with all the code churn
+<a name="l-222"></a><span class="tm">19:43:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I don't necessarily disagree with your points, just that they're factoring unrelated to multiwallet itself IMO
+<a name="l-223"></a><span class="tm">19:43:26</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">stevenroose:</span> not now or here. ask in #bitcoin-dev, there's a meeting going on here right now
+<a name="l-224"></a><span class="tm">19:43:28</span><span class="nk"> &lt;jtimon&gt;</span> I wouldn't mind some re-reviews on #8855 (previously #6907), it's simple
+<a name="l-225"></a><span class="tm">19:43:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">stevenroose:</span> no, it got 'activated' eons ago. then the miner signaling it mined BIP109 invalid blocks (because their implementation was broken) and forked classic off (until classic ripped out 109)
+<a name="l-226"></a><span class="tm">19:43:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+<a name="l-227"></a><span class="tm">19:43:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> But multiwallet will be also my prio for 0.15. I start reviewing more soon.
+<a name="l-228"></a><span class="tm">19:43:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/6907 | Chainparams: Use a regular factory for creating chainparams by jtimon · Pull Request #6907 · bitcoin/bitcoin · GitHub
+<a name="l-229"></a><span class="tm">19:43:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> The whole Qt part is unsolved IMO.
+<a name="l-230"></a><span class="tm">19:44:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> The general concept of switching/opening/closing/creating wallets
+<a name="l-231"></a><span class="tm">19:44:06</span><span class="nk"> &lt;stevenroose&gt;</span> achow101, my apologies
+<a name="l-232"></a><span class="tm">19:44:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> no, I have a branch for that
+<a name="l-233"></a><span class="tm">19:44:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I'd be happy to have it in JSONRPC already
+<a name="l-234"></a><span class="tm">19:44:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it's 2 PRs away
+<a name="l-235"></a><span class="tm">19:44:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> no need to block anything on GUI support
+<a name="l-236"></a><span class="tm">19:44:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> great!
+<a name="l-237"></a><span class="tm">19:44:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Sure...
+<a name="l-238"></a><span class="tm">19:44:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> But in general the low level stuff should conceptually fits the UI goals
+<a name="l-239"></a><span class="tm">19:44:55</span><span class="nk"> &lt;wumpus&gt;</span> even small steps forward are worthwhile in this regard
+<a name="l-240"></a><span class="tm">19:44:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> sure
+<a name="l-241"></a><span class="tm">19:45:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Multiwallet was hold back long enought... I'm happy with every simple babystep
+<a name="l-242"></a><span class="tm">19:45:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> Knots has actually included multiwallet since 0.13, FWIW
+<a name="l-243"></a><span class="tm">19:45:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> Never used Knots. I probably should try it at least.
+<a name="l-244"></a><span class="tm">19:46:46</span><span class="nk"> &lt;wumpus&gt;</span> ok, other topics?
+<a name="l-245"></a><span class="tm">19:47:01</span><span class="nk"> &lt;jnewbery&gt;</span> running python rpc tests from `make check`?
+<a name="l-246"></a><span class="tm">19:47:07</span><span class="nk"> &lt;kanzure&gt;</span> was someone asking about nulldummy versionbit?
+<a name="l-247"></a><span class="tm">19:47:21</span><span class="nk"> &lt;luke-jr&gt;</span> isn't nulldummy deployed with segwit?
+<a name="l-248"></a><span class="tm">19:47:34</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-249"></a><span class="tm">19:48:24</span><span class="nk"> &lt;achow101&gt;</span> I've been getting some reports about people's nodes running out of memory. perhaps we need to publish a "minimum spec" so people know what to expect if they don't meet that
+<a name="l-250"></a><span class="tm">19:48:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jnewbery:</span> +1. we were discussing this a few min ago. That makes "make check" dependent on python3 though (apparently). Not sure if wumpus is ok with that
+<a name="l-251"></a><span class="tm">19:48:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I don't mind
+<a name="l-252"></a><span class="tm">19:49:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> the only thing I worry about is the slowness of the RPC tests
+<a name="l-253"></a><span class="tm">19:49:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> What's the benefits of adding the rpc's to `make check`?
+<a name="l-254"></a><span class="tm">19:49:46</span><span class="nk"> &lt;wumpus&gt;</span> 'make check' should ideally do fairly quick checks, some of the RPC tests classify as that, but the whole suite takes maybe too long
+<a name="l-255"></a><span class="tm">19:49:57</span><span class="nk"> &lt;gmaxwell&gt;</span> make check is currently not quick at all.
+<a name="l-256"></a><span class="tm">19:50:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I think on my system it actually takes similar time to the whole rpc checks.
+<a name="l-257"></a><span class="tm">19:50:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> secp256k1 is part of that :p
+<a name="l-258"></a><span class="tm">19:50:18</span><span class="nk"> &lt;gmaxwell&gt;</span> let me revise.
+<a name="l-259"></a><span class="tm">19:50:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> same. But lately I've been coming around to gmaxwell's point that they're a bulk of our tests, so it's kinda a disservice for people to assume that "make check" and all is good
+<a name="l-260"></a><span class="tm">19:50:32</span><span class="nk"> &lt;gmaxwell&gt;</span> the unit tests themselves take almost as long as the rpc tests.
+<a name="l-261"></a><span class="tm">19:50:36</span><span class="nk"> &lt;gmaxwell&gt;</span> and are _far_ less useful.
+<a name="l-262"></a><span class="tm">19:50:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed. Adding another 20min rpc test will result in nobody running make check anymore
+<a name="l-263"></a><span class="tm">19:50:38</span><span class="nk"> &lt;wumpus&gt;</span> it does the extensive tests for secp256k1, which take quite a while
+<a name="l-264"></a><span class="tm">19:50:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> Does anyone but us run make check now? :P
+<a name="l-265"></a><span class="tm">19:50:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> that's certainly not true here
+<a name="l-266"></a><span class="tm">19:50:50</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> also, this would parallelize the tests. So the boost tests and rpc would run at the same time
+<a name="l-267"></a><span class="tm">19:50:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jnewbery:</span> I would prefer a diferent target, you could still do make check tests, or only make check or only make tests
+<a name="l-268"></a><span class="tm">19:50:55</span><span class="nk"> &lt;luke-jr&gt;</span> I'd rather `make check` be comprehensive than quick tbh. the default RPC test suite seems like an okay compromise.
+<a name="l-269"></a><span class="tm">19:50:57</span><span class="nk"> &lt;wumpus&gt;</span> yes, I run make check a lot
+<a name="l-270"></a><span class="tm">19:51:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> I hope so... but i doubt.
+<a name="l-271"></a><span class="tm">19:51:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> ok that's pretty cool
+<a name="l-272"></a><span class="tm">19:51:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the secp256k1 tests are adjustable and can basically take as little or as much time as you like, we could make it arbitarily fast.
+<a name="l-273"></a><span class="tm">19:51:28</span><span class="nk"> &lt;jnewbery&gt;</span> I could select a subset of fast rpc tests if you think the standard list is too slow
+<a name="l-274"></a><span class="tm">19:51:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess not even the gitian system runs make check
+<a name="l-275"></a><span class="tm">19:51:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> though I'd like to move some more of the secp256k1 tests to runtime, it isn't like distributors actually make check. :(
+<a name="l-276"></a><span class="tm">19:51:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I dont think running the secp256k1 tests thoroughly is a bad idea at all
+<a name="l-277"></a><span class="tm">19:51:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> helps catch compiler bugs and such
+<a name="l-278"></a><span class="tm">19:51:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> though a bit more complex because of the platforms.
+<a name="l-279"></a><span class="tm">19:51:56</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> maybe the tests to run with make should be all but excluding prunning.py?
+<a name="l-280"></a><span class="tm">19:52:13</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, I think they're important, though we could move some of that to simple startup time. The most critical checks are very fast.
+<a name="l-281"></a><span class="tm">19:52:37</span><span class="nk"> &lt;wumpus&gt;</span> e.g. broken signing is very, very bad
+<a name="l-282"></a><span class="tm">19:52:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I worry a lot about compiler bugs, our current make check is woefully inadequate (except the libsecp256k1 part, granted. :P )
+<a name="l-283"></a><span class="tm">19:52:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">cfields:</span> but the unittests themelseves don't run in parallel like the rpc/py tests, right?
+<a name="l-284"></a><span class="tm">19:53:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> (similar to how I nagged you to make those rng tests runtime and you did...)
+<a name="l-285"></a><span class="tm">19:53:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> not that i know
+<a name="l-286"></a><span class="tm">19:53:11</span><span class="nk"> &lt;gmaxwell&gt;</span> (thank you)
+<a name="l-287"></a><span class="tm">19:53:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> parallelism at multiple levels doesn't make much sense, there's only so many cores to go around
+<a name="l-288"></a><span class="tm">19:53:24</span><span class="nk"> &lt;jtimon&gt;</span> also, make check tests -j10 should pass -j10 down to the rpc-tester, right?
+<a name="l-289"></a><span class="tm">19:53:35</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> correct, we'd never survive that
+<a name="l-290"></a><span class="tm">19:53:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> we could probably define a subset of rpc tests that are fast and more useful than the unit tests.
+<a name="l-291"></a><span class="tm">19:53:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jtimon:</span> ooh yes, that'd be really nice
+<a name="l-292"></a><span class="tm">19:54:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yup. don't know if you saw the clang fsafe-stack issue that messes up deterministic signing
+<a name="l-293"></a><span class="tm">19:54:04</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well, current make check could be faster, I compile very fast, but then it gests stuck at 1 core running the tests
+<a name="l-294"></a><span class="tm">19:54:25</span><span class="nk"> &lt;jtimon&gt;</span> half the time I wait more for the unittests than to compile
+<a name="l-295"></a><span class="tm">19:54:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I didn't.
+<a name="l-296"></a><span class="tm">19:54:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> but cfields proposes running (some of) the qa tests at the same time
+<a name="l-297"></a><span class="tm">19:54:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> let me dig it up
+<a name="l-298"></a><span class="tm">19:54:57</span><span class="nk"> &lt;gmaxwell&gt;</span> Has anyone recently 'profiled' the tests to see where time is being spent?
+<a name="l-299"></a><span class="tm">19:55:12</span><span class="nk"> &lt;gmaxwell&gt;</span> I bet we have cases where 20% of the time is checking if addition works or something. :P
+<a name="l-300"></a><span class="tm">19:55:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> unit or rpc?
+<a name="l-301"></a><span class="tm">19:55:16</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">gmaxwell:</span> unit tests or rpc tests
+<a name="l-302"></a><span class="tm">19:55:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> https://github.com/bitcoin-core/secp256k1/issues/445
+<a name="l-303"></a><span class="tm">19:55:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> both.
+<a name="l-304"></a><span class="tm">19:55:33</span><span class="nk"> &lt;jnewbery&gt;</span> I've profiled rpc tests. A lot of time is spent in stopnode()
+<a name="l-305"></a><span class="tm">19:55:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> holy fuck!
+<a name="l-306"></a><span class="tm">19:55:53</span><span class="nk"> &lt;wumpus&gt;</span> both frameworks measure the time spent in every test, so profiling at that level is easy
+<a name="l-307"></a><span class="tm">19:55:58</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well, I suggest a different target, but if they don't depend on each other, I guess they would run "at the same time"
+<a name="l-308"></a><span class="tm">19:56:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> good for tests. (but as I said, we should make some of those runtime too)
+<a name="l-309"></a><span class="tm">19:56:08</span><span class="nk"> &lt;wumpus&gt;</span> I don't remember by heart which ones, though
+<a name="l-310"></a><span class="tm">19:56:12</span><span class="nk"> &lt;morcos&gt;</span> i believe the rpc tests could also be made faster if tx relay had a different poisson distribution for regtest or something... i seem to remember that being an issue
+<a name="l-311"></a><span class="tm">19:56:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> whoa. Isn't that default for clang now? Or proposed, at least?
+<a name="l-312"></a><span class="tm">19:56:51</span><span class="nk"> &lt;gmaxwell&gt;</span> regardless of the specific example, compiler bugs are a real thing.
+<a name="l-313"></a><span class="tm">19:57:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I think it's going to be more widely enabled, yes, though AFAIK not yet. I only caught it because cloudabi already has it as default
+<a name="l-314"></a><span class="tm">19:57:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jnewbery:</span> i'd be interested in your findings there
+<a name="l-315"></a><span class="tm">19:57:06</span><span class="nk"> &lt;gmaxwell&gt;</span> (though seeing them in rather boring C code is depressing)
+<a name="l-316"></a><span class="tm">19:57:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> in any case thats the best news all day! I've complained many times that our tests must suck because we've not found any miscompliation bugs.
+<a name="l-317"></a><span class="tm">19:57:49</span><span class="nk"> &lt;wumpus&gt;</span> (test_bitcoin -log_level=test_suite shows which unit tsts take so long. most are really fast! )
+<a name="l-318"></a><span class="tm">19:58:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> finally some evidence that our tests are potentially okay. :P
+<a name="l-319"></a><span class="tm">19:58:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> heh
+<a name="l-320"></a><span class="tm">19:58:32</span><span class="nk"> &lt;jnewbery&gt;</span> ok, sounds like there's no fundamental objection to at least doing some rpc tests in make check. I'll open a PR and we can continue discussion there.
+<a name="l-321"></a><span class="tm">19:58:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> and yes doing some quick secp256k1 tests at runtime would make a lot of sense
+<a name="l-322"></a><span class="tm">19:59:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> basic sanity is fairly easy to check
+<a name="l-323"></a><span class="tm">19:59:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> yes, and we should look at time measurements and rebalance the tests to be more useful.
+<a name="l-324"></a><span class="tm">19:59:12</span><span class="nk"> &lt;jnewbery&gt;</span> also, once 9956 is merged we can stop calling them rpc tests!
+<a name="l-325"></a><span class="tm">19:59:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I have a branch somewhere that adds some runtime selftests, but I think I got a bit carried away and put it aside. :P
+<a name="l-326"></a><span class="tm">19:59:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jnewbery:</span> Yes. I'd like to see that merged.
+<a name="l-327"></a><span class="tm">19:59:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> no, no fundamental objection. Just about speed but that doesn't depend on the language/framework
+<a name="l-328"></a><span class="tm">19:59:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> +1
+<a name="l-329"></a><span class="tm">20:00:01</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jnewbery:</span> I still heard no reason against adding a new target instead of reusing check
+<a name="l-330"></a><span class="tm">20:00:10</span><span class="nk"> &lt;wumpus&gt;</span> some of the qa tests are really fast, some of the unit tests really slow, indeed should rebalance testing bang for buck
+<a name="l-331"></a><span class="tm">20:00:19</span><span class="nk"> &lt;gmaxwell&gt;</span> https://github.com/bitcoin-core/secp256k1/pull/217  (but I'd probably toss that and take a somewhat different approach now)
+<a name="l-332"></a><span class="tm">20:00:22</span><span class="nk"> &lt;wumpus&gt;</span> it's time
+<a name="l-333"></a><span class="tm">20:00:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
