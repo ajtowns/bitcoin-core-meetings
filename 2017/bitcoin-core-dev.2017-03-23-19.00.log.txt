@@ -1,0 +1,340 @@
+19:00:20 <wumpus> #startmeeting
+19:00:20 <lightningbot> Meeting started Thu Mar 23 19:00:20 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:20 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:20 <sipa> hi
+19:00:20 <achow101> hi
+19:00:27 <gmaxwell> Welcome to meeting.
+19:00:34 <cfields> hi
+19:00:50 <btcdrak> greetings!
+19:00:57 <wumpus> proposed topics?
+19:01:14 <btcdrak> holiday at the beach?
+19:01:27 <petertodd> btcdrak: that's what the financial crypto conference is for
+19:01:29 <gmaxwell> wumpus: The segwit address proposal on the list.
+19:01:35 <petertodd> gmaxwell: +1
+19:01:37 <wumpus> sounds good to me
+19:01:39 <btcdrak> +1
+19:01:44 <wumpus> #topic  segwit address proposal
+19:01:53 <jonasschnelli> proposed topic: DER encoded priv keys in wallet
+19:02:05 <jonasschnelli> ack #sw addr format
+19:02:12 <sipa> general opinions/questions about the segwit addr format?
+19:02:25 <gmaxwell> We might have made a strategic error in getting 1:1 comments from too many people, causing a darth of comments on the list.  Comments on the list would be good even if they're just "I reviewed this before, LGTM"
+19:02:26 <jonasschnelli> Andreas S. concern about QRCode?
+19:02:44 <kanzure> who has reviewed bech32 by now?
+19:02:45 <btcdrak> ML post is here https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-March/013749.html
+19:03:03 <sipa> jonasschnelli: petertodd responded, by i can give some extra commemtd
+19:03:04 <petertodd> gmaxwell: along thsoe lines, I think making some of those 1:1 comments public might be helpful for new devs interested in learning how these processes work
+19:03:06 <sipa> *commemts
+19:03:10 <jonasschnelli> IMO QRCode have redundant parts while - as far as I understand bech32 – has also error correction.. seems a bit unefficient. Though QRCode are another layer I guess.
+19:03:47 <jonasschnelli> (need to read petertodd's response; wasn't aware(
+19:03:55 <gmaxwell> jonasschnelli: He suggested it use more characters but using anything non-alphanum makes it so double click copy doesn't work in browsers,  also being a non power-of-prime base makes strong error detection infesable, and at best could reduce the size by a couple percent.
+19:04:09 <gmaxwell> These points are all addressed in the document, I believe.
+19:04:29 <kanzure> tromp's MiXcAsE proposal was a joke right?
+19:04:43 <sipa> gmaxwell: base 43 is actually totally doable as it is a prime
+19:04:46 <petertodd> gmaxwell: there's a few things that the document doesn't mention as clearly as it could, like how non-alphanum poses barriers for non-english-speaking users
+19:04:50 <wumpus> jonasschnelli: I don't think the qr error detection/correction is strong enough for somthing as critical to get right as an address
+19:04:51 <gmaxwell> (in fact in an earlier revision we used - as a seperator but dropped it for click copy compatibility)
+19:04:51 <sipa> gmaxwell: but it requires bignum code to convert
+19:05:04 <jonasschnelli> wumpus: Yes. Agree.
+19:05:24 <sipa> petertodd: feel free to suggest better language :)
+19:05:29 <gmaxwell> wumpus: it would probably be fine if we only ever used QR codes.. but obviously that isn't possible.
+19:06:03 <petertodd> sipa: will do - also thanks for having such a great list of rationals already! really helpful to understand why something was chosen and what the tradeoffs are
+19:06:09 <gmaxwell> petertodd: yes, though really being num only be best for international support but the result is significantly bigger and slower to deal with. :(  I tried that out at one point.
+19:06:13 <wumpus> gmaxwell: a more compact format could be used with qr codes, in any case, if that's desirable. That doesn't affect this standard.
+19:06:21 <luke-jr> QR codes could hypothetically encode it in binary, but meh
+19:06:43 <kanzure> rationale section was good, although i think it would be worthwhile to describe the 'exhaustive search'
+19:06:47 <kanzure> in public
+19:06:49 <wumpus> luke-jr: right.
+19:06:59 <gmaxwell> luke-jr: if we had a binary QR only format I assume it would intentionally begin with something like a null byte to make sure it doesn't get mangled by text channels.
+19:07:14 <petertodd> gmaxwell: yeah, we're fortunate that lots of non-english-speakers still known the alphabet; even english speakers often don't know the names of punctuation symbols, and those names are also not entirely canonical
+19:07:57 <jonasschnelli> It's probably not worth to design an additional binary addr standard for QrCodes. Maybe they are only temporary? Gone in 3-4 yrs?
+19:08:04 <gmaxwell> There were a lot of other rational things we trimmed from the document. One of pieter's concerns was that the length of the document would make it seem complicated (though the proposal is pretty simple.); feedback on reddit seemed to somewhat validate that.
+19:08:12 <petertodd> luke-jr: so by matchin QR code's special-case character set support, we end up with an encoding that at the low level is basically binary anyway
+19:08:35 <gmaxwell> jonasschnelli: I think that it's probably not worth it for that, but industry feedback would be nice.
+19:08:50 <gmaxwell> petertodd: thats a point, though the unfortuate thing is that it's exposed to mangling.
+19:09:04 <sipa> the alphanuneric mode is pretty efficient; only 10% extra compared to binary
+19:09:12 <sipa> it uses 5.5 bits per character
+19:09:16 <gmaxwell> e.g. QR decoder -> something that munges up the strings -> software -> coins in sppppaccccceeee.
+19:09:24 <sipa> so 5.5 bits per 5 bits of data is pretty goof
+19:09:26 <sipa> good
+19:09:34 <petertodd> jonasschnelli: I think the day Qr codes aren't heavily used will be the day bech32 is irrelevant anyway because people are all paying each other by very different means :)
+19:09:49 <jonasschnelli> probably... :)
+19:10:04 <sipa> while base58 uses 8 bits per 5.86 bits of data
+19:10:15 <gmaxwell> sipas point is more important, only a 10%-ish overhead in this format vs some binary QR code.
+19:10:50 <sipa> if you also drop the checksum, we get much larger savings of course
+19:11:13 <sipa> in practice you'd get a 25% reduction for p2wpkh
+19:11:23 <jonasschnelli> side note: could the Bech32 encoding also be used for private keys (== 32bit seeds)?
+19:11:29 <gmaxwell> true. but ugh. the some text handling path replaces a character.
+19:11:31 <sipa> jonasschnelli: good question!
+19:11:37 <wumpus> indeed, for base58 addresses there also never has been a binary standard for qr codes
+19:11:44 <sipa> jonasschnelli: we've been thinking about a stronger checksum for private keys
+19:11:45 <Anduck> QR codes iirc can work even if 30% of the code misread
+19:11:46 <wumpus> which would have saved a lot more
+19:12:03 <petertodd> jonasschnelli: yes - in fact I'm planning on using it for non-bitcoin applications too
+19:12:06 <sipa> possibly 12 checksum characters (which is the maximum doable with 64 bit arithmetic)
+19:12:24 <jonasschnelli> Yes. An alternative for bip39?
+19:12:42 <gmaxwell> For private keys additional error _correction_ is interesting, and additional overhead is not very consequential.
+19:12:59 <sipa> bech32 can only correct 2 errors, but detect 4
+19:13:22 <sipa> for addresses you really only care about detection
+19:13:29 <sipa> but for private keys you want correction
+19:13:37 <wumpus> yes, quite a different use case
+19:13:45 <gmaxwell> So we've been working on that some in the background. So it would be a different spec but just very similar. (e.g. similar kind of 5 lines of code) for the 12 digit checksum or what not.
+19:13:58 <sipa> with a 12 character checksum, correcting 3 errors is trivial
+19:14:07 <jonasschnelli> current WIF can correct 0.
+19:14:15 <sipa> but perhaps we can find one that can correct 4
+19:14:20 <gmaxwell> kanzure: we left out a lot of technical manutia about the construction which is interesting but not really relevant to the spec.
+19:15:05 <wumpus> makes sense to keep the spec focused and minimal, that way people will more likely read it :) you could link to an additional description, or include it as appendix or such
+19:15:42 <sipa> earlier version explained finite field arithmetic and generator polynomials :)
+19:15:45 <petertodd> wumpus: maybe good to make it a spec + design document? put rational/etc. in the latter. IIRC SHA3 had a document like that, among others.
+19:15:58 <wumpus> petertodd: yes indeed
+19:16:05 <jonasschnelli> The question about the level of complexity: We should't care. Pieter's stuff tend to be complicated. But only because its great and though through well. Awesome work IMO!
+19:16:06 <jtimon> I haven't fully reviewed it, but I've had a fast read on several versions of the doc and asked questions to sipa
+19:16:42 <gmaxwell> Finding a 12-digit code that corrects 4 may take more computing power than we have with just the a hundred cores here... though sipa has done a lot to take that search from completely intractable to plausable. :)   I think this work is a lot lower priority though other things we could be working on (like utxo database refactors and tx compaction) ....
+19:17:27 <sipa> jonasschnelli: i think the result is actually surprisingly simple
+19:17:50 <sipa> (but i'm probably biased)
+19:17:52 <gmaxwell> In any case, review and comment please!
+19:17:59 <luke-jr> I think it's more important to *detect* errors, than to correct them
+19:18:07 <sipa> luke-jr: for addresses, absolutely
+19:18:19 <luke-jr> 4 seems a bit low in that regard
+19:18:51 <jonasschnelli> sipa: I think deeply understanding the specs takes a coupe of hours... and it's different to the current base58check. This may frighten off people... but that shouldn't be something that should affect the process of selecting the *next* addr encoding format IMO
+19:18:53 <gmaxwell> luke-jr: for private keys you can generate the resulting wallet and check against the blockchain.. so correcting can be very useful.
+19:18:53 <petertodd> luke-jr: what do you mean by "4" in the above?
+19:19:12 <luke-jr> [19:12:59] <sipa> bech32 can only correct 2 errors, but detect 4
+19:19:36 <gmaxwell> Well it is _guarenteed_ to detect 4 errors, more than 4 you have a 1:2^30 chance of detecting.
+19:19:56 <sipa> luke-jr: well it has a 99.9999999068% chance to detect more errors
+19:19:58 <luke-jr> if I carefully construct gibberish, I'd expect it to be rejected
+19:20:14 <luke-jr> sipa: ah, okay
+19:20:38 <petertodd> luke-jr: for this application, the threat is random mistakes, not malice - in the malice case someone could just replace the address anyway
+19:20:50 <gmaxwell> This graph shows the probablity of an error going undetected (y) as a function of how likely the user is to make mistakes (x):
+19:20:53 <gmaxwell> https://people.xiph.org/~greg/temp/bch-eff3.png
+19:21:08 <sipa> jonasschnelli: https://github.com/sipa/bech32/blob/master/ref/python/segwit_addr.py <- full encoder/decoder implementation
+19:21:13 <cfields> great work indeed. From what I remember from our discussions before, the work to derive the function was complex, but afterwards, implementing it is simple. Seems best-case to me :). Will review now that it's final.
+19:21:42 <jonasschnelli> sipa: 121 lines... yes. thats indeed very simple.
+19:21:50 <gmaxwell> As you can see, if the user's error rate is below 3.53 errors per address entered, this code has better protection than a 32bit hash (like base58 check uses).  And because of case modulation, users are MUCH less likely to make mistakes with this format.
+19:22:38 <gmaxwell> If the user is unlikely to make errors, then the effective protection of this scheme tends to infinity.
+19:23:22 <gmaxwell> e.g. 0.1% chance of error per character and the probablity that an errored string goes undetected is 1:2^60.
+19:23:40 <sipa> enough on this topic, i guess
+19:24:10 <wumpus> other topics?
+19:24:18 <gmaxwell> jonasschnelli suggested the der wallet thing.
+19:24:30 <jonasschnelli> Yes. We still keep all priv keys DER encoded in BDB
+19:24:47 <jonasschnelli> I think we should bundle the next wallet db update with remvoing DER
+19:24:50 <gmaxwell> The compressed flag has no effect on our operation. We should always set it IMO... make the wallet sightly smaller. Its dumb that the data is stored at all.. it's not used.  But since it's there, better to make it small.
+19:25:04 <gmaxwell> if we make the format incompatible, sure.
+19:25:29 <jonasschnelli> Reading DER (old versions) must be supported. But new wallets should store in plain.
+19:25:33 <wumpus> #topic DER privkeys in wallet
+19:25:33 <gmaxwell> Why are we even storing seralized private keys when BIP32 is in use?
+19:25:41 <jonasschnelli> Yes.
+19:25:44 <jonasschnelli> Importprivkey
+19:25:48 <jonasschnelli> and old wallets
+19:26:00 <jonasschnelli> But I think HD wallets should only have a single privkey (the HD seed)
+19:26:02 <gmaxwell> okay, for that, sure. But I agree, fine to not use DER private keys for that.
+19:26:22 <jonasschnelli> Also the seed key is also DER right now. :/
+19:26:27 <gmaxwell> but otherwise there shouldn't be seralized private keys. Pubkeys yes. :)
+19:26:37 <gmaxwell> wut
+19:26:52 <jonasschnelli> Yes. Ideally it should be... and I think we are working in this direction...
+19:26:55 <wumpus> didn't we have an issue related to this?
+19:26:56 <gmaxwell> okay well, whatever, there is only one there. We could encode it as cat pictures for all I care.
+19:26:56 <phantomcircuit> yeah it's saved using the same format as other private keys
+19:27:26 <gmaxwell> wumpus: there is an issue open over the compressed flag, though its inconsequential.
+19:27:31 <jonasschnelli> wumpus: Yes. https://github.com/bitcoin/bitcoin/issues/10041
+19:27:38 <wumpus> gmaxwell: ok
+19:27:44 <jonasschnelli> and a fix: https://github.com/bitcoin/bitcoin/pull/10043
+19:27:56 <wumpus> I wasn't aware it was inconsequential
+19:27:58 <gmaxwell> I think that to the extent that we continue to write those keys (e.g. for old wallets) that we should always use the compressed flag.
+19:28:00 * luke-jr ponders if importprivkey should be rejected for HD wallets
+19:28:02 <wumpus> did anyone reply that to the issue?
+19:28:03 <jonasschnelli> Though,... as long as nobody reads BDB from the outside it shoudn't matter
+19:28:07 <gmaxwell> wumpus: we decided compressed/uncompressed from the pubkey.
+19:28:24 <gmaxwell> wumpus: the public key inside the der private key does nothing.
+19:28:25 <wumpus> luke-jr: would be nice to keep HD wallets 'pure'
+19:28:34 <wumpus> luke-jr: at the least it should throw a warning
+19:28:51 <wumpus> gmaxwell: weird :)
+19:28:52 <jonasschnelli> luke-jr: Yes. We should reject... in that case
+19:28:55 <luke-jr> if we could do warnings, importprivkey should always throw a warning anyway :p
+19:29:02 <gmaxwell> Background: The DER private key format includes the public key, along with all the ECC group parameters, and other overheads all packed in hundreds of bytes of ASN1 parsing hell.
+19:29:14 <jonasschnelli> wumpus: Yes. It wired... better DER is gone sooner then later
+19:29:29 <jonasschnelli> It would be another thing that will make future devs stumbel
+19:29:34 <wumpus> agreed
+19:29:49 <wumpus> so if there is a backwards-incompatible wallet change, that could be included, I guess
+19:29:54 <gmaxwell> Turns out we were trying to tell the der private key to use compressed or not on the basis of the key using compressed or not...  but the code was wrong. But it doesn't matter because we never did anything with the private key embedded public key.
+19:30:12 <jonasschnelli> wumpus: Yes. The hd chain split...
+19:30:23 <jonasschnelli> (which we hopefully can merge soon)
+19:30:28 <wumpus> jonasschnelli: right
+19:30:55 <jonasschnelli> I think we would have enought time post hd split merge to remove DER for 0.14
+19:31:00 <gmaxwell> we should stage up several incompatible changes to make at once, the multitude of versions is a support burden. Changing the private key formats would be one of them.
+19:31:09 <luke-jr> jonasschnelli: 0.14 is gone; you mean 0.15?
+19:31:13 <BlueMatt> 15
+19:31:22 <jonasschnelli> Ergh.. yes.
+19:32:13 <jonasschnelli> Do we expect that the wallet db handles error correction or should we directly switch to something like Bech32 for our internal privkey serialisation?
+19:32:19 <BlueMatt> gmaxwell: the code looks the same either way? wallet version 14990 14991 14992 can all be in the same release, whatever...code is still wallet.AmUpgradedTo(THING)
+19:32:54 <gmaxwell> in our code but not necessarily in other tools.
+19:33:00 <gmaxwell> also we have to worry about interactions.
+19:33:27 <BlueMatt> fair
+19:33:37 <wumpus> the wallet db has no error correction
+19:33:38 <BlueMatt> gmaxwell: to be clear, are you suggesting they all happen in one wallet version, or in one release?
+19:33:55 <BlueMatt> (I mean we dont support wallet versions from mid-release, but it'd be really annoying...)
+19:34:02 <jonasschnelli> wumpus: I think this would/should be very desirable
+19:34:04 <wumpus> (berkeleydb doesn't and neither does leveldb, the latter only has detection)
+19:34:15 <wumpus> jonasschnelli: yes, encoding privkeys in a resilient format makes sense
+19:34:20 <wumpus> jonasschnelli: though doesn't encryption break that?
+19:34:30 <wumpus> jonasschnelli: the error correction should be around the encryption, not inside it
+19:34:41 <wumpus> otherwise one bit change will  completely mangle it anyway
+19:34:44 <gmaxwell> BlueMatt: preferable to be one version, but certantly one release. I don't know that we really don't support midrelease wallets. "sorry dude, your funds are gone, you made the mistake of helping us test." :P  there are degrees of non-support.
+19:34:48 <luke-jr> we have never broken wallet versions from mid-release AFAIK
+19:34:50 <jonasschnelli> wumpus: good point
+19:35:18 <gmaxwell> bech32 is not helpful for the kinds of errors we would find on disk.. you'll usually lose a whole sector at a time.
+19:35:24 <wumpus> eh, wallets from mid-release should not suddenly break in later updates
+19:35:45 <jonasschnelli> There is also a PR i'd like to bundle with chain-split/rm DER that would detatch the client version from the wallet version/migration handling (PR is called "wallet flags" or similar)
+19:35:48 <gmaxwell> To make a wallet database master key error robust you should just repeat it across multiple disk sectors. :P
+19:36:01 <wumpus> gmaxwell: I've seen single bit errors happen on disk too, though usually due to bus errors
+19:36:28 <gmaxwell> wumpus: yea, but not as common. And it would be fine to have a wallet format with a 4kb master key. .. but I think thats stuff to think about for the post BDB world.
+19:36:30 <petertodd> wumpus: repeating across multiple disk errors fixes that too :)
+19:36:33 <wumpus> but some of the corrupted block files I"ve analyzed certainly had single bit errors
+19:36:47 <gmaxwell> sorry I stated it too strongly.
+19:37:18 <wumpus> in any case - for HD wallets we need to store way less private keys
+19:37:22 <wumpus> so blowing up the master key to 4kb is fine
+19:37:32 <gmaxwell> ya, t'was my intended point. :)
+19:37:35 <wumpus> if that helps protect against various kinds of corruption
+19:37:40 <BlueMatt> gmaxwell: ok, so multiple version numbers, but external tools only need support them as a group and -walletupgrade only supports them as a group?
+19:38:16 <sipa> the wallet flags idea removes that release/walletversion inconsistency completely
+19:38:16 <gmaxwell> BlueMatt: I think that would be okay but why multiple versions? add the code with the features, then a patch that turns all of them on with a single version.
+19:38:52 <sipa> gmaxwell: that's very hard for testing
+19:39:16 <sipa> as you'd need to be able to override the min version in tests to be able to even observe the feature
+19:39:19 <BlueMatt> yea, was just thinking easier for review burden, but I suppose thats fine too
+19:39:35 <BlueMatt> sipa: not so hard to have an extra commit in a pr that doesnt get merged
+19:39:44 <sipa> BlueMatt: ugh
+19:39:48 <gmaxwell> we just create support hurdles for ourselves supporting mixed features. "oh this change brakes bob's wallet because he had a mid-release version that had X and not Y"
+19:39:54 <sipa> code in master should be testable
+19:40:19 <sipa> wallet flags does not necessarily imply supporting mixed features
+19:40:41 <gmaxwell> As long as it doesn't then I don't mind.
+19:40:56 <gmaxwell> Just please lets not dribble in three different incompatible versions during a release cycle.
+19:41:03 <BlueMatt> jonasschnelli: detaching client version, fine, but would strongly prefer a serially increasing version number and not flags
+19:41:06 <gmaxwell> and end up with people with weird wallets that will break later.
+19:41:24 <sipa> we could also detach walletversion from client version
+19:41:32 <sipa> that would accomplish the same thing
+19:41:38 <BlueMatt> yea, that ^
+19:41:41 <gmaxwell> unless we're going to add tests for all the possible variations we shouldn't let people running master encounter them unawares.
+19:41:46 <sipa> and just increment the wallet version when a new feature is added
+19:41:52 <BlueMatt> wasnt sipa magic number picker for a while? can we just go back to that
+19:42:12 <BlueMatt> or jonasschnelli, since he owns wallet these days, mostly
+19:42:21 <gmaxwell> for testing you should just be able to set a commandline paramter that turns on future versions/features.
+19:42:51 <gmaxwell> e.g. default wallet created is version X  but there is code for version Y (or flag Y) and you can ask for it for testing, but until its the default its unstable and all bets are off.
+19:43:13 <jonasschnelli> Need to think about it. Flags seems to be good anyways (supports HD, watch only,...) but most not be linked to the wallet database version.. hmm..
+19:43:25 <gmaxwell> I don't care if we retain compatiblity for a wallet someone created by running bitcoind with --force-wallet-screw-me-over-now-now-now
+19:43:28 <jonasschnelli> s/most/must
+19:44:06 <BlueMatt> jonasschnelli: flags just makes things more complicated to support (interactions, yuck), and I'm not sure we have a compelling use-case for turning on some stuff but not others, aside from "I want my wallet to work all the way back to version 0.X"
+19:44:11 <gmaxwell> And I'm fine with flags too, of course, but not with supporting arbritary combinations. (unless someone really wants to build extensive automated testing for all the combinations)
+19:44:37 <luke-jr> BlueMatt: Core isn't the only compatible wallet.
+19:44:47 <gmaxwell> e.g. basically a version implies flags... and you use flags in the code, and that doesn't mean that all combinations of flags get tested.
+19:45:13 <BlueMatt> luke-jr: all other wallets that read our wallet format are unsupported, I believe (and, hell, probably easier for them if we dont have flags with interactions...)
+19:45:15 <jtimon> right, you can have flags and maybe even have debug option for experimental wallet features that we can remove in releases (or just not leave any wallet feature that doesn't have a version yet)
+19:45:22 <jonasschnelli> Flags would allow flexible backporting? But I think we don't want to do this.
+19:45:35 <jtimon> or just an extra commit that doesn't get merged like BlueMatt says
+19:45:40 <luke-jr> BlueMatt: you're rather aggressive with "unsupported" IMO
+19:45:42 <wumpus> we never backport wallet features
+19:45:54 <gmaxwell> luke-jr: Our _binary_ wallet format isn't intended to be interoperable. If it is, great! but without a spec and a moving target, it isn't something we can guaretee.  To begin with there would need to be an extensive all features all flags test suite... and I think it would be a waste of time to construct that for this format (esp since we're never going to specify BDB itself).
+19:45:57 <BlueMatt> luke-jr: we have limited resources, but, fair point
+19:46:11 <wumpus> yes, the database formats are not an external interface
+19:46:58 <wumpus> we reserve the right to change them completely from one release to another without advance notice, though that will usually not happen
+19:47:05 <gmaxwell> I don't know if wallet format compatiblity is a reasonable goal in general, at least not this year-- just because it's so integrally tied to the functionality.
+19:47:27 <wumpus> older wallets should *always* work
+19:47:34 <wumpus> that's the only guarantee
+19:47:36 <gmaxwell> but obviously we don't want to create unnecessary incompatiblity.
+19:47:43 <gmaxwell> right.
+19:47:51 <gmaxwell> okay, is this horse dead yet?
+19:47:55 <wumpus> yes
+19:47:57 <jonasschnelli> yes
+19:47:59 <wumpus> other topics?
+19:48:07 <sipa> lunch?
+19:48:11 <gmaxwell> I'd like to know if people might be willing to sign onto a statement like this:
+19:48:12 <luke-jr> wallet format changes move slowly. I try to avoid backporting pending PRs to Knots now, but IMO once they get merged they should be fair.
+19:48:15 <gmaxwell> https://0bin.net/paste/vSuqwACPe8WzpCnI#4katsiFvmtzK85e8eNgNVuElwD8kTbjPVuQnkontSyF
+19:48:17 <gribble> https://github.com/bitcoin/bitcoin/issues/4 | Export/Import wallet in a human readable, future-proof format · Issue #4 · bitcoin/bitcoin · GitHub
+19:48:29 <jtimon> sorry, "--force-wallet-screw-me-over-now-now-now" is exactly what I meant
+19:48:32 <petertodd> gmaxwell: ACK
+19:48:32 * BlueMatt proposes we have a weekly call for "what pr are you blocked on and want review on", though we've had mixed results when I've done that before
+19:48:36 <gmaxwell> (gee thanks for the link gribble)
+19:49:06 <wumpus> #topic statement against running closed source node code
+19:49:16 <kanzure> "If it ever does, you may safely assume that the actual contributors to the project are locked in a basement somewhere. In that case, please send help." and food
+19:49:21 <luke-jr> gmaxwell: I haven't thought about it sufficiently to be certain about "never"
+19:49:23 <wumpus> gmaxwell: ACK
+19:49:30 <petertodd> gmaxwell: though I think the statement should be a little more clear on what the risks are - this is money so such a binary may very well be an attempt to steal your coins
+19:49:51 <wumpus> or may have hidden vulnerabilities, bugdoors and backdoors
+19:50:01 <BlueMatt> gmaxwell: seems reasonable
+19:50:04 <jtimon> BlueMatt: the original flags can be replaced with the version flag once you have a version for a set of them
+19:50:07 <kanzure> yep seems good to me
+19:50:20 <gmaxwell> luke-jr: I think I have, plus 1001 other open source packages have. As I point out in the document even if all other options fail, "shut off" remains an option too.
+19:50:27 <jonasschnelli> Yes. A statement would be good. Also.. github.binaries with a SHA256 on reddit is _not_ want you want for a such ecosystem
+19:50:31 <luke-jr> true
+19:50:41 <petertodd> wumpus: see, I think it's good to say in such a statement "hidden vulnerabilities, bugdoors and backdoors" and *also* give a 100% concrete example for the non-devs reading it
+19:50:41 <jtimon> I mean, you can have a single fWalletForNextVersionExperimental flag
+19:50:42 <gmaxwell> okay well I would welcome revisions. I didn't want to make it long and explaining all the options and risks.
+19:50:58 <gmaxwell> Just saying "don't run these things if 'we' do" is protective to both the users and us.
+19:51:04 <wumpus> we have this stringent gitian process which costs quite a lot of time, maybe we should put more focus on it...
+19:51:34 <gmaxwell> In any earlier draft I had listed out some of the options we have (and have used before) and it was 3x longer than this just explining a couple of them. :)
+19:51:45 <kanzure> also, submitting source code "later" is not acceptable either
+19:51:47 <achow101> the statement should say "Bitcoin Core project", not "Bitcoin project" IMO
+19:51:52 <wumpus> I sometimes have the feeling we're doing all this auditability for nothing if people are ready to just download random crap binaries of the internet and run them, though I guess some do validate it...
+19:52:07 <gmaxwell> wumpus: well we know not everyone does that.
+19:52:19 <sipa> wumpus: i think it's a slow process... the best we can do is talk about it, and highlight what we're doing
+19:52:37 <sipa> and just the increase in number of gitian builders on itself is a good sign
+19:52:40 <kanzure> mentioning bugdoors, backdoors and other malware is important
+19:52:46 <sipa> (reminds me, i need to build 0.14...)
+19:53:05 <petertodd> wumpus: I know for a fact that many high-value users do verify PGP signatures and the like, e.g. exchanges and custodians. That effort isn't wasted.
+19:53:07 <gmaxwell> okay, well I can work with some people on some language twiddling. Sounds like a couple people are interested.
+19:53:20 <wumpus> I guess the important thing is that some people do validate it, and can raise a stink if things don't match, which is not possible with random crap executables
+19:53:28 <wumpus> petertodd: right.
+19:53:29 <gmaxwell> and luke-jr if you want to talk later and have me convince you that we'd would never in the future do a binary release, I'd be happy to.
+19:53:39 <BlueMatt> one of these days I'm gonna finally convince cfields to finish his "trusting trust" compiler-builder for use in gitian, then I'll be much louder...the trusting-ubuntu part of gitian is...irritating at best (but still infinitely better than the alternative)
+19:53:48 <gmaxwell> (_NEVER_ I mean, in the strongest sense, I'm sure you already are convinced that almost never would hold)
+19:54:09 <luke-jr> yeah, I certainly can't think of any circumstances that would ever justify it.
+19:54:42 <cfields> BlueMatt: yea, that's a goal of mine for 0.15.
+19:54:43 <petertodd> gmaxwell: I like that you explicitly mentioned in that doc that interruption of service is perferable
+19:54:54 <BlueMatt> cfields: yippee
+19:55:02 <BlueMatt> topic?
+19:55:11 * BlueMatt proposes we have a weekly call for "what pr are you blocked on and want review on", though we've had mixed results when I've done that before
+19:55:26 <gmaxwell> petertodd: well I tested some of this explination on reddit while talking to people 1:1 about some things. so I have an idea of what needs to be explained.
+19:55:34 <jtimon> gmaxwell: I would prefer if we mentioned free software explicitly or even replace open source with free software, but I agree with everything said in that statement
+19:55:36 <sipa> BlueMatt: sounds good to me
+19:55:43 <sipa> BlueMatt: everyone gets to list 1 PR?
+19:55:49 <BlueMatt> sipa: sure
+19:55:51 <jonasschnelli> Maybe two? :)
+19:55:58 <BlueMatt> mine is 9725
+19:56:02 <gmaxwell> jtimon: ack. Thanks for the feedback I'll revise some and consult with others that had comments.
+19:56:06 <jonasschnelli> #9725
+19:56:09 <gribble> https://github.com/bitcoin/bitcoin/issues/9725 | CValidationInterface Cleanups by TheBlueMatt · Pull Request #9725 · bitcoin/bitcoin · GitHub
+19:56:11 <wumpus> so jonasschnelli's wallet chain split seems important
+19:56:21 <jonasschnelli> yes. please. #9294
+19:56:25 <gribble> https://github.com/bitcoin/bitcoin/issues/9294 | Use internal HD chain for change outputs (hd split) by jonasschnelli · Pull Request #9294 · bitcoin/bitcoin · GitHub
+19:56:26 <kanzure> on that last topic, uh, maybe wee should point out that backdoors have been found in node software already (ahem some exchanges come to mind..).
+19:56:33 <BlueMatt> list from last week was #8694, 9294, 9725 and #7729
+19:56:35 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:56:39 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:57:06 <BlueMatt> any additions/replacements or should we let the list stand?
+19:57:47 <gmaxwell> #9959 could probably take some more reviews.
+19:57:48 <wumpus> I'd also really like to have feedback on my patches to add UNIX sockets support at some point (#9979,  #9919) though it's not really urgent
+19:57:49 <gribble> https://github.com/bitcoin/bitcoin/issues/9959 | Mining: Prevent slowdown in CreateNewBlock on large mempools by sdaftuar · Pull Request #9959 · bitcoin/bitcoin · GitHub
+19:57:50 <gribble> https://github.com/bitcoin/bitcoin/issues/9979 | p2p: Bare minimum to support UNIX sockets by laanwj · Pull Request #9979 · bitcoin/bitcoin · GitHub
+19:57:52 <gribble> https://github.com/bitcoin/bitcoin/issues/9919 | UNIX sockets support for RPC by laanwj · Pull Request #9919 · bitcoin/bitcoin · GitHub
+19:58:05 <gmaxwell> (suhas doesn't appear to be here now, so I thought I'd mention it)
+19:58:07 * jtimon reminds to build 0.14
+19:58:30 <luke-jr> I still have to look over BlueMatt's review on multiwallet, so I'll refrain from listing one this time ;)
+19:58:34 <gmaxwell> wumpus: Those are a great idea. I will be trying them out. Did we find out if your patch to libevent is going to make it upstream?
+19:58:35 <cfields> wumpus: ah, i hadn't seen the p2p one
+19:58:40 <jonasschnelli> Can we keep the most important 1PR list on github somehow? A project?
+19:58:57 <sipa> jonasschnelli: sounds good to me
+19:59:02 <jonasschnelli> I think this would be great because priorizing reviews is hard right now
+19:59:10 <wumpus> gmaxwell: still haven't heard about that one, but I don't think it should matter for getting these patches in
+19:59:11 <sipa> a PR can belong to multiple projects, right?
+19:59:21 <gmaxwell> keep in mind to prioritize things that we would want in a 0.14.1.
+19:59:23 <wumpus> sipa: AFAIK yes
+19:59:26 <jonasschnelli> hopefully
+19:59:29 <luke-jr> PR labels seems workable for that too
+19:59:37 <wumpus> we already have so many labels
+19:59:39 <luke-jr> "Top Priority" or somethign perhaps
+19:59:48 <luke-jr> wumpus: but labels are easy to filter :D
+19:59:59 <wumpus> also I use those to classify pulls for the release notes, so I'd prefer not to use them for non-categoritical things
+20:00:04 <jonasschnelli> Project seems to be the better choice...
+20:00:07 <wumpus> yes
+20:00:12 <gmaxwell> "author:wumpus" (since he does most of the merging any of his PRs are effectively 1-reviewer disadvantaged for getting in)
+20:00:17 <sipa> DONG
+20:00:29 <wumpus> #endmeeting
