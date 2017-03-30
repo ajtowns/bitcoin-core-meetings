@@ -1,0 +1,339 @@
+19:01:18 <wumpus> #startmeeting
+19:01:18 <lightningbot> Meeting started Thu Mar 30 19:01:18 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:18 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:41 <instagibbs> hi
+19:01:46 <jeremyrubin> here
+19:01:56 <wumpus> BlueMatt: it shouldn't matter for the AbortNode() case though. Just make the conditional wait 200 milliseconds or so
+19:02:03 <jtimon> topics?
+19:02:24 <wumpus> doesn't matter if signals are slightly delayed
+19:02:30 <BlueMatt> wumpus: the wait is already 200ms
+19:02:30 <wumpus> yes, topics?
+19:02:34 <BlueMatt> talk about abortnode
+19:02:36 <BlueMatt> thats a reasonable topic
+19:02:38 <wumpus> BlueMatt: yes, but make it a wait on a conditional
+19:02:44 <BlueMatt> mmm, fair
+19:02:56 <BlueMatt> yes, for sigterm its reasonable to wait a few 100 ms
+19:03:03 <BlueMatt> for AbortNode it'll wake it immediately
+19:03:06 <wumpus> right.
+19:04:15 <BlueMatt> in other news, so we got 1/6 "Review Priority" PRs merged this week, that's ok, but we can do better :)
+19:04:45 <BlueMatt> oh, nvm, got 2/6
+19:04:49 <wumpus> FYI: https://github.com/bitcoin/bitcoin/projects/8
+19:05:26 <gmaxwell> BlueMatt: 2/6.
+19:05:28 <wumpus> removed the two that have been merged
+19:05:28 <jtimon> I don't think anyone commented in mine, at least I got review in others
+19:05:49 <gmaxwell> I forgot about the project tracker thing, but reviewed some of them anyways.
+19:06:32 <wumpus> doesn't matter, we'll only add pulls that were mentioned to have priority in the meeting to that project tracker, so if you pay attention at the meeting you don't need it :)
+19:07:31 <wumpus> anyhow, everyone go review them
+19:08:21 <wumpus> topic: 0.14.1?
+19:08:29 <bitcoin-git> [13bitcoin] 15sipa opened pull request #10126: Compensate for memory peak at flush time (06master...06peak_compensation) 02https://github.com/bitcoin/bitcoin/pull/10126
+19:08:29 <gmaxwell> Yes, please.
+19:08:33 <jeremyrubin> topic: slow tests?
+19:08:37 <wumpus> #topic 0.14.1
+19:09:02 <achow101> already?
+19:09:25 <gmaxwell> yes. lots of nice fixes to ship. Minor releases are minor.
+19:09:39 <sipa> we have 11 merged PRs marked 0.14.1
+19:09:59 <wumpus> and three open pulls https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.14.1
+19:10:32 <wumpus> sipa: only one still has the "needs backport" tag, I think MarcoFalke ported the rest
+19:10:44 <gmaxwell> I think when we get those three in and those and the recent ones backported, we should be goof for a 0.14.1.
+19:11:11 <gmaxwell> good too.
+19:11:41 <wumpus> agreed
+19:12:45 <wumpus> ok, next topic I guess
+19:12:48 <wumpus> #topic slow tests
+19:13:11 <wumpus> I made an overview here: https://github.com/bitcoin/bitcoin/issues/10026  of the slowest unit tests
+19:13:15 <jeremyrubin> A lot of it is my fault it seems. https://github.com/bitcoin/bitcoin/pull/10099 is ready to go
+19:13:27 <wumpus> some of those have already been worked on or even PRs open to make them faster
+19:13:36 <gmaxwell> jnewbery: if you're around, if 10106 doesn't move forward in a few hours, I recommend you create a new pr, cherry picking that one fix, with your new tests and the fix for the other function.  (just because the PR wasn't opened by a regular so they may not be responsive or may not know how to use github well enough to pull your changes.)
+19:14:12 <jnewbery> gmaxwell: I'll do that this afternoon
+19:14:43 <wumpus> yes, tend to agree, they may not know how to cherry-pick them. I could cherry-pick them into his branch but meh
+19:14:53 <MarcoFalke_lab> wumpus: Yes, dropping GetRand() gave a 4* speedup.
+19:15:02 <gmaxwell> jnewbery: and thanks for the awesome response.
+19:15:08 <jnewbery> np
+19:15:37 <wumpus> MarcoFalke_lab: that'll at least move it down a bit in the top 20
+19:15:42 <jeremyrubin> The cuckoocache tests require a bit more discussion to decrease the parameters; I can pick something arbitrary
+19:16:27 <jeremyrubin> The checkqueue tests should also speed up a lot with #9938, but I'm preparing some tweaks to those
+19:16:28 <gribble> https://github.com/bitcoin/bitcoin/issues/9938 | Lock-Free CheckQueue by JeremyRubin · Pull Request #9938 · bitcoin/bitcoin · GitHub
+19:16:46 <Chris_Stewart_5> re tests: Has anyone given any thought to #8469 , obviously this pull request sacrafices speed for exhaustiveness
+19:16:48 <gribble> https://github.com/bitcoin/bitcoin/issues/8469 | [POC] Introducing property based testing to Core by Christewart · Pull Request #8469 · bitcoin/bitcoin · GitHub
+19:17:02 <jeremyrubin> If anyone has high-core machines, they should try benching how that works
+19:17:02 <wumpus> jeremyrubin: alternatively we could have an -extended mode for the unit tests, like we have for the functional tests, to do extra-thorough tests that shouldn't run every time
+19:17:13 <MarcoFalke_lab> jeremyrubin: If the parameters matter, you could provide a switch to test against quick_run and an expensive one
+19:17:20 <wumpus> yes ^^
+19:17:27 <gmaxwell> I think we should have an extended test, and make running it part of the release process.
+19:17:42 <jeremyrubin> Agree
+19:17:45 <wumpus> but for the standard 'make check' there should be a guideline of max ~1 second per test case
+19:17:59 <MarcoFalke_lab> Everyone agrees! :)
+19:18:07 <gmaxwell> I don't care if the tests take an hour to run if it's only a mandatory once in release thing.
+19:18:09 <cfields> sgtm
+19:18:11 <jeremyrubin> no, 2 seconds!
+19:18:18 <wumpus> gmaxwell: yes or once per day or so on master
+19:18:35 <jonasschnelli> (which is failing currently)
+19:18:49 <gmaxwell> jonasschnelli: what is failing?
+19:18:49 <wumpus> yes, travis is broken again, but there's a pull to fix that
+19:18:52 <cfields> note to self: gitian should run whatever extended tests it can
+19:18:55 <gmaxwell> oh travis
+19:18:58 <jonasschnelli> gmaxwell: https://travis-ci.org/bitcoin/bitcoin/builds
+19:19:13 <MarcoFalke_lab> Jup, will merge the travis fix tonight when I have access to my keys. (If no one beats me to it)
+19:19:31 <wumpus> does anyone have the # perhaps?
+19:19:58 <sdaftuar> i think #10114?
+19:19:59 <MarcoFalke_lab> Though, we should be cautious with putting too much into the cron jobs. The extended test rely on the cache being up to date
+19:19:59 <gribble> https://github.com/bitcoin/bitcoin/issues/10114 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:20:10 <MarcoFalke_lab> Otherwise they would break the 49 minute limit on traivs
+19:20:11 <wumpus> there's also #10072
+19:20:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10072 | Remove sources of unreliablility in extended functional tests by jnewbery · Pull Request #10072 · bitcoin/bitcoin · GitHub
+19:20:39 <wumpus> but yes 114 was the one I meant
+19:20:40 <gmaxwell> We should probably contemplate having some seperate process against master that does continual gitian builds or something.
+19:21:10 <MarcoFalke_lab> jonasschnelli: Is doing that, gmaxwell
+19:21:22 <gmaxwell> oh good.
+19:21:25 <gmaxwell> ignore me.
+19:21:29 <jonasschnelli> gmaxwell: https://bitcoin.jonasschnelli.ch
+19:21:32 <wumpus> yes, jonasschnelli has a build server with a very nice web UI
+19:21:43 <MarcoFalke_lab> jonasschnelli: Are you running the tests?
+19:21:44 <jonasschnelli> (it's currently by manual trigger)
+19:21:50 <jonasschnelli> no.. just gitian
+19:21:55 <gmaxwell> somehow I missed this. cool.
+19:22:08 <wumpus> travis already runs the tests, this is to get executables for testing
+19:23:31 <jnewbery> travis is only broken now because we've set it to run the extended tests once per day, so we're currently flushing out all the extended tests that have always failed on travis. I think once #10114 and #10072 are merged the daily runs should succeed reliably
+19:23:32 <gribble> https://github.com/bitcoin/bitcoin/issues/10114 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:23:33 <gribble> https://github.com/bitcoin/bitcoin/issues/10072 | Remove sources of unreliablility in extended functional tests by jnewbery · Pull Request #10072 · bitcoin/bitcoin · GitHub
+19:24:08 <jonasschnelli> thanks jnewbery for the info (and the fixes)
+19:25:56 <bitcoin-git> [13bitcoin] 15sdaftuar opened pull request #10127: [0.14 backport] Mining: Prevent slowdown in CreateNewBlock on large mempools  (060.14...062017-03-backport-cnb-optimizations) 02https://github.com/bitcoin/bitcoin/pull/10127
+19:26:48 <wumpus> ok, any other topics?
+19:27:41 <bitcoin-git> [13bitcoin] 15laanwj pushed 3 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/cde9b1a864c1...edc62c959ab3
+19:27:42 <bitcoin-git> 13bitcoin/06master 146426716 15John Newbery: Add send_await_disconnect() method to p2p-compactblocks.py...
+19:27:42 <bitcoin-git> 13bitcoin/06master 146a18bb9 15John Newbery: [tests] sync_with_ping should assert that ping hasn't timed out...
+19:27:43 <bitcoin-git> 13bitcoin/06master 14edc62c9 15Wladimir J. van der Laan: Merge #10114: [tests] sync_with_ping should assert that ping hasn't timed out...
+19:27:49 <gmaxwell> I should make notes for topics...
+19:27:57 <BlueMatt> oh, new prs
+19:28:02 <BlueMatt> for review priority
+19:28:12 <BlueMatt> looks like jonasschnelli already added his
+19:28:16 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #10114: [tests] sync_with_ping should assert that ping hasn't timed out (06master...06improve_sync_with_ping) 02https://github.com/bitcoin/bitcoin/pull/10114
+19:28:21 <BlueMatt> anyone else have something to add (aside from 0.14.1-tagged things)
+19:28:22 <wumpus> fine with me, but don't forget the current bunch :p
+19:28:32 <wumpus> yes please review 0.14.1 tagged things
+19:28:35 <wumpus> although those should be easy
+19:28:36 <jonasschnelli> BlueMatt: Yes. The bumpfee refactor (to get a QT fee bump function)
+19:28:53 <sipa> 0.14.1 has priority, but i'd like to see #9792 in at some point to further the get-rid-of-openssl thing :)
+19:29:01 <BlueMatt> wumpus: there is a "For backport" column there...
+19:29:02 <gribble> https://github.com/bitcoin/bitcoin/issues/9792 | FastRandomContext improvements and switch to ChaCha20 by sipa · Pull Request #9792 · bitcoin/bitcoin · GitHub
+19:29:08 <wumpus> but I think we should be able to do 0.14.1 tomorrow so to have something to review for the rest of the week :D
+19:29:22 <wumpus> BlueMatt: yes good point
+19:29:53 <BlueMatt> ok, so morcos and sdaftuar get to propose new ones since they dont have ones up, anyone else want to propose ones?
+19:29:55 <gmaxwell> oh someone opened a PR to do something with debug log excludes, and it adds more insane string processing in the debugging critical path. Would anyone mind if I brought back the PR I shelved to make debug categories use an enum?
+19:30:17 <BlueMatt> gmaxwell: wfm, the pr was jnewbery's
+19:30:20 <sipa> gmaxwell: ack enum debug categories
+19:30:40 <wumpus> gmaxwell: not sure
+19:30:43 <jnewbery> #10123
+19:30:44 <gribble> https://github.com/bitcoin/bitcoin/issues/10123 | Allow debug logs to be excluded from specified component by jnewbery · Pull Request #10123 · bitcoin/bitcoin · GitHub
+19:30:48 <gmaxwell> (the PR was just shelved because I opened it right before a release, and it is a conflict-the-universe PR)
+19:30:59 <wumpus> gmaxwell: well no I guess it makes sense
+19:31:00 <BlueMatt> gmaxwell: go for it now, I'd say
+19:31:05 <wumpus> yes, do it
+19:31:07 <sdaftuar> i'd like to get this DisconnectTip improvement wrapped up (#9208) but i need some help on resolving this annoying issue BlueMatt raised
+19:31:08 <gribble> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+19:31:08 <cfields> gmaxwell: +1.
+19:31:14 <jonasschnelli> Yes. ACK
+19:31:23 <cfields> along the same lines, I'd like to do something similar for net messages
+19:31:23 <wumpus> then you can also map the enum values to strings and automate the help message generation
+19:31:26 <gmaxwell> #9424
+19:31:27 <gribble> https://github.com/bitcoin/bitcoin/issues/9424 | Change LogAcceptCategory to use uint32_t rather than sets of strings. by gmaxwell · Pull Request #9424 · bitcoin/bitcoin · GitHub
+19:31:30 <BlueMatt> sdaftuar: want to bring it up now/
+19:31:38 <jnewbery> gmaxwell: +1. I'll happily review that one
+19:31:38 <BlueMatt> ?
+19:31:48 <wumpus> cfields: yes, should be fairly easy to do, I already changed the syntax for net messages to be enum-like at some point
+19:31:49 <jtimon> since #8855 didn't got new review nor re-review I think just leave that (just remind to potential reviewers that #8994 continues it, in case you "don't see the point")
+19:31:51 <gribble> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+19:31:51 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:32:15 <wumpus> cfields: went as far as I could without making it an actual enum :)
+19:32:17 <gmaxwell> cfields: I looked at adding a perfect hash for net messages... but didn't know if that would be a way you'd want to go. :)
+19:32:29 <BlueMatt> new for review this week is 9792 and 9208
+19:32:35 <cfields> wumpus: yes, it sure looks like an enum :)
+19:32:37 <sipa> gmaxwell: just make sure all debug category names have different length
+19:33:12 <gmaxwell> sipa: well we don't need to do any runtime lookup of category names at all.. so no need to do anything performant there.
+19:33:27 <wumpus> at least give them consecutive values so a bit field can be used to represent the set
+19:33:33 <wumpus> intead of a per-thread map :-(
+19:33:40 <cfields> gmaxwell: i had considered making it an array<char, 12>. But I really don't care, as long as it's switchable and a compile-time constant
+19:33:41 <gmaxwell> wumpus: that is what PR 9424 does.
+19:33:52 <wumpus> gmaxwell: ok, great
+19:33:53 <gmaxwell> wumpus: it assigns them each to a bit.
+19:34:22 <wumpus> the current code that assigns it a thread-local variable is really strange
+19:34:27 <bitcoin-git> [13bitcoin] 15JeremyRubin opened pull request #10128: Speed Up CuckooCache tests (06master...06cuckoo-tests-faster) 02https://github.com/bitcoin/bitcoin/pull/10128
+19:34:30 <cfields> (and now that I think about it, std::array probably isn't switchable anyway)
+19:34:39 <gmaxwell> yes. horrors from beyond time.
+19:34:54 <sdaftuar> topic suggestion: dealing with abortnode / ConnectTip / DisconnectTip failures
+19:35:05 <gmaxwell> in any case, if people support-- 9424 is hard to rebase because it touches the whole codebase.
+19:35:30 <wumpus> cfields: in some modern languages it's possible to switch on compound types and arrays and strings, but no, not c++XX before XX=50 or so :)
+19:35:33 <gmaxwell> but I think it also makes jnewbery's exclude trivial. (in fact: no runtime impact...)
+19:35:50 <wumpus> gmaxwell: yes, it's how it should be done
+19:36:09 <sipa> in haskell it's pretty much the only way you can inspect a compound type at all :p
+19:36:14 <jnewbery> gmaxwell: agree
+19:36:22 <wumpus> sipa: indeed
+19:36:41 <sipa> ok, sdaftuar's topic?
+19:36:46 <gmaxwell> cfields: my intution for that would be using gperf to map the messages to integers. then switching on them... but perhaps overkill.
+19:36:53 <wumpus> #topic dealing with abortnode / ConnectTip / DisconnectTip failures
+19:37:05 <BlueMatt> context: #9208
+19:37:06 <gribble> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+19:37:09 <sipa> sdaftuar: i saw i was pinged in the PR, but haven't read it
+19:37:13 <sdaftuar> so this issue might be hard to grasp without reviewing #9208
+19:37:15 <gribble> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+19:37:29 <wumpus> gmaxwell: will that work for unknown messages too?
+19:37:40 <sdaftuar> but basically matt brought up that we have some edge cases in our code if ConnectTip or DisconnectTip return false
+19:37:54 <wumpus> gmaxwell: does a perfect hash handle collisions? I don't remember
+19:38:07 <cfields> wumpus: perfect hash means no collisions :)
+19:38:13 <wumpus> cfields: for known values
+19:38:34 <jeremyrubin> wouldn't that not be backwards compatible?
+19:38:36 <gmaxwell> wumpus: gperf can check, it's an option.
+19:38:44 <wumpus> cfields: but what if 'moo' maps to the same 32-bit value as 'block'
+19:38:50 <jeremyrubin> someone sends you a new type of message that hashes to something else
+19:39:05 <wumpus> scary
+19:39:06 <sipa> sdaftuar: hmm, i'll review the PR
+19:39:10 <sdaftuar> the last issue i'm trying to resolve is if ConnectTip fails (but the block is not invalid), then we should be in an AbortNode() state.  what consistency are we aiming for in this situation?
+19:39:14 <cfields> wumpus: ah, true
+19:39:16 <gmaxwell> wumpus: making it never have collisions for unknows is just an extra comparison with the correct value.
+19:39:35 <gmaxwell> wumpus: which IIRC the gperf emitted code will do, if enabled.
+19:39:47 <gmaxwell> (actually, looks like it's the default)
+19:39:47 <BlueMatt> lol, ok, so lets pick a topic instead of two
+19:40:16 <gmaxwell> sdaftuar: we should be able to shut down and come back up with the underlying issue resolved and continue.
+19:40:26 <wumpus> yes, sorry, I was just curous about gperf
+19:40:30 <gmaxwell> sdaftuar: I don't care if we lose a bunch of recent blocks.
+19:40:32 <sipa> sdaftuar: it's fine if we lose progress in that case, but if at all avoidable, the on disk state should not be corrupted
+19:40:44 <BlueMatt> anyway, so I further observed that shutdown upon AbortNode can take up to 200ms (see recent PR), which is somewhat frightening, given that mempool and chainstate may not be consistent which we assume in many places :/
+19:40:46 <sdaftuar> gmaxwell: sipa: what should we do with the mempool?
+19:41:03 <sipa> sdaftuar: who cares?
+19:41:08 <BlueMatt> so we keep running for a while normally and possibly have incorrect assumptions
+19:41:11 <gmaxwell> I don't care.
+19:41:16 <wumpus> just drop it
+19:41:29 <sipa> sdaftuar: at restart we'll try to reimport what is on disk
+19:41:36 <sipa> and re-run all necessary consistency checks
+19:41:51 <sipa> so mempool.dat doesn't need to be consistent with the chainstate
+19:41:59 <BlueMatt> and wallet?
+19:42:01 <sdaftuar> i think the concern matt was raising was if before shutdown, it's possible for eg an RPC call to get incorrect results
+19:42:04 <sdaftuar> or the wallet
+19:42:08 <wumpus> yes, no tight coupling, good design
+19:42:19 <BlueMatt> wumpus: point is we *have* tight coupling
+19:42:22 <wumpus> wallet doesn't need to be in sync either, though it should not be ahead
+19:42:24 <sipa> sdaftuar: ugh
+19:42:28 <BlueMatt> and continue running after realizing something is corrupted
+19:42:35 <gmaxwell> well abortnode should be instant-ish.
+19:42:42 <gmaxwell> BlueMatt: so you're fixing that, what is there to discuss?
+19:42:46 <wumpus> a bit behind (as long as it's not further than the prune distance) is ok, it will catch up in next start
+19:42:49 <BlueMatt> gmaxwell: i mean the new pr is an improvement, but its not a fix
+19:43:02 <BlueMatt> its not like you cant have something pending cs_main when coming out of Disconnect/ConnectTip
+19:43:06 <wumpus> but if the wallet is ahead of the chain it will trigger a rescan IIRC
+19:43:10 <gmaxwell> so perhaps abortnode needs to Abort()?
+19:43:18 <BlueMatt> gmaxwell: thats pretty much the question
+19:43:21 <BlueMatt> thats super shit, though, of course
+19:43:24 <gmaxwell> and not faffabout witht politely shutting off threads.
+19:43:24 <wumpus> I don't think so
+19:43:39 <sdaftuar> i inadvertently introduced an assert failure in one of these situations.  maybe that's a feature not a flaw! :)
+19:43:44 <gmaxwell> Why is it shit? we should be durable across a power off, which is worse than aborting.
+19:43:45 <wumpus> the point of abortnode is to be able to show a GUI dialog to the user
+19:43:55 <gmaxwell> ah
+19:43:57 <wumpus> if you abort() the user will never know to check the debug.log
+19:44:07 <BlueMatt> wumpus: well we can show a gui dialog and abort() prior to unlocking cs_main
+19:44:09 <BlueMatt> :P
+19:44:15 <jeremyrubin> have a graceful shutdown falg
+19:44:19 <jeremyrubin> *flag
+19:44:24 <gmaxwell> wumpus: but it's not unlikely that we can't show a gui... if we can't allocate (likely cause).
+19:44:27 <BlueMatt> which would effectively be sufficient
+19:44:29 <wumpus> I always thought that AbortNode was for errors that could tolerate a graceful shutdown
+19:44:35 <wumpus> the really terrible errors we already assert() or abort() on
+19:44:36 <jeremyrubin> and if we're shutting down gracefully, write to a file "was graceful"
+19:44:41 <BlueMatt> gmaxwell: AbortNode() is usually disk corruption
+19:44:45 <jeremyrubin> On next start, show dialogue first thing?
+19:44:46 <wumpus> please don't make it routine to abort() for everything
+19:44:53 <wumpus> only for things that really warrant it
+19:45:00 <wumpus> not crash on every single error
+19:45:02 <BlueMatt> or too little disk space
+19:45:02 <sdaftuar> or too little disk space, not quite teh same as corruption
+19:45:03 <wumpus> that's just a mess
+19:45:21 <gmaxwell> okay, sure.
+19:45:24 <wumpus> for some problems it's fine to try to clean up normally
+19:45:31 <wumpus> but we still need to exit with a message
+19:45:34 <wumpus> that's what abortnode is for
+19:45:56 <wumpus> if BlueMatt can make it work faster that's great, but don't silently kill the program on every error
+19:46:18 <gmaxwell> wumpus: how about every other error?
+19:46:26 <gmaxwell> :P
+19:46:33 <wumpus> gmaxwell: hehe
+19:46:59 <sipa> do #9208 and #9725 interact?
+19:47:01 <gribble> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+19:47:03 <gribble> https://github.com/bitcoin/bitcoin/issues/9725 | CValidationInterface Cleanups by TheBlueMatt · Pull Request #9725 · bitcoin/bitcoin · GitHub
+19:47:07 <gmaxwell> Y'all so worried about the dressings on the coffin.  "It's already dead!"  But sure. Sorry I was only thinking of OOM, it's just a recent subject.
+19:47:19 <BlueMatt> sipa: they dont, afaik, aside from there now being two structs that can be merged
+19:47:22 <jeremyrubin> I think deleting a file on graceful shutdown should work
+19:47:42 <jeremyrubin> And then starting when that file is present shows the dialouge rather than starting
+19:47:46 <BlueMatt> gmaxwell: yea, AbortNode isnt used for thigns like OOM and total death
+19:47:49 <BlueMatt> disk space also does it
+19:47:55 <BlueMatt> but it can also be db corruption
+19:48:13 <jeremyrubin> This means you don't do anything at all on the Abort, but requires the user to restart their node to see the message
+19:48:15 <BlueMatt> so maybe the solution is AbortNode gets renamed to ShutdownSoon() and use make sure disk corruption is something different?
+19:48:31 <wumpus> BlueMatt: yes, makes sense to me
+19:48:33 <wumpus> BlueMatt: or add a flag
+19:48:38 <morcos> I haven't really thought this all the way through, but doesn't it seem that as we move more and more towards things happening in other threads, that you'd rather let those threads finish what they are doing
+19:48:45 <gmaxwell> BlueMatt: you could also harden things up against your current concer by having the rpc stuff always check the shutdown flag right after taking cs_main (whenever it does)?
+19:48:47 <morcos> If you're committing wallet changes for instance
+19:48:59 <gmaxwell> BlueMatt: and if it finds out that its on its way down, just returning at that point.
+19:49:06 <wumpus> in the long run morcos we should move toward looser coupling of things
+19:49:09 <wumpus> I agree
+19:49:13 <BlueMatt> gmaxwell: yea, I'm worried that if we start down that path we have to check it everywhere
+19:49:22 <BlueMatt> eg wallet may make decisions based on some corrupted mempool state
+19:49:27 <morcos> Let's say you just got some new address from the wallet, and the wallet hasn't committed that state yet and then you Abort()
+19:49:31 <BlueMatt> (I havent thought all the way through all the potential issues here, just a potential concern)
+19:50:19 <wumpus> morcos: luckily we have the keypool to handle that specific contingency
+19:50:24 <jeremyrubin> Every thread could have their own unique ungraceful-close file that it should delete (via RAII) on clean exit. Starting with any present would show error. Uncoupled!
+19:50:40 <gmaxwell> morcos: well at least the worst you get there is replay (due to keypool/hdwallets).. though replay can be pretty bad.
+19:51:11 <wumpus> pretty bad but well at least they will never lose live keys
+19:51:47 <BlueMatt> jeremyrubin: I have a feeling we can be more agressive on the super-strange issues, afaiu this stuff is pretty much hit just with out-of-disk everything else is rare enough.....
+19:52:36 <sipa> maybe we should just have some std::atomic<bool> shits_on_fire_yo; which when set prevents RPCs etc
+19:52:46 <wumpus> jeremyrubin: that's not what I mean with uncoupling, what I mean is that if one thread messes up it doesn't need to take the others with it because it can operate more-or-less independently
+19:52:58 <gmaxwell> sipa: well shutdown can be more or less that.
+19:53:14 <sipa> that can even be set from a signal handler
+19:53:34 <BlueMatt> 20<BlueMatt>30 so maybe the solution is AbortNode gets renamed to ShutdownSoon() and use make sure disk corruption is something different?
+19:53:53 <jeremyrubin> sipa: what do you do with an in progress RPC?
+19:54:04 <BlueMatt> in ShutdownSoon cases (eg out of disk) we're ok to continue and just shut down, i think
+19:54:08 <sipa> jeremyrubin: we can only do so much
+19:54:08 <wumpus> you can't generally break off an in-progress RPC
+19:54:11 <BlueMatt> in other cases, we can just assert(false)
+19:54:13 <wumpus> although some will pay attention to fShutdown
+19:54:15 <BlueMatt> because they're super rare anyway
+19:54:21 <jeremyrubin> wumpus: ^ yes, O
+19:54:21 <gmaxwell> but really, what probably should be done is having the rpcs being able to handle being told "No, you can't have access to [whatever chain state you wanted] right now."  then these error conditions that could leave them unstable... could set them.
+19:54:26 <BlueMatt> and if your disk is corrupted we probably shouldnt be flushing wallet and chainstate as a part of shutdown anyway
+19:54:47 <BlueMatt> gmaxwell: yea, but thats a huge rewrite for cases that should be super rare
+19:55:11 <gmaxwell> Or we take a whole different approach to failure messages, .e.g. wrap bitcoin-qt in another program that when qt exists it can go through the logs and give you a useful error. (though this doesn't answer morcos' wallet flush, but really that should be in another process.)
+19:55:26 <wumpus> BlueMatt: I think there should be a clear separation between (A) I/O issues such as out of disk spae, which just happen regularly (B) rare implementation issues such as internal consistency errors
+19:55:27 <cfields> iirc rpc has a IsRPCShuttingDown() or so, but only a few things (gbt only, maybe?) checks it
+19:55:28 <jeremyrubin> wumpus: * yes, I'm aware that isn't quite what you meant, just making noise about having a graceful shutdown file because I think it's a reasonable way to mark if a node shut down dirty
+19:55:44 <wumpus> (A) normal errors should just give the user an error as AbortNode does now and shut down properly
+19:56:02 <wumpus> (B) internal state corruption errors could break off the process immediately
+19:56:02 <gmaxwell> It's obnoxious that we can't preallocate resources such that we can guarentee that we never take a failure at an inoppturtune time.
+19:56:14 <gmaxwell> having to slather the code in error handling to deal with that is not ideal.
+19:56:41 <jeremyrubin> gmaxwell: you can preallocate lots of things?
+19:56:44 <gmaxwell> wumpus: "I had to abort processing a block" is a weak kind of internal state corruption. It leaves assumed invariants violated.
+19:56:57 <gmaxwell> jeremyrubin: in particular we can't make leveldb's disk usage constant.
+19:56:58 <BlueMatt> wumpus: yes, thats my proposal
+19:57:12 <BlueMatt> wumpus: but, specifically, B would include things like chainstate-on-disk-corruption
+19:57:17 <BlueMatt> which it already partially does, just not completely
+19:57:26 <wumpus> having code to handle normal errors is perfectly normal and all code has that, I agree that paranoid memory/disk corruption errors tend not to be possible to handle in a sane way
+19:57:33 <wumpus> BlueMatt: yes
+19:57:48 <BlueMatt> ok, soooo, acks on:<BlueMatt> <BlueMatt> so maybe the solution is AbortNode gets renamed to ShutdownSoon() and use make sure disk corruption is something different?
+19:58:07 <wumpus> BlueMatt: as I said beforer, yes, that or add a flag/criticality level
+19:58:11 <BlueMatt> s/use make sure/make sure/
+19:58:15 <jeremyrubin> BlueMatt: maybe if you paste it again
+19:58:15 <BlueMatt> sure, that too
+19:58:23 <BlueMatt> jeremyrubin: ok, <BlueMatt> ok, soooo, acks on:<BlueMatt> <BlueMatt> so maybe the solution is AbortNode gets renamed to ShutdownSoon() and use make sure disk corruption is something different?
+19:58:39 <gmaxwell> wumpus: for example, if we run out of space while flushing our view of the blockchain will be corrupt, and information about the blockchain from rpcs will be wrong.  In a world where error handling is free, every code path that gets access to the blockchain data would be able to gracefully handle being told it's just not available.  But I think that would be an unreasonable and dangerous amount
+19:58:45 <gmaxwell> of complexity. :(
+19:58:50 <BlueMatt> wumpus: I missed that statement, but, yes
+19:59:00 <gmaxwell> BlueMatt: that sounds okay to me. but I don't know that diskfull is really a shutdown soon though we really do need to give it a nice message. :(
+19:59:03 <wumpus> gmaxwell: note that the out-of-disk error happens *before* the disk is entirely full
+19:59:04 <jeremyrubin> BlueMatt: sgtm
+19:59:12 <wumpus> gmaxwell: there's a threshold
+19:59:22 <wumpus> gmaxwell: so that should already be mitigated
+19:59:26 <gmaxwell> wumpus: yes, but it's not atomic. you can't check and then successfully allocate space.
+19:59:38 <wumpus> no, it's not perfect, but it works pretty well
+19:59:43 <wumpus> I've never had corruption on full disk
+20:00:33 <wumpus> also leveldb write failing shouldn't generally be fatal
+20:00:39 <gmaxwell> on my desktop, which runs with debug=1 it almost always gets checked at the start of the flush. It doesn't corrupt things on disk, but as matt points out the rpc would return somewhat incorrect results during that time.
+20:00:39 <wumpus> it just means the last transaction is not committed
+20:01:00 <jtimon> it seems it's time to abort the meeting
+20:01:06 <wumpus> #endmeeting
