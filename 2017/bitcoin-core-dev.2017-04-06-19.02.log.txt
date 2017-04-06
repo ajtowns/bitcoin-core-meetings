@@ -1,0 +1,96 @@
+19:02:58 <wumpus> #startmeeting
+19:02:58 <lightningbot> Meeting started Thu Apr  6 19:02:58 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:03:08 <luke-jr> gribble: nicks
+19:03:26 <luke-jr> … or not :x
+19:03:29 <kanzure> hi.
+19:03:41 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:03:45 <sipa> hi, half present
+19:03:59 <sdaftuar> hi
+19:04:22 <btcdrak> still breathing
+19:04:24 <wumpus> topics?
+19:05:10 <CodeShark> about 69% present but due to incompatibilities with litecoin that might decrease
+19:05:29 <luke-jr> absent other suggestions: UASF and/or PoW change? maybe too premature to discuss in dev tho
+19:05:42 <sipa> offtopic for here, i think
+19:05:56 <jonasschnelli> Yes. Let's not go down this road.
+19:05:59 <wumpus> yes I don't think they're good fits for this meeting
+19:06:03 <CodeShark> thanks for staying above that crap, sipa :)
+19:06:30 <warren> 0.14.1 status?
+19:06:42 <btcdrak> Maybe someone can dish out review homework?
+19:06:44 <wumpus> 0.14.1 status: rc1 was tagged, gitian builds in progress
+19:06:53 <cfields> hi, here, but also not very present.
+19:07:18 <kanzure> if none of us are actually here, what are we doing?
+19:07:24 <jeremyrubin> here
+19:07:33 <morcos> here
+19:07:39 <wumpus> I'll upload binaries tomorrow morning (NL time)
+19:08:17 <luke-jr> maybe if FC is distracting too many devs, and we have a shortage of topics, meeting should be postponed?
+19:08:23 <btcdrak> maybe we should just order some pizzas and beers.
+19:08:27 <CodeShark> right
+19:08:33 <kanzure> is financial crypto over yet?
+19:08:44 <wumpus> yes, might be better to skip this meeting then, doesn't seem people have much to discuss or are not present or half present
+19:08:51 <jonasschnelli> ack
+19:08:55 <sipa> btcdrak: <BlueMatt> same PRs for review this week
+19:08:56 <btcdrak> shortest meeting eva
+19:08:57 <sdaftuar> anyone want to give updates on what they're working on?
+19:09:01 <jonasschnelli> https://github.com/bitcoin/bitcoin/projects/8
+19:09:06 <jonasschnelli> ^ PRs to review
+19:09:16 <warren> For those who can't directly obtain the osx gitian build req, should we recommend that they do not participate in that part of the gitian process?
+19:09:20 <jonasschnelli> sdaftuar: good idea. You start?
+19:09:28 <luke-jr> I'm looking at adding a UTXO index by scriptPubKey for sweeping purposes
+19:09:28 <sipa> kanzure: dinner after FC17 currently ongoing; BlueMatt, roasbeef, ... are here
+19:09:39 <jonasschnelli> warren: It's just an SDK tar.gz?!
+19:09:47 <sdaftuar> jonasschnelli: sure
+19:09:48 <wumpus> luke-jr: there's a pull for that right?
+19:09:56 <luke-jr> warren: I don't see why it should be hard nowadays.. but yes, if you don't want to, feel free to skip
+19:10:19 <luke-jr> wumpus: the current PR iterates over the entire UTXO set
+19:10:21 <wumpus> luke-jr: https://github.com/bitcoin/bitcoin/pull/9806
+19:10:49 <luke-jr> what I'm working on uses a RIPEMD160 to index scripts -> txid
+19:10:58 <warren> jonasschnelli: I think a lot of non-Mac users have been sharing that with others instead of going through steps of getting it themselves, which defeats the security goal, so it's misleading if multiple people go through the gitian process unless they obtain it themselves.
+19:11:27 <jonasschnelli> warren: that's true
+19:11:32 <wumpus> luke-jr: not sure how that one is diffrent, but I don't think we need multiple utxo indexes
+19:11:43 <luke-jr> anyone who didn't make it themselves should delete and make it (or not do osx builds) IMO
+19:11:43 <jonasschnelli> I'm working on BFD. roasbeef did inform me in Berlin about the progress they have made for the LND. I'd like to have BFD for the hybrid full block SPV mode.
+19:11:50 <jeremyrubin> I'd like to discuss net_processing refactors. It seems like there is some plan for where that is going, but it's not been made available to me.
+19:11:59 <luke-jr> wumpus: the only UTXO index right now is by txid
+19:12:15 <wumpus> luke-jr: yes, but the pull I referenced adds an index by scriptPubKey
+19:12:19 <sipa> luke-jr: #9806
+19:12:20 <gribble> https://github.com/bitcoin/bitcoin/issues/9806 | txoutsbyaddress index (take 3) by droark · Pull Request #9806 · bitcoin/bitcoin · GitHub
+19:13:32 <jtimon> althought it isn't mine, I think https://github.com/bitcoin/bitcoin/pull/7729 should be added to the list of things to review: that blocks the removal of accounts system
+19:13:38 <wumpus> warren: yes, the only reason I had to copy it (from a person I trust very much) is because it makes it possible for me to actually upload the executables. I don't think it's generally useful to build using someone else's macosx sdk file
+19:14:42 <wumpus> but with luke-jr's instructions to extract it on linux there's not really an excuse anymore
+19:15:07 <sipa> i've been working on database/cache/flush/memory usage things
+19:15:18 <wumpus> jtimon: I tend to agree. though please review the *API*, not the code, the code is extremely outdated on that now
+19:15:47 <jtimon> wumpus: thank you, that helps
+19:15:50 <wumpus> jtimon: however I still stand behind the label API as I wrote it down back then, and that's the important part
+19:16:07 <morcos> i've been coding and recoding fee estimates for months now.. they'll maybe be a tiny smidge better but infinitely more complicated and will annoy the crap out of everyone to review.  have a nice day.
+19:16:25 <sdaftuar> i've been working on CreateNewBlock, so that we have a way to skip recently added transactions if the block income from doing so is below some threshold (to model higher orphan risk)
+19:16:32 <warren> wumpus: I'd like for us to be able to hash verify some part of the SDK and add that somewhere in the gitian process, I'm pretty sure this is possible
+19:16:53 <wumpus> warren: if you'd tar it in a deterministic way (like we do in gitian build process itself) that'd be easily possible
+19:16:57 <jcorgan> please correct me if i'm wrong, but #9806 uses hash of the full script as a key, not extracting the embedded push(es) for and addrindex type key, or am i confused
+19:16:58 <gribble> https://github.com/bitcoin/bitcoin/issues/9806 | txoutsbyaddress index (take 3) by droark · Pull Request #9806 · bitcoin/bitcoin · GitHub
+19:17:03 <wumpus> warren: we'd just need a a script for that
+19:17:08 <wumpus> warren: "normalize mac sdk"
+19:17:26 <luke-jr> jcorgan: problem?
+19:17:30 <warren> wumpus: agreed
+19:17:51 <jcorgan> not a problem, just making sure i have the correct understanding
+19:18:18 <wumpus> the files and file names should definitely be the same for everyone, the differences will be in the metadata such as date/time/user and possibly file order
+19:19:14 <jtimon> I put some more ideas on #7829, not sure what to do about it, a couple of people participated at first, but perhaps the proposed task is too boring, even for newbies, at least I found some functions to make static
+19:19:16 <gribble> https://github.com/bitcoin/bitcoin/issues/7829 | Globals: TODO: Experiment: Kill "Params()" by jtimon · Pull Request #7829 · bitcoin/bitcoin · GitHub
+19:20:15 <luke-jr> jcorgan: not sure, but I didn't see a need for it myself
+19:20:18 <jcorgan> luke-jr: wondering if the name 'txoutsbyaddressindex' is misleading
+19:20:43 <luke-jr> jcorgan: definitely, since it has nothing to do with addresses, but I already complained about that in a past PR it appears XD
+19:20:44 <jcorgan> anyway, not sure what the current topic is, i'll take this to the PR comments
+19:20:45 <jtimon> also worked on #9494 #10119 #10118 and more things to potentially do afterwards
+19:20:47 <gribble> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+19:20:47 <gribble> https://github.com/bitcoin/bitcoin/issues/10119 | Util: Remove ArgsManager wrappers: by jtimon · Pull Request #10119 · bitcoin/bitcoin · GitHub
+19:20:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10118 | Util: Remove redundant calls to argsGlobal.IsArgSet() by jtimon · Pull Request #10118 · bitcoin/bitcoin · GitHub
+19:23:11 <sipa> any other topics or updates?
+19:23:34 <sdaftuar> quiet times!
+19:23:47 <jcorgan> maybe here it is quiet :)
+19:24:21 <warren> wumpus mentioned luke's script, for the record it is located here: https://github.com/bitcoin/bitcoin/blob/master/doc/README_osx.md
+19:24:23 <wumpus> let's close the meeting early then
+19:24:29 <jonasschnelli> Yes. /end
+19:24:36 <wumpus> warren: yup
+19:24:42 <warren> well, instructions at least
+19:24:47 <wumpus> #link https://github.com/bitcoin/bitcoin/blob/master/doc/README_osx.md
+19:24:50 <wumpus> #endmeeting
