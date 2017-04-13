@@ -1,0 +1,364 @@
+19:00:17 <wumpus> #startmeeting
+19:00:17 <lightningbot> Meeting started Thu Apr 13 19:00:17 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:17 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:25 <morcos> roger
+19:00:28 <sdaftuar> hello
+19:00:30 <CodeShark> hi
+19:00:32 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure blue
+19:00:33 <wumpus> matt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:00:38 <kanzure> hi.
+19:00:39 <wumpus> hello
+19:00:45 <cfields_> hi
+19:00:50 <instagibbs> hi
+19:00:55 <phantomcircuit> hi
+19:00:55 <wumpus> topics?
+19:01:02 <gmaxwell> Hi!
+19:01:13 <wumpus> #topic 0.14.1
+19:01:20 <wumpus> anyone had report of bugs with the rc1?
+19:01:28 <cfields_> topic suggestion (after 0.14.1): scripted-diffs
+19:01:32 <gmaxwell> Push the button?
+19:01:47 <gmaxwell> wumpus: you know that the bug reports only come after releasing it. :P
+19:01:55 <petertodd> hi
+19:02:12 <wumpus> gmaxwell: the serious ones, yes :p
+19:02:25 * cfields_ scrambles to backport 10176
+19:02:42 <wumpus> but apparently no one heard anything, so time to tag -final
+19:03:26 <cfields_> wumpus: wait for ^^ ? doing now.
+19:04:36 <wumpus> would be nice but I think that's not a regression since 0.14.0, so I'm not sure it warrants another rc
+19:05:15 <gmaxwell> can talk about post meeting, certantly nothing but that is in the air.
+19:05:40 <cfields_> ok
+19:05:40 <wumpus> if you think it's really important to do we can do another rc, no problem
+19:06:26 <gmaxwell> I really don't want to delay 0.14.1 further.
+19:06:36 <cfields_> wumpus: it was more of a since-we're-releasing-anyway kind of thing
+19:06:47 <wumpus> I'd prefer not to either; we should fix the wrapping, but could just was well be included for 0.14.2
+19:07:11 <wumpus> I agree it's something that should be backported to the 0.14 branch
+19:07:25 <morcos> no opinion either way here
+19:07:55 <wumpus> ok
+19:07:58 <BlueMatt> wumpus: I think we should do it in 0.14
+19:08:00 <BlueMatt> .1
+19:08:10 <BlueMatt> because its free, we're already doing 0.14.1 and delaying 1 week isnt gonna kill us
+19:08:43 <luke-jr> cfields_: new fixes = new rc required
+19:08:49 <luke-jr> so not worth it in that scenario
+19:09:26 <BlueMatt_> But delaying 1 week isn't too bad
+19:09:40 <BlueMatt> wait, who is BlueMatt_ ?
+19:10:04 * wumpus confused
+19:10:23 * BlueMatt_ confused
+19:10:24 * BlueMatt has no idea who BlueMatt_ is
+19:10:31 <instagibbs> :/
+19:10:31 * BlueMatt_ has no idea who BlueMatt is
+19:10:47 <kanzure> different timeline, carry on.
+19:10:52 <luke-jr> whois says it's Matt Corallo
+19:11:03 <jcorgan> digital ocean ip
+19:11:12 <BlueMatt> not me
+19:11:19 * BlueMatt has no digitalocean-lon vpses
+19:11:42 <gmaxwell> wumpus: shoot the T1000 (BlueMatt_) and lets move on.
+19:12:01 <sipa> BlueMatt_: this statement is false
+19:12:12 <spudowiar> gmaxwell: I think that's the fake aantonop IP
+19:12:27 <luke-jr> sipa: :D
+19:12:37 <spudowiar> 2017-04-11 21:37:35 -- Mode #bitcoin [+b *!*@178.62.68.75] by gmaxwell
+19:12:45 <gmaxwell> We've got lots more to discuss.
+19:12:50 <BlueMatt> yes, lets move on
+19:13:04 <wumpus> so have we decided anything?
+19:13:11 <sipa> 0.14.1 yay
+19:13:56 <wumpus> #topic scripted-diffs
+19:14:15 <cfields_> yes, let's finish discussing after the meeting
+19:14:45 <cfields_> ok, for reference: #10189
+19:14:46 <gribble> https://github.com/bitcoin/bitcoin/issues/10189 | devtools/net: add a verifier for scriptable changes. Use it to make CNode::id private. by theuni · Pull Request #10189 · bitcoin/bitcoin · GitHub
+19:14:46 <luke-jr> mv meeting/* after-meeting/
+19:15:01 <wumpus> haven't had a time to look at that one yet
+19:15:29 <cfields_> the idea is for changes that are basically just search/replace, to allow a short script to be placed in the commit message, and verified by Travis
+19:15:48 <cfields_> if they don't transform the old commit to the new one exactly, travis will reject
+19:15:58 <cfields_> the aim is to make those kinds of changes easier to review
+19:16:03 <BlueMatt> is ther emuch to discuss? I think its a good idea
+19:16:17 <cfields_> example: https://github.com/bitcoin/bitcoin/pull/10189/commits/d04198309e7e9b21de1604cc4321148b37a46347
+19:16:20 <luke-jr> IMO we shouldn't trust Travis
+19:16:33 <gmaxwell> I'm fine with it so long as we don't expect commiters to be running it.  I think someone should write a list of examples, because when I've made mass programatic changes I haven't done it in ways that would look too tidy in a commit message.
+19:16:34 <wumpus> would that execute arbitrary scripts in commit messages?
+19:16:36 <luke-jr> which is basicaly what you're suggesting)
+19:16:37 <cfields_> BlueMatt: well, you brought up a good point about the safety of random scripts
+19:16:47 <wumpus> seems kind of dangerous, I certainly wouldn't want to run that locally
+19:16:50 <cfields_> so i thought it might be worth discussing possibly constraining. Say to sed or so.
+19:17:00 <BlueMatt> gmaxwell: there are already two examplesa
+19:17:03 <wumpus> I'm really careful what scripts I run, and wouldn't want anything to be run automatically
+19:17:13 <BlueMatt> and, yes, agree, jtimon suggested that they only be run if there is a scripted prefix in the commit's title
+19:17:15 <spudowiar> What sort of damage can be done with, say, sed or awk?
+19:17:16 <BlueMatt> to make it much more obvious
+19:17:28 <petertodd> wumpus: granted, if you ever compile bitcoin you're running stuff within the repo anyway
+19:17:28 <gmaxwell> spudowiar: arbritary damage.
+19:17:31 <spudowiar> I don't think you can do much with sed, not too sure about awk
+19:17:42 <spudowiar> gmaxwell: I mean dangerous code execution
+19:17:47 <cfields_> wumpus: sure, agreed. Travis can run them, and they can ofc be run manually as well.
+19:17:51 <sipa> try applying sed to /etc/init.d files
+19:17:57 <BlueMatt> see-also #10193
+19:17:58 <gribble> https://github.com/bitcoin/bitcoin/issues/10193 | scripted-diff: Remove #include foreach.hpp> by jtimon · Pull Request #10193 · bitcoin bitcoin · GitHub
+19:18:01 <BlueMatt> (which is an example)
+19:18:09 <jcorgan> maybe there should only be a predefined set of opcodes in the script that can run, with a stack...oh wait
+19:18:14 <wumpus> just make it create a ~/.bashrc, runs next time
+19:18:22 <gmaxwell> in any case, if it's a travis mostly thing I think thats ducky. I would attempt to use it.
+19:18:27 <wumpus> I'd really prefer not to do this
+19:18:54 <luke-jr> I don't see the value in a Travis-"mostly" thing.
+19:18:55 <spudowiar> What are the benefits?
+19:18:56 <gmaxwell> I guess the reason to just not commit the script is that they're one time things?
+19:18:57 <cfields_> gmaxwell: that was my intention, yes.
+19:19:05 <luke-jr> it gives a false sense of review
+19:19:09 <wumpus> if there's a script then reviewers can manually verify it too, after reviewing the script
+19:19:13 <BlueMatt> gmaxwell: yes, if they're one-time things its annoying to commit them, also annoying to lose them
+19:19:35 <sipa> when would these scripts be ru
+19:19:37 <sipa> n
+19:20:02 <cfields_> yes, i got the idea from bac5c9cf643e9333479ac667426d0b70f8f3aa7f
+19:20:05 <luke-jr> I wouldn't mind including the scripts in non-first-line commit msg, and having a dev tool to run them, but IMO better if Travis *doesn't* do it
+19:20:17 <gmaxwell> luke-jr: but reviewers can test it. After reviewing the script. The challenge there is just that you normally don't critically review commit messages in that way. but it's kind of perfect-- in that its one time information about the change.
+19:20:23 <cfields_> https://github.com/bitcoin/bitcoin/commit/bac5c9cf643e9333479ac667426d0b70f8f3aa7f
+19:20:55 <gmaxwell> luke-jr: the purpose of travis doing it is for feedback that you've formated it right and it runs on computers other than yours. Not as a review step.
+19:20:58 <cfields_> if we're going to include a transform in the message like that, I figured we may as well standardize it
+19:21:00 <luke-jr> gmaxwell: as long as reviewers do test it, and don't trust Travis
+19:21:02 <wumpus> cfields_: the idea of that was to give reviewers a way to verify it, as well as make it easy for myself to repeat the work if it needs rebase
+19:21:03 <spudowiar> You could create format like `*.cpp *.h | s/boost::filesystem/fs/g`
+19:22:25 <sipa> spudowiar: little bobby tables will haunt you
+19:23:01 <luke-jr> lol
+19:23:02 <petertodd> gmaxwell: note how this is rather like how a merkle sum tree works... the script is a function to transform input to output, and both input and final output are committed via the git commit object
+19:23:14 <cfields_> ok, put a different way, then: if it could be done so that it worked on nothing but a dummy git index, with no access to the filesystem, would that be more acceptable?
+19:23:37 <wumpus> cfields_: if a transformation of the files could be perfectly sandboxed , I'd be all for it, but I'm kind of afraid of anything that will automatically execute scripts from commit messages, especially as most people review the code changes but not so much the messages :)
+19:23:46 <petertodd> cfields_: I mean, with travis the compilation process can do anything anyway, so I don't see how this is a security risk on top of anything else
+19:23:53 <gmaxwell> I don't know that sandboxing this is worth the effort. If you want to do that, knock yourself out, I guess?
+19:23:53 <petertodd> cfields_: that's true for your local dev setup too
+19:24:02 <wumpus> I don't think it's worth the effort, no
+19:24:18 <BlueMatt> wumpus: that was my concern, hence why I like jtimon's suggestion of only doing it if, eg, the commit title starts with "AUTO-SCRIPT: "
+19:24:19 <BlueMatt> or something
+19:24:23 <gmaxwell> petertodd: the only concern I have wrt security is that there is a new thing you need to review before running things. Not just the git diff but the commit messages.
+19:24:24 <BlueMatt> then its obvious from the first line of the commit
+19:24:25 <cfields_> petertodd: i agree. The concern here (I guess) is that we'd get a malicious script committed, then someone would run it locally.
+19:24:26 <BlueMatt> and you will see it
+19:24:57 <petertodd> cfields_: but that's already a problem anyway: I can commit a malicious commit that adds rm -rf / to the makefile
+19:25:16 <gmaxwell> cfields_: I dunno about your workflow, but I could be tricked by this, because I'll pull and git diff <where I was before>  which won't show me the commit message(s).
+19:25:32 <gmaxwell> otherwise I'd argue there is no change.
+19:25:45 <cfields_> gmaxwell: but it wouldn't touch anything in that case. You'd have to actively run it.
+19:25:51 <wumpus> petertodd: you can, but changes to the makefile would be apparent to me at least
+19:25:51 <petertodd> gmaxwell: so long as devs never have git hooks that run this automatically I think we're covered
+19:26:01 <spudowiar> Why not have a script that manually does these checks, prints out each commit message beginning with "AUTO-SCRIPT: " and the commands it would run and asks if you want to run them?
+19:26:08 <petertodd> wumpus: right, but see my reply to gmaxwell above
+19:26:08 <gmaxwell> petertodd: yea, I'm not too concerned.
+19:26:11 <wumpus> yes, as long as it's not executed automatically outside of travis it's fine
+19:26:21 <wumpus> I don't care what is done in travis, that is already somebody else's sandbox
+19:26:24 <cfields_> yes, that's the case as-is.
+19:26:26 <petertodd> wumpus: +1
+19:26:28 <gmaxwell> oh actually too spudowiar's suggestion is good  unless run with --force the script could ask for confirmation.
+19:26:30 <cfields_> nothing is touched locally.
+19:26:50 <wumpus> my point was just that I just don't want e.g. github_merge.py to execute it automatically
+19:26:54 <wumpus> great
+19:27:08 <petertodd> wumpus: yup, that'd be a bit crazy :)
+19:27:09 <cfields_> wait, please back up, I'm not sure if there's a communication breakdown here.
+19:27:47 * sipa makes backup
+19:27:49 <cfields_> as-is, this is travis-only. Nothing runs automatically anywhere but there.
+19:27:55 <wumpus> cfields_: as said I haven't seen the actual PR, just rumors from this channel
+19:28:10 <spudowiar> Well, Travis can run it with --force, github_merge.py can run it without --force?
+19:28:14 <wumpus> yes makes sense to me then cfields_
+19:28:25 <spudowiar> Without --force, no actual commands are run
+19:28:29 <spudowiar> Unless you interactively say so
+19:28:34 <gmaxwell> spudowiar: no need to make merge run it at all. just an extra review step available.
+19:28:35 <cfields_> spudowiar: there's nothing to run "it".
+19:28:43 <wumpus> no, github_merge.py won't run it at all, that is a merge script and shouldn't do anything else
+19:29:02 <wumpus> (I run that on the machine that has the gpg key, so I'm paranoid about it)
+19:29:10 <gmaxwell> But I do think it would be nice if when you manually run that review step it shows you what it's going to run.. to avoid my workflow issue example.
+19:29:12 <spudowiar> cfields_: I'm talking about a hypothetical script
+19:29:18 <spudowiar> wumpus: Buy a PGP smartcard :)
+19:29:47 <petertodd> spudowiar: adversary still can cause the PGP smartcard to sign something you didn't aprove
+19:29:50 <wumpus> ok. seems a communication breakdown here.
+19:29:58 <wumpus> let's just review the PR, and talk about it again next week
+19:30:01 <gmaxwell> okay
+19:30:03 <cfields_> heh, yes please :)
+19:30:12 <sdaftuar> +1!
+19:30:17 <wumpus> #action review #10193
+19:30:20 <gribble> https://github.com/bitcoin/bitcoin/issues/10193 | scripted-diff: Remove #include foreach.hpp> by jtimon · Pull Request #10193 · bitcoin bitcoin · GitHub
+19:30:20 <morcos> good thing our trolling coordination doesn't suffer from these communication problems
+19:30:23 <wumpus> other topics?
+19:31:11 <wumpus> #action review #10189
+19:31:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10189 | devtools/net: add a verifier for scriptable changes. Use it to make CNode::id private. by theuni · Pull Request #10189 · bitcoin/bitcoin · GitHub
+19:31:19 <sdaftuar> topic suggestion: goals for 0.15
+19:31:40 <cfields_> good one.
+19:31:42 <BlueMatt> ok, so ryanofsky wanted to talk about multi-process, too, i think
+19:31:48 <BlueMatt> and, ofc, pr review targets for the week
+19:31:49 <BlueMatt> :)
+19:31:56 <wumpus> #topic goals for 0.15
+19:32:27 <BlueMatt> sdaftuar: my interpretation of "goals for 0.15" is "everyone has their own goals, and should mention the PRs they want reviewed to further their goals as review priorities, and we should all help them :)"
+19:32:53 <gmaxwell> Per-txo dbcache and non-atomic flushing please...
+19:32:58 <wumpus> agree with BlueMatt, though people could state what their goals for 0.15 are
+19:33:01 <jonasschnelli> My goals for 0.15 are: HD auto-restore, Qt feebumper and multiwallet
+19:33:15 <spudowiar> Watch only HD wallets sound good for 0.15 :)
+19:33:20 <gmaxwell> and multiwallet.
+19:33:21 <jonasschnelli> Oh.. yes. That!
+19:33:26 <sdaftuar> gmaxwell: agreed, also i think it would be good to get the new fee estimation in place
+19:33:26 <jonasschnelli> (hd watch only)
+19:33:40 <BlueMatt> multithreaded net_processing (and wallet) with CValidationInterface generating callbacks into it
+19:33:54 <BlueMatt> ie disconnecting validation and everything else with CValidationInterface in betwene :)
+19:34:02 <sipa> when is 0.15 feature freeze?
+19:34:05 <wumpus> luke-jr: are you planning to update the multiwallet prepare pull according to review comments, or should I take it over?
+19:34:07 <achow101> is replacing accounts with labels planned for 0.15?
+19:34:13 <gmaxwell> sdaftuar: I was going to bring that up. I think that we really need a high level description of the algorithim that we could give to non-developers (e.g. academics) to review.  I don't know if that should hold the improvements but we need to get to that.
+19:34:20 <wumpus> luke-jr: it's kind of blocking other things right now I think
+19:34:32 <morcos> yes, re: fee estimation.. i understand its a giant pain in the ass to review...  and for little perceived gain.  but i do think its worth it, and merging it sooner rather than later is better in case there are any edge case improvements needed.
+19:34:44 <luke-jr> wumpus: when I get home
+19:34:45 <BlueMatt> I do NOT think its little perceived gain
+19:34:50 <cfields_> my big goals are: finally move to libevent for connman, deterministic toolchain creator (so we can drop our reliance on ubuntu's toolchain)
+19:34:58 <wumpus> #link Release schedule for 0.15.0 https://github.com/bitcoin/bitcoin/issues/9961
+19:35:00 <sipa> cfields_: woooh!
+19:35:06 <BlueMatt> morcos: one of the topics discussed at the wallet dev meetup thing was about how shit fee estimates across the ecosystem are
+19:35:08 <wumpus> yes libevent please
+19:35:09 <BlueMatt> and bitcoin core is a big part of that
+19:35:10 <morcos> gmaxwell: heh... it's more art than science i think
+19:35:14 <gmaxwell> jonasschnelli: I don't know about HD watch only, we have a lot of overhang in the HD change that isn't done yet. We really need to hammer out all these corner cases before we go adding more major new features in key management.
+19:35:24 <wumpus> I'd also really like to get the UNIX p2p/rpc stuff in
+19:35:35 <jonasschnelli> gmaxwell: can you explain "a lot"?
+19:35:41 <BlueMatt> morcos: your previous warrants to me about weekend fee estimates in your new design being good represent a huge win for the ecosystem
+19:36:07 <luke-jr> wumpus: (tomorrow)
+19:36:09 <wumpus> it's all very low-risk and shouldn't affect non-unix-socket use cases
+19:36:11 <sdaftuar> BlueMatt: I also think the ability to return non-conservative (ie, lower) fee estimates is important
+19:36:17 <gmaxwell> jonasschnelli: all the things related to recovery are broken and we even don't know how to fix some of them.
+19:36:18 <morcos> BlueMatt: yes, but exactly the kind of thing that need real world experimentation, b/c they change the real world conditions
+19:36:18 <wumpus> luke-jr: thanks
+19:36:22 <sipa> i want pertxoutcache, remove memory peak at flushing, better dbcache eviction policy, ...
+19:36:44 <jonasschnelli> gmaxwell: Yes. I'm working on the recover (one of my 0.15 goals: "HD auto-restore")
+19:36:52 <BlueMatt> OKOK, so review priorities towards all these amazing things? whats up this week :)
+19:36:54 <sipa> oh, and segwit activated? pretty please?
+19:36:58 <gmaxwell> morcos: right but there are incentives and security implications in the design, that deserve wider review than we'll get from people who will infer it from the code. Even if the description wasn't completely precise it would help.
+19:37:00 <BlueMatt> sipa: lol
+19:37:08 <cfields_> wumpus: yes. I've looked over that and it kinda clashes with my libevent changes. But it makes sense to get yours in first, then I can adapt mine.
+19:37:22 * BlueMatt registers #10179
+19:37:23 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:37:27 <wumpus> cfields_: the RPC pull (the first one) shouldn't collide
+19:37:28 <gmaxwell> sipa: would likely help to get 0.14.1 out...
+19:37:39 <wumpus> cfields_: I'm fine with including that one only for now, it's most of the code
+19:37:40 <sipa> gmaxwell: ack
+19:37:46 <cfields_> wumpus: no, the other. But it's a non-issue either way.
+19:38:10 <wumpus> cfields_: the p2p-over-unix-socket is a very small patch on top of that, Im fine with doing that after libevent which means it can share the code with the RPC path
+19:38:29 <morcos> gmaxwell: yes, writing up the high level design is actually simpler than explaining the actual implementation.  the high level design is pretty simple.. maybe i'll put more effort into the last commit which adds commentary
+19:38:31 <wumpus> cfields_: though it depends on the time frame I guess
+19:38:40 <gmaxwell> morcos: I think that would be really helpful.
+19:38:46 <cfields_> sounds good.
+19:38:59 <gmaxwell> morcos: Also for general review, I've lost track of the overall design of the estimator.
+19:39:11 <sipa> morcos: i would like to see a 1-page document explaining what it tries to accomplish
+19:39:20 <gmaxwell> morcos: in any case I strongly support improving it, the current one is dumb on weekends.
+19:39:25 <cfields_> sipa: let's activate segwit after the meeting. We only have 20 min left :p
+19:39:32 <gmaxwell> cfields_: ack
+19:39:37 <wumpus> #action activate segwit
+19:39:41 <morcos> sipa: ok
+19:39:45 <gmaxwell> jinx
+19:39:59 <sipa> (i have no clue how the estimator works, or ever worked, beside "something with buckets")
+19:40:04 <morcos> gmaxwell: yes this is much better on weekends (optionally)
+19:40:06 <instagibbs> ack on explanation, I was asking really dumb questions about it yesterday, may help
+19:40:22 <gmaxwell> So we should bring up again per-txo and non-atomic flushing.  These changes are straight forward but call for a lot of heroic crash testing.
+19:41:01 <BlueMatt> gmaxwell: I'm waiting for non-atomic to support disconnects
+19:41:05 <BlueMatt> then I'll re-review :)
+19:41:41 <bitcoin-git> [13bitcoin] 15jnewbery opened pull request #10204: [rpc] rename disconnectnode argument (06master...06rename_disconnect_node_argument) 02https://github.com/bitcoin/bitcoin/pull/10204
+19:42:00 <sipa> gmaxwell: agree, it needs to support reorgs
+19:42:08 <sipa> also... even harder to test
+19:42:28 <cfields_> high-level question about per-txo: what's the desired/expected outcome when downgrading from 0.15 to 0.14 ?
+19:42:33 <gmaxwell> sipa: hm? with the current code we finish the flush all at once.
+19:42:50 <gmaxwell> needing to support reorgs is only an issue with the changes we discussed post per-txo.
+19:43:20 <MarcoFalke> wumpus: The pull jnewbery just opened could go into 0.14.1 if we do another rc anyway
+19:43:32 <sipa> gmaxwell: a crash in the middle a flush after a disconnect cannot be recovered from with the current code
+19:43:32 <wumpus> MarcoFalke: yep
+19:43:37 <gmaxwell> cfields_: per-txo cannot be downgraded. reindex. Gotta take the cost at some point.  Non-atomic is downgradable on clean shutdown, reindex otherwise.
+19:43:48 <jnewbery> MarcoFalke has suggested that I split off the non-backwards compatible rpc argument name change from #10143 into its own PR so it can be backported
+19:43:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10143 | [net] Allow disconnectnode RPC to be called with node id by jnewbery · Pull Request #10143 · bitcoin/bitcoin · GitHub
+19:43:58 <gmaxwell> sipa: gotcha.
+19:44:31 <gmaxwell> cfields_: We're going to have to take a non-downgradable change for per-txo at some point, I don't think never doing it is a realistic option, the improvement is too significant.
+19:44:33 <wumpus> jnewbery: makes sense, it's still fairly safe to rename named arguments now, but they should be backported
+19:45:15 <gmaxwell> cfields_: the overall changes to the dbcache are too burdensom to realisitcally support a version that can support both.
+19:45:35 <sipa> i still wish for non-atomic flush in 0.14.2
+19:45:38 <cfields_> gmaxwell: sure, makes sense. is it worth trying to slip in a bit of smarts into 0.14.1/0.14.2 gracefully saying that (in the event of an attempted downgrade) the format has changed?
+19:45:41 * sipa keeps dreaming
+19:46:02 <gmaxwell> cfields_: yes, that would be more reasonable than getting a generic corruption message.
+19:46:10 <wumpus> cfields_: yes, something for 0.14.2
+19:46:12 <sipa> cfields_: we could add a change in 0.14 that would make explicit downgrade easy
+19:46:13 <morcos> sipa: too big a change
+19:46:18 <wumpus> no more new things for 0.14.1 please
+19:46:19 <cfields_> .2, ignore for .1.
+19:46:32 <gmaxwell> "Your database format is from the future, so sad for you. Please run reindex."
+19:46:35 <cfields_> wumpus: sorry, realized my mistake too late :)
+19:46:47 <sipa> morcos: i said wish, not demand :)
+19:47:24 <sdaftuar> sipa: feature freeze for 0.15 is 2017-07-16
+19:47:30 <luke-jr> sh AI sipa in 0.14.2
+19:47:44 <gmaxwell> T1000 is back.
+19:47:45 <sipa> sdaftuar: yeah, i saw, wumpus gave link
+19:48:06 <luke-jr> I wish*
+19:48:34 <gmaxwell> /mode #bitcoin-dev +b *!*@178.62.68.75
+19:48:39 <luke-jr_> :(
+19:48:52 <luke-jr_> I can't think of a good nick :(
+19:49:00 <wumpus> apparently we need to make meetings invite-to-speak only
+19:49:17 <wumpus> stupid childish trolls are why we can't have nice things
+19:49:17 <kanzure> you used wrong ip address last time
+19:49:36 <spudowiar> wumpus: If you did that, I wouldn't be able to participate :(
+19:49:40 <gmaxwell> wumpus: lets discuss in the meta meeting. :P
+19:49:45 <luke-jr_> spudowiar: Well, no one gives a fuck
+19:49:52 <cfields_> kanzure: no need, they're easy to spot. just ignore.
+19:49:56 <gmaxwell> (after the meeting)
+19:50:19 <gmaxwell> in any case, lots of good things in flight. I think progress for 15 is good right now.
+19:50:26 <BlueMatt> ok, so 10 minutes left
+19:50:28 <BlueMatt> ryanofsky: ?
+19:50:33 <BlueMatt> did you want to talk about multi-proces
+19:50:43 <BlueMatt> also please folks list your review-priority for this week :)
+19:50:55 <spudowiar> If that gets merged I will hug ryanofsky :)
+19:50:59 <wumpus> spudowiar: I don't see why not; would just make it more work to invite everyone
+19:51:11 <ryanofsky> not sure, what there is to say, #10102 is not complete, but the code that's there could use some review
+19:51:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10102 | bitcoin-qt: spawn bitcoind and communicate over pipe (Experimental, WIP) by ryanofsky · Pull Request #10102 · bitcoin/bitcoin · GitHub
+19:51:20 <spudowiar> wumpus: No one would invite me :(
+19:51:36 <sipa> i'm not sure what the appeal of multi process is
+19:51:37 <wumpus> #topic multiprocess
+19:51:47 <wumpus> process isolation
+19:52:00 <sipa> i'd like to see the wallet go into a separate process from the networking
+19:52:03 <jonasschnelli> sipa: #10102
+19:52:04 <gribble> https://github.com/bitcoin/bitcoin/issues/10102 | bitcoin-qt: spawn bitcoind and communicate over pipe (Experimental, WIP) by ryanofsky · Pull Request #10102 · bitcoin/bitcoin · GitHub
+19:52:18 <BlueMatt> sipa: then review my PRs, those do the first step of splitting it off neatly
+19:52:26 <cfields_> ryanofsky: I've been wanting to split out net into a separate process, but the barrier was creating an IPC. So I'm all for it.
+19:52:29 <BlueMatt> then we can use ryanofsky's multiprocess stuff to do the process :)
+19:52:31 <wumpus> not having the gui and the rest in one address space would be a good start
+19:52:32 <sipa> that that's qt from the rest
+19:52:49 <sipa> that seems like a pointless gimmick to me
+19:53:01 <jonasschnelli> Yes. The wallet seems to be more important.
+19:53:06 <wumpus> sigh
+19:53:11 <gmaxwell> If it could disconect and reconnect it would have some value.
+19:53:15 <ryanofsky> agreed the wallet is more important
+19:53:18 * BlueMatt wasnt sure whether folks would like the many-process approach, over two-processes (wallet, and other)
+19:53:29 <jonasschnelli> not saying the Qt part is not important
+19:53:41 <ryanofsky> reason for starting with qt is that wallet work will depend on matt's changes
+19:53:41 <jnewbery> I'd like one process per wallet for multi-wallet
+19:53:44 <spudowiar> Oh, I thought that was wallet as well (my offer of hug has been withdrawn, ryanofsky)
+19:53:54 <wumpus> the gui has more pressing problems though: too much happens synchronous with the core in the GUI loop
+19:54:05 <jonasschnelli> wumpus: thats a good point
+19:54:09 <ryanofsky> and qt seemed like it might be a less controversial place to start since we already have separate bitcoind and bitcoin-qt executables
+19:54:18 <wumpus> ryanofsky: yes I agree
+19:54:44 <cfields_> i suspect this will probably go down like the scripted-diffs discussion. Maybe we should assign ourselves homework to read the PR fully and discuss next week?
+19:54:48 <jonasschnelli> Architectural wise: splitting of Qt makes more sense.. security: wallet. Splitting of the wallet with something similar to an ssh/gpg-agent shouldn't be very complicated.
+19:55:03 <wumpus> ryanofsky: would make sense to not have them share all that code
+19:55:03 <sipa> hmm, i withdraw my comment about it being pointless
+19:55:10 <gmaxwell> I've read the PR.
+19:55:35 <wumpus> also having one example of IPC between process could make other splits easier
+19:55:40 <gmaxwell> But this is not a good design.
+19:55:46 <gmaxwell> as such an example.
+19:55:58 <jnewbery> 5 minutes left.
+19:55:59 <jnewbery> Suggested topic: PR review requests
+19:56:11 <wumpus> gmaxwell: have you commented about the design in the PR?
+19:56:20 <wumpus> #topic high-priority PR review requests
+19:56:33 <BlueMatt> #10179
+19:56:34 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:56:34 <BlueMatt> for me
+19:57:09 <sipa> #9792 plz
+19:57:11 <gribble> https://github.com/bitcoin/bitcoin/issues/9792 | FastRandomContext improvements and switch to ChaCha20 by sipa · Pull Request #9792 · bitcoin/bitcoin · GitHub
+19:57:12 <morcos> wumpus: #9942 can be merged i think which will at least make the rest of the fee estimation changes smaller to review
+19:57:13 <gribble> https://github.com/bitcoin/bitcoin/issues/9942 | Refactor CBlockPolicyEstimator by morcos · Pull Request #9942 · bitcoin/bitcoin · GitHub
+19:57:18 <spudowiar> wumpus: For external signing, currently messing about with external command, using stdio but other IPC example would be useful
+19:57:24 <spudowiar> Oops, topic's moved on, sorry
+19:57:26 <gmaxwell> (What this PR does is pulls in a compat library to just break the function boundaries, to work across processes, it is not an actual IPC.  And for just making the GUI more concurrent and perhaps reconnectable that fine.  But that is not how we should seperate the wallet.
+19:57:31 <gmaxwell> )
+19:57:42 <gmaxwell> wumpus: I can comment more if I haven't.
+19:58:10 <spudowiar> Wallet communicating over the JSON-RPC interface would be quite good, but then you have the issue that wallet functionality is provided over the JSON-RPC interface?
+19:58:24 <wumpus> morcos: BlueMatt: ok added them to the project  https://github.com/bitcoin/bitcoin/projects/8
+19:58:27 <jnewbery> I'd like some review on #10044. The concept had some ACKs in the meeting a few weeks ago.
+19:58:28 <gribble> https://github.com/bitcoin/bitcoin/issues/10044 | Run functional tests in `make check` by jnewbery · Pull Request #10044 · bitcoin/bitcoin · GitHub
+19:58:41 <wumpus> also sipa's
+19:58:46 <morcos> wumpus: ok, in 9942 case i think it has enough acks already
+19:59:03 <cfields_> jnewbery: will do.
+19:59:16 <wumpus> jnewbery: also added
+19:59:35 <luke-jr> spudowiar: JSON-RPC already provides wallet..
+20:00:00 <BlueMatt> DONG
+20:00:04 <wumpus> #endmeeting
