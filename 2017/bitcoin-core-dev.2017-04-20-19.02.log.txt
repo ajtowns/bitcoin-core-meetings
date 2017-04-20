@@ -1,0 +1,257 @@
+19:02:12 <wumpus> #startmeeting
+19:02:12 <lightningbot> Meeting started Thu Apr 20 19:02:12 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:12 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:14 <luke-jr> IIRC one of the sanitisers used to require a special env var to cause an exit
+19:02:20 <gmaxwell> Not yet, only with some not yet merged PRs are we finally TSAN clean, but many of us run it locally and it has found real bugs.   I'm not protesting, but just bringing up the one thing I remember that interacts with that assumption.
+19:02:23 <luke-jr> but I can't find that now (some do need an extra build option tho)
+19:02:34 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:40 <instagibbs> present
+19:02:44 <wumpus> gmaxwell: yes I think it's a good point, not trying to disparage it, but we should document things like this
+19:02:45 <kanzure> hi.
+19:02:50 <cfields> hi
+19:02:56 <jtimon> hola
+19:03:06 <wumpus> topics?
+19:03:08 <gmaxwell> wumpus: my thinking on seeing the comments above was "oh oh ... that interacts with something ... what was it? what was it?"
+19:03:20 <gmaxwell> wumpus: 0.14.x release?
+19:03:29 <wumpus> #topic 0.14.1 release
+19:03:34 <wumpus> let's push the button?
+19:03:37 <luke-jr> k
+19:04:10 <jonasschnelli> Okay for me... to bad #10231 missed 0.14.1
+19:04:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10231 | [Qt] Reduce a significant cs_main lock freeze by jonasschnelli · Pull Request #10231 · bitcoin/bitcoin · GitHub
+19:04:23 <gmaxwell> https://www.youtube.com/watch?v=rLMCjuge6oE "Turn your key SIR"
+19:04:32 <cfields> hooray!
+19:04:34 <luke-jr> jonasschnelli: I can put it in Knots 0.14.1
+19:04:53 <jonasschnelli> luke-jr: Yes. Do that.
+19:04:53 <wumpus> jonasschnelli: is that even tagged for backport? anyhow, tag it for 0.14.2 I'd say
+19:05:13 <jonasschnelli> wumpus: Yeah. I tagged (not the project though).. 0.14.2 is good IMO.
+19:05:42 <wumpus> jonasschnelli: ok!
+19:06:14 <wumpus> next topic?
+19:06:57 * jonasschnelli damns cs_main
+19:07:23 <wumpus> jonasschnelli: if it's any consolation, many projects had a similar issue with a central lock
+19:07:35 * luke-jr coughs at Python
+19:07:52 <wumpus> I was thinkinkg about the Big Kernel Lock, but yes, python is guilty too
+19:07:55 <jonasschnelli> wumpus: Yes. I guess there is much room for optimisation.
+19:08:36 <gmaxwell> There has been some interesting discussion in github related to the wallets handling of address reuse and dust and what not. anyone interested in that subject might want to check out the discussion on #10233  and PRs linked from there.
+19:08:38 <gribble> https://github.com/bitcoin/bitcoin/issues/10233 | Wallet: Support not reusing addresses by jet0 · Pull Request #10233 · bitcoin/bitcoin · GitHub
+19:08:49 <wumpus> #topic blocker PRs for review
+19:09:20 <gmaxwell> jonasschnelli: on locking we need some better lock profiling. If we have some instrumention that yelled anytime lock contention caused >100ms delays, we'd probably find a number of things to fix.
+19:09:35 <jonasschnelli> gmaxwell: Yes. That!
+19:09:47 <gmaxwell> I don't think cs_main is itself really the issue there... just not carefully avoiding it via things like caches.
+19:09:56 <jonasschnelli> gmaxwell: I was printf profiling yesterday
+19:09:59 <luke-jr> I looked into disabling address reuse and it looks harder than I'd like :/
+19:10:09 <morcos> i would like to briefly discuss fee estimation (maybe as separate topic)
+19:10:29 <gmaxwell> on the blocker PRs-- I'm kinda lost where we are with non-atomic writes.
+19:10:30 <jonasschnelli> blocker PR: https://github.com/bitcoin/bitcoin/projects/8
+19:10:35 * BlueMatt #10179
+19:10:37 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:10:50 <BlueMatt> gm2053: i think its ready for review now?
+19:10:53 <morcos> gmaxwell: #10148 in its current form without multi head just needs more review i think
+19:10:56 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:11:26 <morcos> and maybe more tests?
+19:11:35 <jonasschnelli> sipa still has the chacha20 rnd as blocker #9792 ...
+19:11:37 * BlueMatt utacked this morning
+19:11:37 <gribble> https://github.com/bitcoin/bitcoin/issues/9792 | FastRandomContext improvements and switch to ChaCha20 by sipa · Pull Request #9792 · bitcoin/bitcoin · GitHub
+19:11:56 <wumpus> #10179 is already on the list BlueMatt
+19:11:57 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:12:30 <BlueMatt> wumpus: oh, wasnt sure if it got switched after the last merge, sorry
+19:12:32 <wumpus> adding 10148
+19:12:33 <gmaxwell> 9792 isn't hard to review, FWIW, in my expirence.
+19:12:52 <sdaftuar> gmaxwell: i've become more comfortable conceptually with the non-atomic writes (it did take me a while to come around to it being worth the effort).  i'd like to review and test more.
+19:13:01 <morcos> ditto
+19:13:25 <wumpus> 9792 is also already on the list
+19:13:43 <BlueMatt> #9942 can get merged, I think...
+19:13:45 <gribble> https://github.com/bitcoin/bitcoin/issues/9942 | Refactor CBlockPolicyEstimator by morcos · Pull Request #9942 · bitcoin/bitcoin · GitHub
+19:13:55 <jtimon> #8855 isn't hard to review either...
+19:13:57 <gribble> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+19:14:04 <wumpus> if there's something that an be merged you should tell me, preferably outside the meeting :)
+19:14:14 <morcos> yeah wumpus i think that is now just wasting review cycles, it has more than enouch ACK's (we have told you a couple times.. :) )
+19:14:15 <luke-jr> multiwallet is rebased and nits fixed btw
+19:14:25 <gmaxwell> sdaftuar: will let us effectively double the dbcache size being a first benefit... plus it should allow some really nince improvements later post per-txo. Sorry if it wasn't communicated well, the value was more obvious to pieter and I perhaps because we've been hammering on caching policy changes based on per-txo for a while.
+19:14:33 <luke-jr> CWalletDB still needs some serious refactoring, but IMO that's something to do outside multiwallet's PR
+19:15:06 <jonasschnelli> luke-jr: agree
+19:15:18 <wumpus> morcos: I don't remember
+19:15:49 <morcos> wumpus: no problem, i just wasnt telling you because i didn't want to tell you too many times..  in any case i think its ready (9942 that is)
+19:16:03 <bitcoin-git> [13bitcoin] 15luke-jr closed pull request #7289: [WIP] Make arguments reconfigurable at runtime via RPC (06master...06rpc_setarg) 02https://github.com/bitcoin/bitcoin/pull/7289
+19:16:30 <sdaftuar> gmaxwell: yeah, makes sense to me now -- there are a lot of steps of "why don't we do X simpler thing instead" that i know you guys have tried/thought through already, that i needed to think through myself
+19:17:49 <morcos> fee estimation?
+19:17:51 <jonasschnelli> ack
+19:18:04 <bitcoin-git> [13bitcoin] 15laanwj pushed 8 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/987a6c09562e...14c948987f0b
+19:18:04 <bitcoin-git> 13bitcoin/06master 14ae7327b 15Alex Morcos: Make feeEstimator its own global instance of CBlockPolicyEstimator
+19:18:05 <bitcoin-git> 13bitcoin/06master 14f6187d6 15Alex Morcos: Make processBlockTx private.
+19:18:05 <bitcoin-git> 13bitcoin/06master 14dbb9e36 15Alex Morcos: Give CBlockPolicyEstimator it's own lock
+19:18:15 <morcos> Thanks!
+19:18:23 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #9942: Refactor CBlockPolicyEstimator (06master...06moveTxConfirmStats) 02https://github.com/bitcoin/bitcoin/pull/9942
+19:18:40 <BlueMatt> morcos: yes, fee estimation
+19:18:46 <morcos> I wrote this to describe the existing algorithm https://gist.github.com/morcos/d3637f015bc4e607e1fd10d8351e9f41 , which I'm happy to discuss if anyone has any questions on it.
+19:18:55 <gmaxwell> morcos: thanks for that fee estimation writeup, I guess I understood it better than I thought I did, I think I thought more of the discussed things were actually implemented.
+19:18:58 <bitcoin-git> [13bitcoin] 15ryanofsky opened pull request #10242: [qt] Don't call method on null WalletModel object (06master...06pr/rbfnull) 02https://github.com/bitcoin/bitcoin/pull/10242
+19:19:33 <gmaxwell> morcos: I think that writeup is good and should go into the codebase.
+19:19:36 <morcos> And then I wrote #10199 with a bunch of improvements.  I suppose it makes sense to add another section the gist that provides a high level overview of the improvements?
+19:19:38 <gribble> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+19:19:46 <gmaxwell> morcos: that would be good.
+19:20:32 <gmaxwell> I think the estimatior is a complex enough machine that we should maintain a seperate description of it, if not an actual spec.   Just like we do for many major protocol features.
+19:20:49 <morcos> But what I would like to do is err on the side of merging 10199 early and then if there are small bugs or fixes, we can fix them in master
+19:20:51 * jtimon remembers that he also wants to decouple the estimator from the mempool
+19:20:53 <sipa> oops, forgot about meeting
+19:21:01 <gmaxwell> morcos: the writeup could use some more details about the reliablity estimates and how it merges bins.
+19:21:04 <morcos> it takes 2 weeks of continuous up time to even explore all the code paths
+19:21:11 <gmaxwell> sipa: the meeting did not forget about you.
+19:21:33 <morcos> jtimon: yes, i have a plan to do that that builds off BlueMatt's CValidationInterface.  The groundwork is laid in 9942 that was just merged
+19:21:51 <gmaxwell> morcos: are we not saving enough data between restarts that we really do need two weeks continious uptime to hit it all?
+19:21:57 <morcos> reliability estimates?  reliability OF estimates?
+19:22:14 <gmaxwell> morcos: I know that if there aren't many samples in a bin it doesn't use the bin.
+19:22:37 <morcos> gmaxwell: well if you want to know how much fee it'll take to be confirmed in a week, you sure as hell better wait at least a week  (but yes once you've done that once, you may not need to do it again on a restart)
+19:23:02 <morcos> gmaxwell: some of that stuff is changed in 10199 (for the better, obviously i guess)
+19:23:10 <luke-jr> if anyone else acks #10242, maybe mention the meeting going on in a P.S. :p
+19:23:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10242 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+19:23:12 <jtimon> morcos: I know, I reveiwed it yesterday and linked to similar PRs of my own, at the time you only wanted to decouple the mempool from the estimator (9942 just did it), but not the estimator from the mempool, happy if you changed your mind and want both like me now
+19:23:37 <gmaxwell> I guess in general a thing to keep in mind for this sort of description is that we should try to make it detailed enough that if an academic showed up and wrote a paper on it based on only the description (which they will) would their results be likely useful to us or not. :)
+19:23:57 <morcos> but there are some open questions in 10199 that would be helpful to get feedback on
+19:24:06 <morcos> such as starting with not being able to upgrade from the old estimates
+19:24:14 <wumpus> imo the most important about the description is that we understand it
+19:24:20 <gmaxwell> morcos: we should think about saving more of its state in the future.  I have nodes that don't spend more than a few minutes down per month, but don't often make it to two weeks up.
+19:25:12 <luke-jr> morcos: how complicated is the upgrading? we only would need it for one version at most IMO
+19:25:15 <morcos> gmaxwell: i think thats problematic for being able to predict really long time horizons...
+19:25:44 <wumpus> upgrading isn't much of an issue, if the estimation algorithm changes, feel free to throw away the data from the previous one
+19:25:55 <wumpus> just make sure it doesn't crash on upgrading/downgrading
+19:26:23 <gmaxwell> well, to really advance I think what we would probably want is a simulator (perhaps based on historical data) and a metric of success.
+19:26:38 <wumpus> yes
+19:26:41 <morcos> luke-jr: the complicated part is deciding what we want to do, implementing it probably isn't that bad...  but for instance the new estimates are smart about whether your estimates file is stale...  but should it just dumbly use your old estimates until it has new estimates...  what if the new estimates for 5 blocks which you do have is lower than the old estimate for 25 (which you dont' have a new estimate for)
+19:26:47 <morcos> etc.
+19:26:48 <gmaxwell> I think it's more or less fine to toss out data on algo changes. we could worry about doing better when the algo is stable for a long time.
+19:27:13 <wumpus> the difficult part, as with coin selection, is evaluationg algorithms
+19:27:31 <morcos> the historical data is useless... the question is whether you use the old estimates until your new estimates are warmed up (by calculating them before you throw away the data)
+19:27:58 <luke-jr> huh, someone's playing malleability games on testnet.
+19:28:10 <gmaxwell> Electrum does some things with using static estimates when it doesn't have data to estimate on its own.  I think there are a lot of interesting tradeoffs we could make to hotstart. But I don't think starting speed is at all our biggest concern.
+19:28:17 <gmaxwell> luke-jr: they have been for months.
+19:28:47 <gmaxwell> The purely retrospective algorithim is really slow to update to changing network conditions, in particular, it doesn't track the weekly load cycle well.
+19:28:49 <morcos> gmaxwell: right so that is the question..  my preference would be to merge as is.. and then if we get around to it before 0.15 we add a smarter hotstart
+19:29:06 <luke-jr> morcos: well, if it's  not already implemented, I'd say it's not important enough to spend time implementing
+19:29:43 <luke-jr> (upgrading, that is)
+19:29:56 <morcos> gmaxwell: yes... one of the main problems the new design was meant to address...  still using only a purely retrospective algorithm, so the problem fundamentally remains, but in practice its much more responsive  (b/c it looks at different time horizons simultaneously)
+19:30:59 <jcorgan> clearly this calls for Deep Fee Estimation
+19:31:08 <gmaxwell> die
+19:31:36 <jcorgan> tell me what you *really* think
+19:31:40 <wumpus> hehe, deep fee estimation
+19:31:55 <luke-jr> no no, Xtreme Deep Fee Estimation!
+19:32:07 <morcos> anyway, ok for now i'll update the gist with a high level description of the algorithm
+19:32:11 <gmaxwell> I have a lovely algorithim for an efficient limited memory 2D exponentially weighed moving average somewhere....
+19:32:17 <gmaxwell> morcos: great.
+19:32:32 <sipa> Xthin fees
+19:32:36 <luke-jr> XD
+19:32:46 <morcos> but my basic point here is that ideally we need weeks/months of testing in master to uncover possible edge cases
+19:33:14 <morcos> i'm relatively confident that overall this is better, but thats not the same thing as saying it doesn' thave problems that need fixing...
+19:33:16 <wumpus> yes, it shouldn't be merged last minute
+19:33:34 <gmaxwell> morcos: well get your description up soon, and I'll review shortly after.  I think fee estimation is self contained enough we could merge something and back it out if we don't like it... but we need to have more than you understanding what we're doing at least. :)
+19:33:58 <morcos> gmaxwell: yes basically my point..  ok sounds good
+19:34:08 <gmaxwell> (if for no other reason than we need to understand it better to spot failures with it.)
+19:34:12 <jonasschnelli> morcos: maybe it was asked already, how fast are the estimations available after startup? Does it work with prune=550?
+19:34:26 <morcos> prune is irrelevant
+19:34:50 <morcos> it can give you an estimate for a target of N once it has been caught up for 2*N blocks...
+19:35:01 <gmaxwell> jonasschnelli: Estimations for depth X need to at least see some multiple of X blocks.
+19:35:22 <morcos> but then it saves that
+19:35:24 <gmaxwell> Becuase you have a moving window of analysis, and no data for longer windows.
+19:35:54 <jonasschnelli> So for a conf target of 2 you need to wait ~40min after startup?
+19:35:57 <morcos> so if you stop and restart you're starting over again for increasing your max possible target, but you still have access for up to that max possible target
+19:36:34 <morcos> jonasschnelli: correct, but again, only the first time  (or if you have been down for more than 6 weeks i think)
+19:36:37 <gmaxwell> jonasschnelli: well not really, because you save the results. so the first time, yes. But that goes back to the hot start question.. and there are lots of ways we could hot start these things, if we really had something that was working well otherwise.
+19:36:50 <jtimon> jcorgan: after alphago took go away from me I was looking for other problem to solve with https://github.com/jtimon/preann as an excuse to run it again </offtopic spam>
+19:37:42 <jonasschnelli> Okay. Thanks... I'll test 10199 with the mainnet GUI then a bit (before of after merging)
+19:37:51 <bitcoin-git> [13bitcoin] 15ryanofsky opened pull request #10244: [qt] Add abstraction layer for accessing node and wallet functionality from gui (06master...06pr/ipc-local) 02https://github.com/bitcoin/bitcoin/pull/10244
+19:37:53 <jonasschnelli> *or
+19:38:44 <morcos> gmaxwell: in the meantime the PR description in 10199 covers the changes pretty close to what i will write up on the gist
+19:40:09 <morcos> i guess i need to do a quick rebase now that 9942 is done
+19:44:25 * luke-jr crickets
+19:44:32 <wumpus> any other topics?
+19:44:54 <gmaxwell> I want to talk to luke some about the address reuse thing, but it can be post meeting.
+19:45:06 <wumpus> time to tag 0.14.1 final and start gitian building
+19:45:25 * luke-jr spins out a Knots branch :p
+19:45:54 <wumpus> gmaxwell: well there's time
+19:45:58 <wumpus> #topic address reuse thing
+19:46:47 <gmaxwell> so a serious privacy problem which has been actively exploited for a long time is that people make near-dust payments to addresses once they've been spent from, so that you spend from them again in new txn, creating snowballing that links all your transactions togeather.
+19:46:54 <wumpus> * [new tag]         v0.14.1 -> v0.14.1
+19:47:32 <instagibbs> https://www.reddit.com/r/BitcoinBeginners/comments/66az3b/why_do_i_keep_getting_000000001_deposits/ for example
+19:47:35 <gmaxwell> Latest discussions seem to be driven by a user that runs a gambling site and whom cares about this because his customers get running into issues transactions that link back to him.
+19:47:42 <wumpus> do we need a 'block transacton' functionality against such transaction abuse?
+19:47:45 <gmaxwell> but it's a general concern for everyone.
+19:48:16 <gmaxwell> So there have been discussion about some very heavy handed manual methods, but I think I have a suggestion that could potentially be a default behavior:
+19:48:28 <gmaxwell> but I'm interested in hearing if other people think I'm crazy.
+19:48:31 <wumpus> wouldn't be the first time I have an UTXO I just want to ignore
+19:48:37 <morcos> stop the suspense!
+19:48:52 <BlueMatt> morcos: ack
+19:48:57 <gmaxwell> First create a seperate quarenteened balance. Any address or specfic txo could be manually quarenteened or unquarenteed at any itme.
+19:49:29 <gmaxwell> Then adjust coin selection to always spend all payments to a particular address at once (+/- some filtering with dust that might be needed to prevent dust attacks).
+19:49:56 <gmaxwell> Then once an address has been spent from, it's automatically added to tue quarenteen list (with any outputs that weren't spent, e.g. whatever failed the dust filtering).
+19:50:21 <wumpus> I think the quarantaine is a good idea, not so sure about adding things automatically though
+19:50:26 <gmaxwell> If users want to intentionally reuse an address, I suppose they'd need a way to prevent them from being reblocked.
+19:50:35 <morcos> i like the general idea
+19:50:42 <luke-jr> gmaxwell: and quarantined funds are excluded from balance or tx list somehow?
+19:51:05 <gmaxwell> Well I think the attacks will continue unless we could come up with something that was close to automatic... Could be something that gives a GUI user a choice the first time it happens or if the Q balance becomes non-negligble.
+19:51:05 <BlueMatt> morcos: I might prefer if we were Quarantine ing things and not quarantaine or quarenteened :p
+19:51:06 <morcos> but what if you have 10 10btc utxos at the same address and you need to pay someone 1 btc
+19:51:09 <morcos> you spend them all?
+19:51:28 <gmaxwell> luke-jr: they'd be shown in the tx list, but skipped for spending, and shown as a seperate balances. Like confirmed vs unconfirmed balance.
+19:51:59 <BlueMatt> gmaxwell: I'm somewhat unsold as default policy
+19:52:03 <gmaxwell> morcos: yep. and create a big change. Which I think is fine.  I think a seperate issue is that we should auto-split very large change. But thats 90% independant.
+19:52:04 <BlueMatt> it seems to be a somewhat-surprising break
+19:52:18 <jcorgan> and the name 'quarantined' might be a bit heavy handed
+19:52:27 <gmaxwell> BlueMatt: the current privacy trashing is itself a very surprising break.
+19:52:32 <BlueMatt> fair
+19:52:36 <luke-jr> it might be less confusing if only the first receive ever was displayed/accepted, and all subsequent ones got quarantined
+19:52:48 <gmaxwell> jcorgan: well I came up with that on the spot, on github they're calling it frozen, which I think is super misleading (bank froze my funds!). :P
+19:52:55 <jcorgan> reserved?
+19:53:11 <luke-jr> suspicious? :P
+19:53:13 <wumpus> trash can
+19:53:16 <Chris_Stewart_5> extraneous?
+19:53:19 <gmaxwell> luke-jr: first recieved leads to an immediate attack: dust spammer races the payment then you get the dust and not the payment. :)
+19:53:22 <morcos> gmaxwell: hmm...   i do like the idea of auto-quarantining spent address or dust left over in mostly spent addresses, but not sure i like default spending all the inputs and possibly giving you large change
+19:53:35 <luke-jr> gmaxwell: first confirmed with a larger value?
+19:53:47 <gmaxwell> morcos: really I'm surprised at that. That change alone is something I've wanted to do for a while (and was carrying patches for it for a bit)
+19:53:49 <morcos> quarantine is a good name, but lets not bikeshed that
+19:54:14 <luke-jr> gmaxwell: maybe auto-quarantine dust too
+19:54:26 <instagibbs> morcos, assuming spending the dust is worthwhile, what's the concern?
+19:54:26 <BlueMatt> gmaxwell: I'm not sold on non-end-user wallets here. it seems like it woul dbreak many merchant workflows that use bitcoind
+19:54:29 <sdaftuar> auto-spending all the funds with a given address makes sense to me as well
+19:54:42 <wumpus> morcos: let's quarantine the bikeshed
+19:54:49 <luke-jr> BlueMatt: merchant workflows that reuse addresses are broken anyway
+19:54:52 <BlueMatt> (eg you receive half a payment, your coin selection spends from that addr, then you receive the other half, and now you dont realize you got paid?)
+19:54:53 <luke-jr> wumpus: lol
+19:54:55 <gmaxwell> BlueMatt: why? (thats why I'm asking.) -- obviously it would be configurable.
+19:55:25 <jtimon> re bikeshedding: the class managing this obviously needs to be called quarantiner
+19:55:33 <gmaxwell> BlueMatt: how often are merchants doing that?  I mean you can get into advanced things like biasing selection to chose SPK that have least recently recieved funds to avoid that.
+19:55:56 <BlueMatt> gmaxwell: I assume most merchants at least support multiple txn to complete your payment?
+19:56:02 <BlueMatt> most guis ive read seem to imply that
+19:56:36 <morcos> yeah i suppose if its configurable, an option that autospends everythign from any address that gets spent makes sense
+19:56:40 <gmaxwell> BlueMatt: kinda. but they also require them to be recieved at effectively the same time. I think it's managable.
+19:56:45 <instagibbs> I'm not sure they accept multiple txn as policy
+19:56:50 <instagibbs> err automatically
+19:57:01 <gmaxwell> Just the autospend alone would radically improve privacy, and would almost be enough except for the malicious dust creation.
+19:57:03 <BlueMatt> gmaxwell: to make it compatible you'd have to never spend outputs newer than X, where X is merchant time frame
+19:57:32 <gmaxwell> BlueMatt: ya, which would be a trivial 'first try without x' in the current framework.
+19:57:35 <BlueMatt> i agree in principal, but it sounds like you'd break some folks' workflow in subtle ways. adding the option and defaulting off for non-gui users, maybe?
+19:58:05 <sipa> i don't see how autospending would break anything?
+19:58:11 <luke-jr> or just tweak how RPC shows quarantine
+19:58:13 <gmaxwell> well it could evolve over time, too-- I do think it's not worth our time to do things here that we don't think could be on for a majority of users eventually in some form.
+19:58:21 <instagibbs> At a minimum you could make near-dust be quarantined
+19:58:25 <morcos> i would think there could be some threshold for auto-un-quarantining too right?  like if your quarantine address receives 1 BTC?  or maybe not, maybe it just becomes common sense to check that
+19:58:35 <wumpus> in the first version this is introduced it should be disabled by default in any case, I think, let's present it as a security feature first. Could always be enabled by default later but that should not be the initial goal.
+19:58:43 <gmaxwell> Because already people who are super aware of privacy can and will already manually do coin selection to achieve ends like this.
+19:58:50 <BlueMatt> gmaxwell: agreed in principal, but there are also easier fixes we can do initially. eg bias coin selection towards this with fallbacks?
+19:58:51 <luke-jr> wumpus: true
+19:58:55 <gmaxwell> wumpus: absolutely.
+19:59:08 <wumpus> anything that potentially 'disappears' funds shouldn't be enabled lightly
+19:59:09 <luke-jr> it's harmless to add if it's disabled by default initially
+19:59:23 <wumpus> luke-jr: exactly
+19:59:23 <morcos> ok, so this sounds like general agreement that this is a good idea and has degenerated into arguing about defaults.   all development discussion in a nutshell!
+19:59:24 <BlueMatt> "disabled by default" can also mean "if something fails, fall back to the current behavior"
+19:59:31 <gmaxwell> Just in principle I don't think the resource investment is worth if it we don't think that the end goal couldn't be default-ish (e.g. GUI) use.
+19:59:32 <BlueMatt> morcos: yup
+19:59:34 <wumpus> I'd enable it personally
+19:59:54 <wumpus> it's worth the resource investment if we think it's useful to have
+20:00:12 <sdaftuar> so perhaps a first simple step would be to enable auto-spending of all funds from a given address in the coin selection logic?
+20:00:19 <gmaxwell> I think users should be okay with 'multiple balances' we already have confirmed vs unconfirmed, and normal bank accounts have multiple balances.
+20:00:20 <luke-jr> IMO the end goal should be to treat address reuse as something that just doesn't work, and have a quarantine people can dig out lost funds if necessary
+20:00:22 <BlueMatt> sdaftuar: ack
+20:00:26 <BlueMatt> DONG
+20:00:35 <jtimon> I would start with the quarantine thing as only usable manually, which we all seem to like, and then propose automatic things
+20:00:36 <wumpus> #endmeeting

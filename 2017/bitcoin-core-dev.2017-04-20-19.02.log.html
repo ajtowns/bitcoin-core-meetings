@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:02:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:02:12</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Apr 20 19:02:12 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:02:12</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:14</span><span class="nk"> &lt;luke-jr&gt;</span> IIRC one of the sanitisers used to require a special env var to cause an exit
+<a name="l-5"></a><span class="tm">19:02:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Not yet, only with some not yet merged PRs are we finally TSAN clean, but many of us run it locally and it has found real bugs.   I'm not protesting, but just bringing up the one thing I remember that interacts with that assumption.
+<a name="l-6"></a><span class="tm">19:02:23</span><span class="nk"> &lt;luke-jr&gt;</span> but I can't find that now (some do need an extra build option tho)
+<a name="l-7"></a><span class="tm">19:02:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-8"></a><span class="tm">19:02:40</span><span class="nk"> &lt;instagibbs&gt;</span> present
+<a name="l-9"></a><span class="tm">19:02:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes I think it's a good point, not trying to disparage it, but we should document things like this
+<a name="l-10"></a><span class="tm">19:02:45</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-11"></a><span class="tm">19:02:50</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:02:56</span><span class="nk"> &lt;jtimon&gt;</span> hola
+<a name="l-13"></a><span class="tm">19:03:06</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-14"></a><span class="tm">19:03:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> my thinking on seeing the comments above was "oh oh ... that interacts with something ... what was it? what was it?"
+<a name="l-15"></a><span class="tm">19:03:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> 0.14.x release?
+<a name="l-16"></a><span class="tm">19:03:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.14.1 release</span>
+<a name="l-17"></a><span class="tm">19:03:34</span><span class="nk"> &lt;wumpus&gt;</span> let's push the button?
+<a name="l-18"></a><span class="tm">19:03:37</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-19"></a><span class="tm">19:04:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay for me... to bad #10231 missed 0.14.1
+<a name="l-20"></a><span class="tm">19:04:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10231 | [Qt] Reduce a significant cs_main lock freeze by jonasschnelli · Pull Request #10231 · bitcoin/bitcoin · GitHub
+<a name="l-21"></a><span class="tm">19:04:23</span><span class="nk"> &lt;gmaxwell&gt;</span> https://www.youtube.com/watch?v=rLMCjuge6oE "Turn your key SIR"
+<a name="l-22"></a><span class="tm">19:04:32</span><span class="nk"> &lt;cfields&gt;</span> hooray!
+<a name="l-23"></a><span class="tm">19:04:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> I can put it in Knots 0.14.1
+<a name="l-24"></a><span class="tm">19:04:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> Yes. Do that.
+<a name="l-25"></a><span class="tm">19:04:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> is that even tagged for backport? anyhow, tag it for 0.14.2 I'd say
+<a name="l-26"></a><span class="tm">19:05:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yeah. I tagged (not the project though).. 0.14.2 is good IMO.
+<a name="l-27"></a><span class="tm">19:05:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> ok!
+<a name="l-28"></a><span class="tm">19:06:14</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-29"></a><span class="tm">19:06:57 </span><span class="nka">* jonasschnelli</span> <span class="ac">damns cs_main</span>
+<a name="l-30"></a><span class="tm">19:07:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> if it's any consolation, many projects had a similar issue with a central lock
+<a name="l-31"></a><span class="tm">19:07:35 </span><span class="nka">* luke-jr</span> <span class="ac">coughs at Python</span>
+<a name="l-32"></a><span class="tm">19:07:52</span><span class="nk"> &lt;wumpus&gt;</span> I was thinkinkg about the Big Kernel Lock, but yes, python is guilty too
+<a name="l-33"></a><span class="tm">19:07:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. I guess there is much room for optimisation.
+<a name="l-34"></a><span class="tm">19:08:36</span><span class="nk"> &lt;gmaxwell&gt;</span> There has been some interesting discussion in github related to the wallets handling of address reuse and dust and what not. anyone interested in that subject might want to check out the discussion on #10233  and PRs linked from there.
+<a name="l-35"></a><span class="tm">19:08:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10233 | Wallet: Support not reusing addresses by jet0 · Pull Request #10233 · bitcoin/bitcoin · GitHub
+<a name="l-36"></a><span class="tm">19:08:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">blocker PRs for review</span>
+<a name="l-37"></a><span class="tm">19:09:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> on locking we need some better lock profiling. If we have some instrumention that yelled anytime lock contention caused &gt;100ms delays, we'd probably find a number of things to fix.
+<a name="l-38"></a><span class="tm">19:09:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. That!
+<a name="l-39"></a><span class="tm">19:09:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think cs_main is itself really the issue there... just not carefully avoiding it via things like caches.
+<a name="l-40"></a><span class="tm">19:09:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> I was printf profiling yesterday
+<a name="l-41"></a><span class="tm">19:09:59</span><span class="nk"> &lt;luke-jr&gt;</span> I looked into disabling address reuse and it looks harder than I'd like :/
+<a name="l-42"></a><span class="tm">19:10:09</span><span class="nk"> &lt;morcos&gt;</span> i would like to briefly discuss fee estimation (maybe as separate topic)
+<a name="l-43"></a><span class="tm">19:10:29</span><span class="nk"> &lt;gmaxwell&gt;</span> on the blocker PRs-- I'm kinda lost where we are with non-atomic writes.
+<a name="l-44"></a><span class="tm">19:10:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> blocker PR: https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-45"></a><span class="tm">19:10:35 </span><span class="nka">* BlueMatt</span> <span class="ac">#10179</span>
+<a name="l-46"></a><span class="tm">19:10:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-47"></a><span class="tm">19:10:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gm2053:</span> i think its ready for review now?
+<a name="l-48"></a><span class="tm">19:10:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> #10148 in its current form without multi head just needs more review i think
+<a name="l-49"></a><span class="tm">19:10:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+<a name="l-50"></a><span class="tm">19:11:26</span><span class="nk"> &lt;morcos&gt;</span> and maybe more tests?
+<a name="l-51"></a><span class="tm">19:11:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> sipa still has the chacha20 rnd as blocker #9792 ...
+<a name="l-52"></a><span class="tm">19:11:37 </span><span class="nka">* BlueMatt</span> <span class="ac">utacked this morning</span>
+<a name="l-53"></a><span class="tm">19:11:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9792 | FastRandomContext improvements and switch to ChaCha20 by sipa · Pull Request #9792 · bitcoin/bitcoin · GitHub
+<a name="l-54"></a><span class="tm">19:11:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#10179 </span><span class="cmdline">is already on the list BlueMatt</span>
+<a name="l-55"></a><span class="tm">19:11:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-56"></a><span class="tm">19:12:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> oh, wasnt sure if it got switched after the last merge, sorry
+<a name="l-57"></a><span class="tm">19:12:32</span><span class="nk"> &lt;wumpus&gt;</span> adding 10148
+<a name="l-58"></a><span class="tm">19:12:33</span><span class="nk"> &lt;gmaxwell&gt;</span> 9792 isn't hard to review, FWIW, in my expirence.
+<a name="l-59"></a><span class="tm">19:12:52</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i've become more comfortable conceptually with the non-atomic writes (it did take me a while to come around to it being worth the effort).  i'd like to review and test more.
+<a name="l-60"></a><span class="tm">19:13:01</span><span class="nk"> &lt;morcos&gt;</span> ditto
+<a name="l-61"></a><span class="tm">19:13:25</span><span class="nk"> &lt;wumpus&gt;</span> 9792 is also already on the list
+<a name="l-62"></a><span class="tm">19:13:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#9942 </span><span class="cmdline">can get merged, I think...</span>
+<a name="l-63"></a><span class="tm">19:13:45</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9942 | Refactor CBlockPolicyEstimator by morcos · Pull Request #9942 · bitcoin/bitcoin · GitHub
+<a name="l-64"></a><span class="tm">19:13:55</span><span class="nk"> &lt;jtimon&gt;</span> <span class="cmd">#8855 </span><span class="cmdline">isn't hard to review either...</span>
+<a name="l-65"></a><span class="tm">19:13:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+<a name="l-66"></a><span class="tm">19:14:04</span><span class="nk"> &lt;wumpus&gt;</span> if there's something that an be merged you should tell me, preferably outside the meeting :)
+<a name="l-67"></a><span class="tm">19:14:14</span><span class="nk"> &lt;morcos&gt;</span> yeah wumpus i think that is now just wasting review cycles, it has more than enouch ACK's (we have told you a couple times.. :) )
+<a name="l-68"></a><span class="tm">19:14:15</span><span class="nk"> &lt;luke-jr&gt;</span> multiwallet is rebased and nits fixed btw
+<a name="l-69"></a><span class="tm">19:14:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> will let us effectively double the dbcache size being a first benefit... plus it should allow some really nince improvements later post per-txo. Sorry if it wasn't communicated well, the value was more obvious to pieter and I perhaps because we've been hammering on caching policy changes based on per-txo for a while.
+<a name="l-70"></a><span class="tm">19:14:33</span><span class="nk"> &lt;luke-jr&gt;</span> CWalletDB still needs some serious refactoring, but IMO that's something to do outside multiwallet's PR
+<a name="l-71"></a><span class="tm">19:15:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> agree
+<a name="l-72"></a><span class="tm">19:15:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I don't remember
+<a name="l-73"></a><span class="tm">19:15:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> no problem, i just wasnt telling you because i didn't want to tell you too many times..  in any case i think its ready (9942 that is)
+<a name="l-74"></a><span class="tm">19:16:03</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15luke-jr closed pull request #7289: [WIP] Make arguments reconfigurable at runtime via RPC (06master...06rpc_setarg) 02https://github.com/bitcoin/bitcoin/pull/7289
+<a name="l-75"></a><span class="tm">19:16:30</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yeah, makes sense to me now -- there are a lot of steps of "why don't we do X simpler thing instead" that i know you guys have tried/thought through already, that i needed to think through myself
+<a name="l-76"></a><span class="tm">19:17:49</span><span class="nk"> &lt;morcos&gt;</span> fee estimation?
+<a name="l-77"></a><span class="tm">19:17:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-78"></a><span class="tm">19:18:04</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 8 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/987a6c09562e...14c948987f0b
+<a name="l-79"></a><span class="tm">19:18:04</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14ae7327b 15Alex Morcos: Make feeEstimator its own global instance of CBlockPolicyEstimator
+<a name="l-80"></a><span class="tm">19:18:05</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14f6187d6 15Alex Morcos: Make processBlockTx private.
+<a name="l-81"></a><span class="tm">19:18:05</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14dbb9e36 15Alex Morcos: Give CBlockPolicyEstimator it's own lock
+<a name="l-82"></a><span class="tm">19:18:15</span><span class="nk"> &lt;morcos&gt;</span> Thanks!
+<a name="l-83"></a><span class="tm">19:18:23</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj closed pull request #9942: Refactor CBlockPolicyEstimator (06master...06moveTxConfirmStats) 02https://github.com/bitcoin/bitcoin/pull/9942
+<a name="l-84"></a><span class="tm">19:18:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yes, fee estimation
+<a name="l-85"></a><span class="tm">19:18:46</span><span class="nk"> &lt;morcos&gt;</span> I wrote this to describe the existing algorithm https://gist.github.com/morcos/d3637f015bc4e607e1fd10d8351e9f41 , which I'm happy to discuss if anyone has any questions on it.
+<a name="l-86"></a><span class="tm">19:18:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> thanks for that fee estimation writeup, I guess I understood it better than I thought I did, I think I thought more of the discussed things were actually implemented.
+<a name="l-87"></a><span class="tm">19:18:58</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15ryanofsky opened pull request #10242: [qt] Don't call method on null WalletModel object (06master...06pr/rbfnull) 02https://github.com/bitcoin/bitcoin/pull/10242
+<a name="l-88"></a><span class="tm">19:19:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I think that writeup is good and should go into the codebase.
+<a name="l-89"></a><span class="tm">19:19:36</span><span class="nk"> &lt;morcos&gt;</span> And then I wrote #10199 with a bunch of improvements.  I suppose it makes sense to add another section the gist that provides a high level overview of the improvements?
+<a name="l-90"></a><span class="tm">19:19:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+<a name="l-91"></a><span class="tm">19:19:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> that would be good.
+<a name="l-92"></a><span class="tm">19:20:32</span><span class="nk"> &lt;gmaxwell&gt;</span> I think the estimatior is a complex enough machine that we should maintain a seperate description of it, if not an actual spec.   Just like we do for many major protocol features.
+<a name="l-93"></a><span class="tm">19:20:49</span><span class="nk"> &lt;morcos&gt;</span> But what I would like to do is err on the side of merging 10199 early and then if there are small bugs or fixes, we can fix them in master
+<a name="l-94"></a><span class="tm">19:20:51 </span><span class="nka">* jtimon</span> <span class="ac">remembers that he also wants to decouple the estimator from the mempool</span>
+<a name="l-95"></a><span class="tm">19:20:53</span><span class="nk"> &lt;sipa&gt;</span> oops, forgot about meeting
+<a name="l-96"></a><span class="tm">19:21:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> the writeup could use some more details about the reliablity estimates and how it merges bins.
+<a name="l-97"></a><span class="tm">19:21:04</span><span class="nk"> &lt;morcos&gt;</span> it takes 2 weeks of continuous up time to even explore all the code paths
+<a name="l-98"></a><span class="tm">19:21:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> the meeting did not forget about you.
+<a name="l-99"></a><span class="tm">19:21:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jtimon:</span> yes, i have a plan to do that that builds off BlueMatt's CValidationInterface.  The groundwork is laid in 9942 that was just merged
+<a name="l-100"></a><span class="tm">19:21:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> are we not saving enough data between restarts that we really do need two weeks continious uptime to hit it all?
+<a name="l-101"></a><span class="tm">19:21:57</span><span class="nk"> &lt;morcos&gt;</span> reliability estimates?  reliability OF estimates?
+<a name="l-102"></a><span class="tm">19:22:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I know that if there aren't many samples in a bin it doesn't use the bin.
+<a name="l-103"></a><span class="tm">19:22:37</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> well if you want to know how much fee it'll take to be confirmed in a week, you sure as hell better wait at least a week  (but yes once you've done that once, you may not need to do it again on a restart)
+<a name="l-104"></a><span class="tm">19:23:02</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> some of that stuff is changed in 10199 (for the better, obviously i guess)
+<a name="l-105"></a><span class="tm">19:23:10</span><span class="nk"> &lt;luke-jr&gt;</span> if anyone else acks #10242, maybe mention the meeting going on in a P.S. :p
+<a name="l-106"></a><span class="tm">19:23:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10242 | An error has occurred and has been logged. Please contact this bot's administrator for more information.
+<a name="l-107"></a><span class="tm">19:23:12</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> I know, I reveiwed it yesterday and linked to similar PRs of my own, at the time you only wanted to decouple the mempool from the estimator (9942 just did it), but not the estimator from the mempool, happy if you changed your mind and want both like me now
+<a name="l-108"></a><span class="tm">19:23:37</span><span class="nk"> &lt;gmaxwell&gt;</span> I guess in general a thing to keep in mind for this sort of description is that we should try to make it detailed enough that if an academic showed up and wrote a paper on it based on only the description (which they will) would their results be likely useful to us or not. :)
+<a name="l-109"></a><span class="tm">19:23:57</span><span class="nk"> &lt;morcos&gt;</span> but there are some open questions in 10199 that would be helpful to get feedback on
+<a name="l-110"></a><span class="tm">19:24:06</span><span class="nk"> &lt;morcos&gt;</span> such as starting with not being able to upgrade from the old estimates
+<a name="l-111"></a><span class="tm">19:24:14</span><span class="nk"> &lt;wumpus&gt;</span> imo the most important about the description is that we understand it
+<a name="l-112"></a><span class="tm">19:24:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> we should think about saving more of its state in the future.  I have nodes that don't spend more than a few minutes down per month, but don't often make it to two weeks up.
+<a name="l-113"></a><span class="tm">19:25:12</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> how complicated is the upgrading? we only would need it for one version at most IMO
+<a name="l-114"></a><span class="tm">19:25:15</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i think thats problematic for being able to predict really long time horizons...
+<a name="l-115"></a><span class="tm">19:25:44</span><span class="nk"> &lt;wumpus&gt;</span> upgrading isn't much of an issue, if the estimation algorithm changes, feel free to throw away the data from the previous one
+<a name="l-116"></a><span class="tm">19:25:55</span><span class="nk"> &lt;wumpus&gt;</span> just make sure it doesn't crash on upgrading/downgrading
+<a name="l-117"></a><span class="tm">19:26:23</span><span class="nk"> &lt;gmaxwell&gt;</span> well, to really advance I think what we would probably want is a simulator (perhaps based on historical data) and a metric of success.
+<a name="l-118"></a><span class="tm">19:26:38</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-119"></a><span class="tm">19:26:41</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> the complicated part is deciding what we want to do, implementing it probably isn't that bad...  but for instance the new estimates are smart about whether your estimates file is stale...  but should it just dumbly use your old estimates until it has new estimates...  what if the new estimates for 5 blocks which you do have is lower than the old estimate for 25 (which you dont' have a new estimate for)
+<a name="l-120"></a><span class="tm">19:26:47</span><span class="nk"> &lt;morcos&gt;</span> etc.
+<a name="l-121"></a><span class="tm">19:26:48</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's more or less fine to toss out data on algo changes. we could worry about doing better when the algo is stable for a long time.
+<a name="l-122"></a><span class="tm">19:27:13</span><span class="nk"> &lt;wumpus&gt;</span> the difficult part, as with coin selection, is evaluationg algorithms
+<a name="l-123"></a><span class="tm">19:27:31</span><span class="nk"> &lt;morcos&gt;</span> the historical data is useless... the question is whether you use the old estimates until your new estimates are warmed up (by calculating them before you throw away the data)
+<a name="l-124"></a><span class="tm">19:27:58</span><span class="nk"> &lt;luke-jr&gt;</span> huh, someone's playing malleability games on testnet.
+<a name="l-125"></a><span class="tm">19:28:10</span><span class="nk"> &lt;gmaxwell&gt;</span> Electrum does some things with using static estimates when it doesn't have data to estimate on its own.  I think there are a lot of interesting tradeoffs we could make to hotstart. But I don't think starting speed is at all our biggest concern.
+<a name="l-126"></a><span class="tm">19:28:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> they have been for months.
+<a name="l-127"></a><span class="tm">19:28:47</span><span class="nk"> &lt;gmaxwell&gt;</span> The purely retrospective algorithim is really slow to update to changing network conditions, in particular, it doesn't track the weekly load cycle well.
+<a name="l-128"></a><span class="tm">19:28:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> right so that is the question..  my preference would be to merge as is.. and then if we get around to it before 0.15 we add a smarter hotstart
+<a name="l-129"></a><span class="tm">19:29:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> well, if it's  not already implemented, I'd say it's not important enough to spend time implementing
+<a name="l-130"></a><span class="tm">19:29:43</span><span class="nk"> &lt;luke-jr&gt;</span> (upgrading, that is)
+<a name="l-131"></a><span class="tm">19:29:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes... one of the main problems the new design was meant to address...  still using only a purely retrospective algorithm, so the problem fundamentally remains, but in practice its much more responsive  (b/c it looks at different time horizons simultaneously)
+<a name="l-132"></a><span class="tm">19:30:59</span><span class="nk"> &lt;jcorgan&gt;</span> clearly this calls for Deep Fee Estimation
+<a name="l-133"></a><span class="tm">19:31:08</span><span class="nk"> &lt;gmaxwell&gt;</span> die
+<a name="l-134"></a><span class="tm">19:31:36</span><span class="nk"> &lt;jcorgan&gt;</span> tell me what you *really* think
+<a name="l-135"></a><span class="tm">19:31:40</span><span class="nk"> &lt;wumpus&gt;</span> hehe, deep fee estimation
+<a name="l-136"></a><span class="tm">19:31:55</span><span class="nk"> &lt;luke-jr&gt;</span> no no, Xtreme Deep Fee Estimation!
+<a name="l-137"></a><span class="tm">19:32:07</span><span class="nk"> &lt;morcos&gt;</span> anyway, ok for now i'll update the gist with a high level description of the algorithm
+<a name="l-138"></a><span class="tm">19:32:11</span><span class="nk"> &lt;gmaxwell&gt;</span> I have a lovely algorithim for an efficient limited memory 2D exponentially weighed moving average somewhere....
+<a name="l-139"></a><span class="tm">19:32:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> great.
+<a name="l-140"></a><span class="tm">19:32:32</span><span class="nk"> &lt;sipa&gt;</span> Xthin fees
+<a name="l-141"></a><span class="tm">19:32:36</span><span class="nk"> &lt;luke-jr&gt;</span> XD
+<a name="l-142"></a><span class="tm">19:32:46</span><span class="nk"> &lt;morcos&gt;</span> but my basic point here is that ideally we need weeks/months of testing in master to uncover possible edge cases
+<a name="l-143"></a><span class="tm">19:33:14</span><span class="nk"> &lt;morcos&gt;</span> i'm relatively confident that overall this is better, but thats not the same thing as saying it doesn' thave problems that need fixing...
+<a name="l-144"></a><span class="tm">19:33:16</span><span class="nk"> &lt;wumpus&gt;</span> yes, it shouldn't be merged last minute
+<a name="l-145"></a><span class="tm">19:33:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> well get your description up soon, and I'll review shortly after.  I think fee estimation is self contained enough we could merge something and back it out if we don't like it... but we need to have more than you understanding what we're doing at least. :)
+<a name="l-146"></a><span class="tm">19:33:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes basically my point..  ok sounds good
+<a name="l-147"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> (if for no other reason than we need to understand it better to spot failures with it.)
+<a name="l-148"></a><span class="tm">19:34:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> maybe it was asked already, how fast are the estimations available after startup? Does it work with prune=550?
+<a name="l-149"></a><span class="tm">19:34:26</span><span class="nk"> &lt;morcos&gt;</span> prune is irrelevant
+<a name="l-150"></a><span class="tm">19:34:50</span><span class="nk"> &lt;morcos&gt;</span> it can give you an estimate for a target of N once it has been caught up for 2*N blocks...
+<a name="l-151"></a><span class="tm">19:35:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> Estimations for depth X need to at least see some multiple of X blocks.
+<a name="l-152"></a><span class="tm">19:35:22</span><span class="nk"> &lt;morcos&gt;</span> but then it saves that
+<a name="l-153"></a><span class="tm">19:35:24</span><span class="nk"> &lt;gmaxwell&gt;</span> Becuase you have a moving window of analysis, and no data for longer windows.
+<a name="l-154"></a><span class="tm">19:35:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> So for a conf target of 2 you need to wait ~40min after startup?
+<a name="l-155"></a><span class="tm">19:35:57</span><span class="nk"> &lt;morcos&gt;</span> so if you stop and restart you're starting over again for increasing your max possible target, but you still have access for up to that max possible target
+<a name="l-156"></a><span class="tm">19:36:34</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> correct, but again, only the first time  (or if you have been down for more than 6 weeks i think)
+<a name="l-157"></a><span class="tm">19:36:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> well not really, because you save the results. so the first time, yes. But that goes back to the hot start question.. and there are lots of ways we could hot start these things, if we really had something that was working well otherwise.
+<a name="l-158"></a><span class="tm">19:36:50</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jcorgan:</span> after alphago took go away from me I was looking for other problem to solve with https://github.com/jtimon/preann as an excuse to run it again &lt;/offtopic spam&gt;
+<a name="l-159"></a><span class="tm">19:37:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Thanks... I'll test 10199 with the mainnet GUI then a bit (before of after merging)
+<a name="l-160"></a><span class="tm">19:37:51</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15ryanofsky opened pull request #10244: [qt] Add abstraction layer for accessing node and wallet functionality from gui (06master...06pr/ipc-local) 02https://github.com/bitcoin/bitcoin/pull/10244
+<a name="l-161"></a><span class="tm">19:37:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> *or
+<a name="l-162"></a><span class="tm">19:38:44</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> in the meantime the PR description in 10199 covers the changes pretty close to what i will write up on the gist
+<a name="l-163"></a><span class="tm">19:40:09</span><span class="nk"> &lt;morcos&gt;</span> i guess i need to do a quick rebase now that 9942 is done
+<a name="l-164"></a><span class="tm">19:44:25 </span><span class="nka">* luke-jr</span> <span class="ac">crickets</span>
+<a name="l-165"></a><span class="tm">19:44:32</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-166"></a><span class="tm">19:44:54</span><span class="nk"> &lt;gmaxwell&gt;</span> I want to talk to luke some about the address reuse thing, but it can be post meeting.
+<a name="l-167"></a><span class="tm">19:45:06</span><span class="nk"> &lt;wumpus&gt;</span> time to tag 0.14.1 final and start gitian building
+<a name="l-168"></a><span class="tm">19:45:25 </span><span class="nka">* luke-jr</span> <span class="ac">spins out a Knots branch :p</span>
+<a name="l-169"></a><span class="tm">19:45:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well there's time
+<a name="l-170"></a><span class="tm">19:45:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">address reuse thing</span>
+<a name="l-171"></a><span class="tm">19:46:47</span><span class="nk"> &lt;gmaxwell&gt;</span> so a serious privacy problem which has been actively exploited for a long time is that people make near-dust payments to addresses once they've been spent from, so that you spend from them again in new txn, creating snowballing that links all your transactions togeather.
+<a name="l-172"></a><span class="tm">19:46:54</span><span class="nk"> &lt;wumpus&gt;</span> * [new tag]         v0.14.1 -&gt; v0.14.1
+<a name="l-173"></a><span class="tm">19:47:32</span><span class="nk"> &lt;instagibbs&gt;</span> https://www.reddit.com/r/BitcoinBeginners/comments/66az3b/why_do_i_keep_getting_000000001_deposits/ for example
+<a name="l-174"></a><span class="tm">19:47:35</span><span class="nk"> &lt;gmaxwell&gt;</span> Latest discussions seem to be driven by a user that runs a gambling site and whom cares about this because his customers get running into issues transactions that link back to him.
+<a name="l-175"></a><span class="tm">19:47:42</span><span class="nk"> &lt;wumpus&gt;</span> do we need a 'block transacton' functionality against such transaction abuse?
+<a name="l-176"></a><span class="tm">19:47:45</span><span class="nk"> &lt;gmaxwell&gt;</span> but it's a general concern for everyone.
+<a name="l-177"></a><span class="tm">19:48:16</span><span class="nk"> &lt;gmaxwell&gt;</span> So there have been discussion about some very heavy handed manual methods, but I think I have a suggestion that could potentially be a default behavior:
+<a name="l-178"></a><span class="tm">19:48:28</span><span class="nk"> &lt;gmaxwell&gt;</span> but I'm interested in hearing if other people think I'm crazy.
+<a name="l-179"></a><span class="tm">19:48:31</span><span class="nk"> &lt;wumpus&gt;</span> wouldn't be the first time I have an UTXO I just want to ignore
+<a name="l-180"></a><span class="tm">19:48:37</span><span class="nk"> &lt;morcos&gt;</span> stop the suspense!
+<a name="l-181"></a><span class="tm">19:48:52</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> ack
+<a name="l-182"></a><span class="tm">19:48:57</span><span class="nk"> &lt;gmaxwell&gt;</span> First create a seperate quarenteened balance. Any address or specfic txo could be manually quarenteened or unquarenteed at any itme.
+<a name="l-183"></a><span class="tm">19:49:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Then adjust coin selection to always spend all payments to a particular address at once (+/- some filtering with dust that might be needed to prevent dust attacks).
+<a name="l-184"></a><span class="tm">19:49:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Then once an address has been spent from, it's automatically added to tue quarenteen list (with any outputs that weren't spent, e.g. whatever failed the dust filtering).
+<a name="l-185"></a><span class="tm">19:50:21</span><span class="nk"> &lt;wumpus&gt;</span> I think the quarantaine is a good idea, not so sure about adding things automatically though
+<a name="l-186"></a><span class="tm">19:50:26</span><span class="nk"> &lt;gmaxwell&gt;</span> If users want to intentionally reuse an address, I suppose they'd need a way to prevent them from being reblocked.
+<a name="l-187"></a><span class="tm">19:50:35</span><span class="nk"> &lt;morcos&gt;</span> i like the general idea
+<a name="l-188"></a><span class="tm">19:50:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> and quarantined funds are excluded from balance or tx list somehow?
+<a name="l-189"></a><span class="tm">19:51:05</span><span class="nk"> &lt;gmaxwell&gt;</span> Well I think the attacks will continue unless we could come up with something that was close to automatic... Could be something that gives a GUI user a choice the first time it happens or if the Q balance becomes non-negligble.
+<a name="l-190"></a><span class="tm">19:51:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I might prefer if we were Quarantine ing things and not quarantaine or quarenteened :p
+<a name="l-191"></a><span class="tm">19:51:06</span><span class="nk"> &lt;morcos&gt;</span> but what if you have 10 10btc utxos at the same address and you need to pay someone 1 btc
+<a name="l-192"></a><span class="tm">19:51:09</span><span class="nk"> &lt;morcos&gt;</span> you spend them all?
+<a name="l-193"></a><span class="tm">19:51:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> they'd be shown in the tx list, but skipped for spending, and shown as a seperate balances. Like confirmed vs unconfirmed balance.
+<a name="l-194"></a><span class="tm">19:51:59</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm somewhat unsold as default policy
+<a name="l-195"></a><span class="tm">19:52:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yep. and create a big change. Which I think is fine.  I think a seperate issue is that we should auto-split very large change. But thats 90% independant.
+<a name="l-196"></a><span class="tm">19:52:04</span><span class="nk"> &lt;BlueMatt&gt;</span> it seems to be a somewhat-surprising break
+<a name="l-197"></a><span class="tm">19:52:18</span><span class="nk"> &lt;jcorgan&gt;</span> and the name 'quarantined' might be a bit heavy handed
+<a name="l-198"></a><span class="tm">19:52:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> the current privacy trashing is itself a very surprising break.
+<a name="l-199"></a><span class="tm">19:52:32</span><span class="nk"> &lt;BlueMatt&gt;</span> fair
+<a name="l-200"></a><span class="tm">19:52:36</span><span class="nk"> &lt;luke-jr&gt;</span> it might be less confusing if only the first receive ever was displayed/accepted, and all subsequent ones got quarantined
+<a name="l-201"></a><span class="tm">19:52:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jcorgan:</span> well I came up with that on the spot, on github they're calling it frozen, which I think is super misleading (bank froze my funds!). :P
+<a name="l-202"></a><span class="tm">19:52:55</span><span class="nk"> &lt;jcorgan&gt;</span> reserved?
+<a name="l-203"></a><span class="tm">19:53:11</span><span class="nk"> &lt;luke-jr&gt;</span> suspicious? :P
+<a name="l-204"></a><span class="tm">19:53:13</span><span class="nk"> &lt;wumpus&gt;</span> trash can
+<a name="l-205"></a><span class="tm">19:53:16</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> extraneous?
+<a name="l-206"></a><span class="tm">19:53:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> first recieved leads to an immediate attack: dust spammer races the payment then you get the dust and not the payment. :)
+<a name="l-207"></a><span class="tm">19:53:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> hmm...   i do like the idea of auto-quarantining spent address or dust left over in mostly spent addresses, but not sure i like default spending all the inputs and possibly giving you large change
+<a name="l-208"></a><span class="tm">19:53:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> first confirmed with a larger value?
+<a name="l-209"></a><span class="tm">19:53:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> really I'm surprised at that. That change alone is something I've wanted to do for a while (and was carrying patches for it for a bit)
+<a name="l-210"></a><span class="tm">19:53:49</span><span class="nk"> &lt;morcos&gt;</span> quarantine is a good name, but lets not bikeshed that
+<a name="l-211"></a><span class="tm">19:54:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> maybe auto-quarantine dust too
+<a name="l-212"></a><span class="tm">19:54:26</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, assuming spending the dust is worthwhile, what's the concern?
+<a name="l-213"></a><span class="tm">19:54:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm not sold on non-end-user wallets here. it seems like it woul dbreak many merchant workflows that use bitcoind
+<a name="l-214"></a><span class="tm">19:54:29</span><span class="nk"> &lt;sdaftuar&gt;</span> auto-spending all the funds with a given address makes sense to me as well
+<a name="l-215"></a><span class="tm">19:54:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> let's quarantine the bikeshed
+<a name="l-216"></a><span class="tm">19:54:49</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> merchant workflows that reuse addresses are broken anyway
+<a name="l-217"></a><span class="tm">19:54:52</span><span class="nk"> &lt;BlueMatt&gt;</span> (eg you receive half a payment, your coin selection spends from that addr, then you receive the other half, and now you dont realize you got paid?)
+<a name="l-218"></a><span class="tm">19:54:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> lol
+<a name="l-219"></a><span class="tm">19:54:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> why? (thats why I'm asking.) -- obviously it would be configurable.
+<a name="l-220"></a><span class="tm">19:55:25</span><span class="nk"> &lt;jtimon&gt;</span> re bikeshedding: the class managing this obviously needs to be called quarantiner
+<a name="l-221"></a><span class="tm">19:55:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> how often are merchants doing that?  I mean you can get into advanced things like biasing selection to chose SPK that have least recently recieved funds to avoid that.
+<a name="l-222"></a><span class="tm">19:55:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I assume most merchants at least support multiple txn to complete your payment?
+<a name="l-223"></a><span class="tm">19:56:02</span><span class="nk"> &lt;BlueMatt&gt;</span> most guis ive read seem to imply that
+<a name="l-224"></a><span class="tm">19:56:36</span><span class="nk"> &lt;morcos&gt;</span> yeah i suppose if its configurable, an option that autospends everythign from any address that gets spent makes sense
+<a name="l-225"></a><span class="tm">19:56:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> kinda. but they also require them to be recieved at effectively the same time. I think it's managable.
+<a name="l-226"></a><span class="tm">19:56:45</span><span class="nk"> &lt;instagibbs&gt;</span> I'm not sure they accept multiple txn as policy
+<a name="l-227"></a><span class="tm">19:56:50</span><span class="nk"> &lt;instagibbs&gt;</span> err automatically
+<a name="l-228"></a><span class="tm">19:57:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Just the autospend alone would radically improve privacy, and would almost be enough except for the malicious dust creation.
+<a name="l-229"></a><span class="tm">19:57:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> to make it compatible you'd have to never spend outputs newer than X, where X is merchant time frame
+<a name="l-230"></a><span class="tm">19:57:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> ya, which would be a trivial 'first try without x' in the current framework.
+<a name="l-231"></a><span class="tm">19:57:35</span><span class="nk"> &lt;BlueMatt&gt;</span> i agree in principal, but it sounds like you'd break some folks' workflow in subtle ways. adding the option and defaulting off for non-gui users, maybe?
+<a name="l-232"></a><span class="tm">19:58:05</span><span class="nk"> &lt;sipa&gt;</span> i don't see how autospending would break anything?
+<a name="l-233"></a><span class="tm">19:58:11</span><span class="nk"> &lt;luke-jr&gt;</span> or just tweak how RPC shows quarantine
+<a name="l-234"></a><span class="tm">19:58:13</span><span class="nk"> &lt;gmaxwell&gt;</span> well it could evolve over time, too-- I do think it's not worth our time to do things here that we don't think could be on for a majority of users eventually in some form.
+<a name="l-235"></a><span class="tm">19:58:21</span><span class="nk"> &lt;instagibbs&gt;</span> At a minimum you could make near-dust be quarantined
+<a name="l-236"></a><span class="tm">19:58:25</span><span class="nk"> &lt;morcos&gt;</span> i would think there could be some threshold for auto-un-quarantining too right?  like if your quarantine address receives 1 BTC?  or maybe not, maybe it just becomes common sense to check that
+<a name="l-237"></a><span class="tm">19:58:35</span><span class="nk"> &lt;wumpus&gt;</span> in the first version this is introduced it should be disabled by default in any case, I think, let's present it as a security feature first. Could always be enabled by default later but that should not be the initial goal.
+<a name="l-238"></a><span class="tm">19:58:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Because already people who are super aware of privacy can and will already manually do coin selection to achieve ends like this.
+<a name="l-239"></a><span class="tm">19:58:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> agreed in principal, but there are also easier fixes we can do initially. eg bias coin selection towards this with fallbacks?
+<a name="l-240"></a><span class="tm">19:58:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> true
+<a name="l-241"></a><span class="tm">19:58:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> absolutely.
+<a name="l-242"></a><span class="tm">19:59:08</span><span class="nk"> &lt;wumpus&gt;</span> anything that potentially 'disappears' funds shouldn't be enabled lightly
+<a name="l-243"></a><span class="tm">19:59:09</span><span class="nk"> &lt;luke-jr&gt;</span> it's harmless to add if it's disabled by default initially
+<a name="l-244"></a><span class="tm">19:59:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> exactly
+<a name="l-245"></a><span class="tm">19:59:23</span><span class="nk"> &lt;morcos&gt;</span> ok, so this sounds like general agreement that this is a good idea and has degenerated into arguing about defaults.   all development discussion in a nutshell!
+<a name="l-246"></a><span class="tm">19:59:24</span><span class="nk"> &lt;BlueMatt&gt;</span> "disabled by default" can also mean "if something fails, fall back to the current behavior"
+<a name="l-247"></a><span class="tm">19:59:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Just in principle I don't think the resource investment is worth if it we don't think that the end goal couldn't be default-ish (e.g. GUI) use.
+<a name="l-248"></a><span class="tm">19:59:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yup
+<a name="l-249"></a><span class="tm">19:59:34</span><span class="nk"> &lt;wumpus&gt;</span> I'd enable it personally
+<a name="l-250"></a><span class="tm">19:59:54</span><span class="nk"> &lt;wumpus&gt;</span> it's worth the resource investment if we think it's useful to have
+<a name="l-251"></a><span class="tm">20:00:12</span><span class="nk"> &lt;sdaftuar&gt;</span> so perhaps a first simple step would be to enable auto-spending of all funds from a given address in the coin selection logic?
+<a name="l-252"></a><span class="tm">20:00:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I think users should be okay with 'multiple balances' we already have confirmed vs unconfirmed, and normal bank accounts have multiple balances.
+<a name="l-253"></a><span class="tm">20:00:20</span><span class="nk"> &lt;luke-jr&gt;</span> IMO the end goal should be to treat address reuse as something that just doesn't work, and have a quarantine people can dig out lost funds if necessary
+<a name="l-254"></a><span class="tm">20:00:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> ack
+<a name="l-255"></a><span class="tm">20:00:26</span><span class="nk"> &lt;BlueMatt&gt;</span> DONG
+<a name="l-256"></a><span class="tm">20:00:35</span><span class="nk"> &lt;jtimon&gt;</span> I would start with the quarantine thing as only usable manually, which we all seem to like, and then propose automatic things
+<a name="l-257"></a><span class="tm">20:00:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
