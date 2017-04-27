@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:02:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:02:01</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Apr 27 19:02:01 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:02:01</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have two topic proposals: "hd-restore" and "limited NODE_NETWORK (NODE_NETWORK_LIMITED) signaling"
+<a name="l-5"></a><span class="tm">19:02:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt</span>
+<a name="l-6"></a><span class="tm">19:02:33</span><span class="nk"> &lt;wumpus&gt;</span> instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+<a name="l-7"></a><span class="tm">19:02:39</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-8"></a><span class="tm">19:02:44</span><span class="nk"> &lt;instagibbs&gt;</span> here
+<a name="l-9"></a><span class="tm">19:02:47</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-10"></a><span class="tm">19:03:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">hd-restore (jonasschnelli)</span>
+<a name="l-11"></a><span class="tm">19:03:21</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic: summary of BlueMatt's overall plan for libconsensu
+<a name="l-12"></a><span class="tm">19:03:41</span><span class="nk"> &lt;kanzure&gt;</span> is this 10240?
+<a name="l-13"></a><span class="tm">19:03:45</span><span class="nk"> &lt;jtimon&gt;</span> if BlueMatt wants of course
+<a name="l-14"></a><span class="tm">19:03:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> k, can share. jonasschnelli you have the floor :)
+<a name="l-15"></a><span class="tm">19:03:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> Re. HD restore. I'm not sure if we should always try to restore funds or if we should check for the bestblock and compare it to the chain tip and only then restore
+<a name="l-16"></a><span class="tm">19:04:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> The main stuff is in #10240
+<a name="l-17"></a><span class="tm">19:04:13</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | [WIP] Add basic HD wallet restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-18"></a><span class="tm">19:04:24</span><span class="nk"> &lt;instagibbs&gt;</span> ack libconsensus discussion
+<a name="l-19"></a><span class="tm">19:04:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> But I think we should only restore if the wallet's bestblock lacks behind
+<a name="l-20"></a><span class="tm">19:04:35</span><span class="nk"> &lt;instagibbs&gt;</span> oh sorry, didnt see topic set already :)
+<a name="l-21"></a><span class="tm">19:04:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> Because...
+<a name="l-22"></a><span class="tm">19:04:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> Encrypted wallets may need to unlock
+<a name="l-23"></a><span class="tm">19:05:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> And also for performance / log reasons
+<a name="l-24"></a><span class="tm">19:05:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> i assumed we'd always keep a buffer of X pubkeys around
+<a name="l-25"></a><span class="tm">19:05:15</span><span class="nk"> &lt;BlueMatt&gt;</span> because you may have wallet "forks"
+<a name="l-26"></a><span class="tm">19:05:21</span><span class="nk"> &lt;BlueMatt&gt;</span> not sure what you mean by "restore"?
+<a name="l-27"></a><span class="tm">19:05:28</span><span class="nk"> &lt;BlueMatt&gt;</span> (feel free to tell me to shut up and go read the pr)
+<a name="l-28"></a><span class="tm">19:05:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> By restore I mean always check the keypool keys and auto-extend (if only 50 [TBD] keys are left, topup to 100 [TBD]
+<a name="l-29"></a><span class="tm">19:05:57</span><span class="nk"> &lt;kanzure&gt;</span> looks like it's re: finding relevant transactions
+<a name="l-30"></a><span class="tm">19:06:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> If we always restore... we would need to unlock encrypted wallet...
+<a name="l-31"></a><span class="tm">19:06:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> (more often)
+<a name="l-32"></a><span class="tm">19:06:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> my assumption was that we'd always mark seen keys as used (and we should do that independently)
+<a name="l-33"></a><span class="tm">19:06:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> we should also always extend the keypool when we can
+<a name="l-34"></a><span class="tm">19:06:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> ah, you mean like "when do we extend keypool to watch buffer"?
+<a name="l-35"></a><span class="tm">19:06:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Yes. But what if we can't?
+<a name="l-36"></a><span class="tm">19:06:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> and if the keypool runs out in a non-interactive setting, shutdown
+<a name="l-37"></a><span class="tm">19:07:00</span><span class="nk"> &lt;achow101&gt;</span> If it needs to generate keys you could prompt the user right when the main gui pops up
+<a name="l-38"></a><span class="tm">19:07:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> And whats a save gap limit? I would assume &gt;100 keys.
+<a name="l-39"></a><span class="tm">19:07:18</span><span class="nk"> &lt;BlueMatt&gt;</span> another option would be to stop updating best seen block
+<a name="l-40"></a><span class="tm">19:07:29</span><span class="nk"> &lt;BlueMatt&gt;</span> and then kick off a background rescan-from-that-height when wallet next unlocks
+<a name="l-41"></a><span class="tm">19:07:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> If someone has handed out 101 keys and only the position 101 has payed...
+<a name="l-42"></a><span class="tm">19:07:38</span><span class="nk"> &lt;BlueMatt&gt;</span> if gap goes under some threshold
+<a name="l-43"></a><span class="tm">19:07:45</span><span class="nk"> &lt;kanzure&gt;</span> yea, trigger on next unlock is better than achow101 popup
+<a name="l-44"></a><span class="tm">19:07:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> needs to be cli-compatible, though
+<a name="l-45"></a><span class="tm">19:08:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> GUI is solvable..
+<a name="l-46"></a><span class="tm">19:08:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> if we fix the bdb flushing stupidity, generating new keys becomes very cheap
+<a name="l-47"></a><span class="tm">19:08:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> I don't know how to solve the non GUI way
+<a name="l-48"></a><span class="tm">19:08:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> shutdown. make sure it doesn't happen
+<a name="l-49"></a><span class="tm">19:08:21</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">jonasschnelli:</span> how would you hand out 101 keys if the 101st wasn't generated yet?
+<a name="l-50"></a><span class="tm">19:08:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> i mean keys are cheap, can do 250 or 500 or something crazy
+<a name="l-51"></a><span class="tm">19:08:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> But how to unlock during init in the first place?
+<a name="l-52"></a><span class="tm">19:08:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> you can't
+<a name="l-53"></a><span class="tm">19:08:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> but cant we just use the keypool number now as the "buffer"?
+<a name="l-54"></a><span class="tm">19:08:48</span><span class="nk"> &lt;sipa&gt;</span> ah, i see what you mean
+<a name="l-55"></a><span class="tm">19:08:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> But right after we rescan and sync
+<a name="l-56"></a><span class="tm">19:09:07</span><span class="nk"> &lt;BlueMatt&gt;</span> and, like, the lower bound should be like keypool count / 2
+<a name="l-57"></a><span class="tm">19:09:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> you cant just shutdown mid-sync
+<a name="l-58"></a><span class="tm">19:09:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> Yes. But with the current 100 default, we would enforce a shutdown on startup for encrypted wallets
+<a name="l-59"></a><span class="tm">19:09:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> why not?
+<a name="l-60"></a><span class="tm">19:09:47</span><span class="nk"> &lt;sipa&gt;</span> it's an error condition that we cannot recover from
+<a name="l-61"></a><span class="tm">19:09:48 </span><span class="nka">* BlueMatt</span> <span class="ac">re-proposes that we stop updating wallet's best height if our keypool falls below keypool / 2</span>
+<a name="l-62"></a><span class="tm">19:09:56</span><span class="nk"> &lt;BlueMatt&gt;</span> and then rescan when keypool next gets filled
+<a name="l-63"></a><span class="tm">19:09:57</span><span class="nk"> &lt;sipa&gt;</span> hmm
+<a name="l-64"></a><span class="tm">19:10:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO an explicit "restore-mode" with a "unlock during startup" (not sure how) would be preferable for encrypted wallets
+<a name="l-65"></a><span class="tm">19:10:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> you should also stop pruning
+<a name="l-66"></a><span class="tm">19:10:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, that would be my major reservation
+<a name="l-67"></a><span class="tm">19:10:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> not sure you realistically can in a daemon setting
+<a name="l-68"></a><span class="tm">19:10:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> is stdin a total nogo? *duck*
+<a name="l-69"></a><span class="tm">19:10:44</span><span class="nk"> &lt;sipa&gt;</span> so i guess we need a special "stop syncing" mode that we go into when the keypool runs out
+<a name="l-70"></a><span class="tm">19:10:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> there is no stdin with -daemon
+<a name="l-71"></a><span class="tm">19:10:51</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> i guess you can stop pruning and if disk fills it will do the shutdown part for you :p
+<a name="l-72"></a><span class="tm">19:10:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> ugh
+<a name="l-73"></a><span class="tm">19:11:02</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, i know
+<a name="l-74"></a><span class="tm">19:11:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Yes. But at least you could run in non-daemon headless
+<a name="l-75"></a><span class="tm">19:11:07</span><span class="nk"> &lt;wumpus&gt;</span> yes a blocking mode makes sense in that case
+<a name="l-76"></a><span class="tm">19:11:24</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so blocking in pruning mode, rescan-later in non-pruning mode?
+<a name="l-77"></a><span class="tm">19:11:34</span><span class="nk"> &lt;wumpus&gt;</span> and no, stdin is not an option, there should be no expectation with bitcoind that there's anyone at the terminal
+<a name="l-78"></a><span class="tm">19:11:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> If you run with an encrypted wallet and the bestblock lacks behind, shutdown if we can't unlock over stdin
+<a name="l-79"></a><span class="tm">19:11:52</span><span class="nk"> &lt;BlueMatt&gt;</span> no stdin, just shutdown
+<a name="l-80"></a><span class="tm">19:11:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> So we have only RPC to unlock?
+<a name="l-81"></a><span class="tm">19:11:57</span><span class="nk"> &lt;wumpus&gt;</span> everything should be scriptable
+<a name="l-82"></a><span class="tm">19:11:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> but only in prune mode
+<a name="l-83"></a><span class="tm">19:12:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-84"></a><span class="tm">19:12:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> But how do we unlock/extend before we sync?
+<a name="l-85"></a><span class="tm">19:12:25</span><span class="nk"> &lt;wumpus&gt;</span> just wait until the wallet is unlocked to start
+<a name="l-86"></a><span class="tm">19:12:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> rpc starts after chain sync
+<a name="l-87"></a><span class="tm">19:12:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> you go into a blocking mode, and you continue after walletunlock
+<a name="l-88"></a><span class="tm">19:12:37</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-89"></a><span class="tm">19:12:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> and no, no stdin ever
+<a name="l-90"></a><span class="tm">19:13:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> but can we block the sync and wait for RPC wallettunlock?
+<a name="l-91"></a><span class="tm">19:13:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> why not?
+<a name="l-92"></a><span class="tm">19:13:15</span><span class="nk"> &lt;wumpus&gt;</span> sure
+<a name="l-93"></a><span class="tm">19:13:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> (without changing too much)?
+<a name="l-94"></a><span class="tm">19:13:18</span><span class="nk"> &lt;BlueMatt&gt;</span> ProcessNewBlock { return false; }
+<a name="l-95"></a><span class="tm">19:13:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> okay... sounds good. Need to take a closer look.
+<a name="l-96"></a><span class="tm">19:13:33</span><span class="nk"> &lt;sipa&gt;</span> add a function to validation.h to let the core know that validation cannot progress
+<a name="l-97"></a><span class="tm">19:13:42</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe stop net too under the current net-pause stuff
+<a name="l-98"></a><span class="tm">19:13:47</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-99"></a><span class="tm">19:13:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> Good point.
+<a name="l-100"></a><span class="tm">19:13:54</span><span class="nk"> &lt;kanzure&gt;</span> should it shutdown if wallet is not unlocked within a certain time period? if it's not shutdown users might expect it to still be syncing.
+<a name="l-101"></a><span class="tm">19:14:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Next question: what's a sane gap limit?
+<a name="l-102"></a><span class="tm">19:14:02</span><span class="nk"> &lt;wumpus&gt;</span> the only precondition for getting out of Init() is that the genesis block has been processed, everything else can be delayed
+<a name="l-103"></a><span class="tm">19:14:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> 100 seems way to low to me
+<a name="l-104"></a><span class="tm">19:14:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> fix bdb flushing insanity, and raise it to 1000 or 10000
+<a name="l-105"></a><span class="tm">19:14:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> keypool / 2?
+<a name="l-106"></a><span class="tm">19:14:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> (risk of losing funds is involved)
+<a name="l-107"></a><span class="tm">19:14:24</span><span class="nk"> &lt;BlueMatt&gt;</span> and we can bump keypool to 500
+<a name="l-108"></a><span class="tm">19:14:25</span><span class="nk"> &lt;achow101&gt;</span> how would you know that it is blocking and you need to walletunlock?
+<a name="l-109"></a><span class="tm">19:14:29</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">jonasschnelli:</span> i think the answer will depend on performance.  also, do you really want to encourage users to use gaps? the answer might be yes..
+<a name="l-110"></a><span class="tm">19:15:06</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">achow101:</span> yes that is why i suggested shutdown after a certain period of time. users might not realize that syncing is stopped otherwise.
+<a name="l-111"></a><span class="tm">19:15:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> there my next concern pops up... all user will always have to have 500+ keypools. In an explicit restore more, only then we would need to have a large pool
+<a name="l-112"></a><span class="tm">19:15:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> who cares about 500 keys'
+<a name="l-113"></a><span class="tm">19:15:41</span><span class="nk"> &lt;sipa&gt;</span> it's 16 kB of memory
+<a name="l-114"></a><span class="tm">19:15:52</span><span class="nk"> &lt;sipa&gt;</span> well, some small constant multiple of that
+<a name="l-115"></a><span class="tm">19:15:52</span><span class="nk"> &lt;kanzure&gt;</span> i thought derivation time was the bottleneck?
+<a name="l-116"></a><span class="tm">19:15:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Hmm... yes.
+<a name="l-117"></a><span class="tm">19:16:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> If it just would be a pubkey and H160 onyl.. but it's also the privatre key! hell
+<a name="l-118"></a><span class="tm">19:16:17</span><span class="nk"> &lt;wumpus&gt;</span> the memory usage of keys is not an issue, just generation time (and that's only due to bdb stupidity)
+<a name="l-119"></a><span class="tm">19:16:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> we can do ~10000 derivation steps per second on a single thread on modern CPU
+<a name="l-120"></a><span class="tm">19:16:42</span><span class="nk"> &lt;kanzure&gt;</span> is that with bdb madness? :)
+<a name="l-121"></a><span class="tm">19:16:46</span><span class="nk"> &lt;sipa&gt;</span> and maybe 5 due to BDB flushing
+<a name="l-122"></a><span class="tm">19:16:47</span><span class="nk"> &lt;wumpus&gt;</span> calling fsync after every key is not a good idea, it should create the entire keypool refill in one transaction
+<a name="l-123"></a><span class="tm">19:16:53</span><span class="nk"> &lt;luke-jr&gt;</span> IMO automatic pruning should probably have as a precondition that the wallet has updated to the block being pruned, if it doesn't already; then the wallet can just set its criteria for processing
+<a name="l-124"></a><span class="tm">19:17:20</span><span class="nk"> &lt;luke-jr&gt;</span> and if auto-pruning is enabled, block validation (safely) when the size is hit, until it can prune further?
+<a name="l-125"></a><span class="tm">19:17:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> agree, but that's not a concern right now as the wallet updates synchronously... with BlueMatt's coming changes maybe that changes
+<a name="l-126"></a><span class="tm">19:17:42</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, that changes, but it still shouldnt be too slow
+<a name="l-127"></a><span class="tm">19:17:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> With HD, there would also be no need for the disk-keypool for unencrypted wallets,.. it's just legacy. We could always fill up in-mem
+<a name="l-128"></a><span class="tm">19:18:02</span><span class="nk"> &lt;BlueMatt&gt;</span> if your wallet falls behind consensus, you have a very, very large wallet
+<a name="l-129"></a><span class="tm">19:18:13</span><span class="nk"> &lt;BlueMatt&gt;</span> (and should pause sync anyway)
+<a name="l-130"></a><span class="tm">19:18:39</span><span class="nk"> &lt;sipa&gt;</span> right, the wallet should have the ability to pause syncing or prevent pruning
+<a name="l-131"></a><span class="tm">19:18:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Conclusion:</span> a) always scan keypool and topup, b) extend keypool and gap-limit to 500+, c) block when encrypted until RPC unlocked.
+<a name="l-132"></a><span class="tm">19:19:11</span><span class="nk"> &lt;sipa&gt;</span> sgtm
+<a name="l-133"></a><span class="tm">19:19:17</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-134"></a><span class="tm">19:19:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> thanks. That was effective
+<a name="l-135"></a><span class="tm">19:19:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">libconsensus (BlueMatt)</span>
+<a name="l-136"></a><span class="tm">19:19:51</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, so obviously this is all based on #771
+<a name="l-137"></a><span class="tm">19:19:53</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/771 | CBlockStore by TheBlueMatt · Pull Request #771 · bitcoin/bitcoin · GitHub
+<a name="l-138"></a><span class="tm">19:19:59</span><span class="nk"> &lt;BlueMatt&gt;</span> :)
+<a name="l-139"></a><span class="tm">19:20:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> (19 Jan 2012)
+<a name="l-140"></a><span class="tm">19:20:22</span><span class="nk"> &lt;wumpus&gt;</span> archeology?
+<a name="l-141"></a><span class="tm">19:20:23</span><span class="nk"> &lt;BlueMatt&gt;</span> but pr #10279 creates a CChainState class which will hold things like mapBlockIndex chainActive, etc, etc
+<a name="l-142"></a><span class="tm">19:20:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10279 | Add a CChainState class to validation.cpp to take another step towards clarifying internal interfaces by TheBlueMatt · Pull Request #10279 · bitcoin/bitcoin · GitHub
+<a name="l-143"></a><span class="tm">19:20:40</span><span class="nk"> &lt;BlueMatt&gt;</span> and have ProcessNewBlock Activate..., Connect, etc, etc, etc
+<a name="l-144"></a><span class="tm">19:20:53</span><span class="nk"> &lt;sipa&gt;</span> yay
+<a name="l-145"></a><span class="tm">19:21:04</span><span class="nk"> &lt;BlueMatt&gt;</span> long-term that class' public interface will be libbitcoinconsensus, but right now its really just to clean up internal interfaces within validation.cpp
+<a name="l-146"></a><span class="tm">19:21:13</span><span class="nk"> &lt;wumpus&gt;</span> sounds good to me
+<a name="l-147"></a><span class="tm">19:21:29</span><span class="nk"> &lt;BlueMatt&gt;</span> that class would get a pcoinsTip and related stuff to write/read blocks from disk
+<a name="l-148"></a><span class="tm">19:21:39</span><span class="nk"> &lt;BlueMatt&gt;</span> and then only be able to call that and pure functions (eg script validation)
+<a name="l-149"></a><span class="tm">19:21:45</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> so what's the next thing we will be able to expose with these changes?
+<a name="l-150"></a><span class="tm">19:21:51</span><span class="nk"> &lt;cfields&gt;</span> ooh, +1
+<a name="l-151"></a><span class="tm">19:21:54</span><span class="nk"> &lt;BlueMatt&gt;</span> there is a bit of cleanup in the pr, but mostly its just moving into a class
+<a name="l-152"></a><span class="tm">19:22:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jtimon:</span> expose-wise? probably nothing for like 2 more releases "until its ready"
+<a name="l-153"></a><span class="tm">19:22:15 </span><span class="nka">* BlueMatt</span> <span class="ac">is not a fan of libbitcoinconsensus being a grab-bag of random verification functions</span>
+<a name="l-154"></a><span class="tm">19:22:21</span><span class="nk"> &lt;jtimon&gt;</span> the class itself? mhmm
+<a name="l-155"></a><span class="tm">19:22:32</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean "the class"  but I assume via a C API
+<a name="l-156"></a><span class="tm">19:24:01</span><span class="nk"> &lt;BlueMatt&gt;</span> any other questions? or next topic?
+<a name="l-157"></a><span class="tm">19:24:08</span><span class="nk"> &lt;jtimon&gt;</span> yes, I know, and I'm very open to see what you want to expose, even if I don't renounce to the verifyWithoutChangingState x {block, header, tx, script} + getFlags() vision I had
+<a name="l-158"></a><span class="tm">19:24:38</span><span class="nk"> &lt;jtimon&gt;</span> but that's helpful, I can just imagine the class being exposed as a c api
+<a name="l-159"></a><span class="tm">19:25:15</span><span class="nk"> &lt;wumpus&gt;</span> not directly, it's just another step toward being able to
+<a name="l-160"></a><span class="tm">19:25:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">limited NODE_NETWORK (NODE_NETWORK_LIMITED) signaling (jonasschnelli)</span>
+<a name="l-161"></a><span class="tm">19:25:57</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> +1
+<a name="l-162"></a><span class="tm">19:25:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> I wanted to ask if a first step to announce pruned NODE_NETWORK would make sense.
+<a name="l-163"></a><span class="tm">19:26:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> Could be NODE_NETWORK_LIMITED
+<a name="l-164"></a><span class="tm">19:26:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> what would it entail?
+<a name="l-165"></a><span class="tm">19:26:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> The only requirement is relay, and serve the last 144 blocks
+<a name="l-166"></a><span class="tm">19:26:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">jonasschnelli:</span> ACK
+<a name="l-167"></a><span class="tm">19:26:22</span><span class="nk"> &lt;wumpus&gt;</span> we had this discussion recently, I thnk the conclusion was to use two service bits
+<a name="l-168"></a><span class="tm">19:26:28</span><span class="nk"> &lt;wumpus&gt;</span> (or one, at first)
+<a name="l-169"></a><span class="tm">19:26:31</span><span class="nk"> &lt;gmaxwell&gt;</span> what wumpus said.
+<a name="l-170"></a><span class="tm">19:26:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> (which is almost always possible with the current auto-prune limit)
+<a name="l-171"></a><span class="tm">19:26:43</span><span class="nk"> &lt;sipa&gt;</span> i would suggest something that guarantees 1 day and 1 week
+<a name="l-172"></a><span class="tm">19:26:51</span><span class="nk"> &lt;wumpus&gt;</span> one bit combination would be 144, one would be ~1000
+<a name="l-173"></a><span class="tm">19:26:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> so segwit prune=550 wouldn't be allowed?
+<a name="l-174"></a><span class="tm">19:27:02 </span><span class="nka">* BlueMatt</span> <span class="ac">resists the urge to bikeshed on the "1 week" number</span>
+<a name="l-175"></a><span class="tm">19:27:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Which should be 2 days and 2 weeks so the boundary condition doesn't leave you right out.
+<a name="l-176"></a><span class="tm">19:27:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i have data!
+<a name="l-177"></a><span class="tm">19:27:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> We would have to bump there
+<a name="l-178"></a><span class="tm">19:27:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> sipa has data on request rates.
+<a name="l-179"></a><span class="tm">19:27:21</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, true, thats right
+<a name="l-180"></a><span class="tm">19:27:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it's allowed, but it can't signal anything
+<a name="l-181"></a><span class="tm">19:27:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i'll analyse the numbers again if there is interest
+<a name="l-182"></a><span class="tm">19:27:44</span><span class="nk"> &lt;gmaxwell&gt;</span> The only think to bikeshed is how much higher do we need the cutoff than his data, it should be at least a couple blocks higher because of reorgs/boundary conditions.
+<a name="l-183"></a><span class="tm">19:28:20</span><span class="nk"> &lt;gmaxwell&gt;</span> our existing minimum sizing for pruning is sized out for 288 blocks, so I think we should just do that, it will make ~144 pretty reliable.
+<a name="l-184"></a><span class="tm">19:28:29</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15sipa opened pull request #10290: Add -stopatheight for benchmarking (06master...06shutdown_at_height) 02https://github.com/bitcoin/bitcoin/pull/10290
+<a name="l-185"></a><span class="tm">19:28:38</span><span class="nk"> &lt;wumpus&gt;</span> yep
+<a name="l-186"></a><span class="tm">19:28:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ack without seeing code
+<a name="l-187"></a><span class="tm">19:28:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> Two service bits seems to be great. Did anyone started with specs/BIP?
+<a name="l-188"></a><span class="tm">19:29:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i just have a log of which depths of blocks are being fetched from my node
+<a name="l-189"></a><span class="tm">19:29:42</span><span class="nk"> &lt;cfields&gt;</span> how would NODE_NETWORK_LIMITED interact (if at all) with the remote peer's advertised height?
+<a name="l-190"></a><span class="tm">19:29:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> since february
+<a name="l-191"></a><span class="tm">19:30:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> I don't think it should?
+<a name="l-192"></a><span class="tm">19:30:05</span><span class="nk"> &lt;luke-jr&gt;</span> IMO would be nicer to have the new service bit require *some* historical storage, but I guess we're not running out..
+<a name="l-193"></a><span class="tm">19:30:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO the purpose is to signal "I have only a limited amount of blocks"
+<a name="l-194"></a><span class="tm">19:30:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> not at all, we ignore that value
+<a name="l-195"></a><span class="tm">19:30:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, i recall now
+<a name="l-196"></a><span class="tm">19:30:26</span><span class="nk"> &lt;cfields&gt;</span> ok, good
+<a name="l-197"></a><span class="tm">19:30:27</span><span class="nk"> &lt;gmaxwell&gt;</span> That advetised height shouldn't be used for almost anything.
+<a name="l-198"></a><span class="tm">19:30:28</span><span class="nk"> &lt;wumpus&gt;</span> (as it's easily spoofable)
+<a name="l-199"></a><span class="tm">19:30:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> The best-height in version doesn't matter IMO
+<a name="l-200"></a><span class="tm">19:30:32</span><span class="nk"> &lt;wumpus&gt;</span> it isn't used at all
+<a name="l-201"></a><span class="tm">19:30:39</span><span class="nk"> &lt;sipa&gt;</span> i believe it is not used at all
+<a name="l-202"></a><span class="tm">19:30:44</span><span class="nk"> &lt;sipa&gt;</span> (by bitcoin core)
+<a name="l-203"></a><span class="tm">19:30:46</span><span class="nk"> &lt;luke-jr&gt;</span> I'm not sure why more than the last 1-2 blocks should be needed to indicate relaying
+<a name="l-204"></a><span class="tm">19:30:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> I  think it's used by SPV
+<a name="l-205"></a><span class="tm">19:31:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> because or reorgs.
+<a name="l-206"></a><span class="tm">19:31:20</span><span class="nk"> &lt;gmaxwell&gt;</span> if I can't serve you the parents of my tip, I can't help you reorg onto it, making my serving nearly useless.
+<a name="l-207"></a><span class="tm">19:31:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I meant in bitcoin core; I don't know about other implementations
+<a name="l-208"></a><span class="tm">19:31:24</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-209"></a><span class="tm">19:31:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> Is a min of 144 blocks to height?
+<a name="l-210"></a><span class="tm">19:31:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> No... nm
+<a name="l-211"></a><span class="tm">19:31:45</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> and requiring nodes to have a GB or two of space for this is a trivial cost these days
+<a name="l-212"></a><span class="tm">19:31:52</span><span class="nk"> &lt;achow101&gt;</span> is the point of NODE_NETWORK_LIMITED just to tell nodes that they can request the most recent blocks from said node?
+<a name="l-213"></a><span class="tm">19:31:55</span><span class="nk"> &lt;luke-jr&gt;</span> assuming we only fetch blocks when reorging to their chain
+<a name="l-214"></a><span class="tm">19:32:02</span><span class="nk"> &lt;instagibbs&gt;</span> It's the unbounded growth that gets people to shut off nodes
+<a name="l-215"></a><span class="tm">19:32:04</span><span class="nk"> &lt;achow101&gt;</span> and right now you can't request any blocks from pruned nodes?
+<a name="l-216"></a><span class="tm">19:32:11</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case the bit must promise more than nodes count on.
+<a name="l-217"></a><span class="tm">19:32:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> pruned nodes don't even advertize they can relay blocks
+<a name="l-218"></a><span class="tm">19:32:34</span><span class="nk"> &lt;instagibbs&gt;</span> achow101, NODE_NETWORK is a flag for that, and it's missing from pruned nodes currently
+<a name="l-219"></a><span class="tm">19:32:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> once you are in sync (&gt;-144) you can pair with pruned peers and be fine
+<a name="l-220"></a><span class="tm">19:32:53</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-221"></a><span class="tm">19:32:56</span><span class="nk"> &lt;gmaxwell&gt;</span> Say nodes frequently need to catch up a day.  You only keep 144 blocks.   Peer needs to catch up a day, connects to you.. opps you can't help them because a day turned out to be 150 blocks, they wasted their time connecting to you for nothing.
+<a name="l-222"></a><span class="tm">19:33:43</span><span class="nk"> &lt;gmaxwell&gt;</span> So for this to be useful the requester has to be conservative and not try to talk to you unless it thinks you are _very_ likely to have what it needs, which means that you need a fair amount more than the target.
+<a name="l-223"></a><span class="tm">19:34:11</span><span class="nk"> &lt;gmaxwell&gt;</span> So to serve a day of blocks, you'll need a day and a half or so. Round it up to 288.
+<a name="l-224"></a><span class="tm">19:34:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> oh hi. long time no see.
+<a name="l-225"></a><span class="tm">19:34:33</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> heh
+<a name="l-226"></a><span class="tm">19:34:39</span><span class="nk"> &lt;gmaxwell&gt;</span> and as mentioned, our pruning limit is already there.
+<a name="l-227"></a><span class="tm">19:34:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> I just think we should allow the current auto-pruning 550 peers to signal relay and "limited amount of blocks around the tip".
+<a name="l-228"></a><span class="tm">19:35:08</span><span class="nk"> &lt;luke-jr&gt;</span> so 137 blocks?
+<a name="l-229"></a><span class="tm">19:35:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> If we set NODE_NETWORK_LIMIT higher while allowing to prune shorter,.. this would wast potential peers
+<a name="l-230"></a><span class="tm">19:35:22</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> 1337 blocks
+<a name="l-231"></a><span class="tm">19:35:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> then that will never be used.
+<a name="l-232"></a><span class="tm">19:35:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-233"></a><span class="tm">19:35:43</span><span class="nk"> &lt;gmaxwell&gt;</span> If we don't know how many blocks to except we'll never connect to them.
+<a name="l-234"></a><span class="tm">19:36:14</span><span class="nk"> &lt;gmaxwell&gt;</span> This impacts the connection logic, we'll need logic that changes the requested services based on an estimate of how far back we are.
+<a name="l-235"></a><span class="tm">19:36:17</span><span class="nk"> &lt;sipa&gt;</span> when you're fully synced, why wouldn't you connect to a node that guarantees for example having the last 10 blocks?
+<a name="l-236"></a><span class="tm">19:36:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Well, if we are in sync, you could be friendly and make space for the one who need sync and re-connect to limited peers?
+<a name="l-237"></a><span class="tm">19:36:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. What sipa said
+<a name="l-238"></a><span class="tm">19:36:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> I would expect the larger the chain grows the more pruned peers we will see
+<a name="l-239"></a><span class="tm">19:37:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> (rought assumption)
+<a name="l-240"></a><span class="tm">19:37:11</span><span class="nk"> &lt;sipa&gt;</span> not that we should support pruning that much, but for bandwidth reasons it may be reasonable that someone wants to relay new blocks, but not historical ones
+<a name="l-241"></a><span class="tm">19:38:11</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I think we can make a good argument that requiring nodes to have something like 1GB of storage for historical blocks isn't a big deal, and makes the logic around all this stuff simpler
+<a name="l-242"></a><span class="tm">19:38:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> signaling the amount of block you have is also not extremly effective because of the addr-man, seed/crawl delay
+<a name="l-243"></a><span class="tm">19:38:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> *blocks
+<a name="l-244"></a><span class="tm">19:38:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> again, not talking about storage, but about bandwidth
+<a name="l-245"></a><span class="tm">19:38:52</span><span class="nk"> &lt;sipa&gt;</span> it's an open question - i'm not convinced it's needed or useful
+<a name="l-246"></a><span class="tm">19:39:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Agree with sipa. Main pain point in historical blocks is upstream bandwidth
+<a name="l-247"></a><span class="tm">19:39:07</span><span class="nk"> &lt;gmaxwell&gt;</span> sipa sure that would also work: but (1) nodes that only keep ten blocks are a hazard to the network, and (2) there is no real reason to keep that little, and (3) we don't have signaling room to send out every tiny variation.
+<a name="l-248"></a><span class="tm">19:39:10</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> how much more bandwidth do your status say serving ~100 or whatever blocks is vs. 10?
+<a name="l-249"></a><span class="tm">19:39:21</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> I mean, you can just turn off NODE_NETWORK_LIMIT entirely
+<a name="l-250"></a><span class="tm">19:39:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> They would keep more but only willing to serve the last 10
+<a name="l-251"></a><span class="tm">19:39:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> if you want to limit your bandwidth, limit it.
+<a name="l-252"></a><span class="tm">19:39:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> well we have 3 possibilities
+<a name="l-253"></a><span class="tm">19:39:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> NODE_NETWORK_LIMITED would be a limit
+<a name="l-254"></a><span class="tm">19:39:51</span><span class="nk"> &lt;sipa&gt;</span> fair enough, we have other mechanisms for limiting bandwidth
+<a name="l-255"></a><span class="tm">19:39:51</span><span class="nk"> &lt;edcba&gt;</span> QoS on historical blocks :)
+<a name="l-256"></a><span class="tm">19:40:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">petertodd:</span> i need to look again... it may not be that much difference
+<a name="l-257"></a><span class="tm">19:40:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> and we have had reorgs longer than 10 in recent memory, what happens if all of your peers are like that?
+<a name="l-258"></a><span class="tm">19:40:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> we have?!
+<a name="l-259"></a><span class="tm">19:41:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> bip50 was 30 deep, iirc
+<a name="l-260"></a><span class="tm">19:41:17</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, you mean the csv false-signaling reorgs?
+<a name="l-261"></a><span class="tm">19:41:22</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, ok
+<a name="l-262"></a><span class="tm">19:41:44</span><span class="nk"> &lt;sipa&gt;</span> ok, i retract my suggestion for 10 deep
+<a name="l-263"></a><span class="tm">19:41:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> Would the two bit amount-of-blocks-available signaling be effective regarding the delay of address distribution?
+<a name="l-264"></a><span class="tm">19:41:52</span><span class="nk"> &lt;BlueMatt&gt;</span> always need 2 * MAX_HUMAN_FIX_TIME_FACTOR for everything :p
+<a name="l-265"></a><span class="tm">19:42:02</span><span class="nk"> &lt;sipa&gt;</span> but we do have 3 possibilities with 2 bits... perhaps we can have a 3rd limit
+<a name="l-266"></a><span class="tm">19:42:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> People tend to prune to MB rather then blocks (which could be a design mistake)
+<a name="l-267"></a><span class="tm">19:42:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> Why do you think it has much to do with address distribution delay at all?
+<a name="l-268"></a><span class="tm">19:42:29</span><span class="nk"> &lt;gmaxwell&gt;</span> if you keep the last 288 you keep the last 288.. you're not going to flicker that on and off.
+<a name="l-269"></a><span class="tm">19:42:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> the design guarentees that you'll have 288 blocks.
+<a name="l-270"></a><span class="tm">19:42:48</span><span class="nk"> &lt;gmaxwell&gt;</span> (of the software)
+<a name="l-271"></a><span class="tm">19:42:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Maybe I'm looking to much to our seeders,... but the crawling till you serve IPs can be very delayed.
+<a name="l-272"></a><span class="tm">19:43:02</span><span class="nk"> &lt;gmaxwell&gt;</span> so?
+<a name="l-273"></a><span class="tm">19:43:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jonasschnelli:</span> I think I agree on prunning by height being more useful
+<a name="l-274"></a><span class="tm">19:43:13</span><span class="nk"> &lt;gmaxwell&gt;</span> You'll signal you keep X if you're guarenteed to keep X.
+<a name="l-275"></a><span class="tm">19:43:26</span><span class="nk"> &lt;jtimon&gt;</span> or relative height rather
+<a name="l-276"></a><span class="tm">19:43:33</span><span class="nk"> &lt;sipa&gt;</span> s/height/depth/
+<a name="l-277"></a><span class="tm">19:43:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. But prune=550 is a MB target. Does it guarantee and amount of blocks?
+<a name="l-278"></a><span class="tm">19:43:42</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> right, thanks
+<a name="l-279"></a><span class="tm">19:43:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> *an
+<a name="l-280"></a><span class="tm">19:44:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> it guarentees we'll keep 288 blocks. The whole feature was designed to guarentee that for reorg reasons, but people thought offering a MB centric UI would be more useful to users.
+<a name="l-281"></a><span class="tm">19:44:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I think in the future we'll change it to a limited set of options.
+<a name="l-282"></a><span class="tm">19:44:45</span><span class="nk"> &lt;gmaxwell&gt;</span> Maybe all of them named after words for big in different languages, like starbucks. :P
+<a name="l-283"></a><span class="tm">19:44:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Fair enough...
+<a name="l-284"></a><span class="tm">19:44:53</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> the MB option confuses people though since it includes the undo data. people see 550 and they assume it means 550 blocks since 1 MB blocks
+<a name="l-285"></a><span class="tm">19:44:53</span><span class="nk"> &lt;luke-jr&gt;</span> eh, 550 MB is only guaranteed 137 blocks with segwit
+<a name="l-286"></a><span class="tm">19:45:04</span><span class="nk"> &lt;luke-jr&gt;</span> oh, forgot undo data
+<a name="l-287"></a><span class="tm">19:45:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> "For me a venti depruned node, please"
+<a name="l-288"></a><span class="tm">19:45:20</span><span class="nk"> &lt;wumpus&gt;</span> lol @ coffee names
+<a name="l-289"></a><span class="tm">19:45:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> then that needs to get fixed.
+<a name="l-290"></a><span class="tm">19:45:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> lol
+<a name="l-291"></a><span class="tm">19:45:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> with a double shot of xthin.
+<a name="l-292"></a><span class="tm">19:45:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> pfff
+<a name="l-293"></a><span class="tm">19:46:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> easy fix.
+<a name="l-294"></a><span class="tm">19:46:18</span><span class="nk"> &lt;luke-jr&gt;</span> controversial fix
+<a name="l-295"></a><span class="tm">19:46:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> it'll break existing configs
+<a name="l-296"></a><span class="tm">19:46:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. I can start writing a draft specs about the two bit (144/~1000) NODE_NETWORK_LIMITED.. will announce once I have something
+<a name="l-297"></a><span class="tm">19:46:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I'm sorry, I dont speak starbucks
+<a name="l-298"></a><span class="tm">19:46:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> so?
+<a name="l-299"></a><span class="tm">19:47:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> seriously, like why did I bother commenting today?
+<a name="l-300"></a><span class="tm">19:47:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> venti is italian for 20. easy. that's obviously more than "grande" or "tall"
+<a name="l-301"></a><span class="tm">19:47:22</span><span class="nk"> &lt;gmaxwell&gt;</span> first peak is at 144, if _must_ keep more than that to be useful.
+<a name="l-302"></a><span class="tm">19:47:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ehh, I'll stick with my *good* coffee, thanks
+<a name="l-303"></a><span class="tm">19:47:56</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, next topic?
+<a name="l-304"></a><span class="tm">19:48:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority for review</span>
+<a name="l-305"></a><span class="tm">19:48:14</span><span class="nk"> &lt;praxeology&gt;</span> My 2 cents: the UI should stay in MB, but underlying the variables stored by the software should be in block count... for the prune threshold.
+<a name="l-306"></a><span class="tm">19:48:43</span><span class="nk"> &lt;wumpus&gt;</span> anything to add to project https://github.com/bitcoin/bitcoin/projects/8?
+<a name="l-307"></a><span class="tm">19:48:55 </span><span class="nka">* BlueMatt</span> <span class="ac">suggests adding #10199 for morcos</span>
+<a name="l-308"></a><span class="tm">19:48:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+<a name="l-309"></a><span class="tm">19:49:00</span><span class="nk"> &lt;BlueMatt&gt;</span> (who is out today)
+<a name="l-310"></a><span class="tm">19:49:17</span><span class="nk"> &lt;sipa&gt;</span> i'd like to get review on #10195 (which i think is ready)
+<a name="l-311"></a><span class="tm">19:49:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-312"></a><span class="tm">19:49:20 </span><span class="nka">* BlueMatt</span> <span class="ac">humbly requests rebase of #7729 which is on that list</span>
+<a name="l-313"></a><span class="tm">19:49:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+<a name="l-314"></a><span class="tm">19:49:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> pyou already have an entry....
+<a name="l-315"></a><span class="tm">19:49:30</span><span class="nk"> &lt;sipa&gt;</span> oh :(
+<a name="l-316"></a><span class="tm">19:49:50</span><span class="nk"> &lt;wumpus&gt;</span> added 10199
+<a name="l-317"></a><span class="tm">19:50:23</span><span class="nk"> &lt;cfields&gt;</span> It's not urgent, but #10285 is first in a long line towards libevent
+<a name="l-318"></a><span class="tm">19:50:24</span><span class="nk"> &lt;sipa&gt;</span> ok, swap #10148 for #10195 then; 10148 needs more tests
+<a name="l-319"></a><span class="tm">19:50:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10285 | net: refactor the connection process. moving towards async connections. by theuni · Pull Request #10285 · bitcoin/bitcoin · GitHub
+<a name="l-320"></a><span class="tm">19:50:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+<a name="l-321"></a><span class="tm">19:50:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-322"></a><span class="tm">19:50:38</span><span class="nk"> &lt;luke-jr&gt;</span> suggested topic? planned obsolecense
+<a name="l-323"></a><span class="tm">19:50:41</span><span class="nk"> &lt;jtimon&gt;</span> random though: what about maintaining the mb option an adding an incompatible one (you can only set one) with depth ? then the mb can be just an estimation that translates to depth on init, but you don't break old configs, only the expected guarantees about limits
+<a name="l-324"></a><span class="tm">19:51:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> NACK
+<a name="l-325"></a><span class="tm">19:51:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> NACK topic or NACK it altogether? :/
+<a name="l-326"></a><span class="tm">19:51:24</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> planned obsolecense is a bad name for it
+<a name="l-327"></a><span class="tm">19:51:25</span><span class="nk"> &lt;BlueMatt&gt;</span> second
+<a name="l-328"></a><span class="tm">19:52:09</span><span class="nk"> &lt;wumpus&gt;</span> added 10285, swapped #10148 for #10195
+<a name="l-329"></a><span class="tm">19:52:10 </span><span class="nka">* luke-jr</span> <span class="ac">waits for topic change before going into discussion</span>
+<a name="l-330"></a><span class="tm">19:52:10 </span><span class="nka">* jtimon</span> <span class="ac">checks https://github.com/bitcoin/bitcoin/pull/8855 is on the priority list</span>
+<a name="l-331"></a><span class="tm">19:52:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+<a name="l-332"></a><span class="tm">19:52:13</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-333"></a><span class="tm">19:52:28</span><span class="nk"> &lt;sipa&gt;</span> thanks
+<a name="l-334"></a><span class="tm">19:52:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bitcoind expiration</span>
+<a name="l-335"></a><span class="tm">19:53:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> 10282
+<a name="l-336"></a><span class="tm">19:53:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#10282</span><span class="cmdline"></span>
+<a name="l-337"></a><span class="tm">19:53:45</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10282 | Expire bitcoind &amp; bitcoin-qt 7-8 years after its last change by luke-jr · Pull Request #10282 · bitcoin/bitcoin · GitHub
+<a name="l-338"></a><span class="tm">19:53:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> reasoning for NACK?
+<a name="l-339"></a><span class="tm">19:54:11</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> maybe explain reasoning for doing so first?
+<a name="l-340"></a><span class="tm">19:54:12</span><span class="nk"> &lt;luke-jr&gt;</span> re achow101's comment, I don't really think it matters what we call it
+<a name="l-341"></a><span class="tm">19:54:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> 10282 has a full explanation
+<a name="l-342"></a><span class="tm">19:54:51</span><span class="nk"> &lt;petertodd&gt;</span> any timeframe short enough to really be useful will probably be short enough to raise political risks...
+<a name="l-343"></a><span class="tm">19:54:51</span><span class="nk"> &lt;luke-jr&gt;</span> 1) it's basically guaranteed to be unsafe by then; 2) hardforks become softforks with enough lead time
+<a name="l-344"></a><span class="tm">19:55:00</span><span class="nk"> &lt;jtimon&gt;</span> I think if it's optional and disabled by default it kind of defeats the point, but I certainly don't want that for myself or the users I recommend to use bitcoin core
+<a name="l-345"></a><span class="tm">19:55:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i don't see how this has anything to do with consensus changes
+<a name="l-346"></a><span class="tm">19:55:32</span><span class="nk"> &lt;petertodd&gt;</span> also, is there any precedent for this kind of expiration in other software?
+<a name="l-347"></a><span class="tm">19:55:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> 110% sends the wrong message. if i expected any reasonable person to see that and think "I need to think for myself about what consensus of the network is" I'd be happy with it, but realistically the only people reading that will think "oh, I have to switch to the latest thing from Bitcoin Core, for whatever Bitcoin Core is according to my local google server"
+<a name="l-348"></a><span class="tm">19:55:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> what is the use case for running node software over 7 years after its release, without maintenance?
+<a name="l-349"></a><span class="tm">19:55:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> yes, but I'm not aware of any that can be overridden.
+<a name="l-350"></a><span class="tm">19:56:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i think insecurity of the software is perhaps a good reason, but not consensus
+<a name="l-351"></a><span class="tm">19:56:07</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> got any examples?
+<a name="l-352"></a><span class="tm">19:56:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">petertodd:</span> see also the thing with debian and xscreensaver.
+<a name="l-353"></a><span class="tm">19:56:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> that's a problem independent of this IMO
+<a name="l-354"></a><span class="tm">19:56:35</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> ah, yeah, that crazy situation...
+<a name="l-355"></a><span class="tm">19:57:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> how is that independant of the thing which creates it? but, indeed, security may be a reasonable reason, not sure its justified, though
+<a name="l-356"></a><span class="tm">19:57:26</span><span class="nk"> &lt;BlueMatt&gt;</span> am i really not allowed to not upgrade the bitcoind I've got running behind by bitcoind/xyz firewall?
+<a name="l-357"></a><span class="tm">19:57:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> people will mostly all update before this triggers; probably using the insecure method you describre
+<a name="l-358"></a><span class="tm">19:57:44</span><span class="nk"> &lt;gmaxwell&gt;</span> I agree with petertodd's point about short enough to be useful is short enough to be problematic. :( But there are other not really useful features...
+<a name="l-359"></a><span class="tm">19:57:50</span><span class="nk"> &lt;BlueMatt&gt;</span> oops, bitcoind crashed in production
+<a name="l-360"></a><span class="tm">19:58:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> note this has an explicit override allowed
+<a name="l-361"></a><span class="tm">19:58:26</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> and there's a larger point too: chances are the surrounding software on your machine is also not getting updated anyway, so you've got other big problems
+<a name="l-362"></a><span class="tm">19:58:32</span><span class="nk"> &lt;luke-jr&gt;</span> if you really don't want to upgrade, just add to your config file
+<a name="l-363"></a><span class="tm">19:58:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> yes, and you can do that /after/ your bitcoind has crashed
+<a name="l-364"></a><span class="tm">19:58:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> let's say my friend remembers what I told him about being up to date 6 years and 11 months after I helped him install bitcoin core
+<a name="l-365"></a><span class="tm">19:58:38</span><span class="nk"> &lt;BlueMatt&gt;</span> which is kinda shit
+<a name="l-366"></a><span class="tm">19:58:48</span><span class="nk"> &lt;gmaxwell&gt;</span> it would be nice to be able to say there are no nodes running older than X without the user deciding to keep them running.
+<a name="l-367"></a><span class="tm">19:58:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> you could do it before as well, but IMO after 7 years it's okay to force the user to do something
+<a name="l-368"></a><span class="tm">19:59:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> yes, but the crash was an RCE and all your funds are now gone. :)
+<a name="l-369"></a><span class="tm">19:59:27</span><span class="nk"> &lt;wumpus&gt;</span> if you run nodes in production you'll have some system to monitor it
+<a name="l-370"></a><span class="tm">19:59:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> not if its the bitcoind that everything talks to on your network and it just sits behind sufficient layers of regularly-updated bitcoind firewalls
+<a name="l-371"></a><span class="tm">19:59:39</span><span class="nk"> &lt;wumpus&gt;</span> and summon an operator on crashes
+<a name="l-372"></a><span class="tm">19:59:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> lol, i meannnnn, maybe
+<a name="l-373"></a><span class="tm">20:00:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> hahaha, yes, with a server farm at the end of the rainbow
+<a name="l-374"></a><span class="tm">20:00:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> and what if it doesn't crash, but someone exploits your failure to enforce a softfork?
+<a name="l-375"></a><span class="tm">20:00:21</span><span class="nk"> &lt;jtimon&gt;</span> or shouldn't I recommend bitcoin core for a wallet?
+<a name="l-376"></a><span class="tm">20:00:25</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> you should talk to some banking IT guys about how hard it is to get approval to update things :)
+<a name="l-377"></a><span class="tm">20:00:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> I don't understand your argument.
+<a name="l-378"></a><span class="tm">20:00:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">petertodd:</span> I'm not saying anything about updating
+<a name="l-379"></a><span class="tm">20:00:54</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, you can over-ride the setting, I believe
+<a name="l-380"></a><span class="tm">20:01:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">wumpus:</span> literally touching a config option is an update by those standards
+<a name="l-381"></a><span class="tm">20:01:09</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">instagibbs:</span> oh, I missed that
+<a name="l-382"></a><span class="tm">20:01:18</span><span class="nk"> &lt;wumpus&gt;</span> only about crashes, if some software is important to your business and it crashes, you'll notice.
+<a name="l-383"></a><span class="tm">20:01:41</span><span class="nk"> &lt;wumpus&gt;</span> anyhow
+<a name="l-384"></a><span class="tm">20:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

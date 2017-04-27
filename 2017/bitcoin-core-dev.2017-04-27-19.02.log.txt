@@ -1,0 +1,384 @@
+19:02:01 <wumpus> #startmeeting
+19:02:01 <lightningbot> Meeting started Thu Apr 27 19:02:01 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:01 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:31 <jonasschnelli> I have two topic proposals: "hd-restore" and "limited NODE_NETWORK (NODE_NETWORK_LIMITED) signaling"
+19:02:33 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt
+19:02:33 <wumpus> instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:02:39 <kanzure> hi.
+19:02:44 <instagibbs> here
+19:02:47 <cfields> hi
+19:03:17 <wumpus> #topic hd-restore (jonasschnelli)
+19:03:21 <jtimon> suggested topic: summary of BlueMatt's overall plan for libconsensu
+19:03:41 <kanzure> is this 10240?
+19:03:45 <jtimon> if BlueMatt wants of course
+19:03:47 <BlueMatt> jtimon: k, can share. jonasschnelli you have the floor :)
+19:03:50 <jonasschnelli> Re. HD restore. I'm not sure if we should always try to restore funds or if we should check for the bestblock and compare it to the chain tip and only then restore
+19:04:12 <jonasschnelli> The main stuff is in #10240
+19:04:13 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | [WIP] Add basic HD wallet restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:04:24 <instagibbs> ack libconsensus discussion
+19:04:34 <jonasschnelli> But I think we should only restore if the wallet's bestblock lacks behind
+19:04:35 <instagibbs> oh sorry, didnt see topic set already :)
+19:04:44 <jonasschnelli> Because...
+19:04:51 <jonasschnelli> Encrypted wallets may need to unlock
+19:05:06 <jonasschnelli> And also for performance / log reasons
+19:05:09 <BlueMatt> jonasschnelli: i assumed we'd always keep a buffer of X pubkeys around
+19:05:15 <BlueMatt> because you may have wallet "forks"
+19:05:21 <BlueMatt> not sure what you mean by "restore"?
+19:05:28 <BlueMatt> (feel free to tell me to shut up and go read the pr)
+19:05:55 <jonasschnelli> BlueMatt: By restore I mean always check the keypool keys and auto-extend (if only 50 [TBD] keys are left, topup to 100 [TBD]
+19:05:57 <kanzure> looks like it's re: finding relevant transactions
+19:06:19 <jonasschnelli> If we always restore... we would need to unlock encrypted wallet...
+19:06:29 <jonasschnelli> (more often)
+19:06:30 <sipa> jonasschnelli: my assumption was that we'd always mark seen keys as used (and we should do that independently)
+19:06:43 <sipa> jonasschnelli: we should also always extend the keypool when we can
+19:06:54 <BlueMatt> jonasschnelli: ah, you mean like "when do we extend keypool to watch buffer"?
+19:06:56 <jonasschnelli> sipa: Yes. But what if we can't?
+19:06:59 <sipa> jonasschnelli: and if the keypool runs out in a non-interactive setting, shutdown
+19:07:00 <achow101> If it needs to generate keys you could prompt the user right when the main gui pops up
+19:07:15 <jonasschnelli> And whats a save gap limit? I would assume >100 keys.
+19:07:18 <BlueMatt> another option would be to stop updating best seen block
+19:07:29 <BlueMatt> and then kick off a background rescan-from-that-height when wallet next unlocks
+19:07:38 <jonasschnelli> If someone has handed out 101 keys and only the position 101 has payed...
+19:07:38 <BlueMatt> if gap goes under some threshold
+19:07:45 <kanzure> yea, trigger on next unlock is better than achow101 popup
+19:07:58 <BlueMatt> achow101: needs to be cli-compatible, though
+19:08:03 <jonasschnelli> achow101: GUI is solvable..
+19:08:07 <sipa> jonasschnelli: if we fix the bdb flushing stupidity, generating new keys becomes very cheap
+19:08:11 <jonasschnelli> I don't know how to solve the non GUI way
+19:08:20 <sipa> jonasschnelli: shutdown. make sure it doesn't happen
+19:08:21 <achow101> jonasschnelli: how would you hand out 101 keys if the 101st wasn't generated yet?
+19:08:29 <BlueMatt> jonasschnelli: i mean keys are cheap, can do 250 or 500 or something crazy
+19:08:35 <jonasschnelli> sipa: But how to unlock during init in the first place?
+19:08:40 <sipa> jonasschnelli: you can't
+19:08:47 <BlueMatt> jonasschnelli: but cant we just use the keypool number now as the "buffer"?
+19:08:48 <sipa> ah, i see what you mean
+19:08:50 <jonasschnelli> But right after we rescan and sync
+19:09:07 <BlueMatt> and, like, the lower bound should be like keypool count / 2
+19:09:21 <BlueMatt> sipa: you cant just shutdown mid-sync
+19:09:30 <jonasschnelli> BlueMatt: Yes. But with the current 100 default, we would enforce a shutdown on startup for encrypted wallets
+19:09:33 <sipa> BlueMatt: why not?
+19:09:47 <sipa> it's an error condition that we cannot recover from
+19:09:48 * BlueMatt re-proposes that we stop updating wallet's best height if our keypool falls below keypool / 2
+19:09:56 <BlueMatt> and then rescan when keypool next gets filled
+19:09:57 <sipa> hmm
+19:10:05 <jonasschnelli> IMO an explicit "restore-mode" with a "unlock during startup" (not sure how) would be preferable for encrypted wallets
+19:10:12 <sipa> BlueMatt: you should also stop pruning
+19:10:20 <BlueMatt> sipa: yes, that would be my major reservation
+19:10:29 <BlueMatt> jonasschnelli: not sure you realistically can in a daemon setting
+19:10:40 <jonasschnelli> is stdin a total nogo? *duck*
+19:10:44 <sipa> so i guess we need a special "stop syncing" mode that we go into when the keypool runs out
+19:10:49 <sipa> jonasschnelli: there is no stdin with -daemon
+19:10:51 <BlueMatt> sipa: i guess you can stop pruning and if disk fills it will do the shutdown part for you :p
+19:10:58 <sipa> BlueMatt: ugh
+19:11:02 <BlueMatt> yea, i know
+19:11:03 <jonasschnelli> sipa: Yes. But at least you could run in non-daemon headless
+19:11:07 <wumpus> yes a blocking mode makes sense in that case
+19:11:24 <BlueMatt> ok, so blocking in pruning mode, rescan-later in non-pruning mode?
+19:11:34 <wumpus> and no, stdin is not an option, there should be no expectation with bitcoind that there's anyone at the terminal
+19:11:35 <jonasschnelli> If you run with an encrypted wallet and the bestblock lacks behind, shutdown if we can't unlock over stdin
+19:11:52 <BlueMatt> no stdin, just shutdown
+19:11:56 <jonasschnelli> wumpus: So we have only RPC to unlock?
+19:11:57 <wumpus> everything should be scriptable
+19:11:57 <BlueMatt> jonasschnelli: but only in prune mode
+19:12:07 <wumpus> jonasschnelli: yes
+19:12:14 <jonasschnelli> But how do we unlock/extend before we sync?
+19:12:25 <wumpus> just wait until the wallet is unlocked to start
+19:12:25 <jonasschnelli> rpc starts after chain sync
+19:12:31 <sipa> jonasschnelli: you go into a blocking mode, and you continue after walletunlock
+19:12:37 <wumpus> right
+19:12:52 <sipa> jonasschnelli: and no, no stdin ever
+19:13:03 <jonasschnelli> but can we block the sync and wait for RPC wallettunlock?
+19:13:09 <sipa> jonasschnelli: why not?
+19:13:15 <wumpus> sure
+19:13:18 <jonasschnelli> (without changing too much)?
+19:13:18 <BlueMatt> ProcessNewBlock { return false; }
+19:13:31 <jonasschnelli> okay... sounds good. Need to take a closer look.
+19:13:33 <sipa> add a function to validation.h to let the core know that validation cannot progress
+19:13:42 <BlueMatt> maybe stop net too under the current net-pause stuff
+19:13:47 <sipa> right
+19:13:53 <jonasschnelli> Good point.
+19:13:54 <kanzure> should it shutdown if wallet is not unlocked within a certain time period? if it's not shutdown users might expect it to still be syncing.
+19:14:00 <jonasschnelli> Next question: what's a sane gap limit?
+19:14:02 <wumpus> the only precondition for getting out of Init() is that the genesis block has been processed, everything else can be delayed
+19:14:04 <jonasschnelli> 100 seems way to low to me
+19:14:16 <sipa> jonasschnelli: fix bdb flushing insanity, and raise it to 1000 or 10000
+19:14:17 <BlueMatt> jonasschnelli: keypool / 2?
+19:14:18 <jonasschnelli> (risk of losing funds is involved)
+19:14:24 <BlueMatt> and we can bump keypool to 500
+19:14:25 <achow101> how would you know that it is blocking and you need to walletunlock?
+19:14:29 <kanzure> jonasschnelli: i think the answer will depend on performance.  also, do you really want to encourage users to use gaps? the answer might be yes..
+19:15:06 <kanzure> achow101: yes that is why i suggested shutdown after a certain period of time. users might not realize that syncing is stopped otherwise.
+19:15:15 <jonasschnelli> there my next concern pops up... all user will always have to have 500+ keypools. In an explicit restore more, only then we would need to have a large pool
+19:15:30 <sipa> jonasschnelli: who cares about 500 keys'
+19:15:41 <sipa> it's 16 kB of memory
+19:15:52 <sipa> well, some small constant multiple of that
+19:15:52 <kanzure> i thought derivation time was the bottleneck?
+19:15:56 <jonasschnelli> Hmm... yes.
+19:16:08 <jonasschnelli> If it just would be a pubkey and H160 onyl.. but it's also the privatre key! hell
+19:16:17 <wumpus> the memory usage of keys is not an issue, just generation time (and that's only due to bdb stupidity)
+19:16:33 <sipa> kanzure: we can do ~10000 derivation steps per second on a single thread on modern CPU
+19:16:42 <kanzure> is that with bdb madness? :)
+19:16:46 <sipa> and maybe 5 due to BDB flushing
+19:16:47 <wumpus> calling fsync after every key is not a good idea, it should create the entire keypool refill in one transaction
+19:16:53 <luke-jr> IMO automatic pruning should probably have as a precondition that the wallet has updated to the block being pruned, if it doesn't already; then the wallet can just set its criteria for processing
+19:17:20 <luke-jr> and if auto-pruning is enabled, block validation (safely) when the size is hit, until it can prune further?
+19:17:30 <sipa> luke-jr: agree, but that's not a concern right now as the wallet updates synchronously... with BlueMatt's coming changes maybe that changes
+19:17:42 <BlueMatt> yes, that changes, but it still shouldnt be too slow
+19:17:48 <jonasschnelli> With HD, there would also be no need for the disk-keypool for unencrypted wallets,.. it's just legacy. We could always fill up in-mem
+19:18:02 <BlueMatt> if your wallet falls behind consensus, you have a very, very large wallet
+19:18:13 <BlueMatt> (and should pause sync anyway)
+19:18:39 <sipa> right, the wallet should have the ability to pause syncing or prevent pruning
+19:18:49 <jonasschnelli> Conclusion: a) always scan keypool and topup, b) extend keypool and gap-limit to 500+, c) block when encrypted until RPC unlocked.
+19:19:11 <sipa> sgtm
+19:19:17 <wumpus> yes
+19:19:18 <jonasschnelli> thanks. That was effective
+19:19:32 <wumpus> #topic libconsensus (BlueMatt)
+19:19:51 <BlueMatt> yes, so obviously this is all based on #771
+19:19:53 <gribble> https://github.com/bitcoin/bitcoin/issues/771 | CBlockStore by TheBlueMatt · Pull Request #771 · bitcoin/bitcoin · GitHub
+19:19:59 <BlueMatt> :)
+19:20:08 <jonasschnelli> (19 Jan 2012)
+19:20:22 <wumpus> archeology?
+19:20:23 <BlueMatt> but pr #10279 creates a CChainState class which will hold things like mapBlockIndex chainActive, etc, etc
+19:20:24 <gribble> https://github.com/bitcoin/bitcoin/issues/10279 | Add a CChainState class to validation.cpp to take another step towards clarifying internal interfaces by TheBlueMatt · Pull Request #10279 · bitcoin/bitcoin · GitHub
+19:20:40 <BlueMatt> and have ProcessNewBlock Activate..., Connect, etc, etc, etc
+19:20:53 <sipa> yay
+19:21:04 <BlueMatt> long-term that class' public interface will be libbitcoinconsensus, but right now its really just to clean up internal interfaces within validation.cpp
+19:21:13 <wumpus> sounds good to me
+19:21:29 <BlueMatt> that class would get a pcoinsTip and related stuff to write/read blocks from disk
+19:21:39 <BlueMatt> and then only be able to call that and pure functions (eg script validation)
+19:21:45 <jtimon> BlueMatt: so what's the next thing we will be able to expose with these changes?
+19:21:51 <cfields> ooh, +1
+19:21:54 <BlueMatt> there is a bit of cleanup in the pr, but mostly its just moving into a class
+19:22:06 <BlueMatt> jtimon: expose-wise? probably nothing for like 2 more releases "until its ready"
+19:22:15 * BlueMatt is not a fan of libbitcoinconsensus being a grab-bag of random verification functions
+19:22:21 <jtimon> the class itself? mhmm
+19:22:32 <BlueMatt> i mean "the class"  but I assume via a C API
+19:24:01 <BlueMatt> any other questions? or next topic?
+19:24:08 <jtimon> yes, I know, and I'm very open to see what you want to expose, even if I don't renounce to the verifyWithoutChangingState x {block, header, tx, script} + getFlags() vision I had
+19:24:38 <jtimon> but that's helpful, I can just imagine the class being exposed as a c api
+19:25:15 <wumpus> not directly, it's just another step toward being able to
+19:25:36 <wumpus> #topic limited NODE_NETWORK (NODE_NETWORK_LIMITED) signaling (jonasschnelli)
+19:25:57 <petertodd> wumpus: +1
+19:25:57 <jonasschnelli> I wanted to ask if a first step to announce pruned NODE_NETWORK would make sense.
+19:26:04 <jonasschnelli> Could be NODE_NETWORK_LIMITED
+19:26:11 <sipa> jonasschnelli: what would it entail?
+19:26:14 <jonasschnelli> The only requirement is relay, and serve the last 144 blocks
+19:26:21 <petertodd> jonasschnelli: ACK
+19:26:22 <wumpus> we had this discussion recently, I thnk the conclusion was to use two service bits
+19:26:28 <wumpus> (or one, at first)
+19:26:31 <gmaxwell> what wumpus said.
+19:26:32 <jonasschnelli> (which is almost always possible with the current auto-prune limit)
+19:26:43 <sipa> i would suggest something that guarantees 1 day and 1 week
+19:26:51 <wumpus> one bit combination would be 144, one would be ~1000
+19:26:58 <luke-jr> jonasschnelli: so segwit prune=550 wouldn't be allowed?
+19:27:02 * BlueMatt resists the urge to bikeshed on the "1 week" number
+19:27:02 <gmaxwell> Which should be 2 days and 2 weeks so the boundary condition doesn't leave you right out.
+19:27:09 <sipa> BlueMatt: i have data!
+19:27:11 <jonasschnelli> luke-jr: We would have to bump there
+19:27:14 <gmaxwell> BlueMatt: sipa has data on request rates.
+19:27:21 <BlueMatt> oh, true, thats right
+19:27:22 <wumpus> luke-jr: it's allowed, but it can't signal anything
+19:27:44 <sipa> BlueMatt: i'll analyse the numbers again if there is interest
+19:27:44 <gmaxwell> The only think to bikeshed is how much higher do we need the cutoff than his data, it should be at least a couple blocks higher because of reorgs/boundary conditions.
+19:28:20 <gmaxwell> our existing minimum sizing for pruning is sized out for 288 blocks, so I think we should just do that, it will make ~144 pretty reliable.
+19:28:29 <bitcoin-git> [13bitcoin] 15sipa opened pull request #10290: Add -stopatheight for benchmarking (06master...06shutdown_at_height) 02https://github.com/bitcoin/bitcoin/pull/10290
+19:28:38 <wumpus> yep
+19:28:47 <BlueMatt> sipa: ack without seeing code
+19:28:49 <jonasschnelli> Two service bits seems to be great. Did anyone started with specs/BIP?
+19:29:27 <sipa> BlueMatt: i just have a log of which depths of blocks are being fetched from my node
+19:29:42 <cfields> how would NODE_NETWORK_LIMITED interact (if at all) with the remote peer's advertised height?
+19:29:59 <sipa> BlueMatt: since february
+19:30:03 <gmaxwell> cfields: I don't think it should?
+19:30:05 <luke-jr> IMO would be nicer to have the new service bit require *some* historical storage, but I guess we're not running out..
+19:30:08 <jonasschnelli> IMO the purpose is to signal "I have only a limited amount of blocks"
+19:30:12 <wumpus> cfields: not at all, we ignore that value
+19:30:24 <BlueMatt> sipa: yes, i recall now
+19:30:26 <cfields> ok, good
+19:30:27 <gmaxwell> That advetised height shouldn't be used for almost anything.
+19:30:28 <wumpus> (as it's easily spoofable)
+19:30:31 <jonasschnelli> The best-height in version doesn't matter IMO
+19:30:32 <wumpus> it isn't used at all
+19:30:39 <sipa> i believe it is not used at all
+19:30:44 <sipa> (by bitcoin core)
+19:30:46 <luke-jr> I'm not sure why more than the last 1-2 blocks should be needed to indicate relaying
+19:30:53 <jonasschnelli> wumpus: I  think it's used by SPV
+19:31:01 <gmaxwell> luke-jr: because or reorgs.
+19:31:20 <gmaxwell> if I can't serve you the parents of my tip, I can't help you reorg onto it, making my serving nearly useless.
+19:31:24 <wumpus> jonasschnelli: I meant in bitcoin core; I don't know about other implementations
+19:31:24 <luke-jr> hmm
+19:31:28 <jonasschnelli> Is a min of 144 blocks to height?
+19:31:44 <jonasschnelli> No... nm
+19:31:45 <petertodd> luke-jr: and requiring nodes to have a GB or two of space for this is a trivial cost these days
+19:31:52 <achow101> is the point of NODE_NETWORK_LIMITED just to tell nodes that they can request the most recent blocks from said node?
+19:31:55 <luke-jr> assuming we only fetch blocks when reorging to their chain
+19:32:02 <instagibbs> It's the unbounded growth that gets people to shut off nodes
+19:32:04 <achow101> and right now you can't request any blocks from pruned nodes?
+19:32:11 <gmaxwell> In any case the bit must promise more than nodes count on.
+19:32:17 <sipa> achow101: pruned nodes don't even advertize they can relay blocks
+19:32:34 <instagibbs> achow101, NODE_NETWORK is a flag for that, and it's missing from pruned nodes currently
+19:32:36 <jonasschnelli> achow101: once you are in sync (>-144) you can pair with pruned peers and be fine
+19:32:53 <achow101> ok
+19:32:56 <gmaxwell> Say nodes frequently need to catch up a day.  You only keep 144 blocks.   Peer needs to catch up a day, connects to you.. opps you can't help them because a day turned out to be 150 blocks, they wasted their time connecting to you for nothing.
+19:33:43 <gmaxwell> So for this to be useful the requester has to be conservative and not try to talk to you unless it thinks you are _very_ likely to have what it needs, which means that you need a fair amount more than the target.
+19:34:11 <gmaxwell> So to serve a day of blocks, you'll need a day and a half or so. Round it up to 288.
+19:34:25 <gmaxwell> petertodd: oh hi. long time no see.
+19:34:33 <petertodd> gmaxwell: heh
+19:34:39 <gmaxwell> and as mentioned, our pruning limit is already there.
+19:34:49 <jonasschnelli> I just think we should allow the current auto-pruning 550 peers to signal relay and "limited amount of blocks around the tip".
+19:35:08 <luke-jr> so 137 blocks?
+19:35:21 <jonasschnelli> If we set NODE_NETWORK_LIMIT higher while allowing to prune shorter,.. this would wast potential peers
+19:35:22 <petertodd> luke-jr: 1337 blocks
+19:35:27 <gmaxwell> jonasschnelli: then that will never be used.
+19:35:28 <jonasschnelli> heh
+19:35:43 <gmaxwell> If we don't know how many blocks to except we'll never connect to them.
+19:36:14 <gmaxwell> This impacts the connection logic, we'll need logic that changes the requested services based on an estimate of how far back we are.
+19:36:17 <sipa> when you're fully synced, why wouldn't you connect to a node that guarantees for example having the last 10 blocks?
+19:36:19 <jonasschnelli> gmaxwell: Well, if we are in sync, you could be friendly and make space for the one who need sync and re-connect to limited peers?
+19:36:30 <jonasschnelli> Yes. What sipa said
+19:36:57 <jonasschnelli> I would expect the larger the chain grows the more pruned peers we will see
+19:37:09 <jonasschnelli> (rought assumption)
+19:37:11 <sipa> not that we should support pruning that much, but for bandwidth reasons it may be reasonable that someone wants to relay new blocks, but not historical ones
+19:38:11 <petertodd> sipa: I think we can make a good argument that requiring nodes to have something like 1GB of storage for historical blocks isn't a big deal, and makes the logic around all this stuff simpler
+19:38:12 <jonasschnelli> signaling the amount of block you have is also not extremly effective because of the addr-man, seed/crawl delay
+19:38:18 <jonasschnelli> *blocks
+19:38:30 <sipa> petertodd: again, not talking about storage, but about bandwidth
+19:38:52 <sipa> it's an open question - i'm not convinced it's needed or useful
+19:39:02 <jonasschnelli> Yes. Agree with sipa. Main pain point in historical blocks is upstream bandwidth
+19:39:07 <gmaxwell> sipa sure that would also work: but (1) nodes that only keep ten blocks are a hazard to the network, and (2) there is no real reason to keep that little, and (3) we don't have signaling room to send out every tiny variation.
+19:39:10 <petertodd> sipa: how much more bandwidth do your status say serving ~100 or whatever blocks is vs. 10?
+19:39:21 <petertodd> sipa: I mean, you can just turn off NODE_NETWORK_LIMIT entirely
+19:39:26 <jonasschnelli> gmaxwell: They would keep more but only willing to serve the last 10
+19:39:28 <gmaxwell> sipa: if you want to limit your bandwidth, limit it.
+19:39:32 <sipa> gmaxwell: well we have 3 possibilities
+19:39:45 <jonasschnelli> NODE_NETWORK_LIMITED would be a limit
+19:39:51 <sipa> fair enough, we have other mechanisms for limiting bandwidth
+19:39:51 <edcba> QoS on historical blocks :)
+19:40:20 <sipa> petertodd: i need to look again... it may not be that much difference
+19:40:30 <gmaxwell> sipa: and we have had reorgs longer than 10 in recent memory, what happens if all of your peers are like that?
+19:40:57 <BlueMatt> gmaxwell: we have?!
+19:41:17 <sipa> BlueMatt: bip50 was 30 deep, iirc
+19:41:17 <BlueMatt> oh, you mean the csv false-signaling reorgs?
+19:41:22 <BlueMatt> yea, ok
+19:41:44 <sipa> ok, i retract my suggestion for 10 deep
+19:41:46 <jonasschnelli> Would the two bit amount-of-blocks-available signaling be effective regarding the delay of address distribution?
+19:41:52 <BlueMatt> always need 2 * MAX_HUMAN_FIX_TIME_FACTOR for everything :p
+19:42:02 <sipa> but we do have 3 possibilities with 2 bits... perhaps we can have a 3rd limit
+19:42:08 <jonasschnelli> People tend to prune to MB rather then blocks (which could be a design mistake)
+19:42:17 <gmaxwell> jonasschnelli: Why do you think it has much to do with address distribution delay at all?
+19:42:29 <gmaxwell> if you keep the last 288 you keep the last 288.. you're not going to flicker that on and off.
+19:42:42 <gmaxwell> jonasschnelli: the design guarentees that you'll have 288 blocks.
+19:42:48 <gmaxwell> (of the software)
+19:42:53 <jonasschnelli> gmaxwell: Maybe I'm looking to much to our seeders,... but the crawling till you serve IPs can be very delayed.
+19:43:02 <gmaxwell> so?
+19:43:09 <jtimon> jonasschnelli: I think I agree on prunning by height being more useful
+19:43:13 <gmaxwell> You'll signal you keep X if you're guarenteed to keep X.
+19:43:26 <jtimon> or relative height rather
+19:43:33 <sipa> s/height/depth/
+19:43:36 <jonasschnelli> Okay. But prune=550 is a MB target. Does it guarantee and amount of blocks?
+19:43:42 <jtimon> sipa: right, thanks
+19:43:43 <jonasschnelli> *an
+19:44:10 <gmaxwell> jonasschnelli: it guarentees we'll keep 288 blocks. The whole feature was designed to guarentee that for reorg reasons, but people thought offering a MB centric UI would be more useful to users.
+19:44:21 <gmaxwell> I think in the future we'll change it to a limited set of options.
+19:44:45 <gmaxwell> Maybe all of them named after words for big in different languages, like starbucks. :P
+19:44:53 <jonasschnelli> Okay. Fair enough...
+19:44:53 <achow101> gmaxwell: the MB option confuses people though since it includes the undo data. people see 550 and they assume it means 550 blocks since 1 MB blocks
+19:44:53 <luke-jr> eh, 550 MB is only guaranteed 137 blocks with segwit
+19:45:04 <luke-jr> oh, forgot undo data
+19:45:11 <sipa> gmaxwell: "For me a venti depruned node, please"
+19:45:20 <wumpus> lol @ coffee names
+19:45:23 <gmaxwell> luke-jr: then that needs to get fixed.
+19:45:24 <jonasschnelli> lol
+19:45:38 <gmaxwell> sipa: with a double shot of xthin.
+19:45:43 <jonasschnelli> pfff
+19:46:10 <gmaxwell> luke-jr: easy fix.
+19:46:18 <luke-jr> controversial fix
+19:46:24 <sipa> gmaxwell: it'll break existing configs
+19:46:41 <jonasschnelli> Okay. I can start writing a draft specs about the two bit (144/~1000) NODE_NETWORK_LIMITED.. will announce once I have something
+19:46:42 <BlueMatt> sipa: I'm sorry, I dont speak starbucks
+19:46:49 <gmaxwell> sipa: so?
+19:47:04 <gmaxwell> jonasschnelli: seriously, like why did I bother commenting today?
+19:47:18 <sipa> BlueMatt: venti is italian for 20. easy. that's obviously more than "grande" or "tall"
+19:47:22 <gmaxwell> first peak is at 144, if _must_ keep more than that to be useful.
+19:47:49 <BlueMatt> sipa: ehh, I'll stick with my *good* coffee, thanks
+19:47:56 <BlueMatt> anyway, next topic?
+19:48:08 <wumpus> #topic high priority for review
+19:48:14 <praxeology> My 2 cents: the UI should stay in MB, but underlying the variables stored by the software should be in block count... for the prune threshold.
+19:48:43 <wumpus> anything to add to project https://github.com/bitcoin/bitcoin/projects/8?
+19:48:55 * BlueMatt suggests adding #10199 for morcos
+19:48:56 <gribble> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+19:49:00 <BlueMatt> (who is out today)
+19:49:17 <sipa> i'd like to get review on #10195 (which i think is ready)
+19:49:18 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:49:20 * BlueMatt humbly requests rebase of #7729 which is on that list
+19:49:21 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+19:49:26 <BlueMatt> sipa: pyou already have an entry....
+19:49:30 <sipa> oh :(
+19:49:50 <wumpus> added 10199
+19:50:23 <cfields> It's not urgent, but #10285 is first in a long line towards libevent
+19:50:24 <sipa> ok, swap #10148 for #10195 then; 10148 needs more tests
+19:50:24 <gribble> https://github.com/bitcoin/bitcoin/issues/10285 | net: refactor the connection process. moving towards async connections. by theuni · Pull Request #10285 · bitcoin/bitcoin · GitHub
+19:50:25 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:50:26 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:50:38 <luke-jr> suggested topic? planned obsolecense
+19:50:41 <jtimon> random though: what about maintaining the mb option an adding an incompatible one (you can only set one) with depth ? then the mb can be just an estimation that translates to depth on init, but you don't break old configs, only the expected guarantees about limits
+19:51:00 <BlueMatt> luke-jr: NACK
+19:51:16 <luke-jr> BlueMatt: NACK topic or NACK it altogether? :/
+19:51:24 <achow101> luke-jr: planned obsolecense is a bad name for it
+19:51:25 <BlueMatt> second
+19:52:09 <wumpus> added 10285, swapped #10148 for #10195
+19:52:10 * luke-jr waits for topic change before going into discussion
+19:52:10 * jtimon checks https://github.com/bitcoin/bitcoin/pull/8855 is on the priority list
+19:52:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:52:13 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:52:28 <sipa> thanks
+19:52:50 <wumpus> #topic bitcoind expiration
+19:53:42 <jonasschnelli> 10282
+19:53:44 <jonasschnelli> #10282
+19:53:45 <gribble> https://github.com/bitcoin/bitcoin/issues/10282 | Expire bitcoind & bitcoin-qt 7-8 years after its last change by luke-jr · Pull Request #10282 · bitcoin/bitcoin · GitHub
+19:53:50 <luke-jr> BlueMatt: reasoning for NACK?
+19:54:11 <cfields> luke-jr: maybe explain reasoning for doing so first?
+19:54:12 <luke-jr> re achow101's comment, I don't really think it matters what we call it
+19:54:23 <luke-jr> cfields: 10282 has a full explanation
+19:54:51 <petertodd> any timeframe short enough to really be useful will probably be short enough to raise political risks...
+19:54:51 <luke-jr> 1) it's basically guaranteed to be unsafe by then; 2) hardforks become softforks with enough lead time
+19:55:00 <jtimon> I think if it's optional and disabled by default it kind of defeats the point, but I certainly don't want that for myself or the users I recommend to use bitcoin core
+19:55:19 <sipa> luke-jr: i don't see how this has anything to do with consensus changes
+19:55:32 <petertodd> also, is there any precedent for this kind of expiration in other software?
+19:55:40 <BlueMatt> luke-jr: 110% sends the wrong message. if i expected any reasonable person to see that and think "I need to think for myself about what consensus of the network is" I'd be happy with it, but realistically the only people reading that will think "oh, I have to switch to the latest thing from Bitcoin Core, for whatever Bitcoin Core is according to my local google server"
+19:55:43 <luke-jr> jtimon: what is the use case for running node software over 7 years after its release, without maintenance?
+19:55:53 <gmaxwell> petertodd: yes, but I'm not aware of any that can be overridden.
+19:56:06 <sipa> luke-jr: i think insecurity of the software is perhaps a good reason, but not consensus
+19:56:07 <petertodd> gmaxwell: got any examples?
+19:56:13 <gmaxwell> petertodd: see also the thing with debian and xscreensaver.
+19:56:32 <luke-jr> BlueMatt: that's a problem independent of this IMO
+19:56:35 <petertodd> gmaxwell: ah, yeah, that crazy situation...
+19:57:02 <BlueMatt> luke-jr: how is that independant of the thing which creates it? but, indeed, security may be a reasonable reason, not sure its justified, though
+19:57:26 <BlueMatt> am i really not allowed to not upgrade the bitcoind I've got running behind by bitcoind/xyz firewall?
+19:57:33 <luke-jr> BlueMatt: people will mostly all update before this triggers; probably using the insecure method you describre
+19:57:44 <gmaxwell> I agree with petertodd's point about short enough to be useful is short enough to be problematic. :( But there are other not really useful features...
+19:57:50 <BlueMatt> oops, bitcoind crashed in production
+19:58:23 <luke-jr> BlueMatt: note this has an explicit override allowed
+19:58:26 <petertodd> gmaxwell: and there's a larger point too: chances are the surrounding software on your machine is also not getting updated anyway, so you've got other big problems
+19:58:32 <luke-jr> if you really don't want to upgrade, just add to your config file
+19:58:35 <BlueMatt> luke-jr: yes, and you can do that /after/ your bitcoind has crashed
+19:58:36 <jtimon> luke-jr: let's say my friend remembers what I told him about being up to date 6 years and 11 months after I helped him install bitcoin core
+19:58:38 <BlueMatt> which is kinda shit
+19:58:48 <gmaxwell> it would be nice to be able to say there are no nodes running older than X without the user deciding to keep them running.
+19:58:58 <luke-jr> BlueMatt: you could do it before as well, but IMO after 7 years it's okay to force the user to do something
+19:59:04 <gmaxwell> BlueMatt: yes, but the crash was an RCE and all your funds are now gone. :)
+19:59:27 <wumpus> if you run nodes in production you'll have some system to monitor it
+19:59:30 <BlueMatt> gmaxwell: not if its the bitcoind that everything talks to on your network and it just sits behind sufficient layers of regularly-updated bitcoind firewalls
+19:59:39 <wumpus> and summon an operator on crashes
+19:59:53 <BlueMatt> wumpus: lol, i meannnnn, maybe
+20:00:08 <sipa> wumpus: hahaha, yes, with a server farm at the end of the rainbow
+20:00:19 <luke-jr> BlueMatt: and what if it doesn't crash, but someone exploits your failure to enforce a softfork?
+20:00:21 <jtimon> or shouldn't I recommend bitcoin core for a wallet?
+20:00:25 <petertodd> wumpus: you should talk to some banking IT guys about how hard it is to get approval to update things :)
+20:00:33 <luke-jr> jtimon: I don't understand your argument.
+20:00:45 <wumpus> petertodd: I'm not saying anything about updating
+20:00:54 <instagibbs> jtimon, you can over-ride the setting, I believe
+20:01:08 <petertodd> wumpus: literally touching a config option is an update by those standards
+20:01:09 <jtimon> instagibbs: oh, I missed that
+20:01:18 <wumpus> only about crashes, if some software is important to your business and it crashes, you'll notice.
+20:01:41 <wumpus> anyhow
+20:01:43 <wumpus> #endmeeting
