@@ -1,0 +1,182 @@
+19:01:13 <sipa> #startmeeting
+19:01:13 <lightningbot> Meeting started Thu May  4 19:01:13 2017 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:13 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:23 <sipa> topics?
+19:01:36 <BlueMatt> oh, wumpus is out?
+19:01:41 <sipa> he is
+19:01:45 <instagibbs> hi
+19:01:51 <BlueMatt> #10337
+19:01:52 <gribble> https://github.com/bitcoin/bitcoin/issues/10337 | Coin Control Dialog is not (very) useful for manual privacy protection · Issue #10337 · bitcoin/bitcoin · GitHub
+19:01:56 <BlueMatt> :(
+19:02:06 <jonasschnelli> Proposed low prio topic: HD restore update / questions
+19:02:11 <sipa> #topic #10337
+19:02:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10337 | Coin Control Dialog is not (very) useful for manual privacy protection · Issue #10337 · bitcoin/bitcoin · GitHub
+19:02:22 <sipa> gmaxwell: ping people?
+19:02:30 <luke-jr> BlueMatt: I agree change shouldn't be grouped as it is, but I don't understand how "received by address" is wrong
+19:02:38 <BlueMatt> turns out the coin control dialog is almost entirely useless
+19:03:01 <jonasschnelli> BlueMatt: entierly useless? I disagree
+19:03:08 <BlueMatt> the "received by address" thing works fine for coins you just received, but if it is a change output it walks back the first input until it finds a non-change output
+19:03:11 <luke-jr> BlueMatt: seems plenty useful to me
+19:03:20 <BlueMatt> so it, essentially, picks an address at random if the output is change
+19:03:24 <luke-jr> BlueMatt: I see different "received by address" for change too
+19:03:34 <BlueMatt> and groups by it, which obviously isnt what you want for privacy
+19:03:45 <BlueMatt> luke-jr: for addresses marked as change in the wallet? no
+19:04:05 <luke-jr> BlueMatt: yes..
+19:04:08 <BlueMatt> for random addresses of yours it should work, but not for addresses via getrawchangeaddress
+19:04:23 <luke-jr> I don't use that RPC, but it works for normal change
+19:04:26 <jtimon> hi
+19:04:28 <BlueMatt> (or, ofc, normal change)
+19:05:04 <BlueMatt> https://github.com/bitcoin/bitcoin/blob/master/src/qt/walletmodel.cpp#L620
+19:05:35 <sipa> it sounds to me like it is doing a mix of "receive by address" and "linked grouping"
+19:05:44 <sipa> both are perhaps useful
+19:05:56 <BlueMatt> more importantly, really, is that I've repeatedly seen the tree mode of the coin picker dialog as the same as listaddressgroupings, which it is clearly not
+19:06:06 <BlueMatt> sipa: well the change-output-results-in-random-grouping thing is kinda strange
+19:06:20 <sipa> right, it shouldn't walk for receive address
+19:06:35 <luke-jr> BlueMatt: I have nfc what that code does, but it *looks* right in the end window :/
+19:06:39 <sipa> and it should alwaya walk (to some deterministic representative) for grouping
+19:06:45 <sipa> *alwaya
+19:06:48 <sipa> *alwayS
+19:06:53 <BlueMatt> *always
+19:07:11 <BlueMatt> but, yea, anyway, I think this should really emulate the grouping rpc
+19:07:38 <BlueMatt> the "where did these coins come from" question is not really useful for anything but coins you just got, in which case they will already be ungrouped
+19:07:38 <sipa> a "received by address" is still useful i think, but it's not the same as grouping
+19:07:50 <kanzure> hi.
+19:07:51 <BlueMatt> yes, but if it is not received directly, it should be "Change"
+19:08:03 <sipa> BlueMatt: seems reasonable to me
+19:08:28 <BlueMatt> anyway, other topics?
+19:08:39 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:08:47 <sipa> #topic HD restore update
+19:08:57 <jonasschnelli> #10240
+19:08:58 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:09:14 <jonasschnelli> I have worked out a solution that seems to work for encrypted and encrypted&pruned wallets.
+19:09:17 * BlueMatt wonders why we cant have a derivation key which is not encrypted in our wallet so taht we dont have to pause sync
+19:09:24 <jonasschnelli> It can halt the sync / validation progress.
+19:09:34 <jonasschnelli> But,.. I'm not sure what gap limit and default keypool size we should use
+19:09:35 <BlueMatt> (to generate new keys)
+19:09:38 <jonasschnelli> 100 and 20 seems very little
+19:10:10 <sipa> BlueMatt: that requires non-hardened derivation
+19:10:19 <jonasschnelli> BlueMatt: IMO encryption (private key wallets) with public key derivation should be avoided
+19:10:32 <BlueMatt> sipa: yes, is that a concern?
+19:10:41 <sipa> BlueMatt: yes, we have a dumpprivkey command
+19:10:54 <jonasschnelli> We should aim – longterm – for watchonly-hd (see NicolasDorier workd) and add a signing-agent ala gpg / ssh
+19:10:56 <sipa> leaking one private key means you leak your whole walley
+19:11:09 <BlueMatt> jonasschnelli: why? your list of funds is already public to the encrypted wallet holders? that wouldnt change?
+19:11:13 <jonasschnelli> But that is alredy the next topic. :)
+19:11:25 <luke-jr> sipa: dumpprivkey isn't supposed to be safe
+19:11:32 <sipa> luke-jr: i know
+19:11:36 <luke-jr> but we could make it fail for non-hardened keys?
+19:11:43 <sipa> luke-jr: but it breaks expectations
+19:11:52 <sipa> people have a mental model about how it works
+19:12:15 <BlueMatt> sipa: maybe I'm confused on the format of HD...seems you can build a list of derivation secrets which is based on a non-encrypted private key which is unexportable?
+19:12:19 <BlueMatt> sipa: and then that would not be the case
+19:12:21 <jonasschnelli> Yes. But I vaguely remember that we once said we don't want to mix private-key wallets with public key derivation... and this makes very much sense to me
+19:12:32 <BlueMatt> (dont know the format of HD, but we could do something else if its way better)
+19:12:47 <sipa> BlueMatt: if you have the parent public key + private child key, you can compute all private child keys
+19:12:57 <jonasschnelli> If we would do child pubkey derivation, keypools could be removed (at least for HD)
+19:13:05 <sipa> BlueMatt: that is an inevitable weakness of EC based derivation
+19:13:19 <jonasschnelli> What sipa said
+19:13:20 <sipa> BlueMatt: and it is reason why bip32 has hardened keys
+19:13:30 <sipa> which core uses
+19:13:31 <BlueMatt> sipa: even if your list of privkeys is based on adding a new random value to the previous privkey where the new random value is just a hashchain of a private secret?
+19:13:53 <sipa> BlueMatt: then you lose public derivation
+19:14:13 <sipa> (the ability to compute child pubkeys without knowing the parent privkey)
+19:14:25 <BlueMatt> lets take this offline
+19:14:29 <sipa> sounds good
+19:14:35 <jonasschnelli> back to the topic: what GAP limit should we enforce by default?
+19:14:45 <BlueMatt> 1000
+19:14:52 <BlueMatt> default keypool 10k
+19:14:54 <jonasschnelli> Yeah.. I like this
+19:15:01 <jonasschnelli> But only for encrypted wallets?
+19:15:09 <jonasschnelli> IMO we should (only encrypted)
+19:15:10 <sipa> but in general i believe that most cases where the public derivation is wanted, just use huge precomputed key lists
+19:15:14 <jonasschnelli> non encrypted can say with 100
+19:15:18 <sipa> jonasschnelli: meh
+19:15:26 <sipa> why bother differentiating?
+19:15:28 <gmaxwell> why only encryption? I don't think that makes sense.
+19:15:36 <jonasschnelli> True, the gap limit must be the same.. right
+19:15:41 <jonasschnelli> sry
+19:15:42 <gmaxwell> less complexity please, and keys are cheap.
+19:15:59 <jonasschnelli> Okay, ... I'll bump it to 1000
+19:16:10 <bitcoin-git> [13bitcoin] 15jtimon opened pull request #10339: Optimization: Calculate block hash less times (06master...06b15-optimization-blockhash) 02https://github.com/bitcoin/bitcoin/pull/10339
+19:16:29 <jonasschnelli> Next question: the tests are mostly running with a keypool size of 1... so the gap limit stuff is only enforced for the new test in #10240
+19:16:30 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:16:34 <jonasschnelli> Is that a problem?
+19:16:36 <gmaxwell> jtimon: thanks for working on that.
+19:17:22 <jonasschnelli> (but maybe take the test question offline).
+19:17:37 <jonasschnelli> Well,.. keypool size is answered... all good. Thanks for reviews. :p
+19:17:51 <jtimon> gmaxwell: no problem, thank you for pointing it out the other day
+19:19:09 <jonasschnelli> other topics?
+19:19:43 <BlueMatt> review, review, review, review, review :)
+19:19:53 <sipa> yes, let's go over priority reviews
+19:20:04 <jonasschnelli> https://github.com/bitcoin/bitcoin/projects/8
+19:20:05 <sipa> #topic review requests
+19:20:17 <Chris_Stewart_5> Can #9980 be merged? Might be some what controversial
+19:20:23 <gribble> https://github.com/bitcoin/bitcoin/issues/9980 | Fix mem access violation merkleblock by Christewart · Pull Request #9980 · bitcoin/bitcoin · GitHub
+19:20:35 <BlueMatt> Chris_Stewart_5: we're super backlogged on review right now :(
+19:20:40 <Chris_Stewart_5> I thought jnewberry did a good job with the comments
+19:20:56 <jonasschnelli> Chris_Stewart_5: I can't see an tested or untested ACK there
+19:21:10 <BlueMatt> like, super backlogged-not-gonna-get-everything-for-0.15 backlogged :(
+19:21:30 <Chris_Stewart_5> That's fine :-). Thought I would bring it up since asking for topics
+19:21:39 <BlueMatt> we can add it to the review heap
+19:22:10 <BlueMatt> can we remove #8694 until it gets fixed+rebased?
+19:22:13 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:22:25 <BlueMatt> it seems to have been in a constant state of not-reviewable since it was added to the "high priority for review"
+19:22:26 <instagibbs> sorry, when it 0.15 feature freeze
+19:22:31 <jonasschnelli> luke-jr: plans to rebase it?
+19:22:50 <BlueMatt> instagibbs: 2017-07-16
+19:22:58 <instagibbs> eep, ok
+19:23:25 <jonasschnelli> I though MW was one of the high profiled features targets for 0.15..
+19:23:27 <jtimon> is there anything else that needs to be done for #9494 ?
+19:23:28 <luke-jr> I just did? :/
+19:23:28 <gribble> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+19:23:29 <BlueMatt> sdaftuar: asks for #9208
+19:23:31 <gribble> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+19:23:56 <luke-jr> not really sure how to address the mapMultiArgs thing
+19:24:03 <luke-jr> besides refactoring everything using it
+19:24:06 <jonasschnelli> I add 9208 to the review-prio-list
+19:24:09 <jtimon> on the list we have #8855 from me, which remains being simple to review
+19:24:11 <gribble> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+19:24:27 <BlueMatt> jonasschnelli: you already have one
+19:24:39 <gmaxwell> I really would like to see us get per-txout + atomic merged sooner rather than later, so we can get more testing time on the code.
+19:24:39 <jonasschnelli> BlueMatt: It's sdaftuar. :P
+19:24:52 <BlueMatt> ohoh
+19:24:54 <BlueMatt> yes, sorry
+19:24:55 <jtimon> luke-jr: refactoring everything that uses mapMultiArgs is what #9494 does
+19:24:57 <gribble> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+19:24:57 <jonasschnelli> No worries... I protect the ratio. :)
+19:25:05 <BlueMatt> jonasschnelli: I read that as "add for me", not "added"
+19:25:05 <luke-jr> jtimon: k, I'll take a look
+19:25:09 <instagibbs> jtimon, will review
+19:25:18 <cfields> gmaxwell: agreed
+19:25:20 <jtimon> awesome, thanks
+19:25:58 <sipa> let's put 9494 on the list this week
+19:26:04 <BlueMatt> either way, #8694 probably needs deleted
+19:26:06 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:26:11 <luke-jr> BlueMatt: why?
+19:26:12 <jonasschnelli> I guess soon we have to introduce a review/open-new-PR ratio (only allowed to open a PR is you have carefully reviewed other PRs)
+19:26:20 <BlueMatt> luke-jr: because its not reviewable?
+19:26:20 <luke-jr> oh, from the list only, ok
+19:26:25 <BlueMatt> yeayea
+19:26:34 <sipa> i want to keep 8694 as a priority for 0.15
+19:26:51 <jonasschnelli> #8855 is already in the list by jtimon
+19:26:52 <gribble> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+19:26:52 <jtimon> sipa: there's already one from me on the list
+19:27:08 <BlueMatt> sipa: I'm just saying gotta remove it from the list because its not reviewable atm, even if we want it for 0.15
+19:27:23 <sipa> BlueMatt: agree
+19:27:44 <sipa> jtimon: let's focus on the args refactoring first... it seems that that will more easily go stale
+19:27:49 <luke-jr> 0.15 and priority-review are two diff lists for a reason; let's do jtimon's PR first
+19:28:09 <sipa> luke-jr: agree
+19:28:59 <sipa> any further topics?
+19:29:13 <gmaxwell> sipa: where are things with per-txo?
+19:29:31 <jonasschnelli> #10195
+19:29:33 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:29:37 <BlueMatt> gmaxwell: needs more review, could use side-by-side benchmarks incl: memory usage, disk usage, performance numbers
+19:29:50 <sipa> yes, i'm planning to do benchmarks
+19:30:19 <gmaxwell> BlueMatt: "much faster"
+19:30:28 <sipa> other todos are better upgrade code (with a fancy progress bar...), that doesn't leave gigabytes of uncompacted data in the chainstate
+19:30:41 <sipa> but i believe it is functionally complete and tested
+19:31:45 <BlueMatt> alright, if there are no more topics I'd emplore people to keep reviewing the big 0.15 things, since it looks like we're gonna slip a few, which is sad
+19:31:46 <sipa> it seems to make the chainstate some 20% larger
+19:32:18 <sipa> i'll report numbers on the PR, no need to discuss here
+19:32:24 <sipa> BlueMatt: ack
+19:32:31 <sipa> #endmeeting

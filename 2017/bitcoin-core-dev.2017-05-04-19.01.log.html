@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:13</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May  4 19:01:13 2017 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:13</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:23</span><span class="nk"> &lt;sipa&gt;</span> topics?
+<a name="l-5"></a><span class="tm">19:01:36</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, wumpus is out?
+<a name="l-6"></a><span class="tm">19:01:41</span><span class="nk"> &lt;sipa&gt;</span> he is
+<a name="l-7"></a><span class="tm">19:01:45</span><span class="nk"> &lt;instagibbs&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:01:51</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#10337</span><span class="cmdline"></span>
+<a name="l-9"></a><span class="tm">19:01:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10337 | Coin Control Dialog is not (very) useful for manual privacy protection · Issue #10337 · bitcoin/bitcoin · GitHub
+<a name="l-10"></a><span class="tm">19:01:56</span><span class="nk"> &lt;BlueMatt&gt;</span> :(
+<a name="l-11"></a><span class="tm">19:02:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Proposed low prio topic: HD restore update / questions
+<a name="l-12"></a><span class="tm">19:02:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">#10337</span>
+<a name="l-13"></a><span class="tm">19:02:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10337 | Coin Control Dialog is not (very) useful for manual privacy protection · Issue #10337 · bitcoin/bitcoin · GitHub
+<a name="l-14"></a><span class="tm">19:02:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ping people?
+<a name="l-15"></a><span class="tm">19:02:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> I agree change shouldn't be grouped as it is, but I don't understand how "received by address" is wrong
+<a name="l-16"></a><span class="tm">19:02:38</span><span class="nk"> &lt;BlueMatt&gt;</span> turns out the coin control dialog is almost entirely useless
+<a name="l-17"></a><span class="tm">19:03:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> entierly useless? I disagree
+<a name="l-18"></a><span class="tm">19:03:08</span><span class="nk"> &lt;BlueMatt&gt;</span> the "received by address" thing works fine for coins you just received, but if it is a change output it walks back the first input until it finds a non-change output
+<a name="l-19"></a><span class="tm">19:03:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> seems plenty useful to me
+<a name="l-20"></a><span class="tm">19:03:20</span><span class="nk"> &lt;BlueMatt&gt;</span> so it, essentially, picks an address at random if the output is change
+<a name="l-21"></a><span class="tm">19:03:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> I see different "received by address" for change too
+<a name="l-22"></a><span class="tm">19:03:34</span><span class="nk"> &lt;BlueMatt&gt;</span> and groups by it, which obviously isnt what you want for privacy
+<a name="l-23"></a><span class="tm">19:03:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> for addresses marked as change in the wallet? no
+<a name="l-24"></a><span class="tm">19:04:05</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> yes..
+<a name="l-25"></a><span class="tm">19:04:08</span><span class="nk"> &lt;BlueMatt&gt;</span> for random addresses of yours it should work, but not for addresses via getrawchangeaddress
+<a name="l-26"></a><span class="tm">19:04:23</span><span class="nk"> &lt;luke-jr&gt;</span> I don't use that RPC, but it works for normal change
+<a name="l-27"></a><span class="tm">19:04:26</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-28"></a><span class="tm">19:04:28</span><span class="nk"> &lt;BlueMatt&gt;</span> (or, ofc, normal change)
+<a name="l-29"></a><span class="tm">19:05:04</span><span class="nk"> &lt;BlueMatt&gt;</span> https://github.com/bitcoin/bitcoin/blob/master/src/qt/walletmodel.cpp#L620
+<a name="l-30"></a><span class="tm">19:05:35</span><span class="nk"> &lt;sipa&gt;</span> it sounds to me like it is doing a mix of "receive by address" and "linked grouping"
+<a name="l-31"></a><span class="tm">19:05:44</span><span class="nk"> &lt;sipa&gt;</span> both are perhaps useful
+<a name="l-32"></a><span class="tm">19:05:56</span><span class="nk"> &lt;BlueMatt&gt;</span> more importantly, really, is that I've repeatedly seen the tree mode of the coin picker dialog as the same as listaddressgroupings, which it is clearly not
+<a name="l-33"></a><span class="tm">19:06:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> well the change-output-results-in-random-grouping thing is kinda strange
+<a name="l-34"></a><span class="tm">19:06:20</span><span class="nk"> &lt;sipa&gt;</span> right, it shouldn't walk for receive address
+<a name="l-35"></a><span class="tm">19:06:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> I have nfc what that code does, but it *looks* right in the end window :/
+<a name="l-36"></a><span class="tm">19:06:39</span><span class="nk"> &lt;sipa&gt;</span> and it should alwaya walk (to some deterministic representative) for grouping
+<a name="l-37"></a><span class="tm">19:06:45</span><span class="nk"> &lt;sipa&gt;</span> *alwaya
+<a name="l-38"></a><span class="tm">19:06:48</span><span class="nk"> &lt;sipa&gt;</span> *alwayS
+<a name="l-39"></a><span class="tm">19:06:53</span><span class="nk"> &lt;BlueMatt&gt;</span> *always
+<a name="l-40"></a><span class="tm">19:07:11</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yea, anyway, I think this should really emulate the grouping rpc
+<a name="l-41"></a><span class="tm">19:07:38</span><span class="nk"> &lt;BlueMatt&gt;</span> the "where did these coins come from" question is not really useful for anything but coins you just got, in which case they will already be ungrouped
+<a name="l-42"></a><span class="tm">19:07:38</span><span class="nk"> &lt;sipa&gt;</span> a "received by address" is still useful i think, but it's not the same as grouping
+<a name="l-43"></a><span class="tm">19:07:50</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-44"></a><span class="tm">19:07:51</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, but if it is not received directly, it should be "Change"
+<a name="l-45"></a><span class="tm">19:08:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> seems reasonable to me
+<a name="l-46"></a><span class="tm">19:08:28</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, other topics?
+<a name="l-47"></a><span class="tm">19:08:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-48"></a><span class="tm">19:08:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">HD restore update</span>
+<a name="l-49"></a><span class="tm">19:08:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#10240</span><span class="cmdline"></span>
+<a name="l-50"></a><span class="tm">19:08:58</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-51"></a><span class="tm">19:09:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have worked out a solution that seems to work for encrypted and encrypted&amp;pruned wallets.
+<a name="l-52"></a><span class="tm">19:09:17 </span><span class="nka">* BlueMatt</span> <span class="ac">wonders why we cant have a derivation key which is not encrypted in our wallet so taht we dont have to pause sync</span>
+<a name="l-53"></a><span class="tm">19:09:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> It can halt the sync / validation progress.
+<a name="l-54"></a><span class="tm">19:09:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> But,.. I'm not sure what gap limit and default keypool size we should use
+<a name="l-55"></a><span class="tm">19:09:35</span><span class="nk"> &lt;BlueMatt&gt;</span> (to generate new keys)
+<a name="l-56"></a><span class="tm">19:09:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> 100 and 20 seems very little
+<a name="l-57"></a><span class="tm">19:10:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> that requires non-hardened derivation
+<a name="l-58"></a><span class="tm">19:10:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> IMO encryption (private key wallets) with public key derivation should be avoided
+<a name="l-59"></a><span class="tm">19:10:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, is that a concern?
+<a name="l-60"></a><span class="tm">19:10:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, we have a dumpprivkey command
+<a name="l-61"></a><span class="tm">19:10:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> We should aim – longterm – for watchonly-hd (see NicolasDorier workd) and add a signing-agent ala gpg / ssh
+<a name="l-62"></a><span class="tm">19:10:56</span><span class="nk"> &lt;sipa&gt;</span> leaking one private key means you leak your whole walley
+<a name="l-63"></a><span class="tm">19:11:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> why? your list of funds is already public to the encrypted wallet holders? that wouldnt change?
+<a name="l-64"></a><span class="tm">19:11:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> But that is alredy the next topic. :)
+<a name="l-65"></a><span class="tm">19:11:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> dumpprivkey isn't supposed to be safe
+<a name="l-66"></a><span class="tm">19:11:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i know
+<a name="l-67"></a><span class="tm">19:11:36</span><span class="nk"> &lt;luke-jr&gt;</span> but we could make it fail for non-hardened keys?
+<a name="l-68"></a><span class="tm">19:11:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> but it breaks expectations
+<a name="l-69"></a><span class="tm">19:11:52</span><span class="nk"> &lt;sipa&gt;</span> people have a mental model about how it works
+<a name="l-70"></a><span class="tm">19:12:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> maybe I'm confused on the format of HD...seems you can build a list of derivation secrets which is based on a non-encrypted private key which is unexportable?
+<a name="l-71"></a><span class="tm">19:12:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> and then that would not be the case
+<a name="l-72"></a><span class="tm">19:12:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. But I vaguely remember that we once said we don't want to mix private-key wallets with public key derivation... and this makes very much sense to me
+<a name="l-73"></a><span class="tm">19:12:32</span><span class="nk"> &lt;BlueMatt&gt;</span> (dont know the format of HD, but we could do something else if its way better)
+<a name="l-74"></a><span class="tm">19:12:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> if you have the parent public key + private child key, you can compute all private child keys
+<a name="l-75"></a><span class="tm">19:12:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> If we would do child pubkey derivation, keypools could be removed (at least for HD)
+<a name="l-76"></a><span class="tm">19:13:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> that is an inevitable weakness of EC based derivation
+<a name="l-77"></a><span class="tm">19:13:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> What sipa said
+<a name="l-78"></a><span class="tm">19:13:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> and it is reason why bip32 has hardened keys
+<a name="l-79"></a><span class="tm">19:13:30</span><span class="nk"> &lt;sipa&gt;</span> which core uses
+<a name="l-80"></a><span class="tm">19:13:31</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> even if your list of privkeys is based on adding a new random value to the previous privkey where the new random value is just a hashchain of a private secret?
+<a name="l-81"></a><span class="tm">19:13:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> then you lose public derivation
+<a name="l-82"></a><span class="tm">19:14:13</span><span class="nk"> &lt;sipa&gt;</span> (the ability to compute child pubkeys without knowing the parent privkey)
+<a name="l-83"></a><span class="tm">19:14:25</span><span class="nk"> &lt;BlueMatt&gt;</span> lets take this offline
+<a name="l-84"></a><span class="tm">19:14:29</span><span class="nk"> &lt;sipa&gt;</span> sounds good
+<a name="l-85"></a><span class="tm">19:14:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> back to the topic: what GAP limit should we enforce by default?
+<a name="l-86"></a><span class="tm">19:14:45</span><span class="nk"> &lt;BlueMatt&gt;</span> 1000
+<a name="l-87"></a><span class="tm">19:14:52</span><span class="nk"> &lt;BlueMatt&gt;</span> default keypool 10k
+<a name="l-88"></a><span class="tm">19:14:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yeah.. I like this
+<a name="l-89"></a><span class="tm">19:15:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> But only for encrypted wallets?
+<a name="l-90"></a><span class="tm">19:15:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> IMO we should (only encrypted)
+<a name="l-91"></a><span class="tm">19:15:10</span><span class="nk"> &lt;sipa&gt;</span> but in general i believe that most cases where the public derivation is wanted, just use huge precomputed key lists
+<a name="l-92"></a><span class="tm">19:15:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> non encrypted can say with 100
+<a name="l-93"></a><span class="tm">19:15:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> meh
+<a name="l-94"></a><span class="tm">19:15:26</span><span class="nk"> &lt;sipa&gt;</span> why bother differentiating?
+<a name="l-95"></a><span class="tm">19:15:28</span><span class="nk"> &lt;gmaxwell&gt;</span> why only encryption? I don't think that makes sense.
+<a name="l-96"></a><span class="tm">19:15:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> True, the gap limit must be the same.. right
+<a name="l-97"></a><span class="tm">19:15:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> sry
+<a name="l-98"></a><span class="tm">19:15:42</span><span class="nk"> &lt;gmaxwell&gt;</span> less complexity please, and keys are cheap.
+<a name="l-99"></a><span class="tm">19:15:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay, ... I'll bump it to 1000
+<a name="l-100"></a><span class="tm">19:16:10</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jtimon opened pull request #10339: Optimization: Calculate block hash less times (06master...06b15-optimization-blockhash) 02https://github.com/bitcoin/bitcoin/pull/10339
+<a name="l-101"></a><span class="tm">19:16:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Next question: the tests are mostly running with a keypool size of 1... so the gap limit stuff is only enforced for the new test in #10240
+<a name="l-102"></a><span class="tm">19:16:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-103"></a><span class="tm">19:16:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Is that a problem?
+<a name="l-104"></a><span class="tm">19:16:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> thanks for working on that.
+<a name="l-105"></a><span class="tm">19:17:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> (but maybe take the test question offline).
+<a name="l-106"></a><span class="tm">19:17:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> Well,.. keypool size is answered... all good. Thanks for reviews. :p
+<a name="l-107"></a><span class="tm">19:17:51</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> no problem, thank you for pointing it out the other day
+<a name="l-108"></a><span class="tm">19:19:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> other topics?
+<a name="l-109"></a><span class="tm">19:19:43</span><span class="nk"> &lt;BlueMatt&gt;</span> review, review, review, review, review :)
+<a name="l-110"></a><span class="tm">19:19:53</span><span class="nk"> &lt;sipa&gt;</span> yes, let's go over priority reviews
+<a name="l-111"></a><span class="tm">19:20:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-112"></a><span class="tm">19:20:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">review requests</span>
+<a name="l-113"></a><span class="tm">19:20:17</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> Can #9980 be merged? Might be some what controversial
+<a name="l-114"></a><span class="tm">19:20:23</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9980 | Fix mem access violation merkleblock by Christewart · Pull Request #9980 · bitcoin/bitcoin · GitHub
+<a name="l-115"></a><span class="tm">19:20:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">Chris_Stewart_5:</span> we're super backlogged on review right now :(
+<a name="l-116"></a><span class="tm">19:20:40</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> I thought jnewberry did a good job with the comments
+<a name="l-117"></a><span class="tm">19:20:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Chris_Stewart_5:</span> I can't see an tested or untested ACK there
+<a name="l-118"></a><span class="tm">19:21:10</span><span class="nk"> &lt;BlueMatt&gt;</span> like, super backlogged-not-gonna-get-everything-for-0.15 backlogged :(
+<a name="l-119"></a><span class="tm">19:21:30</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> That's fine :-). Thought I would bring it up since asking for topics
+<a name="l-120"></a><span class="tm">19:21:39</span><span class="nk"> &lt;BlueMatt&gt;</span> we can add it to the review heap
+<a name="l-121"></a><span class="tm">19:22:10</span><span class="nk"> &lt;BlueMatt&gt;</span> can we remove #8694 until it gets fixed+rebased?
+<a name="l-122"></a><span class="tm">19:22:13</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+<a name="l-123"></a><span class="tm">19:22:25</span><span class="nk"> &lt;BlueMatt&gt;</span> it seems to have been in a constant state of not-reviewable since it was added to the "high priority for review"
+<a name="l-124"></a><span class="tm">19:22:26</span><span class="nk"> &lt;instagibbs&gt;</span> sorry, when it 0.15 feature freeze
+<a name="l-125"></a><span class="tm">19:22:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> plans to rebase it?
+<a name="l-126"></a><span class="tm">19:22:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">instagibbs:</span> 2017-07-16
+<a name="l-127"></a><span class="tm">19:22:58</span><span class="nk"> &lt;instagibbs&gt;</span> eep, ok
+<a name="l-128"></a><span class="tm">19:23:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> I though MW was one of the high profiled features targets for 0.15..
+<a name="l-129"></a><span class="tm">19:23:27</span><span class="nk"> &lt;jtimon&gt;</span> is there anything else that needs to be done for #9494 ?
+<a name="l-130"></a><span class="tm">19:23:28</span><span class="nk"> &lt;luke-jr&gt;</span> I just did? :/
+<a name="l-131"></a><span class="tm">19:23:28</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+<a name="l-132"></a><span class="tm">19:23:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> asks for #9208
+<a name="l-133"></a><span class="tm">19:23:31</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9208 | Improve DisconnectTip performance by sdaftuar · Pull Request #9208 · bitcoin/bitcoin · GitHub
+<a name="l-134"></a><span class="tm">19:23:56</span><span class="nk"> &lt;luke-jr&gt;</span> not really sure how to address the mapMultiArgs thing
+<a name="l-135"></a><span class="tm">19:24:03</span><span class="nk"> &lt;luke-jr&gt;</span> besides refactoring everything using it
+<a name="l-136"></a><span class="tm">19:24:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> I add 9208 to the review-prio-list
+<a name="l-137"></a><span class="tm">19:24:09</span><span class="nk"> &lt;jtimon&gt;</span> on the list we have #8855 from me, which remains being simple to review
+<a name="l-138"></a><span class="tm">19:24:11</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+<a name="l-139"></a><span class="tm">19:24:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> you already have one
+<a name="l-140"></a><span class="tm">19:24:39</span><span class="nk"> &lt;gmaxwell&gt;</span> I really would like to see us get per-txout + atomic merged sooner rather than later, so we can get more testing time on the code.
+<a name="l-141"></a><span class="tm">19:24:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> It's sdaftuar. :P
+<a name="l-142"></a><span class="tm">19:24:52</span><span class="nk"> &lt;BlueMatt&gt;</span> ohoh
+<a name="l-143"></a><span class="tm">19:24:54</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, sorry
+<a name="l-144"></a><span class="tm">19:24:55</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> refactoring everything that uses mapMultiArgs is what #9494 does
+<a name="l-145"></a><span class="tm">19:24:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+<a name="l-146"></a><span class="tm">19:24:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> No worries... I protect the ratio. :)
+<a name="l-147"></a><span class="tm">19:25:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> I read that as "add for me", not "added"
+<a name="l-148"></a><span class="tm">19:25:05</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> k, I'll take a look
+<a name="l-149"></a><span class="tm">19:25:09</span><span class="nk"> &lt;instagibbs&gt;</span> jtimon, will review
+<a name="l-150"></a><span class="tm">19:25:18</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> agreed
+<a name="l-151"></a><span class="tm">19:25:20</span><span class="nk"> &lt;jtimon&gt;</span> awesome, thanks
+<a name="l-152"></a><span class="tm">19:25:58</span><span class="nk"> &lt;sipa&gt;</span> let's put 9494 on the list this week
+<a name="l-153"></a><span class="tm">19:26:04</span><span class="nk"> &lt;BlueMatt&gt;</span> either way, #8694 probably needs deleted
+<a name="l-154"></a><span class="tm">19:26:06</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+<a name="l-155"></a><span class="tm">19:26:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> why?
+<a name="l-156"></a><span class="tm">19:26:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess soon we have to introduce a review/open-new-PR ratio (only allowed to open a PR is you have carefully reviewed other PRs)
+<a name="l-157"></a><span class="tm">19:26:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> because its not reviewable?
+<a name="l-158"></a><span class="tm">19:26:20</span><span class="nk"> &lt;luke-jr&gt;</span> oh, from the list only, ok
+<a name="l-159"></a><span class="tm">19:26:25</span><span class="nk"> &lt;BlueMatt&gt;</span> yeayea
+<a name="l-160"></a><span class="tm">19:26:34</span><span class="nk"> &lt;sipa&gt;</span> i want to keep 8694 as a priority for 0.15
+<a name="l-161"></a><span class="tm">19:26:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#8855 </span><span class="cmdline">is already in the list by jtimon</span>
+<a name="l-162"></a><span class="tm">19:26:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8855 | Use a proper factory for creating chainparams by jtimon · Pull Request #8855 · bitcoin/bitcoin · GitHub
+<a name="l-163"></a><span class="tm">19:26:52</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> there's already one from me on the list
+<a name="l-164"></a><span class="tm">19:27:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I'm just saying gotta remove it from the list because its not reviewable atm, even if we want it for 0.15
+<a name="l-165"></a><span class="tm">19:27:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> agree
+<a name="l-166"></a><span class="tm">19:27:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> let's focus on the args refactoring first... it seems that that will more easily go stale
+<a name="l-167"></a><span class="tm">19:27:49</span><span class="nk"> &lt;luke-jr&gt;</span> 0.15 and priority-review are two diff lists for a reason; let's do jtimon's PR first
+<a name="l-168"></a><span class="tm">19:28:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> agree
+<a name="l-169"></a><span class="tm">19:28:59</span><span class="nk"> &lt;sipa&gt;</span> any further topics?
+<a name="l-170"></a><span class="tm">19:29:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> where are things with per-txo?
+<a name="l-171"></a><span class="tm">19:29:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#10195</span><span class="cmdline"></span>
+<a name="l-172"></a><span class="tm">19:29:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-173"></a><span class="tm">19:29:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> needs more review, could use side-by-side benchmarks incl: memory usage, disk usage, performance numbers
+<a name="l-174"></a><span class="tm">19:29:50</span><span class="nk"> &lt;sipa&gt;</span> yes, i'm planning to do benchmarks
+<a name="l-175"></a><span class="tm">19:30:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> "much faster"
+<a name="l-176"></a><span class="tm">19:30:28</span><span class="nk"> &lt;sipa&gt;</span> other todos are better upgrade code (with a fancy progress bar...), that doesn't leave gigabytes of uncompacted data in the chainstate
+<a name="l-177"></a><span class="tm">19:30:41</span><span class="nk"> &lt;sipa&gt;</span> but i believe it is functionally complete and tested
+<a name="l-178"></a><span class="tm">19:31:45</span><span class="nk"> &lt;BlueMatt&gt;</span> alright, if there are no more topics I'd emplore people to keep reviewing the big 0.15 things, since it looks like we're gonna slip a few, which is sad
+<a name="l-179"></a><span class="tm">19:31:46</span><span class="nk"> &lt;sipa&gt;</span> it seems to make the chainstate some 20% larger
+<a name="l-180"></a><span class="tm">19:32:18</span><span class="nk"> &lt;sipa&gt;</span> i'll report numbers on the PR, no need to discuss here
+<a name="l-181"></a><span class="tm">19:32:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> ack
+<a name="l-182"></a><span class="tm">19:32:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
