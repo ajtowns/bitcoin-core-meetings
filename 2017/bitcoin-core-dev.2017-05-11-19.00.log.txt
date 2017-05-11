@@ -1,0 +1,308 @@
+19:00:16 <wumpus> #startmeeting
+19:00:16 <lightningbot> Meeting started Thu May 11 19:00:16 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:16 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:26 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:31 <sipa> present
+19:00:40 <murchandamus> present
+19:00:44 <wumpus> topics?
+19:00:49 <sipa> murchandamus == murch?
+19:00:51 <cfields> hi, here
+19:00:54 <instagibbs> yes sipa
+19:00:54 <murchandamus> aye!
+19:00:56 <morcos> gmaxwell: oh ok, i agree with not defining now..  maybe we should make just _HIGH more then though
+19:00:59 <kanzure> hi.
+19:01:36 <gmaxwell> morcos: yes, I was thinking HIGH would be targeted at hosts syncing 2016 blocks, but I forget where the breakpoints were exactly in sipas' data.
+19:01:39 <wumpus> any proposed topics? (we can continue the pruning service bits topic if people want that)
+19:01:40 <BlueMatt> damnit, can enver remember topics i wanted to bring up come meeting time :(
+19:01:57 <luke-jr> O.o?
+19:02:18 <gmaxwell> wumpus: well we should talk about per-txo. I think it's ready for merge except for more testing/review.
+19:02:26 <instagibbs> suggested topic: fee targeting/coin selection overhaul
+19:02:35 <wumpus> #topic per-txo utxo database
+19:02:52 <sipa> #10148
+19:02:54 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:02:56 <gmaxwell> if people haven't seen the graphs: https://cloud.githubusercontent.com/assets/548488/25769030/c84fe65e-31c4-11e7-8819-264c44e50ddf.png
+19:03:02 <sipa> oops, no, #10195
+19:03:04 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:03:12 <morcos> sorry sipa, that has been on my list, but my list has been gathering dust for the last couple weeks
+19:03:13 <BlueMatt> I'm still halfway through review
+19:03:16 <gmaxwell> The graphs should be making all your mouths water.
+19:03:30 <instagibbs> why is y-axis in block time :P
+19:03:34 <wumpus> ah yes I was still testing #10148, should probably switch to #10195
+19:03:37 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:03:39 <instagibbs> clock*
+19:03:39 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:03:41 <gmaxwell> instagibbs: so that the flushing graph works out.
+19:03:52 <sipa> instagibbs: so that the x axis of both graphs lines up
+19:04:00 <cfields> i've made it through review, but I lack enough confidence to ACK the thing :\
+19:04:04 <BlueMatt> gm2051: #10192
+19:04:05 <gmaxwell> The most impressive thing about that chart isn't the ~33% speedup, it's the reduction in flushing frequency.
+19:04:08 <gribble> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+19:04:17 <BlueMatt> gmaxwell: ^
+19:04:20 <cfields> gmaxwell: yes, that's great.
+19:04:33 <sipa> i was very surprised by how much it reduces flushing
+19:04:49 <wumpus> nice chart
+19:04:54 <sipa> my guess is that the resulting speedup isn't that dramatic because it's running on a system with pretty fast I/O
+19:05:12 <wumpus> heh, but most users have systems with slow i/o
+19:05:27 <sipa> oh, one downside: chainstate db goes from 2.2G to 2.7G
+19:05:30 <gmaxwell> right, testing it on a system with slow i/o would be interesting. But will take forever.
+19:05:45 <BlueMatt> 2.7 seems fine
+19:06:09 <luke-jr> hmm
+19:06:31 <sipa> the TODOs that i know of are a few code cleanups (marked as TODO in the code), and better UI wrt the upgrade process
+19:06:45 <sipa> there is a one-time upgrade of the old db to the new db at startup, which can be interrupted
+19:06:55 <gmaxwell> The upgrade doesn't take long on a system with fast IO at least.
+19:06:57 <BlueMatt> sipa: it needs way more review
+19:07:02 <sipa> BlueMatt: of course
+19:07:03 <BlueMatt> there are lots of things in that queue, sadly
+19:07:10 <wumpus> upgrade should be fast if it just iterates through the db in sorted order
+19:07:18 <wumpus> even on systems with fairly slow (seek) i/o
+19:07:28 <sipa> wumpus: it does, it takes a couple of minutes on a system with fast I/O
+19:08:02 <wumpus> I'll try it out this week
+19:08:36 <gmaxwell> One thing to keep in mind is that keeping it unmerged reduces testing. Absolutely it needs more review before being merged, but we also should try to get it merged sooner rather than later.
+19:08:46 <gmaxwell> So that we get more time baking on it in master.
+19:09:00 <BlueMatt> gmaxwell: we're not even close to that point
+19:09:12 <BlueMatt> but, yes, we should be agressive about merge, as long as its a ways before release
+19:09:14 <morcos> agreed gmaxwell, same thing with #10199
+19:09:16 <gribble> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+19:09:28 <sipa> morcos: i'll do another review pass on that today
+19:09:40 <wumpus> yes, this shouldn't be something to merge last minute for 0.15
+19:09:44 <morcos> good thing about that one, is its a lot less likely to casue a disaster
+19:09:45 * BlueMatt finds 10199 to be wayyyy more important than per-utxo
+19:09:55 * morcos disagrees
+19:10:13 <gmaxwell> I strongly disagree.
+19:10:44 <wumpus> they're both important for different reasons
+19:10:55 <wumpus> it's comparing apples and oranges
+19:11:09 <BlueMatt> anyway, do we have any real topics?
+19:11:29 <sipa> i have one low-priority idea i'd like to talk about (running utxo commitments)
+19:11:31 * BlueMatt wishes the ny weather were better...
+19:11:36 <BlueMatt> sipa: shoot
+19:11:46 <wumpus> #topic fee targeting/coin selection overhaul (instagibbs)
+19:11:47 <gmaxwell> BlueMatt: it's beautiful here in mountain view today.
+19:12:06 <sipa> instagibbs: topic
+19:12:17 <murchandamus> gmaxwell: A bit cloudy here in Palo Alto though. ;)
+19:12:24 <instagibbs> So I tried my hand at doing redoing fee targeting #10360 without directly changing coin selection
+19:12:25 <gribble> https://github.com/bitcoin/bitcoin/issues/10360 | [WIP] [Wallet] Target effective value during transaction creation by instagibbs · Pull Request #10360 · bitcoin/bitcoin · GitHub
+19:12:36 <instagibbs> Was wondering if people were wary of that, versus a complete overhaul
+19:12:43 <instagibbs> morcos has concerns
+19:12:49 <morcos> wary is a good word for it
+19:12:55 <morcos> not opposed
+19:13:02 <gmaxwell> I feel a little uneasy about the changes to augment selection while we don't have a strategy to sweep dust. It worries me that we're potentially going to again untintentionally create another UTXO count blowup event.
+19:13:11 <sipa> instagibbs: i haven't looked into the details... is it just treating the net value of its output as amount - feerate*size_of_spend ?
+19:13:15 <murchandamus> I've talked a bit with instagibbs about it and it seems to me that when that approach finds a direct match it may have a huge number of inputs
+19:13:20 <instagibbs> sipa yes
+19:13:36 <gmaxwell> murchandamus: that sounds great to me. :P
+19:13:43 <murchandamus> I've combined a similar approach but trying to combine inputs by size large to small
+19:14:05 <instagibbs> sipa, so you may get more smaller inputs that directly match, for example
+19:14:13 <murchandamus> gmaxwell: I think that slightly bigger average transaction with lower variance in transaction size are better than huge variance in transaction size
+19:14:39 <morcos> i like the idea of being at least somewhat fee smart, and including more inputs when fees are lower
+19:14:41 <sipa> but even if it spends many inputs, it always does so in a way that is economical
+19:14:57 <instagibbs> sipa, it will always use "positive effective value" inputs
+19:14:59 <sipa> so unless you assume that the feerate is going down in the future, there is little reason to postpone spending them
+19:15:05 <murchandamus> morcos: Exactly. We have huge variance in fees over the week
+19:15:10 <gmaxwell> murchandamus: high to low sounds like it would destroy privacy.
+19:15:10 <morcos> the idea of wanting to do a quick transaction and paying 200 sat/byte to do it, and you include tons of little inputs that have little to none net value seems bad to me
+19:15:46 <murchandamus> sipa: But adding a single input costs as much as four outputs, so you'd probably rather add a change output when fees are high than add another input, and later in the week do a few consolidation transactions
+19:15:55 * luke-jr wonders how contentious it would be to move to a system where dust requires a larger proof so it can be pruned from the UTXO set
+19:16:05 <murchandamus> I've been hearing that some people do this to save money
+19:16:07 <gmaxwell> morcos: I though about that and I think a nice estimate would be the ratio between the current feerate set and the BIG_NUM target (e.g. 1008 block target).  If this ratio is low, then you should be agressive in spending.
+19:16:11 <morcos> admittedly its a difficult problem...  how do you distinguish a user that only does 200 sat/byte txs vs one that has a range
+19:16:32 <murchandamus> gmaxwell: I don't think it does, because it's only the selection for making exact matches
+19:16:43 <morcos> gmaxwell: yes, i agree... something like that
+19:16:46 <murchandamus> and you don't know if the first combination that matched was actually among the largest in your wallet
+19:17:22 <morcos> anyway, clearly there are a lot of ideas here, and i kidn of think that the amount of consideration that has to go into most changes is almost the same, and it might not be worthing doing all of that sanity checking if we're only making a small change
+19:17:23 <instagibbs> yes, so there are plenty of interesting strategies, the question is should we not be making semi-obvious fixing until we can agree on those :)
+19:17:34 <murchandamus> gmaxwell: interesting approach
+19:18:22 <instagibbs> related: can we kill minimum total fee?
+19:18:22 <morcos> at the very least, i'd think this should be lower priority for 0.15 than the prevously mentioned things right now... so we have to think about resources
+19:18:33 <morcos> instagibbs: +1 on that for a first step
+19:18:37 <sipa> instagibbs: ack
+19:18:38 <instagibbs> morcos, yes that was the feeling I get
+19:18:41 <murchandamus> instagibbs: Accounting for UTXO in selection by effective value does take a load of pain out of selection strategies
+19:19:21 <gmaxwell> instagibbs: but if a 'semi obvious fix' blows up other considerations thats bad.  Do you have a reason to believe your change won't cause a massive increase in utxo accumulation?
+19:19:33 <morcos> also i have a PR #9343 that also removes edge case logic.  cleaning these things up now will make future improvements easier to do and reason about
+19:19:35 <gribble> https://github.com/bitcoin/bitcoin/issues/9343 | Dont create change at dust limit by morcos · Pull Request #9343 · bitcoin/bitcoin · GitHub
+19:19:38 <murchandamus> instagibbs: I'm not sure that just this change with the current selection strategy of Core does much better in the selection, because of the selecting/deselecting pass
+19:19:43 <instagibbs> gmaxwell, no, I wasn't assuming as much, sorry if that seemed implied
+19:20:09 <murchandamus> gmaxwell: Pretty sure it would rather decrease UTXO footprints
+19:20:36 <murchandamus> right now Core will often fail in the first few passes when it selects more inputs because it hadn't accounted for the fees in advance
+19:20:37 <sipa> instagibbs: which feerate are you using?
+19:20:57 <instagibbs> sipa, whatever the user has selected via settings
+19:21:01 <gmaxwell> instagibbs: well, thats why I ask. basically, in any mature system you can have 'bugs' which you depend on. at first glance it semeed to me that your PR might fix a bug where we're overly agressively spending TXO that are negative value. But we may depend on that bug to help manage the UTXO size.  At least that was my impression.
+19:21:05 <murchandamus> with this change it would always succeed as soon as it finds an exact match
+19:21:08 <sipa> instagibbs: oh, duh
+19:21:09 <instagibbs> well, aside from total minimum fee, because that's stupid
+19:21:55 <instagibbs> gmaxwell, could be. Maybe next step, aside from general refactor and cleaning, is to get better data
+19:22:08 <gmaxwell> murchandamus: I'm not following your logic. Yes, the first few passes will fail, then it will target a higher amount, and be successful.
+19:22:18 <murchandamus> gmaxwell: Yes, it shoudl never select UTXO that are negative effective value
+19:22:22 <instagibbs> and stop throwing away money as fees egregiously: #10333
+19:22:23 <gribble> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+19:22:35 <gmaxwell> murchandamus: By "should" do you mean the current behavior?
+19:22:43 <instagibbs> current behavior almost certainly does
+19:22:49 <gmaxwell> The current behavior absolutely will select txos with negative value.
+19:23:02 <sipa> So how about we fix that first?
+19:23:06 <gmaxwell> And "fixing" that may have severely deletarious effects on the network.
+19:23:08 <murchandamus> gmaxwell: It only fails if it doesn't find a transaction input set within the number of estimated inputs from the previous tries
+19:23:11 <morcos> sipa: yeah i was thinking that
+19:23:12 <instagibbs> I could always just make it ignore negative effective value
+19:23:13 <morcos> gmaxwell: disagree
+19:23:13 <instagibbs> ...
+19:23:14 <instagibbs> lol
+19:23:38 <instagibbs> I mean either it's a feature, and we shouldnt fix it, or a bug and we should
+19:23:46 <morcos> instagibbs: yeah exactly
+19:24:09 <gmaxwell> It can be both! :)
+19:24:18 <murchandamus> gmaxwell: I meant "should" as in when you calculate the effective value of a UTXO, if it is a negative effective value it shouldn't be selected
+19:24:28 <instagibbs> aspirational should?
+19:24:29 <sdaftuar> so there's a difference here between generally factoring in feerates in the coin selection, and throwing out inputs that have negative value.  i assume that's what we're getting at?
+19:24:33 <murchandamus> gmaxwell: actually yes
+19:24:37 <gmaxwell> It's a feature when its mild and happening during times of low feerate. And a bug when its severe when it is insane and happening during high feerate.
+19:24:42 <murchandamus> current behavior would select them
+19:24:48 <instagibbs> gmaxwell, fair enough...
+19:25:00 <wumpus> yes, eating utxos with negative value cleans up the utxo set
+19:25:06 <morcos> gmaxwell: right now when feerates vary from 10 to 200 sat/byte.   something that is 0 at 200 sat/byte should be cleaned up at a lower fee rate, not thrown away
+19:25:26 <gmaxwell> Fixing it unconditionally without doing something about dust cleanup may be quite harmful to the network.
+19:25:30 <wumpus> of course it's better to not create them in the first place
+19:25:43 <morcos> wumpus: yes!  see #9343
+19:25:44 <gribble> https://github.com/bitcoin/bitcoin/issues/9343 | Dont create change at dust limit by morcos · Pull Request #9343 · bitcoin/bitcoin · GitHub
+19:25:57 <murchandamus> morcos: That's what I meant
+19:25:58 <instagibbs> ^I should review that one
+19:25:59 <morcos> i'm not sure thats the only way they are created, perhaps we could do more to avoid creating them also
+19:26:12 <gmaxwell> morcos: well they're created by people being buttheads.
+19:26:15 <morcos> i should say, i'm sure thats not the only way
+19:26:21 <instagibbs> I noticed in current logic we create near-dust, but when we're modifying change, we have much higher bar to clear
+19:26:23 <gmaxwell> and no amount of fixing the wallet will prevent their creation.
+19:26:24 <instagibbs> we should sync this
+19:26:36 <wumpus> yes, we should get that one in
+19:26:49 <wumpus> gmaxwell: well not creating them ourselves is not a total solution, but it helps
+19:27:01 <gmaxwell> wumpus: absolutely, sorry if it sounded like I said otherwise.
+19:27:06 <morcos> gmaxwell: yeah its a good question how many are created unintentionally vs intentionally
+19:27:47 <morcos> it wouldn't be unreasonable to raise the limit for intentionally creating them in Core, in adddition to imporving unintentional behavior
+19:27:53 <gmaxwell> and at least as far as the "some anonymous third party sends you a few bitcents"  I think it's fine to spend those at a slight loss, esp if its in a privacy preserving way, and double especially if it's at as low a fee rate as you expect to see.
+19:27:59 <murchandamus> morcos: Core never creates change outputs smaller than 0.01 BTC unless the wallet is being almost depleted with the transaction, right?
+19:28:22 <morcos> murchandamus: well.. thats the design goal, i don't think its achieved
+19:28:29 <instagibbs> it's not achieved at all
+19:28:30 <instagibbs> sad!
+19:28:30 <gmaxwell> what morcos said
+19:28:44 <gmaxwell> well it's better since 0.13.whatever when we fixed some things.
+19:28:53 <gmaxwell> with the target/2 checks.
+19:29:04 <murchandamus> I'll have to check out the linked issue
+19:29:11 <morcos> in particular, if you have nTotalLower < target + CENT, you aim for target, and almost definitely create some stupidly small change
+19:29:26 <morcos> among other posibilities
+19:29:37 <murchandamus> morcos: Ah right, I forgot about the pre-selection before knapsack
+19:29:39 <morcos> the linked issue is even more edge case
+19:29:41 <murchandamus> thanks for the reminder
+19:30:07 <morcos> but like nTotalFee needs to go away before its easy to clean up the general case
+19:30:22 <morcos> easIER
+19:30:40 <murchandamus> morcos: I think the way to go would be to dissect and modularize the coin selection out of wallet.cpp, if that's possible
+19:30:44 <murchandamus> right now it is such a moloch
+19:31:06 <instagibbs> I mean you can basically just throw away anything at or below SelectCoins, imo
+19:31:10 <wumpus> murchandamus: yes please
+19:31:27 <gmaxwell> Moloch whose mind is pure machinery!
+19:32:16 <murchandamus> I think instagibbs and I might coordinate something there, and jnewberry was also interested AFAIK
+19:32:21 <gmaxwell> can we new-subject?  good discussion on this, lots of PRs for people to look at and discuss more. :)
+19:32:28 <instagibbs> morcos is also interested
+19:32:34 <instagibbs> yes I'm satisfied, we can continue offline
+19:32:46 <murchandamus> thanks, me too
+19:32:48 <wumpus> #topic running utxo commitments (sipa)
+19:32:56 <sipa> ok
+19:32:58 <gmaxwell> instagibbs: in any case, that one concern: that we might 'fix' what is dedusting the UTXO is the only reason I didn't ACK your patch. So we should try to get confidence there or add some other fix for that.
+19:33:13 <instagibbs> gmaxwell, my firster iteration didnt even "fix" it :P
+19:33:17 * jonasschnelli think we should have a graphical 3D "real coins" (in the size of the BTC value) manual drag'n'drop coin selection
+19:33:20 <sipa> so, gmaxwell and i have been thinking about the possibility of maintaining a UTXO commitment hash all the time
+19:34:03 <sipa> this would be useful for making gettxoutsetinfo instantaneous, or for syncing from someone else's UTXO set, or as the basis for a softfork later
+19:34:24 <wumpus> yes, that would be useful
+19:34:36 <sipa> and it seems it would be possible to have an implementation that does this at a cost of a few microseconds per input and per output
+19:34:42 <gmaxwell> A first requirement for any kind of UTXO assumevalid is having a continuous commitment value to simplify review.
+19:34:44 <sipa> in a cryptographically secure way
+19:35:33 <wumpus> jonasschnelli: that's pretty much just "a better GUI for coin control" right?
+19:35:39 <gmaxwell> Effectively, we construct an incremental unordered hash for sets-- so you can add and remove entries one at a time... Because just one scheme isn't enough, we actually constructed several, and now have a fun tradeoffs challenge to decide between them.
+19:35:41 <sipa> there are a few different possible implementations (one is based on multiplying big numbers mod a big prime, one is based on EC math, one is based on adding large hashes toether)... with different performance and security tradeoffs, i'll send a mail about it to the ML soon
+19:36:00 <BlueMatt> ah, ok, was gonna ask what the design was, cool
+19:36:07 <instagibbs> i love the alternative explanations...
+19:36:19 <BlueMatt> i mean we can also not use complicated solutions and be willing to do it in the background at a cost of however many milliseconds later
+19:36:29 <BlueMatt> dunno how complicated your proposal is, of course
+19:36:59 <sipa> BlueMatt: map every UTXO to either a 3072-bit integer and multiply those for all outputs, or to an EC point and all those for all outputs
+19:37:14 <sipa> the multiplication approach is faster, but harder to cache
+19:37:18 <gmaxwell> The strength of our proposals is strictly better than the discrete log assumption.  Neighter are especially complex, though the multiplying one is probably simpler for joe-fool to implement as long as they don't care about performance.
+19:37:33 <sipa> the EC approach could allow us to cache the effect of a single transaction, and then instantly apply it to the running commitment
+19:38:20 <sipa> hahaha
+19:38:28 <wumpus> interesting proposal
+19:38:56 <sipa> so, even though 5us per input/output may not seem much, it's several hours of CPU time for a node syncing from scratch
+19:39:04 <BlueMatt> sipa: hmm, i assume you have a pointer to a crypto accumulator somewhere?
+19:39:13 <BlueMatt> paper*
+19:39:22 <BlueMatt> ehh, I'll just wait for your ml post
+19:39:28 <sipa> BlueMatt: it's a really uninteresting accumulator, as it can't be used to prove anything
+19:39:46 <sipa> i'll include some references
+19:39:58 <gmaxwell> BlueMatt: there have been several papers on related schemes-- however.  Of course, the papers ignore the performance considerations.  And especially in our case we have tradeoffs around block validation latency.
+19:40:38 <instagibbs> I still want compact proofs, get back to work.
+19:40:48 <sipa> also, the DL approach would mean we need an implementation of a fast multiplication mod a (fixed) prime , or a GMP dependency
+19:40:48 <instagibbs> (ducks)
+19:41:14 <sipa> instagibbs: so one advantage that these things have is that they're not incompatible with other UTXO/TXO commitment approaches
+19:41:16 <gmaxwell> in any case, ML post will talk about the tradeoffs and schemes.
+19:41:17 <cfields> is ordering relevant? any effects on parallel validation/caching?
+19:41:25 <sipa> cfields: it's 100% parallellizable
+19:41:30 <gmaxwell> cfields: they're totally independant of ordering.
+19:41:32 <wumpus> if at least it can be done in parallel with some of the i/o  (e.g. database lookups) it wouldn't have to add that much to the total validation time
+19:41:34 <cfields> whew
+19:41:38 <instagibbs> sipa, ack
+19:41:54 <gmaxwell> And as sipa is pointing out, unlike other utxo commitments they do not break STXO like schemes where you have nodes that don't store the whole utxo set.
+19:41:54 <sipa> ordering is irrelevant... it's effectively a set commitment that is homomorphic wrt to set union and subtraction
+19:43:17 <sipa> but if we have this, we could for example log the UTXO commitment hash in the UpdateTip debug.log lines
+19:43:17 <BlueMatt> gmaxwell: well the validation latency tradeoffs are mostly removed by commiting to the previous block's utxo commitment, no?
+19:43:25 <BlueMatt> is there some reason we should avoid doing so?
+19:43:53 <gmaxwell> So the applications I see for this are: an instant gettxouset info,  being able to have updatetip log the UTXO state (making checking nodes much easier), a start on an ability to do an ASSUMEVALID UTXO sync. ('start on' because there is a security/philosophy debate if the value must also be commited to the chain if we're to do an assumevalid like sync)
+19:43:55 <sipa> BlueMatt: well we're not even talking about commiting to it in blocks (though that is an interesting possibility later)
+19:44:21 <BlueMatt> sipa: great! so lets not do it inline and do it in the background later
+19:44:33 <sipa> BlueMatt: and delayed commitments are more complicated if you actually want the latency reduction... you need a backlog and background processing
+19:44:33 <BlueMatt> as long as its under 100ms rpc is still instant
+19:44:34 <BlueMatt> ish
+19:44:54 <gmaxwell> oh well none of this is anywhere near that slow in any case.
+19:44:55 <sipa> which would interfere with CPU demand for signature validation
+19:45:24 <sipa> gmaxwell: if we need an mod inverse in the RPC, it could be 10ms or so with a naive implementation
+19:45:30 <gmaxwell> I think with sutiable caching we're talking about worst case impact, if done inline, on the order of 10ms.
+19:45:52 <sipa> anyway, not that much more to say about it
+19:45:55 <BlueMatt> i think we can live with 10ms :p
+19:46:02 <BlueMatt> anyway, looking forward to the ml post :)
+19:46:08 <wumpus> #topic PRs high priority for review
+19:46:10 <sipa> i just wanted to give a heads up
+19:46:14 <BlueMatt> (in an rpc that would otherwise block cs_main...)
+19:46:41 <sipa> BlueMatt: that 10ms can even run without cs_main
+19:46:43 <instagibbs> a less-extreme wallet PR for consideration to 0.15: #10333
+19:46:43 <gribble> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+19:47:02 <instagibbs> there are still n > 1 reports of extremely high feerates with large num inputs
+19:47:02 <BlueMatt> sipa: thats my point :p
+19:47:18 <instagibbs> they seem to match up with this case
+19:48:16 <wumpus> instagibbs: added 0.15 tag
+19:48:26 <instagibbs> thanks
+19:48:35 <gmaxwell> Where are we with multiwallet?
+19:49:05 <wumpus> there were plenty of review comments on luke-jr's pull, but he hasn't addressed them yet AFAIK
+19:49:08 <gmaxwell> I haven't been following it closely because I've been more focused on per-txo/the above commitment stuff/etc.
+19:49:17 <gmaxwell> luke-jr: ^ plz.
+19:49:19 <jonasschnelli> #8694 needs still rebase
+19:49:21 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:49:55 <luke-jr> wumpus: it's pending on jtimon's PR
+19:50:05 <wumpus> luke-jr: which one?
+19:50:15 <wumpus> I merged a few jtimon PRs this week
+19:50:20 <luke-jr> #9494
+19:50:22 <gribble> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+19:50:43 <luke-jr> which actually looks mergable?
+19:50:49 <wumpus> ok, seems that one is already in high priority for review
+19:50:56 <sipa> wumpus: yeah, i marked it so last week
+19:51:16 <luke-jr> reason being 8694 touches mapMultiArgs
+19:51:25 <wumpus> luke-jr: good to know, will take a look at it soon and merge it
+19:51:28 <luke-jr> rather than avoid that, it seems better to just fix the locking for ti
+19:51:53 <wumpus> yes
+19:52:01 <wumpus> sipa: thanks
+19:52:46 <jonasschnelli> Also, consider reviewing HD-Auto-Restore #10240 (it's currently not in high prio), we should have this in 0.15, otherwise users need to do loop10000(getnewaddress), rescan(genesis) to restore funds.
+19:52:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:53:51 <wumpus> jonasschnelli: added 0.15 milestone
+19:53:56 <gmaxwell> jonasschnelli: I'd missed that you got that going. good to hear.
+19:54:10 <jonasschnelli> I'll rebase and fix the points soon.
+19:54:45 <gmaxwell> I'll take a look at it after I finish my code review on some other PRs that I'm currently working on.
+19:55:18 <jonasschnelli> thanks gmaxwell
+19:57:05 <instagibbs> 3 minutes
+19:57:39 <sipa> my #1 is still #10195 :)
+19:57:41 <gribble> https://github.com/bitcoin/bitcoin/issues/1 | JSON-RPC support for mobile devices ("ultra-lightweight" clients) · Issue #1 · bitcoin/bitcoin · GitHub
+19:57:42 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:57:43 <sipa> eh
+19:57:46 <sipa> ah!
+19:57:55 <wumpus> yep
+19:58:15 <wumpus> #endmeeting

@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:16</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May 11 19:00:16 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:16</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-5"></a><span class="tm">19:00:31</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-6"></a><span class="tm">19:00:40</span><span class="nk"> &lt;murchandamus&gt;</span> present
+<a name="l-7"></a><span class="tm">19:00:44</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-8"></a><span class="tm">19:00:49</span><span class="nk"> &lt;sipa&gt;</span> murchandamus == murch?
+<a name="l-9"></a><span class="tm">19:00:51</span><span class="nk"> &lt;cfields&gt;</span> hi, here
+<a name="l-10"></a><span class="tm">19:00:54</span><span class="nk"> &lt;instagibbs&gt;</span> yes sipa
+<a name="l-11"></a><span class="tm">19:00:54</span><span class="nk"> &lt;murchandamus&gt;</span> aye!
+<a name="l-12"></a><span class="tm">19:00:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> oh ok, i agree with not defining now..  maybe we should make just _HIGH more then though
+<a name="l-13"></a><span class="tm">19:00:59</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-14"></a><span class="tm">19:01:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes, I was thinking HIGH would be targeted at hosts syncing 2016 blocks, but I forget where the breakpoints were exactly in sipas' data.
+<a name="l-15"></a><span class="tm">19:01:39</span><span class="nk"> &lt;wumpus&gt;</span> any proposed topics? (we can continue the pruning service bits topic if people want that)
+<a name="l-16"></a><span class="tm">19:01:40</span><span class="nk"> &lt;BlueMatt&gt;</span> damnit, can enver remember topics i wanted to bring up come meeting time :(
+<a name="l-17"></a><span class="tm">19:01:57</span><span class="nk"> &lt;luke-jr&gt;</span> O.o?
+<a name="l-18"></a><span class="tm">19:02:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well we should talk about per-txo. I think it's ready for merge except for more testing/review.
+<a name="l-19"></a><span class="tm">19:02:26</span><span class="nk"> &lt;instagibbs&gt;</span> suggested topic: fee targeting/coin selection overhaul
+<a name="l-20"></a><span class="tm">19:02:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">per-txo utxo database</span>
+<a name="l-21"></a><span class="tm">19:02:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#10148</span><span class="cmdline"></span>
+<a name="l-22"></a><span class="tm">19:02:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+<a name="l-23"></a><span class="tm">19:02:56</span><span class="nk"> &lt;gmaxwell&gt;</span> if people haven't seen the graphs: https://cloud.githubusercontent.com/assets/548488/25769030/c84fe65e-31c4-11e7-8819-264c44e50ddf.png
+<a name="l-24"></a><span class="tm">19:03:02</span><span class="nk"> &lt;sipa&gt;</span> oops, no, #10195
+<a name="l-25"></a><span class="tm">19:03:04</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-26"></a><span class="tm">19:03:12</span><span class="nk"> &lt;morcos&gt;</span> sorry sipa, that has been on my list, but my list has been gathering dust for the last couple weeks
+<a name="l-27"></a><span class="tm">19:03:13</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm still halfway through review
+<a name="l-28"></a><span class="tm">19:03:16</span><span class="nk"> &lt;gmaxwell&gt;</span> The graphs should be making all your mouths water.
+<a name="l-29"></a><span class="tm">19:03:30</span><span class="nk"> &lt;instagibbs&gt;</span> why is y-axis in block time :P
+<a name="l-30"></a><span class="tm">19:03:34</span><span class="nk"> &lt;wumpus&gt;</span> ah yes I was still testing #10148, should probably switch to #10195
+<a name="l-31"></a><span class="tm">19:03:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10148 | [WIP] Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+<a name="l-32"></a><span class="tm">19:03:39</span><span class="nk"> &lt;instagibbs&gt;</span> clock*
+<a name="l-33"></a><span class="tm">19:03:39</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-34"></a><span class="tm">19:03:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> so that the flushing graph works out.
+<a name="l-35"></a><span class="tm">19:03:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> so that the x axis of both graphs lines up
+<a name="l-36"></a><span class="tm">19:04:00</span><span class="nk"> &lt;cfields&gt;</span> i've made it through review, but I lack enough confidence to ACK the thing :\
+<a name="l-37"></a><span class="tm">19:04:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gm2051:</span> #10192
+<a name="l-38"></a><span class="tm">19:04:05</span><span class="nk"> &lt;gmaxwell&gt;</span> The most impressive thing about that chart isn't the ~33% speedup, it's the reduction in flushing frequency.
+<a name="l-39"></a><span class="tm">19:04:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+<a name="l-40"></a><span class="tm">19:04:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ^
+<a name="l-41"></a><span class="tm">19:04:20</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> yes, that's great.
+<a name="l-42"></a><span class="tm">19:04:33</span><span class="nk"> &lt;sipa&gt;</span> i was very surprised by how much it reduces flushing
+<a name="l-43"></a><span class="tm">19:04:49</span><span class="nk"> &lt;wumpus&gt;</span> nice chart
+<a name="l-44"></a><span class="tm">19:04:54</span><span class="nk"> &lt;sipa&gt;</span> my guess is that the resulting speedup isn't that dramatic because it's running on a system with pretty fast I/O
+<a name="l-45"></a><span class="tm">19:05:12</span><span class="nk"> &lt;wumpus&gt;</span> heh, but most users have systems with slow i/o
+<a name="l-46"></a><span class="tm">19:05:27</span><span class="nk"> &lt;sipa&gt;</span> oh, one downside: chainstate db goes from 2.2G to 2.7G
+<a name="l-47"></a><span class="tm">19:05:30</span><span class="nk"> &lt;gmaxwell&gt;</span> right, testing it on a system with slow i/o would be interesting. But will take forever.
+<a name="l-48"></a><span class="tm">19:05:45</span><span class="nk"> &lt;BlueMatt&gt;</span> 2.7 seems fine
+<a name="l-49"></a><span class="tm">19:06:09</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-50"></a><span class="tm">19:06:31</span><span class="nk"> &lt;sipa&gt;</span> the TODOs that i know of are a few code cleanups (marked as TODO in the code), and better UI wrt the upgrade process
+<a name="l-51"></a><span class="tm">19:06:45</span><span class="nk"> &lt;sipa&gt;</span> there is a one-time upgrade of the old db to the new db at startup, which can be interrupted
+<a name="l-52"></a><span class="tm">19:06:55</span><span class="nk"> &lt;gmaxwell&gt;</span> The upgrade doesn't take long on a system with fast IO at least.
+<a name="l-53"></a><span class="tm">19:06:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> it needs way more review
+<a name="l-54"></a><span class="tm">19:07:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> of course
+<a name="l-55"></a><span class="tm">19:07:03</span><span class="nk"> &lt;BlueMatt&gt;</span> there are lots of things in that queue, sadly
+<a name="l-56"></a><span class="tm">19:07:10</span><span class="nk"> &lt;wumpus&gt;</span> upgrade should be fast if it just iterates through the db in sorted order
+<a name="l-57"></a><span class="tm">19:07:18</span><span class="nk"> &lt;wumpus&gt;</span> even on systems with fairly slow (seek) i/o
+<a name="l-58"></a><span class="tm">19:07:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> it does, it takes a couple of minutes on a system with fast I/O
+<a name="l-59"></a><span class="tm">19:08:02</span><span class="nk"> &lt;wumpus&gt;</span> I'll try it out this week
+<a name="l-60"></a><span class="tm">19:08:36</span><span class="nk"> &lt;gmaxwell&gt;</span> One thing to keep in mind is that keeping it unmerged reduces testing. Absolutely it needs more review before being merged, but we also should try to get it merged sooner rather than later.
+<a name="l-61"></a><span class="tm">19:08:46</span><span class="nk"> &lt;gmaxwell&gt;</span> So that we get more time baking on it in master.
+<a name="l-62"></a><span class="tm">19:09:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> we're not even close to that point
+<a name="l-63"></a><span class="tm">19:09:12</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yes, we should be agressive about merge, as long as its a ways before release
+<a name="l-64"></a><span class="tm">19:09:14</span><span class="nk"> &lt;morcos&gt;</span> agreed gmaxwell, same thing with #10199
+<a name="l-65"></a><span class="tm">19:09:16</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10199 | Better fee estimates by morcos · Pull Request #10199 · bitcoin/bitcoin · GitHub
+<a name="l-66"></a><span class="tm">19:09:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i'll do another review pass on that today
+<a name="l-67"></a><span class="tm">19:09:40</span><span class="nk"> &lt;wumpus&gt;</span> yes, this shouldn't be something to merge last minute for 0.15
+<a name="l-68"></a><span class="tm">19:09:44</span><span class="nk"> &lt;morcos&gt;</span> good thing about that one, is its a lot less likely to casue a disaster
+<a name="l-69"></a><span class="tm">19:09:45 </span><span class="nka">* BlueMatt</span> <span class="ac">finds 10199 to be wayyyy more important than per-utxo</span>
+<a name="l-70"></a><span class="tm">19:09:55 </span><span class="nka">* morcos</span> <span class="ac">disagrees</span>
+<a name="l-71"></a><span class="tm">19:10:13</span><span class="nk"> &lt;gmaxwell&gt;</span> I strongly disagree.
+<a name="l-72"></a><span class="tm">19:10:44</span><span class="nk"> &lt;wumpus&gt;</span> they're both important for different reasons
+<a name="l-73"></a><span class="tm">19:10:55</span><span class="nk"> &lt;wumpus&gt;</span> it's comparing apples and oranges
+<a name="l-74"></a><span class="tm">19:11:09</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, do we have any real topics?
+<a name="l-75"></a><span class="tm">19:11:29</span><span class="nk"> &lt;sipa&gt;</span> i have one low-priority idea i'd like to talk about (running utxo commitments)
+<a name="l-76"></a><span class="tm">19:11:31 </span><span class="nka">* BlueMatt</span> <span class="ac">wishes the ny weather were better...</span>
+<a name="l-77"></a><span class="tm">19:11:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> shoot
+<a name="l-78"></a><span class="tm">19:11:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">fee targeting/coin selection overhaul (instagibbs)</span>
+<a name="l-79"></a><span class="tm">19:11:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> it's beautiful here in mountain view today.
+<a name="l-80"></a><span class="tm">19:12:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> topic
+<a name="l-81"></a><span class="tm">19:12:17</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> A bit cloudy here in Palo Alto though. ;)
+<a name="l-82"></a><span class="tm">19:12:24</span><span class="nk"> &lt;instagibbs&gt;</span> So I tried my hand at doing redoing fee targeting #10360 without directly changing coin selection
+<a name="l-83"></a><span class="tm">19:12:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10360 | [WIP] [Wallet] Target effective value during transaction creation by instagibbs · Pull Request #10360 · bitcoin/bitcoin · GitHub
+<a name="l-84"></a><span class="tm">19:12:36</span><span class="nk"> &lt;instagibbs&gt;</span> Was wondering if people were wary of that, versus a complete overhaul
+<a name="l-85"></a><span class="tm">19:12:43</span><span class="nk"> &lt;instagibbs&gt;</span> morcos has concerns
+<a name="l-86"></a><span class="tm">19:12:49</span><span class="nk"> &lt;morcos&gt;</span> wary is a good word for it
+<a name="l-87"></a><span class="tm">19:12:55</span><span class="nk"> &lt;morcos&gt;</span> not opposed
+<a name="l-88"></a><span class="tm">19:13:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I feel a little uneasy about the changes to augment selection while we don't have a strategy to sweep dust. It worries me that we're potentially going to again untintentionally create another UTXO count blowup event.
+<a name="l-89"></a><span class="tm">19:13:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> i haven't looked into the details... is it just treating the net value of its output as amount - feerate*size_of_spend ?
+<a name="l-90"></a><span class="tm">19:13:15</span><span class="nk"> &lt;murchandamus&gt;</span> I've talked a bit with instagibbs about it and it seems to me that when that approach finds a direct match it may have a huge number of inputs
+<a name="l-91"></a><span class="tm">19:13:20</span><span class="nk"> &lt;instagibbs&gt;</span> sipa yes
+<a name="l-92"></a><span class="tm">19:13:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">murchandamus:</span> that sounds great to me. :P
+<a name="l-93"></a><span class="tm">19:13:43</span><span class="nk"> &lt;murchandamus&gt;</span> I've combined a similar approach but trying to combine inputs by size large to small
+<a name="l-94"></a><span class="tm">19:14:05</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, so you may get more smaller inputs that directly match, for example
+<a name="l-95"></a><span class="tm">19:14:13</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> I think that slightly bigger average transaction with lower variance in transaction size are better than huge variance in transaction size
+<a name="l-96"></a><span class="tm">19:14:39</span><span class="nk"> &lt;morcos&gt;</span> i like the idea of being at least somewhat fee smart, and including more inputs when fees are lower
+<a name="l-97"></a><span class="tm">19:14:41</span><span class="nk"> &lt;sipa&gt;</span> but even if it spends many inputs, it always does so in a way that is economical
+<a name="l-98"></a><span class="tm">19:14:57</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, it will always use "positive effective value" inputs
+<a name="l-99"></a><span class="tm">19:14:59</span><span class="nk"> &lt;sipa&gt;</span> so unless you assume that the feerate is going down in the future, there is little reason to postpone spending them
+<a name="l-100"></a><span class="tm">19:15:05</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">morcos:</span> Exactly. We have huge variance in fees over the week
+<a name="l-101"></a><span class="tm">19:15:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">murchandamus:</span> high to low sounds like it would destroy privacy.
+<a name="l-102"></a><span class="tm">19:15:10</span><span class="nk"> &lt;morcos&gt;</span> the idea of wanting to do a quick transaction and paying 200 sat/byte to do it, and you include tons of little inputs that have little to none net value seems bad to me
+<a name="l-103"></a><span class="tm">19:15:46</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">sipa:</span> But adding a single input costs as much as four outputs, so you'd probably rather add a change output when fees are high than add another input, and later in the week do a few consolidation transactions
+<a name="l-104"></a><span class="tm">19:15:55 </span><span class="nka">* luke-jr</span> <span class="ac">wonders how contentious it would be to move to a system where dust requires a larger proof so it can be pruned from the UTXO set</span>
+<a name="l-105"></a><span class="tm">19:16:05</span><span class="nk"> &lt;murchandamus&gt;</span> I've been hearing that some people do this to save money
+<a name="l-106"></a><span class="tm">19:16:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> I though about that and I think a nice estimate would be the ratio between the current feerate set and the BIG_NUM target (e.g. 1008 block target).  If this ratio is low, then you should be agressive in spending.
+<a name="l-107"></a><span class="tm">19:16:11</span><span class="nk"> &lt;morcos&gt;</span> admittedly its a difficult problem...  how do you distinguish a user that only does 200 sat/byte txs vs one that has a range
+<a name="l-108"></a><span class="tm">19:16:32</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> I don't think it does, because it's only the selection for making exact matches
+<a name="l-109"></a><span class="tm">19:16:43</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yes, i agree... something like that
+<a name="l-110"></a><span class="tm">19:16:46</span><span class="nk"> &lt;murchandamus&gt;</span> and you don't know if the first combination that matched was actually among the largest in your wallet
+<a name="l-111"></a><span class="tm">19:17:22</span><span class="nk"> &lt;morcos&gt;</span> anyway, clearly there are a lot of ideas here, and i kidn of think that the amount of consideration that has to go into most changes is almost the same, and it might not be worthing doing all of that sanity checking if we're only making a small change
+<a name="l-112"></a><span class="tm">19:17:23</span><span class="nk"> &lt;instagibbs&gt;</span> yes, so there are plenty of interesting strategies, the question is should we not be making semi-obvious fixing until we can agree on those :)
+<a name="l-113"></a><span class="tm">19:17:34</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> interesting approach
+<a name="l-114"></a><span class="tm">19:18:22</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="hi">related:</span> can we kill minimum total fee?
+<a name="l-115"></a><span class="tm">19:18:22</span><span class="nk"> &lt;morcos&gt;</span> at the very least, i'd think this should be lower priority for 0.15 than the prevously mentioned things right now... so we have to think about resources
+<a name="l-116"></a><span class="tm">19:18:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> +1 on that for a first step
+<a name="l-117"></a><span class="tm">19:18:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> ack
+<a name="l-118"></a><span class="tm">19:18:38</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, yes that was the feeling I get
+<a name="l-119"></a><span class="tm">19:18:41</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">instagibbs:</span> Accounting for UTXO in selection by effective value does take a load of pain out of selection strategies
+<a name="l-120"></a><span class="tm">19:19:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> but if a 'semi obvious fix' blows up other considerations thats bad.  Do you have a reason to believe your change won't cause a massive increase in utxo accumulation?
+<a name="l-121"></a><span class="tm">19:19:33</span><span class="nk"> &lt;morcos&gt;</span> also i have a PR #9343 that also removes edge case logic.  cleaning these things up now will make future improvements easier to do and reason about
+<a name="l-122"></a><span class="tm">19:19:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9343 | Dont create change at dust limit by morcos · Pull Request #9343 · bitcoin/bitcoin · GitHub
+<a name="l-123"></a><span class="tm">19:19:38</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">instagibbs:</span> I'm not sure that just this change with the current selection strategy of Core does much better in the selection, because of the selecting/deselecting pass
+<a name="l-124"></a><span class="tm">19:19:43</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, no, I wasn't assuming as much, sorry if that seemed implied
+<a name="l-125"></a><span class="tm">19:20:09</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> Pretty sure it would rather decrease UTXO footprints
+<a name="l-126"></a><span class="tm">19:20:36</span><span class="nk"> &lt;murchandamus&gt;</span> right now Core will often fail in the first few passes when it selects more inputs because it hadn't accounted for the fees in advance
+<a name="l-127"></a><span class="tm">19:20:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> which feerate are you using?
+<a name="l-128"></a><span class="tm">19:20:57</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, whatever the user has selected via settings
+<a name="l-129"></a><span class="tm">19:21:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> well, thats why I ask. basically, in any mature system you can have 'bugs' which you depend on. at first glance it semeed to me that your PR might fix a bug where we're overly agressively spending TXO that are negative value. But we may depend on that bug to help manage the UTXO size.  At least that was my impression.
+<a name="l-130"></a><span class="tm">19:21:05</span><span class="nk"> &lt;murchandamus&gt;</span> with this change it would always succeed as soon as it finds an exact match
+<a name="l-131"></a><span class="tm">19:21:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> oh, duh
+<a name="l-132"></a><span class="tm">19:21:09</span><span class="nk"> &lt;instagibbs&gt;</span> well, aside from total minimum fee, because that's stupid
+<a name="l-133"></a><span class="tm">19:21:55</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, could be. Maybe next step, aside from general refactor and cleaning, is to get better data
+<a name="l-134"></a><span class="tm">19:22:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">murchandamus:</span> I'm not following your logic. Yes, the first few passes will fail, then it will target a higher amount, and be successful.
+<a name="l-135"></a><span class="tm">19:22:18</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> Yes, it shoudl never select UTXO that are negative effective value
+<a name="l-136"></a><span class="tm">19:22:22</span><span class="nk"> &lt;instagibbs&gt;</span> and stop throwing away money as fees egregiously: #10333
+<a name="l-137"></a><span class="tm">19:22:23</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+<a name="l-138"></a><span class="tm">19:22:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">murchandamus:</span> By "should" do you mean the current behavior?
+<a name="l-139"></a><span class="tm">19:22:43</span><span class="nk"> &lt;instagibbs&gt;</span> current behavior almost certainly does
+<a name="l-140"></a><span class="tm">19:22:49</span><span class="nk"> &lt;gmaxwell&gt;</span> The current behavior absolutely will select txos with negative value.
+<a name="l-141"></a><span class="tm">19:23:02</span><span class="nk"> &lt;sipa&gt;</span> So how about we fix that first?
+<a name="l-142"></a><span class="tm">19:23:06</span><span class="nk"> &lt;gmaxwell&gt;</span> And "fixing" that may have severely deletarious effects on the network.
+<a name="l-143"></a><span class="tm">19:23:08</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> It only fails if it doesn't find a transaction input set within the number of estimated inputs from the previous tries
+<a name="l-144"></a><span class="tm">19:23:11</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> yeah i was thinking that
+<a name="l-145"></a><span class="tm">19:23:12</span><span class="nk"> &lt;instagibbs&gt;</span> I could always just make it ignore negative effective value
+<a name="l-146"></a><span class="tm">19:23:13</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> disagree
+<a name="l-147"></a><span class="tm">19:23:13</span><span class="nk"> &lt;instagibbs&gt;</span> ...
+<a name="l-148"></a><span class="tm">19:23:14</span><span class="nk"> &lt;instagibbs&gt;</span> lol
+<a name="l-149"></a><span class="tm">19:23:38</span><span class="nk"> &lt;instagibbs&gt;</span> I mean either it's a feature, and we shouldnt fix it, or a bug and we should
+<a name="l-150"></a><span class="tm">19:23:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> yeah exactly
+<a name="l-151"></a><span class="tm">19:24:09</span><span class="nk"> &lt;gmaxwell&gt;</span> It can be both! :)
+<a name="l-152"></a><span class="tm">19:24:18</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> I meant "should" as in when you calculate the effective value of a UTXO, if it is a negative effective value it shouldn't be selected
+<a name="l-153"></a><span class="tm">19:24:28</span><span class="nk"> &lt;instagibbs&gt;</span> aspirational should?
+<a name="l-154"></a><span class="tm">19:24:29</span><span class="nk"> &lt;sdaftuar&gt;</span> so there's a difference here between generally factoring in feerates in the coin selection, and throwing out inputs that have negative value.  i assume that's what we're getting at?
+<a name="l-155"></a><span class="tm">19:24:33</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">gmaxwell:</span> actually yes
+<a name="l-156"></a><span class="tm">19:24:37</span><span class="nk"> &lt;gmaxwell&gt;</span> It's a feature when its mild and happening during times of low feerate. And a bug when its severe when it is insane and happening during high feerate.
+<a name="l-157"></a><span class="tm">19:24:42</span><span class="nk"> &lt;murchandamus&gt;</span> current behavior would select them
+<a name="l-158"></a><span class="tm">19:24:48</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, fair enough...
+<a name="l-159"></a><span class="tm">19:25:00</span><span class="nk"> &lt;wumpus&gt;</span> yes, eating utxos with negative value cleans up the utxo set
+<a name="l-160"></a><span class="tm">19:25:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> right now when feerates vary from 10 to 200 sat/byte.   something that is 0 at 200 sat/byte should be cleaned up at a lower fee rate, not thrown away
+<a name="l-161"></a><span class="tm">19:25:26</span><span class="nk"> &lt;gmaxwell&gt;</span> Fixing it unconditionally without doing something about dust cleanup may be quite harmful to the network.
+<a name="l-162"></a><span class="tm">19:25:30</span><span class="nk"> &lt;wumpus&gt;</span> of course it's better to not create them in the first place
+<a name="l-163"></a><span class="tm">19:25:43</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes!  see #9343
+<a name="l-164"></a><span class="tm">19:25:44</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9343 | Dont create change at dust limit by morcos · Pull Request #9343 · bitcoin/bitcoin · GitHub
+<a name="l-165"></a><span class="tm">19:25:57</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">morcos:</span> That's what I meant
+<a name="l-166"></a><span class="tm">19:25:58</span><span class="nk"> &lt;instagibbs&gt;</span> ^I should review that one
+<a name="l-167"></a><span class="tm">19:25:59</span><span class="nk"> &lt;morcos&gt;</span> i'm not sure thats the only way they are created, perhaps we could do more to avoid creating them also
+<a name="l-168"></a><span class="tm">19:26:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> well they're created by people being buttheads.
+<a name="l-169"></a><span class="tm">19:26:15</span><span class="nk"> &lt;morcos&gt;</span> i should say, i'm sure thats not the only way
+<a name="l-170"></a><span class="tm">19:26:21</span><span class="nk"> &lt;instagibbs&gt;</span> I noticed in current logic we create near-dust, but when we're modifying change, we have much higher bar to clear
+<a name="l-171"></a><span class="tm">19:26:23</span><span class="nk"> &lt;gmaxwell&gt;</span> and no amount of fixing the wallet will prevent their creation.
+<a name="l-172"></a><span class="tm">19:26:24</span><span class="nk"> &lt;instagibbs&gt;</span> we should sync this
+<a name="l-173"></a><span class="tm">19:26:36</span><span class="nk"> &lt;wumpus&gt;</span> yes, we should get that one in
+<a name="l-174"></a><span class="tm">19:26:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well not creating them ourselves is not a total solution, but it helps
+<a name="l-175"></a><span class="tm">19:27:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> absolutely, sorry if it sounded like I said otherwise.
+<a name="l-176"></a><span class="tm">19:27:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> yeah its a good question how many are created unintentionally vs intentionally
+<a name="l-177"></a><span class="tm">19:27:47</span><span class="nk"> &lt;morcos&gt;</span> it wouldn't be unreasonable to raise the limit for intentionally creating them in Core, in adddition to imporving unintentional behavior
+<a name="l-178"></a><span class="tm">19:27:53</span><span class="nk"> &lt;gmaxwell&gt;</span> and at least as far as the "some anonymous third party sends you a few bitcents"  I think it's fine to spend those at a slight loss, esp if its in a privacy preserving way, and double especially if it's at as low a fee rate as you expect to see.
+<a name="l-179"></a><span class="tm">19:27:59</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">morcos:</span> Core never creates change outputs smaller than 0.01 BTC unless the wallet is being almost depleted with the transaction, right?
+<a name="l-180"></a><span class="tm">19:28:22</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">murchandamus:</span> well.. thats the design goal, i don't think its achieved
+<a name="l-181"></a><span class="tm">19:28:29</span><span class="nk"> &lt;instagibbs&gt;</span> it's not achieved at all
+<a name="l-182"></a><span class="tm">19:28:30</span><span class="nk"> &lt;instagibbs&gt;</span> sad!
+<a name="l-183"></a><span class="tm">19:28:30</span><span class="nk"> &lt;gmaxwell&gt;</span> what morcos said
+<a name="l-184"></a><span class="tm">19:28:44</span><span class="nk"> &lt;gmaxwell&gt;</span> well it's better since 0.13.whatever when we fixed some things.
+<a name="l-185"></a><span class="tm">19:28:53</span><span class="nk"> &lt;gmaxwell&gt;</span> with the target/2 checks.
+<a name="l-186"></a><span class="tm">19:29:04</span><span class="nk"> &lt;murchandamus&gt;</span> I'll have to check out the linked issue
+<a name="l-187"></a><span class="tm">19:29:11</span><span class="nk"> &lt;morcos&gt;</span> in particular, if you have nTotalLower &lt; target + CENT, you aim for target, and almost definitely create some stupidly small change
+<a name="l-188"></a><span class="tm">19:29:26</span><span class="nk"> &lt;morcos&gt;</span> among other posibilities
+<a name="l-189"></a><span class="tm">19:29:37</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">morcos:</span> Ah right, I forgot about the pre-selection before knapsack
+<a name="l-190"></a><span class="tm">19:29:39</span><span class="nk"> &lt;morcos&gt;</span> the linked issue is even more edge case
+<a name="l-191"></a><span class="tm">19:29:41</span><span class="nk"> &lt;murchandamus&gt;</span> thanks for the reminder
+<a name="l-192"></a><span class="tm">19:30:07</span><span class="nk"> &lt;morcos&gt;</span> but like nTotalFee needs to go away before its easy to clean up the general case
+<a name="l-193"></a><span class="tm">19:30:22</span><span class="nk"> &lt;morcos&gt;</span> easIER
+<a name="l-194"></a><span class="tm">19:30:40</span><span class="nk"> &lt;murchandamus&gt;</span> <span class="hi">morcos:</span> I think the way to go would be to dissect and modularize the coin selection out of wallet.cpp, if that's possible
+<a name="l-195"></a><span class="tm">19:30:44</span><span class="nk"> &lt;murchandamus&gt;</span> right now it is such a moloch
+<a name="l-196"></a><span class="tm">19:31:06</span><span class="nk"> &lt;instagibbs&gt;</span> I mean you can basically just throw away anything at or below SelectCoins, imo
+<a name="l-197"></a><span class="tm">19:31:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">murchandamus:</span> yes please
+<a name="l-198"></a><span class="tm">19:31:27</span><span class="nk"> &lt;gmaxwell&gt;</span> Moloch whose mind is pure machinery!
+<a name="l-199"></a><span class="tm">19:32:16</span><span class="nk"> &lt;murchandamus&gt;</span> I think instagibbs and I might coordinate something there, and jnewberry was also interested AFAIK
+<a name="l-200"></a><span class="tm">19:32:21</span><span class="nk"> &lt;gmaxwell&gt;</span> can we new-subject?  good discussion on this, lots of PRs for people to look at and discuss more. :)
+<a name="l-201"></a><span class="tm">19:32:28</span><span class="nk"> &lt;instagibbs&gt;</span> morcos is also interested
+<a name="l-202"></a><span class="tm">19:32:34</span><span class="nk"> &lt;instagibbs&gt;</span> yes I'm satisfied, we can continue offline
+<a name="l-203"></a><span class="tm">19:32:46</span><span class="nk"> &lt;murchandamus&gt;</span> thanks, me too
+<a name="l-204"></a><span class="tm">19:32:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">running utxo commitments (sipa)</span>
+<a name="l-205"></a><span class="tm">19:32:56</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-206"></a><span class="tm">19:32:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> in any case, that one concern: that we might 'fix' what is dedusting the UTXO is the only reason I didn't ACK your patch. So we should try to get confidence there or add some other fix for that.
+<a name="l-207"></a><span class="tm">19:33:13</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, my firster iteration didnt even "fix" it :P
+<a name="l-208"></a><span class="tm">19:33:17 </span><span class="nka">* jonasschnelli</span> <span class="ac">think we should have a graphical 3D "real coins" (in the size of the BTC value) manual drag'n'drop coin selection</span>
+<a name="l-209"></a><span class="tm">19:33:20</span><span class="nk"> &lt;sipa&gt;</span> so, gmaxwell and i have been thinking about the possibility of maintaining a UTXO commitment hash all the time
+<a name="l-210"></a><span class="tm">19:34:03</span><span class="nk"> &lt;sipa&gt;</span> this would be useful for making gettxoutsetinfo instantaneous, or for syncing from someone else's UTXO set, or as the basis for a softfork later
+<a name="l-211"></a><span class="tm">19:34:24</span><span class="nk"> &lt;wumpus&gt;</span> yes, that would be useful
+<a name="l-212"></a><span class="tm">19:34:36</span><span class="nk"> &lt;sipa&gt;</span> and it seems it would be possible to have an implementation that does this at a cost of a few microseconds per input and per output
+<a name="l-213"></a><span class="tm">19:34:42</span><span class="nk"> &lt;gmaxwell&gt;</span> A first requirement for any kind of UTXO assumevalid is having a continuous commitment value to simplify review.
+<a name="l-214"></a><span class="tm">19:34:44</span><span class="nk"> &lt;sipa&gt;</span> in a cryptographically secure way
+<a name="l-215"></a><span class="tm">19:35:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> that's pretty much just "a better GUI for coin control" right?
+<a name="l-216"></a><span class="tm">19:35:39</span><span class="nk"> &lt;gmaxwell&gt;</span> Effectively, we construct an incremental unordered hash for sets-- so you can add and remove entries one at a time... Because just one scheme isn't enough, we actually constructed several, and now have a fun tradeoffs challenge to decide between them.
+<a name="l-217"></a><span class="tm">19:35:41</span><span class="nk"> &lt;sipa&gt;</span> there are a few different possible implementations (one is based on multiplying big numbers mod a big prime, one is based on EC math, one is based on adding large hashes toether)... with different performance and security tradeoffs, i'll send a mail about it to the ML soon
+<a name="l-218"></a><span class="tm">19:36:00</span><span class="nk"> &lt;BlueMatt&gt;</span> ah, ok, was gonna ask what the design was, cool
+<a name="l-219"></a><span class="tm">19:36:07</span><span class="nk"> &lt;instagibbs&gt;</span> i love the alternative explanations...
+<a name="l-220"></a><span class="tm">19:36:19</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean we can also not use complicated solutions and be willing to do it in the background at a cost of however many milliseconds later
+<a name="l-221"></a><span class="tm">19:36:29</span><span class="nk"> &lt;BlueMatt&gt;</span> dunno how complicated your proposal is, of course
+<a name="l-222"></a><span class="tm">19:36:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> map every UTXO to either a 3072-bit integer and multiply those for all outputs, or to an EC point and all those for all outputs
+<a name="l-223"></a><span class="tm">19:37:14</span><span class="nk"> &lt;sipa&gt;</span> the multiplication approach is faster, but harder to cache
+<a name="l-224"></a><span class="tm">19:37:18</span><span class="nk"> &lt;gmaxwell&gt;</span> The strength of our proposals is strictly better than the discrete log assumption.  Neighter are especially complex, though the multiplying one is probably simpler for joe-fool to implement as long as they don't care about performance.
+<a name="l-225"></a><span class="tm">19:37:33</span><span class="nk"> &lt;sipa&gt;</span> the EC approach could allow us to cache the effect of a single transaction, and then instantly apply it to the running commitment
+<a name="l-226"></a><span class="tm">19:38:20</span><span class="nk"> &lt;sipa&gt;</span> hahaha
+<a name="l-227"></a><span class="tm">19:38:28</span><span class="nk"> &lt;wumpus&gt;</span> interesting proposal
+<a name="l-228"></a><span class="tm">19:38:56</span><span class="nk"> &lt;sipa&gt;</span> so, even though 5us per input/output may not seem much, it's several hours of CPU time for a node syncing from scratch
+<a name="l-229"></a><span class="tm">19:39:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> hmm, i assume you have a pointer to a crypto accumulator somewhere?
+<a name="l-230"></a><span class="tm">19:39:13</span><span class="nk"> &lt;BlueMatt&gt;</span> paper*
+<a name="l-231"></a><span class="tm">19:39:22</span><span class="nk"> &lt;BlueMatt&gt;</span> ehh, I'll just wait for your ml post
+<a name="l-232"></a><span class="tm">19:39:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> it's a really uninteresting accumulator, as it can't be used to prove anything
+<a name="l-233"></a><span class="tm">19:39:46</span><span class="nk"> &lt;sipa&gt;</span> i'll include some references
+<a name="l-234"></a><span class="tm">19:39:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> there have been several papers on related schemes-- however.  Of course, the papers ignore the performance considerations.  And especially in our case we have tradeoffs around block validation latency.
+<a name="l-235"></a><span class="tm">19:40:38</span><span class="nk"> &lt;instagibbs&gt;</span> I still want compact proofs, get back to work.
+<a name="l-236"></a><span class="tm">19:40:48</span><span class="nk"> &lt;sipa&gt;</span> also, the DL approach would mean we need an implementation of a fast multiplication mod a (fixed) prime , or a GMP dependency
+<a name="l-237"></a><span class="tm">19:40:48</span><span class="nk"> &lt;instagibbs&gt;</span> (ducks)
+<a name="l-238"></a><span class="tm">19:41:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> so one advantage that these things have is that they're not incompatible with other UTXO/TXO commitment approaches
+<a name="l-239"></a><span class="tm">19:41:16</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, ML post will talk about the tradeoffs and schemes.
+<a name="l-240"></a><span class="tm">19:41:17</span><span class="nk"> &lt;cfields&gt;</span> is ordering relevant? any effects on parallel validation/caching?
+<a name="l-241"></a><span class="tm">19:41:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> it's 100% parallellizable
+<a name="l-242"></a><span class="tm">19:41:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> they're totally independant of ordering.
+<a name="l-243"></a><span class="tm">19:41:32</span><span class="nk"> &lt;wumpus&gt;</span> if at least it can be done in parallel with some of the i/o  (e.g. database lookups) it wouldn't have to add that much to the total validation time
+<a name="l-244"></a><span class="tm">19:41:34</span><span class="nk"> &lt;cfields&gt;</span> whew
+<a name="l-245"></a><span class="tm">19:41:38</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, ack
+<a name="l-246"></a><span class="tm">19:41:54</span><span class="nk"> &lt;gmaxwell&gt;</span> And as sipa is pointing out, unlike other utxo commitments they do not break STXO like schemes where you have nodes that don't store the whole utxo set.
+<a name="l-247"></a><span class="tm">19:41:54</span><span class="nk"> &lt;sipa&gt;</span> ordering is irrelevant... it's effectively a set commitment that is homomorphic wrt to set union and subtraction
+<a name="l-248"></a><span class="tm">19:43:17</span><span class="nk"> &lt;sipa&gt;</span> but if we have this, we could for example log the UTXO commitment hash in the UpdateTip debug.log lines
+<a name="l-249"></a><span class="tm">19:43:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> well the validation latency tradeoffs are mostly removed by commiting to the previous block's utxo commitment, no?
+<a name="l-250"></a><span class="tm">19:43:25</span><span class="nk"> &lt;BlueMatt&gt;</span> is there some reason we should avoid doing so?
+<a name="l-251"></a><span class="tm">19:43:53</span><span class="nk"> &lt;gmaxwell&gt;</span> So the applications I see for this are: an instant gettxouset info,  being able to have updatetip log the UTXO state (making checking nodes much easier), a start on an ability to do an ASSUMEVALID UTXO sync. ('start on' because there is a security/philosophy debate if the value must also be commited to the chain if we're to do an assumevalid like sync)
+<a name="l-252"></a><span class="tm">19:43:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> well we're not even talking about commiting to it in blocks (though that is an interesting possibility later)
+<a name="l-253"></a><span class="tm">19:44:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> great! so lets not do it inline and do it in the background later
+<a name="l-254"></a><span class="tm">19:44:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> and delayed commitments are more complicated if you actually want the latency reduction... you need a backlog and background processing
+<a name="l-255"></a><span class="tm">19:44:33</span><span class="nk"> &lt;BlueMatt&gt;</span> as long as its under 100ms rpc is still instant
+<a name="l-256"></a><span class="tm">19:44:34</span><span class="nk"> &lt;BlueMatt&gt;</span> ish
+<a name="l-257"></a><span class="tm">19:44:54</span><span class="nk"> &lt;gmaxwell&gt;</span> oh well none of this is anywhere near that slow in any case.
+<a name="l-258"></a><span class="tm">19:44:55</span><span class="nk"> &lt;sipa&gt;</span> which would interfere with CPU demand for signature validation
+<a name="l-259"></a><span class="tm">19:45:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> if we need an mod inverse in the RPC, it could be 10ms or so with a naive implementation
+<a name="l-260"></a><span class="tm">19:45:30</span><span class="nk"> &lt;gmaxwell&gt;</span> I think with sutiable caching we're talking about worst case impact, if done inline, on the order of 10ms.
+<a name="l-261"></a><span class="tm">19:45:52</span><span class="nk"> &lt;sipa&gt;</span> anyway, not that much more to say about it
+<a name="l-262"></a><span class="tm">19:45:55</span><span class="nk"> &lt;BlueMatt&gt;</span> i think we can live with 10ms :p
+<a name="l-263"></a><span class="tm">19:46:02</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, looking forward to the ml post :)
+<a name="l-264"></a><span class="tm">19:46:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">PRs high priority for review</span>
+<a name="l-265"></a><span class="tm">19:46:10</span><span class="nk"> &lt;sipa&gt;</span> i just wanted to give a heads up
+<a name="l-266"></a><span class="tm">19:46:14</span><span class="nk"> &lt;BlueMatt&gt;</span> (in an rpc that would otherwise block cs_main...)
+<a name="l-267"></a><span class="tm">19:46:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> that 10ms can even run without cs_main
+<a name="l-268"></a><span class="tm">19:46:43</span><span class="nk"> &lt;instagibbs&gt;</span> a less-extreme wallet PR for consideration to 0.15: #10333
+<a name="l-269"></a><span class="tm">19:46:43</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+<a name="l-270"></a><span class="tm">19:47:02</span><span class="nk"> &lt;instagibbs&gt;</span> there are still n &gt; 1 reports of extremely high feerates with large num inputs
+<a name="l-271"></a><span class="tm">19:47:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> thats my point :p
+<a name="l-272"></a><span class="tm">19:47:18</span><span class="nk"> &lt;instagibbs&gt;</span> they seem to match up with this case
+<a name="l-273"></a><span class="tm">19:48:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> added 0.15 tag
+<a name="l-274"></a><span class="tm">19:48:26</span><span class="nk"> &lt;instagibbs&gt;</span> thanks
+<a name="l-275"></a><span class="tm">19:48:35</span><span class="nk"> &lt;gmaxwell&gt;</span> Where are we with multiwallet?
+<a name="l-276"></a><span class="tm">19:49:05</span><span class="nk"> &lt;wumpus&gt;</span> there were plenty of review comments on luke-jr's pull, but he hasn't addressed them yet AFAIK
+<a name="l-277"></a><span class="tm">19:49:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I haven't been following it closely because I've been more focused on per-txo/the above commitment stuff/etc.
+<a name="l-278"></a><span class="tm">19:49:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> ^ plz.
+<a name="l-279"></a><span class="tm">19:49:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#8694 </span><span class="cmdline">needs still rebase</span>
+<a name="l-280"></a><span class="tm">19:49:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+<a name="l-281"></a><span class="tm">19:49:55</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it's pending on jtimon's PR
+<a name="l-282"></a><span class="tm">19:50:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> which one?
+<a name="l-283"></a><span class="tm">19:50:15</span><span class="nk"> &lt;wumpus&gt;</span> I merged a few jtimon PRs this week
+<a name="l-284"></a><span class="tm">19:50:20</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="cmd">#9494</span><span class="cmdline"></span>
+<a name="l-285"></a><span class="tm">19:50:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+<a name="l-286"></a><span class="tm">19:50:43</span><span class="nk"> &lt;luke-jr&gt;</span> which actually looks mergable?
+<a name="l-287"></a><span class="tm">19:50:49</span><span class="nk"> &lt;wumpus&gt;</span> ok, seems that one is already in high priority for review
+<a name="l-288"></a><span class="tm">19:50:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> yeah, i marked it so last week
+<a name="l-289"></a><span class="tm">19:51:16</span><span class="nk"> &lt;luke-jr&gt;</span> reason being 8694 touches mapMultiArgs
+<a name="l-290"></a><span class="tm">19:51:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> good to know, will take a look at it soon and merge it
+<a name="l-291"></a><span class="tm">19:51:28</span><span class="nk"> &lt;luke-jr&gt;</span> rather than avoid that, it seems better to just fix the locking for ti
+<a name="l-292"></a><span class="tm">19:51:53</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-293"></a><span class="tm">19:52:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> thanks
+<a name="l-294"></a><span class="tm">19:52:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also, consider reviewing HD-Auto-Restore #10240 (it's currently not in high prio), we should have this in 0.15, otherwise users need to do loop10000(getnewaddress), rescan(genesis) to restore funds.
+<a name="l-295"></a><span class="tm">19:52:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-296"></a><span class="tm">19:53:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> added 0.15 milestone
+<a name="l-297"></a><span class="tm">19:53:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I'd missed that you got that going. good to hear.
+<a name="l-298"></a><span class="tm">19:54:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll rebase and fix the points soon.
+<a name="l-299"></a><span class="tm">19:54:45</span><span class="nk"> &lt;gmaxwell&gt;</span> I'll take a look at it after I finish my code review on some other PRs that I'm currently working on.
+<a name="l-300"></a><span class="tm">19:55:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> thanks gmaxwell
+<a name="l-301"></a><span class="tm">19:57:05</span><span class="nk"> &lt;instagibbs&gt;</span> 3 minutes
+<a name="l-302"></a><span class="tm">19:57:39</span><span class="nk"> &lt;sipa&gt;</span> my #1 is still #10195 :)
+<a name="l-303"></a><span class="tm">19:57:41</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/1 | JSON-RPC support for mobile devices ("ultra-lightweight" clients) · Issue #1 · bitcoin/bitcoin · GitHub
+<a name="l-304"></a><span class="tm">19:57:42</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-305"></a><span class="tm">19:57:43</span><span class="nk"> &lt;sipa&gt;</span> eh
+<a name="l-306"></a><span class="tm">19:57:46</span><span class="nk"> &lt;sipa&gt;</span> ah!
+<a name="l-307"></a><span class="tm">19:57:55</span><span class="nk"> &lt;wumpus&gt;</span> yep
+<a name="l-308"></a><span class="tm">19:58:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
