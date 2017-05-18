@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:43</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May 18 19:01:43 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:43</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:10</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-5"></a><span class="tm">19:02:17</span><span class="nk"> &lt;sipa&gt;</span> yow
+<a name="l-6"></a><span class="tm">19:02:26</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:02:26</span><span class="nk"> &lt;CodeShark&gt;</span> I just have one topic for today, but I'll let others suggest theirs
+<a name="l-8"></a><span class="tm">19:02:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 2 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/28c6e8d71b3a...ea6fde3f1d26
+<a name="l-9"></a><span class="tm">19:02:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14618d07f 15Jorge Timón: MOVEONLY: tx functions to consensus/tx_verify.o...
+<a name="l-10"></a><span class="tm">19:02:35</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14ea6fde3 15Wladimir J. van der Laan: Merge #8329: Consensus: MOVEONLY: Move functions for tx verification...
+<a name="l-11"></a><span class="tm">19:02:39</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-12"></a><span class="tm">19:02:49</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="topic">#topic </span><span class="topicline">clientside filtering</span>
+<a name="l-13"></a><span class="tm">19:02:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-14"></a><span class="tm">19:03:26</span><span class="nk"> &lt;luke-jr&gt;</span> BIP148
+<a name="l-15"></a><span class="tm">19:03:33</span><span class="nk"> &lt;luke-jr&gt;</span> (after clientside filtering etc)
+<a name="l-16"></a><span class="tm">19:03:50</span><span class="nk"> &lt;wumpus&gt;</span> I don't think that works CodeShark, I think only the chair can set the topic
+<a name="l-17"></a><span class="tm">19:03:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">clientside filtering</span>
+<a name="l-18"></a><span class="tm">19:03:58</span><span class="nk"> &lt;CodeShark&gt;</span> :)
+<a name="l-19"></a><span class="tm">19:04:19</span><span class="nk"> &lt;CodeShark&gt;</span> so there are several filtering options with different performance tradeoffs
+<a name="l-20"></a><span class="tm">19:04:40</span><span class="nk"> &lt;CodeShark&gt;</span> bloom filters have been typically considered - but there are some other ideas that might be worth considering
+<a name="l-21"></a><span class="tm">19:04:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Filter for BDF, read gmaxwell's reply: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012637.html
+<a name="l-22"></a><span class="tm">19:05:00</span><span class="nk"> &lt;CodeShark&gt;</span> roasbeef has worked on an idea based on golomb coded sets
+<a name="l-23"></a><span class="tm">19:05:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> «he most efficient data structure is similar to a bloom filter, but you use more bits and only one hash function. The result will be mostly zero bits. Then you entropy code it using RLE+Rice coding or an optimal binomial packer (e.g. https://people.xiph.org/~greg/binomial_codec.c).»
+<a name="l-24"></a><span class="tm">19:05:55</span><span class="nk"> &lt;sipa&gt;</span> yes?
+<a name="l-25"></a><span class="tm">19:05:56</span><span class="nk"> &lt;CodeShark&gt;</span> gcs sacrifices CPU for space
+<a name="l-26"></a><span class="tm">19:06:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think what we would need is data about the filter size for the last 100000 blocks...
+<a name="l-27"></a><span class="tm">19:06:16</span><span class="nk"> &lt;CodeShark&gt;</span> filters are smaller, but queries are more computationally expensive
+<a name="l-28"></a><span class="tm">19:06:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> CPU for who when is always the question.
+<a name="l-29"></a><span class="tm">19:06:24</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">jonasschnelli:</span> I have that
+<a name="l-30"></a><span class="tm">19:06:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">roasbeef:</span> Oo... share?
+<a name="l-31"></a><span class="tm">19:06:33</span><span class="nk"> &lt;CodeShark&gt;</span> hey, roasbeef! :)
+<a name="l-32"></a><span class="tm">19:07:01</span><span class="nk"> &lt;gmaxwell&gt;</span> what BIP37 does is very cpu expensive for the serving party, which is why it leads to dos attacks.
+<a name="l-33"></a><span class="tm">19:07:17</span><span class="nk"> &lt;gmaxwell&gt;</span> with any of the map based proposals that goes away and the cost to construct is not very relevant.
+<a name="l-34"></a><span class="tm">19:07:24</span><span class="nk"> &lt;CodeShark&gt;</span> constructing a gcs isn't very computationally expensive
+<a name="l-35"></a><span class="tm">19:07:38</span><span class="nk"> &lt;sipa&gt;</span> more so than bip37
+<a name="l-36"></a><span class="tm">19:07:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Similarly, cost to lookup is not very relevant, the reciever will decode one per block.
+<a name="l-37"></a><span class="tm">19:07:48</span><span class="nk"> &lt;CodeShark&gt;</span> the queries are a little more computationally expensive than bloom filters, but that is done on client
+<a name="l-38"></a><span class="tm">19:07:51</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">jonasschnelli:</span> i have a csv file of stats for the entire chain, can easily get the last 100k out of it, the csv file itself is 14MB
+<a name="l-39"></a><span class="tm">19:07:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> maybe the lots of hash functions make it more expensive than you might guess.
+<a name="l-40"></a><span class="tm">19:08:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">roasbeef:</span> I take the complete one,. thanks. :)
+<a name="l-41"></a><span class="tm">19:08:14</span><span class="nk"> &lt;CodeShark&gt;</span> but gcs only needs to be computed once per block
+<a name="l-42"></a><span class="tm">19:08:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> do you suggest this as something that blocks commit to?
+<a name="l-43"></a><span class="tm">19:08:36</span><span class="nk"> &lt;sipa&gt;</span> or something that a full node would precompute and store?
+<a name="l-44"></a><span class="tm">19:08:42</span><span class="nk"> &lt;roasbeef&gt;</span> with bloom filters, there are several hash functions, with the gcs based approach, there's a single hash function. but the set itself is compressed, so you need to decompress as you query
+<a name="l-45"></a><span class="tm">19:08:43</span><span class="nk"> &lt;CodeShark&gt;</span> the latter for starters
+<a name="l-46"></a><span class="tm">19:08:44</span><span class="nk"> &lt;sipa&gt;</span> i suppose the last
+<a name="l-47"></a><span class="tm">19:08:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> precomp and store
+<a name="l-48"></a><span class="tm">19:08:50</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">sipe:</span> something a node would precompute and store, to start
+<a name="l-49"></a><span class="tm">19:08:58</span><span class="nk"> &lt;sipa&gt;</span> okay
+<a name="l-50"></a><span class="tm">19:09:19</span><span class="nk"> &lt;sipa&gt;</span> what would be stored in the set?
+<a name="l-51"></a><span class="tm">19:09:23</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm dubious that we'd get state of the art performance from golomb coding, but interested to see.
+<a name="l-52"></a><span class="tm">19:09:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> Can be done after the block has been connected
+<a name="l-53"></a><span class="tm">19:10:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I believe the discussion is the 'bloom map' proposal.
+<a name="l-54"></a><span class="tm">19:10:13</span><span class="nk"> &lt;CodeShark&gt;</span> roasbeef was suggesting two filters - one for super lightweight clients, another for clients that require more sophisticated queries
+<a name="l-55"></a><span class="tm">19:10:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> What are the differences? The tx template types?
+<a name="l-56"></a><span class="tm">19:10:46</span><span class="nk"> &lt;CodeShark&gt;</span> the former would only encode UTXOs, the latter would also encode witness data
+<a name="l-57"></a><span class="tm">19:10:56</span><span class="nk"> &lt;gmaxwell&gt;</span> encode witness data?!
+<a name="l-58"></a><span class="tm">19:11:16</span><span class="nk"> &lt;CodeShark&gt;</span> well, if you want to query for whether a particular execution path has been taken - necessary for things like lightning
+<a name="l-59"></a><span class="tm">19:11:32</span><span class="nk"> &lt;roasbeef&gt;</span> basic has: outpoints, script data pushes. extended has: witness stack, sig script data pushes, txids
+<a name="l-60"></a><span class="tm">19:11:46</span><span class="nk"> &lt;sipa&gt;</span> but do you need to _search_ based on witness data?
+<a name="l-61"></a><span class="tm">19:11:51</span><span class="nk"> &lt;sipa&gt;</span> i understand you may want to see it
+<a name="l-62"></a><span class="tm">19:12:01</span><span class="nk"> &lt;sipa&gt;</span> but you know what UTXOs to query for, no?
+<a name="l-63"></a><span class="tm">19:12:35</span><span class="nk"> &lt;CodeShark&gt;</span> I'm guessing revocation enforcement might be outsourced to nodes that cannot know the exact transaction format - only some key
+<a name="l-64"></a><span class="tm">19:12:50</span><span class="nk"> &lt;CodeShark&gt;</span> roasbeef, wanna comment?
+<a name="l-65"></a><span class="tm">19:12:53</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, requesting it is fine, searching on it?  Be careful: it has serious long term implications if you expect that data will even be readily available.  I am doubtful five years from now most nodes will have any witness data from more than a year back.
+<a name="l-66"></a><span class="tm">19:13:22</span><span class="nk"> &lt;gmaxwell&gt;</span> (witness data also means non-utxo transaction data in that above comment)
+<a name="l-67"></a><span class="tm">19:13:54</span><span class="nk"> &lt;gmaxwell&gt;</span> aside, I'm glad to hear this discussion has moved past just replicating the BIP37 mechenism.
+<a name="l-68"></a><span class="tm">19:13:58</span><span class="nk"> &lt;roasbeef&gt;</span> rationale to include witness data was to allow light cleitns to efficielty scan for things like reusable addresses (stealth addresses), i think my model of how folks do that on-chain these days is dated thoughu, i guess they stuff a notification on Op_returns?
+<a name="l-69"></a><span class="tm">19:14:19</span><span class="nk"> &lt;sipa&gt;</span> i'm not sure that is worth the cost
+<a name="l-70"></a><span class="tm">19:14:30</span><span class="nk"> &lt;sipa&gt;</span> also, individual scriptPubKey pushes?
+<a name="l-71"></a><span class="tm">19:14:46</span><span class="nk"> &lt;sipa&gt;</span> if anything, my preference would just be outpoints and full scriptPubKeys
+<a name="l-72"></a><span class="tm">19:14:50</span><span class="nk"> &lt;roasbeef&gt;</span> they do make the extended filters quite a bit bigger (i have testnet data also)
+<a name="l-73"></a><span class="tm">19:14:54</span><span class="nk"> &lt;gmaxwell&gt;</span> well no one does those things in practice, and everyone who previously has implemented them that I'm aware of performed all scanning via a centeralized server, even though they could have matched on the OP_RETURN.
+<a name="l-74"></a><span class="tm">19:15:23</span><span class="nk"> &lt;CodeShark&gt;</span> we can always start with the simplest minimal filter and then add more if we find use cases
+<a name="l-75"></a><span class="tm">19:15:24</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">gmaxwell:</span> well the intention was to allow the new light client mode to actually make using them pratcical without delegating to a central server
+<a name="l-76"></a><span class="tm">19:15:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">roasbeef:</span> that was already possible with BIP37 and the prior design.
+<a name="l-77"></a><span class="tm">19:15:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> Can we start with adding the same elements that bip37 does?
+<a name="l-78"></a><span class="tm">19:15:48</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">sipa:</span> so including the op-codes?
+<a name="l-79"></a><span class="tm">19:16:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Usuabilty of SPV clients that scan using BIP37 is really poor though, thus the rise of electrum.
+<a name="l-80"></a><span class="tm">19:16:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> bah, and 1) further encourage op_returns and 2) make them even more expensive for full nodes?
+<a name="l-81"></a><span class="tm">19:16:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> the things BIP37 added largely turned out to be a mistake that really degraded BIP37 so I hope a new proposal would do less.
+<a name="l-82"></a><span class="tm">19:16:40</span><span class="nk"> &lt;sipa&gt;</span> well the degradation problem doesn't exist here
+<a name="l-83"></a><span class="tm">19:16:47</span><span class="nk"> &lt;sipa&gt;</span> as the filter is not cumulative
+<a name="l-84"></a><span class="tm">19:17:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> is there a way to do it without OP_RETURN?
+<a name="l-85"></a><span class="tm">19:17:05</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, but you still need a bigger filter for same FP ratio. It's just less awful. :)
+<a name="l-86"></a><span class="tm">19:17:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> sure, payment protocol like systems
+<a name="l-87"></a><span class="tm">19:17:27</span><span class="nk"> &lt;luke-jr&gt;</span> well, true, but then you don't need the crypto stuff for it
+<a name="l-88"></a><span class="tm">19:17:42</span><span class="nk"> &lt;sipa&gt;</span> i think that's a separate discussion and probably not one for here
+<a name="l-89"></a><span class="tm">19:17:48</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-90"></a><span class="tm">19:17:58</span><span class="nk"> &lt;CodeShark&gt;</span> for starters we should look at the most basic use cases
+<a name="l-91"></a><span class="tm">19:18:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Yea, we should have a subcommittee. :P
+<a name="l-92"></a><span class="tm">19:18:07</span><span class="nk"> &lt;sipa&gt;</span> jonasschnelli, CodeShark, roasbeef: is there a use case for individual pushes in scriptPubKeys?
+<a name="l-93"></a><span class="tm">19:18:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> the action is probably define a set of filter and create a spec that leaves room for future filter types
+<a name="l-94"></a><span class="tm">19:18:22</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">jonasschnelli:</span> indeed
+<a name="l-95"></a><span class="tm">19:18:30</span><span class="nk"> &lt;sipa&gt;</span> especially in a world where everything is P2PKH/P2SH/P2WPKH/P2WSH
+<a name="l-96"></a><span class="tm">19:18:38</span><span class="nk"> &lt;CodeShark&gt;</span> once we have the framework for adding new filters, it should be easy to do
+<a name="l-97"></a><span class="tm">19:18:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> multiple filter types can result in n-fold overhead, which will be a significant pressure against defining many.
+<a name="l-98"></a><span class="tm">19:18:47</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">sipa:</span> sure, the filter is smaller if one doesn't include the op-code as well
+<a name="l-99"></a><span class="tm">19:19:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> eh?
+<a name="l-100"></a><span class="tm">19:19:26</span><span class="nk"> &lt;sipa&gt;</span> i must be misunderstanding something then
+<a name="l-101"></a><span class="tm">19:19:27</span><span class="nk"> &lt;roasbeef&gt;</span> oh you mean insert the _entire_ thing
+<a name="l-102"></a><span class="tm">19:19:36</span><span class="nk"> &lt;sipa&gt;</span> yes, just the whole scriptPubKey
+<a name="l-103"></a><span class="tm">19:19:41</span><span class="nk"> &lt;sipa&gt;</span> 1 element per output
+<a name="l-104"></a><span class="tm">19:19:59</span><span class="nk"> &lt;sipa&gt;</span> well, and another one for the outpoint
+<a name="l-105"></a><span class="tm">19:20:08</span><span class="nk"> &lt;roasbeef&gt;</span> mhmm, only advtange to data pushes in that case is in a world where mbare multi-sig is actually used
+<a name="l-106"></a><span class="tm">19:20:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> wait why?
+<a name="l-107"></a><span class="tm">19:20:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> why what?
+<a name="l-108"></a><span class="tm">19:20:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">roasbeef:</span> yes, which we don't expect that world to exist.
+<a name="l-109"></a><span class="tm">19:20:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> yes, the reason it's in BIP37 is for bare multisig support... but i don't think that's very interesting now
+<a name="l-110"></a><span class="tm">19:20:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I expect one insert per output. The scriptpubkey. Why would you insert anything else (for normal functionality)
+<a name="l-111"></a><span class="tm">19:21:06</span><span class="nk"> &lt;gmaxwell&gt;</span> s/now/ever/ but hindsight is 20/20
+<a name="l-112"></a><span class="tm">19:21:18</span><span class="nk"> &lt;gmaxwell&gt;</span> blockchain isn't a message bus. :P
+<a name="l-113"></a><span class="tm">19:21:19</span><span class="nk"> &lt;sipa&gt;</span> i guess if you want to look for an outpoint, you can always search for its scriptPubKey
+<a name="l-114"></a><span class="tm">19:21:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> right.
+<a name="l-115"></a><span class="tm">19:21:27</span><span class="nk"> &lt;gmaxwell&gt;</span> okay.
+<a name="l-116"></a><span class="tm">19:21:58</span><span class="nk"> &lt;sipa&gt;</span> in BIP37 there was a reason to separate it, as it would be less bandwidth if you wanted a specific coutpoint, despite there being many scriptPubKeys with it
+<a name="l-117"></a><span class="tm">19:22:08</span><span class="nk"> &lt;sipa&gt;</span> but here, that reason doesn't really matter i think?
+<a name="l-118"></a><span class="tm">19:22:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> what do you think? just a filter with scriptPubKeys?
+<a name="l-119"></a><span class="tm">19:22:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> the privacy leak from correlated data still exists in map proposals, based on what blocks you choose to scan further, though much less severe than BIP37. Keep that in mind.
+<a name="l-120"></a><span class="tm">19:22:58</span><span class="nk"> &lt;roasbeef&gt;</span> if it's just spk's, then how does one query the filters to see if an outoint has been spent?
+<a name="l-121"></a><span class="tm">19:23:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> by querying for the scriptPubKey that outpoint created
+<a name="l-122"></a><span class="tm">19:23:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">roasbeef:</span> which you will always know, i think?
+<a name="l-123"></a><span class="tm">19:23:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">roasbeef:</span> by looking for its spk.
+<a name="l-124"></a><span class="tm">19:24:09</span><span class="nk"> &lt;roasbeef&gt;</span> <span class="hi">sipa:</span> which would require adding parts of the witness/sigScript though?
+<a name="l-125"></a><span class="tm">19:24:14</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-126"></a><span class="tm">19:24:26</span><span class="nk"> &lt;sipa&gt;</span> i'm confused
+<a name="l-127"></a><span class="tm">19:24:31</span><span class="nk"> &lt;roasbeef&gt;</span> me too :)
+<a name="l-128"></a><span class="tm">19:24:38</span><span class="nk"> &lt;CodeShark&gt;</span> txhash:txindex -&gt; scriptPubKey
+<a name="l-129"></a><span class="tm">19:24:38</span><span class="nk"> &lt;sipa&gt;</span> maybe we should do this outside of the meeting
+<a name="l-130"></a><span class="tm">19:24:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">roasbeef:</span> has nothing to do with the witness. You validate the transaction, you know the content of the outpoint.
+<a name="l-131"></a><span class="tm">19:24:51</span><span class="nk"> &lt;sipa&gt;</span> it seems we're doing protocol design here now
+<a name="l-132"></a><span class="tm">19:25:03</span><span class="nk"> &lt;gmaxwell&gt;</span> 12:17 &lt; gmaxwell&gt; Yea, we should have a subcommittee. :P
+<a name="l-133"></a><span class="tm">19:25:17</span><span class="nk"> &lt;CodeShark&gt;</span> anyhow, we don't need to decide the specifics of what goes in the filter right now
+<a name="l-134"></a><span class="tm">19:25:22</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-135"></a><span class="tm">19:25:27</span><span class="nk"> &lt;roasbeef&gt;</span> ok, sure, to summarize: we have working code for the construction, have nearly finished integrating it into lnd, have a BIP draft that should be ready by next week-ish (will also integrate feedback from thjis discussion)
+<a name="l-136"></a><span class="tm">19:25:31</span><span class="nk"> &lt;CodeShark&gt;</span> I like the idea of creating a framework that allows us to arbitrarily define filters later on
+<a name="l-137"></a><span class="tm">19:25:32</span><span class="nk"> &lt;sipa&gt;</span> i think it's an interesting thing to research further
+<a name="l-138"></a><span class="tm">19:25:41</span><span class="nk"> &lt;sipa&gt;</span> not sure what else needs to be discussed here
+<a name="l-139"></a><span class="tm">19:25:41</span><span class="nk"> &lt;gmaxwell&gt;</span> well we aren't deciding anything right now... :)
+<a name="l-140"></a><span class="tm">19:25:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> I do not.
+<a name="l-141"></a><span class="tm">19:26:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BTW:</span> kallewoof has an draft impl. on serving filters over the p2p (though bloom): https://github.com/kallewoof/bitcoin/pull/1/files (in case someone wants to drive this further)
+<a name="l-142"></a><span class="tm">19:26:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> there is an n-fold cost to additional filters. It is unlikely to me that nodes would be willing to carry arbritarily many in the future.
+<a name="l-143"></a><span class="tm">19:26:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> there might be a reasonable case for more than one, sure.
+<a name="l-144"></a><span class="tm">19:26:56</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, I think this is good to open up more discussion and participation.
+<a name="l-145"></a><span class="tm">19:27:09</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm quite happy to hear that there is activity in this area and I'd like to help.
+<a name="l-146"></a><span class="tm">19:27:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> I see this point but I don't think it would hurt if the specs would allow new filter types
+<a name="l-147"></a><span class="tm">19:27:13</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">gmaxwell:</span> point is the code complexity to support adding arbitrary filters isn't that great and it avoids the bikeshed in writing up the initial BIP ;)
+<a name="l-148"></a><span class="tm">19:27:30</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> yea sure, whatever, but thats just a type paramter.
+<a name="l-149"></a><span class="tm">19:27:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> right.
+<a name="l-150"></a><span class="tm">19:28:12</span><span class="nk"> &lt;sipa&gt;</span> end of topic?
+<a name="l-151"></a><span class="tm">19:28:13 </span><span class="nka">* roasbeef</span> <span class="ac">now uunderstands what sipa was referring to</span>
+<a name="l-152"></a><span class="tm">19:28:31</span><span class="nk"> &lt;wumpus&gt;</span> I don't think any other have been proposed?
+<a name="l-153"></a><span class="tm">19:28:47</span><span class="nk"> &lt;gmaxwell&gt;</span> you're gonna regret saying that.. :P
+<a name="l-154"></a><span class="tm">19:29:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">quick:</span> high priority PRs.
+<a name="l-155"></a><span class="tm">19:29:09</span><span class="nk"> &lt;wumpus&gt;</span> nearly halfway time
+<a name="l-156"></a><span class="tm">19:29:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> kallewoof had also an approch that peers could serve digests of filters to check the integrity among different peers
+<a name="l-157"></a><span class="tm">19:29:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority PRs</span>
+<a name="l-158"></a><span class="tm">19:29:33</span><span class="nk"> &lt;sipa&gt;</span> small topic for later: bytes_serialized
+<a name="l-159"></a><span class="tm">19:29:34</span><span class="nk"> &lt;gmaxwell&gt;</span> Congrats Morcos on the merge of the new fee estimator stuff.
+<a name="l-160"></a><span class="tm">19:29:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> \o/
+<a name="l-161"></a><span class="tm">19:29:45</span><span class="nk"> &lt;sipa&gt;</span> it will need cleanups, but that's fine
+<a name="l-162"></a><span class="tm">19:29:56</span><span class="nk"> &lt;morcos&gt;</span> thanks, quick PSA..  if you run master now it'll blow away your old fee estimates, you might want to make a copy
+<a name="l-163"></a><span class="tm">19:30:01</span><span class="nk"> &lt;wumpus&gt;</span> quite a few high priority PRs were merged this week, so there's place for new ones, please speak up if there's any that block further work for you
+<a name="l-164"></a><span class="tm">19:30:04</span><span class="nk"> &lt;gmaxwell&gt;</span> "micros" not withstanding.
+<a name="l-165"></a><span class="tm">19:30:17</span><span class="nk"> &lt;morcos&gt;</span> i'm hoping to get an improvment which makes the transition more seamless before 0.15
+<a name="l-166"></a><span class="tm">19:30:46</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> i'm basically done reviewing per-txout (#10195), looks awesome! running some benchmarks now.
+<a name="l-167"></a><span class="tm">19:30:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-168"></a><span class="tm">19:30:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> thank you so much
+<a name="l-169"></a><span class="tm">19:31:15</span><span class="nk"> &lt;gmaxwell&gt;</span> I've been testing per-txout. Survived a few crashes so far.
+<a name="l-170"></a><span class="tm">19:31:31</span><span class="nk"> &lt;wumpus&gt;</span> I've been testing #10195 for a while, haven't run into any problems
+<a name="l-171"></a><span class="tm">19:31:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-172"></a><span class="tm">19:31:35</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, dont look now but it's being used in anger on multiple large wallet services :)
+<a name="l-173"></a><span class="tm">19:31:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> "in anger" ?
+<a name="l-174"></a><span class="tm">19:31:55</span><span class="nk"> &lt;instagibbs&gt;</span> "doing it live"
+<a name="l-175"></a><span class="tm">19:32:02</span><span class="nk"> &lt;gmaxwell&gt;</span> "hold my beer"
+<a name="l-176"></a><span class="tm">19:32:30</span><span class="nk"> &lt;morcos&gt;</span> heh.. fools, the whole reason to merge it into master was to get it some more testing
+<a name="l-177"></a><span class="tm">19:32:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> have you done the multiwallet rebasing?
+<a name="l-178"></a><span class="tm">19:32:44</span><span class="nk"> &lt;jtimon&gt;</span> there's not many explicit acks on https://github.com/bitcoin/bitcoin/pull/10339
+<a name="l-179"></a><span class="tm">19:32:48</span><span class="nk"> &lt;luke-jr&gt;</span> I didn't realise jtimon's PR was merged?
+<a name="l-180"></a><span class="tm">19:32:49</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, well, other services were doing crazy things.. (ok enough off-topic)
+<a name="l-181"></a><span class="tm">19:33:03</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> which one?
+<a name="l-182"></a><span class="tm">19:33:05</span><span class="nk"> &lt;wumpus&gt;</span> so, ok, any new ones?
+<a name="l-183"></a><span class="tm">19:33:17</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> args refactor
+<a name="l-184"></a><span class="tm">19:33:17</span><span class="nk"> &lt;ryanofsky&gt;</span> i'd like more review on #10295, it is blocking my ipc prs
+<a name="l-185"></a><span class="tm">19:33:19</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10295 | [qt] Move some WalletModel functions into CWallet by ryanofsky · Pull Request #10295 · bitcoin/bitcoin · GitHub
+<a name="l-186"></a><span class="tm">19:33:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">ryanofsky:</span> ack, i started reviewing that
+<a name="l-187"></a><span class="tm">19:33:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have added #10240 today
+<a name="l-188"></a><span class="tm">19:33:34</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-189"></a><span class="tm">19:33:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> sgtm
+<a name="l-190"></a><span class="tm">19:33:44</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> I see #9494
+<a name="l-191"></a><span class="tm">19:33:45</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+<a name="l-192"></a><span class="tm">19:33:50</span><span class="nk"> &lt;luke-jr&gt;</span> ok, looks like 4 days ago it was; I'll rebase multiwallet then
+<a name="l-193"></a><span class="tm">19:33:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> thank you
+<a name="l-194"></a><span class="tm">19:34:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> great. I promise to test
+<a name="l-195"></a><span class="tm">19:34:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> thank you!
+<a name="l-196"></a><span class="tm">19:35:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">ryanofsky:</span> will do the 10295 review. Thanks for the info
+<a name="l-197"></a><span class="tm">19:35:07</span><span class="nk"> &lt;sipa&gt;</span> short point: wrt the pruned-node-serving, see http://bitcoin.sipa.be/depths.png
+<a name="l-198"></a><span class="tm">19:35:11</span><span class="nk"> &lt;wumpus&gt;</span> added 10295  and 10339
+<a name="l-199"></a><span class="tm">19:35:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">pruned-node serving</span>
+<a name="l-200"></a><span class="tm">19:35:31</span><span class="nk"> &lt;sipa&gt;</span> see that graph, the title is wrong
+<a name="l-201"></a><span class="tm">19:35:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> Currently overhauling the BIP
+<a name="l-202"></a><span class="tm">19:35:47</span><span class="nk"> &lt;sipa&gt;</span> it shows the relative depth of each block downloaded from my node _excluding_ compact blocks
+<a name="l-203"></a><span class="tm">19:36:10</span><span class="nk"> &lt;sipa&gt;</span> gmaxwell did some statistical analysis on it
+<a name="l-204"></a><span class="tm">19:36:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Sipa's data is interesting. 144 is to small for sure.  1008 is fine.  I'm of the view that we don't need more than a dozen or so blocks of headroom.  I think the BIP should be written based on what you should keep.  How you decide where to fetch depends on exactly what you're doing.
+<a name="l-205"></a><span class="tm">19:37:05</span><span class="nk"> &lt;stickcuck&gt;</span> hm
+<a name="l-206"></a><span class="tm">19:37:27</span><span class="nk"> &lt;gmaxwell&gt;</span> I found no really evidence of a real preference for N weeks in sipas data, but rather, advantages for doing 1-day 2-day 3-day ...  etc. But 'day' is a lot more than 144 blocks, because of hashrate increases.
+<a name="l-207"></a><span class="tm">19:38:04</span><span class="nk"> &lt;gmaxwell&gt;</span> You can process the data to roughly remove IBDing peers and the fall off is pretty stark.
+<a name="l-208"></a><span class="tm">19:38:18</span><span class="nk"> &lt;gmaxwell&gt;</span> note sipas graph ignores depth 0.
+<a name="l-209"></a><span class="tm">19:38:33</span><span class="nk"> &lt;sipa&gt;</span> it'd be a hockeystick if it included 0
+<a name="l-210"></a><span class="tm">19:38:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> What would you recommend for "day" instead 144, calc in the historical hashrate increase?
+<a name="l-211"></a><span class="tm">19:38:53</span><span class="nk"> &lt;gmaxwell&gt;</span> also 0 data is inaccurate because it excludes compact blocks
+<a name="l-212"></a><span class="tm">19:39:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> didn't you suggest 288?
+<a name="l-213"></a><span class="tm">19:39:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I think we should make the first threshold 288. It's more than enough to cover a 'day' in practice.
+<a name="l-214"></a><span class="tm">19:39:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> 288 and 1008...
+<a name="l-215"></a><span class="tm">19:39:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> But then the current minimum (prune=550) would not allow to signal the LOW mode?
+<a name="l-216"></a><span class="tm">19:40:08</span><span class="nk"> &lt;morcos&gt;</span> the current minimum is 288
+<a name="l-217"></a><span class="tm">19:40:11</span><span class="nk"> &lt;gmaxwell&gt;</span> and then peers should estimate what they need (based on time, or headers if they have them) and choose where to connect. The estimate should be conservative but it doesn't need to be a 100 block headroom, a dozen blocks should be fine. If you get headers and find that you need more, you'll disconnect and go elsewhere.
+<a name="l-218"></a><span class="tm">19:40:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Or is 288 including headroom?
+<a name="l-219"></a><span class="tm">19:40:24</span><span class="nk"> &lt;morcos&gt;</span> the 550 is just so you don't set a prune limit which you have no hope of respecting
+<a name="l-220"></a><span class="tm">19:40:26</span><span class="nk"> &lt;gmaxwell&gt;</span> the minimum is 288 blocks.
+<a name="l-221"></a><span class="tm">19:40:30</span><span class="nk"> &lt;morcos&gt;</span> its out of date with segwit
+<a name="l-222"></a><span class="tm">19:40:44</span><span class="nk"> &lt;gmaxwell&gt;</span> and we'll blow over the prune setting to preserve 288 blocks.
+<a name="l-223"></a><span class="tm">19:40:55</span><span class="nk"> &lt;morcos&gt;</span> i think the calculation is presented in the code comments
+<a name="l-224"></a><span class="tm">19:41:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. 288 is the minimum. So we should remove the BIP headroom/buffer from the BIP
+<a name="l-225"></a><span class="tm">19:41:22</span><span class="nk"> &lt;gmaxwell&gt;</span> I think eventually we should be changing the prune setting to be enum-like but thats another matter.
+<a name="l-226"></a><span class="tm">19:41:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I think the BIP shouldn't have any buffer.  "You store X from your tip" "You store Y from your tip"  it can then make advice to users on how to choose connections. but the requirement is just what you promise to store.
+<a name="l-227"></a><span class="tm">19:42:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> ack
+<a name="l-228"></a><span class="tm">19:43:12</span><span class="nk"> &lt;gmaxwell&gt;</span> The advice can say to use the best info you have available (time or headers if you have them) to figure out what you need, and then give enough headroom maybe 6 or 12 blocks that you can fetch parents.  The cost of connecting to someone that doesn't have what you need is not that great. You'll request headers from them, learn you need blocks they don't have and you'll disconnect them and connect
+<a name="l-229"></a><span class="tm">19:43:18</span><span class="nk"> &lt;gmaxwell&gt;</span> to someone else.
+<a name="l-230"></a><span class="tm">19:44:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> For the 1008 I guess the BIP can no longer state blocks for 1 week. Now the question is to use 2016 or say it 3.5 days..
+<a name="l-231"></a><span class="tm">19:44:17</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-232"></a><span class="tm">19:44:35</span><span class="nk"> &lt;sipa&gt;</span> i think it should just say 1008 or 2016 blocks or so, and not make any connection with time
+<a name="l-233"></a><span class="tm">19:44:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> From what I understood is that 144 is to little for a day regarding the increasing hash-rate
+<a name="l-234"></a><span class="tm">19:44:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I'll catch up with you later today, I don't have my processed results in front of me. But I think I found that after elimiating IBDs there were very few fetches in sipas data past 1000 blocks deep.    And indeed, it shouldn't mention time.
+<a name="l-235"></a><span class="tm">19:45:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> But light client implementations are really looking for "days" rather the blocks.. but, sure, they can do their homework... but would have been nice to mention day values in the BIP.
+<a name="l-236"></a><span class="tm">19:45:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> But maybe they are to inaccurate
+<a name="l-237"></a><span class="tm">19:45:47</span><span class="nk"> &lt;gmaxwell&gt;</span> The bit(s) should just be defined as "I claim I will keep at least X blocks deep from my tip, maybe I keep more, maybe not."
+<a name="l-238"></a><span class="tm">19:45:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> light clients know how many blocks they are behind after header sync
+<a name="l-239"></a><span class="tm">19:45:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> anyone using these bits will fetch headers.
+<a name="l-240"></a><span class="tm">19:46:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed.... okay. Got it.
+<a name="l-241"></a><span class="tm">19:46:46</span><span class="nk"> &lt;gmaxwell&gt;</span> now, before you connect you won't have headers and you'll need to make a time based guess. If you guess wrong you'll need to disconnect and go elsewhere. Not the end of the world.
+<a name="l-242"></a><span class="tm">19:47:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I agree on that. Re-connecting should be hard.
+<a name="l-243"></a><span class="tm">19:47:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> Maybe even an additional dns query may be involved (in case you filter)
+<a name="l-244"></a><span class="tm">19:48:10</span><span class="nk"> &lt;sipa&gt;</span> even if it happens, it'll happen just once
+<a name="l-245"></a><span class="tm">19:48:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yeah,... shouldn't be a problem for clients
+<a name="l-246"></a><span class="tm">19:48:34</span><span class="nk"> &lt;sipa&gt;</span> because even if you connect to a peer that does not have enough blocks, they'll have the headers to teach you how many blocks you are behind
+<a name="l-247"></a><span class="tm">19:48:39</span><span class="nk"> &lt;sipa&gt;</span> so i don't think it's such a big issue
+<a name="l-248"></a><span class="tm">19:49:03</span><span class="nk"> &lt;sipa&gt;</span> done topic?
+<a name="l-249"></a><span class="tm">19:49:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I think I mentioned it on the list, but it should be clear that these bits should still mean that you can serve headers for the whole chain.
+<a name="l-250"></a><span class="tm">19:49:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bytes_serialized (sipa)</span>
+<a name="l-251"></a><span class="tm">19:49:38</span><span class="nk"> &lt;sipa&gt;</span> thanks
+<a name="l-252"></a><span class="tm">19:49:42</span><span class="nk"> &lt;gmaxwell&gt;</span> Kill with fire (sorry wumpus)
+<a name="l-253"></a><span class="tm">19:49:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> seems obvious.. but I'll mention it
+<a name="l-254"></a><span class="tm">19:49:43</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-255"></a><span class="tm">19:49:54</span><span class="nk"> &lt;sipa&gt;</span> so currently gettxoutsetinfo has a field called bytes_serialized
+<a name="l-256"></a><span class="tm">19:50:03</span><span class="nk"> &lt;sipa&gt;</span> which is based on some theoretical serialization of the utxo set data
+<a name="l-257"></a><span class="tm">19:50:09</span><span class="nk"> &lt;wumpus&gt;</span> I think there's something to be said for a neutral way of representing the utxo size, that doesn't represent on estimates of a specific database format
+<a name="l-258"></a><span class="tm">19:50:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree with that
+<a name="l-259"></a><span class="tm">19:50:20</span><span class="nk"> &lt;gmaxwell&gt;</span> what I said to sipa the other day was that if we list the total bytes in values and the txout counts, that lets you come up with whatever kind of seralized size estimate you want.
+<a name="l-260"></a><span class="tm">19:50:45</span><span class="nk"> &lt;sipa&gt;</span> but would you be fine with it just being the size of keys+values in a neutral format, _not_ accounting for the leveldb prefix compression?
+<a name="l-261"></a><span class="tm">19:50:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-262"></a><span class="tm">19:50:52</span><span class="nk"> &lt;gmaxwell&gt;</span> If you want you could multiply that count by 36 and add the values and that gives you the size for the dumbest seralization that hopefully no one would use.
+<a name="l-263"></a><span class="tm">19:50:52</span><span class="nk"> &lt;luke-jr&gt;</span> values counted as 8 bytes, or compressed?
+<a name="l-264"></a><span class="tm">19:51:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> that's be fine really, and the format change provides oppertunity to change the definition
+<a name="l-265"></a><span class="tm">19:51:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree
+<a name="l-266"></a><span class="tm">19:51:22</span><span class="nk"> &lt;gmaxwell&gt;</span> okay if wumpus and sipa agree I'll shutup.
+<a name="l-267"></a><span class="tm">19:51:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> no strong opinion. do you?
+<a name="l-268"></a><span class="tm">19:51:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> I don't think the compression should be exposed, ideally.
+<a name="l-269"></a><span class="tm">19:51:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> seems fair
+<a name="l-270"></a><span class="tm">19:51:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the only concern I had with a really neutral figure is that it's misleading.
+<a name="l-271"></a><span class="tm">19:51:51</span><span class="nk"> &lt;luke-jr&gt;</span> not a strong opinion though
+<a name="l-272"></a><span class="tm">19:51:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> just a fixed size seems ok to me
+<a name="l-273"></a><span class="tm">19:52:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> that's more future proof likely
+<a name="l-274"></a><span class="tm">19:52:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> so we can have a statistic to compare over time
+<a name="l-275"></a><span class="tm">19:52:11</span><span class="nk"> &lt;morcos&gt;</span> can't we output more than one thing?
+<a name="l-276"></a><span class="tm">19:52:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> indeed
+<a name="l-277"></a><span class="tm">19:52:42</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. a naieve seralization would have 32 bytes for txid, but the reality is probably under 16 due to sharing.  But as long as it doesn't require scanning that data I guess I don't care.
+<a name="l-278"></a><span class="tm">19:52:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> so #10396 reports the actual disk usage
+<a name="l-279"></a><span class="tm">19:52:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10396 | Report LevelDB estimate for chainstate size in gettxoutsetinfo by sipa · Pull Request #10396 · bitcoin/bitcoin · GitHub
+<a name="l-280"></a><span class="tm">19:52:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> and the total number of utxos is also reported
+<a name="l-281"></a><span class="tm">19:53:15</span><span class="nk"> &lt;wumpus&gt;</span> we should definitely report the actual disk usage too!
+<a name="l-282"></a><span class="tm">19:53:23</span><span class="nk"> &lt;morcos&gt;</span> yeah i'm sorry if i'm behind, but i think actual disk usage is useful, even if we want this .. ok, that's all i was saying
+<a name="l-283"></a><span class="tm">19:53:30</span><span class="nk"> &lt;luke-jr&gt;</span> agreed
+<a name="l-284"></a><span class="tm">19:53:30</span><span class="nk"> &lt;sipa&gt;</span> yes yes, absolutely
+<a name="l-285"></a><span class="tm">19:53:44</span><span class="nk"> &lt;sipa&gt;</span> the point is that the current bytes_serialized tries to mimick disk usage, but fails
+<a name="l-286"></a><span class="tm">19:53:45</span><span class="nk"> &lt;gmaxwell&gt;</span> the leveldb usage is a noisy thing that goes up and down based on the mood of the table compacting gods.
+<a name="l-287"></a><span class="tm">19:53:47</span><span class="nk"> &lt;luke-jr&gt;</span> (although I guess users can just du the directory?)
+<a name="l-288"></a><span class="tm">19:53:50</span><span class="nk"> &lt;sipa&gt;</span> and will fail even more post per-txout
+<a name="l-289"></a><span class="tm">19:54:17</span><span class="nk"> &lt;sipa&gt;</span> so if we drop the requirement that bytes_serialized has anything to do with disk usage, all is good
+<a name="l-290"></a><span class="tm">19:54:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yep, it's less useful for reporting as statistics
+<a name="l-291"></a><span class="tm">19:54:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> indeed; I never assumed it did really
+<a name="l-292"></a><span class="tm">19:54:58</span><span class="nk"> &lt;wumpus&gt;</span> to me it was just 'serialization size of utxo in an arbitrary, but constant, format'
+<a name="l-293"></a><span class="tm">19:55:00</span><span class="nk"> &lt;phantomcircuit&gt;</span> huh what im here
+<a name="l-294"></a><span class="tm">19:55:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> would make sense to rename the field too
+<a name="l-295"></a><span class="tm">19:55:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> ok, so 10195 removes bytes_serialized - i'll create a separate PR afterwards to add a (new) bytes_serialized again
+<a name="l-296"></a><span class="tm">19:55:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree
+<a name="l-297"></a><span class="tm">19:55:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it will be odd if the serialized size is larger than the database but not that odd.
+<a name="l-298"></a><span class="tm">19:55:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> at least it will be obvious that it has nothing to do with it then!
+<a name="l-299"></a><span class="tm">19:55:49</span><span class="nk"> &lt;wumpus&gt;</span> (after all we don't want people to report weird jumps in statistics, renaming the field is ag ood hint)
+<a name="l-300"></a><span class="tm">19:56:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> maybe it should be renamed?
+<a name="l-301"></a><span class="tm">19:56:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> yes, it should be
+<a name="l-302"></a><span class="tm">19:56:17</span><span class="nk"> &lt;wumpus&gt;</span> "bogosize"
+<a name="l-303"></a><span class="tm">19:56:21</span><span class="nk"> &lt;gmaxwell&gt;</span> bogosize++
+<a name="l-304"></a><span class="tm">19:56:22</span><span class="nk"> &lt;sipa&gt;</span> hash_serialized is renamed too
+<a name="l-305"></a><span class="tm">19:56:28</span><span class="nk"> &lt;sipa&gt;</span> hahaha bogosize
+<a name="l-306"></a><span class="tm">19:56:34</span><span class="nk"> &lt;sipa&gt;</span> ok, deal
+<a name="l-307"></a><span class="tm">19:56:39</span><span class="nk"> &lt;gmaxwell&gt;</span> should be in nibbles.
+<a name="l-308"></a><span class="tm">19:56:42</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-309"></a><span class="tm">19:56:43</span><span class="nk"> &lt;luke-jr&gt;</span> lol
+<a name="l-310"></a><span class="tm">19:56:44</span><span class="nk"> &lt;wumpus&gt;</span> :D
+<a name="l-311"></a><span class="tm">19:56:46</span><span class="nk"> &lt;sipa&gt;</span> in nepers
+<a name="l-312"></a><span class="tm">19:56:49</span><span class="nk"> &lt;instagibbs&gt;</span> buy one get one size?
+<a name="l-313"></a><span class="tm">19:56:55</span><span class="nk"> &lt;gmaxwell&gt;</span> ehats the base e entropy unit?
+<a name="l-314"></a><span class="tm">19:56:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-315"></a><span class="tm">19:57:27</span><span class="nk"> &lt;luke-jr&gt;</span> can I add an OP_CHECKBOGOSIZE? *hides*
+<a name="l-316"></a><span class="tm">19:57:28</span><span class="nk"> &lt;gmaxwell&gt;</span> Good. (that was supposted to be a "Whats?" but seems you were a step ahead of me)
+<a name="l-317"></a><span class="tm">19:57:39</span><span class="nk"> &lt;sipa&gt;</span> ah, no, nats
+<a name="l-318"></a><span class="tm">19:57:47</span><span class="nk"> &lt;sipa&gt;</span> nepers are just for ratios, like db
+<a name="l-319"></a><span class="tm">19:57:53</span><span class="nk"> &lt;sipa&gt;</span> &lt;/offtopic&gt;
+<a name="l-320"></a><span class="tm">19:58:02</span><span class="nk"> &lt;wumpus&gt;</span> time to close the meeting I think
+<a name="l-321"></a><span class="tm">19:58:02</span><span class="nk"> &lt;instagibbs&gt;</span> 2 minutes
+<a name="l-322"></a><span class="tm">19:58:04</span><span class="nk"> &lt;instagibbs&gt;</span> review begging?
+<a name="l-323"></a><span class="tm">19:58:09</span><span class="nk"> &lt;instagibbs&gt;</span> :P
+<a name="l-324"></a><span class="tm">19:58:11</span><span class="nk"> &lt;wumpus&gt;</span> we already did that one
+<a name="l-325"></a><span class="tm">19:58:13</span><span class="nk"> &lt;instagibbs&gt;</span> ah k
+<a name="l-326"></a><span class="tm">19:58:17</span><span class="nk"> &lt;luke-jr&gt;</span> defer BIP148 to next week?
+<a name="l-327"></a><span class="tm">19:58:22</span><span class="nk"> &lt;wumpus&gt;</span> (though if you have any proposals just say so)
+<a name="l-328"></a><span class="tm">19:58:24</span><span class="nk"> &lt;instagibbs&gt;</span> https://github.com/bitcoin/bitcoin/pull/10333 &lt;-- my beg
+<a name="l-329"></a><span class="tm">19:58:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> oh forgot about that one
+<a name="l-330"></a><span class="tm">19:58:43</span><span class="nk"> &lt;luke-jr&gt;</span> it's okay, a week might be good anyway
+<a name="l-331"></a><span class="tm">19:58:50</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm sure you can discuss it in one minute.
+<a name="l-332"></a><span class="tm">19:59:00</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-333"></a><span class="tm">19:59:03</span><span class="nk"> &lt;kanzure&gt;</span> we need a meeting extension block
+<a name="l-334"></a><span class="tm">19:59:04 </span><span class="nka">* morcos</span> <span class="ac">refrains</span>
+<a name="l-335"></a><span class="tm">19:59:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

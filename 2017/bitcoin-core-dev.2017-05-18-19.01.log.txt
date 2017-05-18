@@ -1,0 +1,335 @@
+19:01:43 <wumpus> #startmeeting
+19:01:43 <lightningbot> Meeting started Thu May 18 19:01:43 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:43 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:10 <kanzure> hi.
+19:02:17 <sipa> yow
+19:02:26 <cfields> hi
+19:02:26 <CodeShark> I just have one topic for today, but I'll let others suggest theirs
+19:02:34 <bitcoin-git> [13bitcoin] 15laanwj pushed 2 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/28c6e8d71b3a...ea6fde3f1d26
+19:02:34 <bitcoin-git> 13bitcoin/06master 14618d07f 15Jorge Timón: MOVEONLY: tx functions to consensus/tx_verify.o...
+19:02:35 <bitcoin-git> 13bitcoin/06master 14ea6fde3 15Wladimir J. van der Laan: Merge #8329: Consensus: MOVEONLY: Move functions for tx verification...
+19:02:39 <wumpus> topics?
+19:02:49 <CodeShark> #topic clientside filtering
+19:02:55 <jonasschnelli> ack
+19:03:26 <luke-jr> BIP148
+19:03:33 <luke-jr> (after clientside filtering etc)
+19:03:50 <wumpus> I don't think that works CodeShark, I think only the chair can set the topic
+19:03:55 <wumpus> #topic clientside filtering
+19:03:58 <CodeShark> :)
+19:04:19 <CodeShark> so there are several filtering options with different performance tradeoffs
+19:04:40 <CodeShark> bloom filters have been typically considered - but there are some other ideas that might be worth considering
+19:04:56 <jonasschnelli> Filter for BDF, read gmaxwell's reply: https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2016-May/012637.html
+19:05:00 <CodeShark> roasbeef has worked on an idea based on golomb coded sets
+19:05:27 <jonasschnelli> «he most efficient data structure is similar to a bloom filter, but you use more bits and only one hash function. The result will be mostly zero bits. Then you entropy code it using RLE+Rice coding or an optimal binomial packer (e.g. https://people.xiph.org/~greg/binomial_codec.c).»
+19:05:55 <sipa> yes?
+19:05:56 <CodeShark> gcs sacrifices CPU for space
+19:06:14 <jonasschnelli> I think what we would need is data about the filter size for the last 100000 blocks...
+19:06:16 <CodeShark> filters are smaller, but queries are more computationally expensive
+19:06:19 <gmaxwell> CodeShark: CPU for who when is always the question.
+19:06:24 <roasbeef> jonasschnelli: I have that
+19:06:32 <jonasschnelli> roasbeef: Oo... share?
+19:06:33 <CodeShark> hey, roasbeef! :)
+19:07:01 <gmaxwell> what BIP37 does is very cpu expensive for the serving party, which is why it leads to dos attacks.
+19:07:17 <gmaxwell> with any of the map based proposals that goes away and the cost to construct is not very relevant.
+19:07:24 <CodeShark> constructing a gcs isn't very computationally expensive
+19:07:38 <sipa> more so than bip37
+19:07:43 <gmaxwell> Similarly, cost to lookup is not very relevant, the reciever will decode one per block.
+19:07:48 <CodeShark> the queries are a little more computationally expensive than bloom filters, but that is done on client
+19:07:51 <roasbeef> jonasschnelli: i have a csv file of stats for the entire chain, can easily get the last 100k out of it, the csv file itself is 14MB
+19:07:57 <gmaxwell> sipa: maybe the lots of hash functions make it more expensive than you might guess.
+19:08:06 <jonasschnelli> roasbeef: I take the complete one,. thanks. :)
+19:08:14 <CodeShark> but gcs only needs to be computed once per block
+19:08:29 <sipa> CodeShark: do you suggest this as something that blocks commit to?
+19:08:36 <sipa> or something that a full node would precompute and store?
+19:08:42 <roasbeef> with bloom filters, there are several hash functions, with the gcs based approach, there's a single hash function. but the set itself is compressed, so you need to decompress as you query
+19:08:43 <CodeShark> the latter for starters
+19:08:44 <sipa> i suppose the last
+19:08:46 <jonasschnelli> precomp and store
+19:08:50 <roasbeef> sipe: something a node would precompute and store, to start
+19:08:58 <sipa> okay
+19:09:19 <sipa> what would be stored in the set?
+19:09:23 <gmaxwell> I'm dubious that we'd get state of the art performance from golomb coding, but interested to see.
+19:09:26 <jonasschnelli> Can be done after the block has been connected
+19:10:04 <gmaxwell> sipa: I believe the discussion is the 'bloom map' proposal.
+19:10:13 <CodeShark> roasbeef was suggesting two filters - one for super lightweight clients, another for clients that require more sophisticated queries
+19:10:40 <jonasschnelli> What are the differences? The tx template types?
+19:10:46 <CodeShark> the former would only encode UTXOs, the latter would also encode witness data
+19:10:56 <gmaxwell> encode witness data?!
+19:11:16 <CodeShark> well, if you want to query for whether a particular execution path has been taken - necessary for things like lightning
+19:11:32 <roasbeef> basic has: outpoints, script data pushes. extended has: witness stack, sig script data pushes, txids
+19:11:46 <sipa> but do you need to _search_ based on witness data?
+19:11:51 <sipa> i understand you may want to see it
+19:12:01 <sipa> but you know what UTXOs to query for, no?
+19:12:35 <CodeShark> I'm guessing revocation enforcement might be outsourced to nodes that cannot know the exact transaction format - only some key
+19:12:50 <CodeShark> roasbeef, wanna comment?
+19:12:53 <gmaxwell> Yes, requesting it is fine, searching on it?  Be careful: it has serious long term implications if you expect that data will even be readily available.  I am doubtful five years from now most nodes will have any witness data from more than a year back.
+19:13:22 <gmaxwell> (witness data also means non-utxo transaction data in that above comment)
+19:13:54 <gmaxwell> aside, I'm glad to hear this discussion has moved past just replicating the BIP37 mechenism.
+19:13:58 <roasbeef> rationale to include witness data was to allow light cleitns to efficielty scan for things like reusable addresses (stealth addresses), i think my model of how folks do that on-chain these days is dated thoughu, i guess they stuff a notification on Op_returns?
+19:14:19 <sipa> i'm not sure that is worth the cost
+19:14:30 <sipa> also, individual scriptPubKey pushes?
+19:14:46 <sipa> if anything, my preference would just be outpoints and full scriptPubKeys
+19:14:50 <roasbeef> they do make the extended filters quite a bit bigger (i have testnet data also)
+19:14:54 <gmaxwell> well no one does those things in practice, and everyone who previously has implemented them that I'm aware of performed all scanning via a centeralized server, even though they could have matched on the OP_RETURN.
+19:15:23 <CodeShark> we can always start with the simplest minimal filter and then add more if we find use cases
+19:15:24 <roasbeef> gmaxwell: well the intention was to allow the new light client mode to actually make using them pratcical without delegating to a central server
+19:15:41 <gmaxwell> roasbeef: that was already possible with BIP37 and the prior design.
+19:15:47 <jonasschnelli> Can we start with adding the same elements that bip37 does?
+19:15:48 <roasbeef> sipa: so including the op-codes?
+19:16:02 <gmaxwell> Usuabilty of SPV clients that scan using BIP37 is really poor though, thus the rise of electrum.
+19:16:04 <sipa> roasbeef: bah, and 1) further encourage op_returns and 2) make them even more expensive for full nodes?
+19:16:26 <gmaxwell> jonasschnelli: the things BIP37 added largely turned out to be a mistake that really degraded BIP37 so I hope a new proposal would do less.
+19:16:40 <sipa> well the degradation problem doesn't exist here
+19:16:47 <sipa> as the filter is not cumulative
+19:17:02 <luke-jr> sipa: is there a way to do it without OP_RETURN?
+19:17:05 <gmaxwell> yes, but you still need a bigger filter for same FP ratio. It's just less awful. :)
+19:17:14 <sipa> luke-jr: sure, payment protocol like systems
+19:17:27 <luke-jr> well, true, but then you don't need the crypto stuff for it
+19:17:42 <sipa> i think that's a separate discussion and probably not one for here
+19:17:48 <luke-jr> k
+19:17:58 <CodeShark> for starters we should look at the most basic use cases
+19:18:00 <gmaxwell> Yea, we should have a subcommittee. :P
+19:18:07 <sipa> jonasschnelli, CodeShark, roasbeef: is there a use case for individual pushes in scriptPubKeys?
+19:18:13 <jonasschnelli> the action is probably define a set of filter and create a spec that leaves room for future filter types
+19:18:22 <CodeShark> jonasschnelli: indeed
+19:18:30 <sipa> especially in a world where everything is P2PKH/P2SH/P2WPKH/P2WSH
+19:18:38 <CodeShark> once we have the framework for adding new filters, it should be easy to do
+19:18:43 <gmaxwell> jonasschnelli: multiple filter types can result in n-fold overhead, which will be a significant pressure against defining many.
+19:18:47 <roasbeef> sipa: sure, the filter is smaller if one doesn't include the op-code as well
+19:19:00 <sipa> roasbeef: eh?
+19:19:26 <sipa> i must be misunderstanding something then
+19:19:27 <roasbeef> oh you mean insert the _entire_ thing
+19:19:36 <sipa> yes, just the whole scriptPubKey
+19:19:41 <sipa> 1 element per output
+19:19:59 <sipa> well, and another one for the outpoint
+19:20:08 <roasbeef> mhmm, only advtange to data pushes in that case is in a world where mbare multi-sig is actually used
+19:20:16 <gmaxwell> sipa: wait why?
+19:20:23 <sipa> gmaxwell: why what?
+19:20:27 <gmaxwell> roasbeef: yes, which we don't expect that world to exist.
+19:20:51 <sipa> roasbeef: yes, the reason it's in BIP37 is for bare multisig support... but i don't think that's very interesting now
+19:20:52 <gmaxwell> sipa: I expect one insert per output. The scriptpubkey. Why would you insert anything else (for normal functionality)
+19:21:06 <gmaxwell> s/now/ever/ but hindsight is 20/20
+19:21:18 <gmaxwell> blockchain isn't a message bus. :P
+19:21:19 <sipa> i guess if you want to look for an outpoint, you can always search for its scriptPubKey
+19:21:26 <gmaxwell> sipa: right.
+19:21:27 <gmaxwell> okay.
+19:21:58 <sipa> in BIP37 there was a reason to separate it, as it would be less bandwidth if you wanted a specific coutpoint, despite there being many scriptPubKeys with it
+19:22:08 <sipa> but here, that reason doesn't really matter i think?
+19:22:30 <sipa> roasbeef: what do you think? just a filter with scriptPubKeys?
+19:22:33 <gmaxwell> sipa: the privacy leak from correlated data still exists in map proposals, based on what blocks you choose to scan further, though much less severe than BIP37. Keep that in mind.
+19:22:58 <roasbeef> if it's just spk's, then how does one query the filters to see if an outoint has been spent?
+19:23:35 <sipa> roasbeef: by querying for the scriptPubKey that outpoint created
+19:23:41 <sipa> roasbeef: which you will always know, i think?
+19:23:55 <gmaxwell> roasbeef: by looking for its spk.
+19:24:09 <roasbeef> sipa: which would require adding parts of the witness/sigScript though?
+19:24:14 <sipa> ?
+19:24:26 <sipa> i'm confused
+19:24:31 <roasbeef> me too :)
+19:24:38 <CodeShark> txhash:txindex -> scriptPubKey
+19:24:38 <sipa> maybe we should do this outside of the meeting
+19:24:39 <gmaxwell> roasbeef: has nothing to do with the witness. You validate the transaction, you know the content of the outpoint.
+19:24:51 <sipa> it seems we're doing protocol design here now
+19:25:03 <gmaxwell> 12:17 < gmaxwell> Yea, we should have a subcommittee. :P
+19:25:17 <CodeShark> anyhow, we don't need to decide the specifics of what goes in the filter right now
+19:25:22 <sipa> agree
+19:25:27 <roasbeef> ok, sure, to summarize: we have working code for the construction, have nearly finished integrating it into lnd, have a BIP draft that should be ready by next week-ish (will also integrate feedback from thjis discussion)
+19:25:31 <CodeShark> I like the idea of creating a framework that allows us to arbitrarily define filters later on
+19:25:32 <sipa> i think it's an interesting thing to research further
+19:25:41 <sipa> not sure what else needs to be discussed here
+19:25:41 <gmaxwell> well we aren't deciding anything right now... :)
+19:25:43 <gmaxwell> CodeShark: I do not.
+19:26:00 <jonasschnelli> BTW: kallewoof has an draft impl. on serving filters over the p2p (though bloom): https://github.com/kallewoof/bitcoin/pull/1/files (in case someone wants to drive this further)
+19:26:05 <gmaxwell> CodeShark: there is an n-fold cost to additional filters. It is unlikely to me that nodes would be willing to carry arbritarily many in the future.
+19:26:14 <gmaxwell> CodeShark: there might be a reasonable case for more than one, sure.
+19:26:56 <gmaxwell> In any case, I think this is good to open up more discussion and participation.
+19:27:09 <gmaxwell> I'm quite happy to hear that there is activity in this area and I'd like to help.
+19:27:10 <jonasschnelli> gmaxwell: I see this point but I don't think it would hurt if the specs would allow new filter types
+19:27:13 <CodeShark> gmaxwell: point is the code complexity to support adding arbitrary filters isn't that great and it avoids the bikeshed in writing up the initial BIP ;)
+19:27:30 <gmaxwell> jonasschnelli: yea sure, whatever, but thats just a type paramter.
+19:27:40 <jonasschnelli> gmaxwell: right.
+19:28:12 <sipa> end of topic?
+19:28:13 * roasbeef now uunderstands what sipa was referring to
+19:28:31 <wumpus> I don't think any other have been proposed?
+19:28:47 <gmaxwell> you're gonna regret saying that.. :P
+19:29:07 <gmaxwell> quick: high priority PRs.
+19:29:09 <wumpus> nearly halfway time
+19:29:14 <jonasschnelli> kallewoof had also an approch that peers could serve digests of filters to check the integrity among different peers
+19:29:15 <wumpus> #topic high priority PRs
+19:29:33 <sipa> small topic for later: bytes_serialized
+19:29:34 <gmaxwell> Congrats Morcos on the merge of the new fee estimator stuff.
+19:29:43 <jonasschnelli> \o/
+19:29:45 <sipa> it will need cleanups, but that's fine
+19:29:56 <morcos> thanks, quick PSA..  if you run master now it'll blow away your old fee estimates, you might want to make a copy
+19:30:01 <wumpus> quite a few high priority PRs were merged this week, so there's place for new ones, please speak up if there's any that block further work for you
+19:30:04 <gmaxwell> "micros" not withstanding.
+19:30:17 <morcos> i'm hoping to get an improvment which makes the transition more seamless before 0.15
+19:30:46 <sdaftuar> sipa: i'm basically done reviewing per-txout (#10195), looks awesome! running some benchmarks now.
+19:30:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:30:57 <sipa> sdaftuar: thank you so much
+19:31:15 <gmaxwell> I've been testing per-txout. Survived a few crashes so far.
+19:31:31 <wumpus> I've been testing #10195 for a while, haven't run into any problems
+19:31:35 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:31:35 <instagibbs> morcos, dont look now but it's being used in anger on multiple large wallet services :)
+19:31:46 <sipa> instagibbs: "in anger" ?
+19:31:55 <instagibbs> "doing it live"
+19:32:02 <gmaxwell> "hold my beer"
+19:32:30 <morcos> heh.. fools, the whole reason to merge it into master was to get it some more testing
+19:32:35 <gmaxwell> luke-jr: have you done the multiwallet rebasing?
+19:32:44 <jtimon> there's not many explicit acks on https://github.com/bitcoin/bitcoin/pull/10339
+19:32:48 <luke-jr> I didn't realise jtimon's PR was merged?
+19:32:49 <instagibbs> morcos, well, other services were doing crazy things.. (ok enough off-topic)
+19:33:03 <jtimon> luke-jr: which one?
+19:33:05 <wumpus> so, ok, any new ones?
+19:33:17 <luke-jr> jtimon: args refactor
+19:33:17 <ryanofsky> i'd like more review on #10295, it is blocking my ipc prs
+19:33:19 <gribble> https://github.com/bitcoin/bitcoin/issues/10295 | [qt] Move some WalletModel functions into CWallet by ryanofsky · Pull Request #10295 · bitcoin/bitcoin · GitHub
+19:33:27 <sipa> ryanofsky: ack, i started reviewing that
+19:33:32 <jonasschnelli> I have added #10240 today
+19:33:34 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:33:38 <sipa> jonasschnelli: sgtm
+19:33:44 <jtimon> luke-jr: I see #9494
+19:33:45 <gribble> https://github.com/bitcoin/bitcoin/issues/9494 | Introduce an ArgsManager class encapsulating cs_args, mapArgs and mapMultiArgs by jtimon · Pull Request #9494 · bitcoin/bitcoin · GitHub
+19:33:50 <luke-jr> ok, looks like 4 days ago it was; I'll rebase multiwallet then
+19:33:55 <sipa> luke-jr: thank you
+19:34:02 <jonasschnelli> luke-jr: great. I promise to test
+19:34:05 <gmaxwell> luke-jr: thank you!
+19:35:02 <jonasschnelli> ryanofsky: will do the 10295 review. Thanks for the info
+19:35:07 <sipa> short point: wrt the pruned-node-serving, see http://bitcoin.sipa.be/depths.png
+19:35:11 <wumpus> added 10295  and 10339
+19:35:22 <wumpus> #topic pruned-node serving
+19:35:31 <sipa> see that graph, the title is wrong
+19:35:33 <jonasschnelli> Currently overhauling the BIP
+19:35:47 <sipa> it shows the relative depth of each block downloaded from my node _excluding_ compact blocks
+19:36:10 <sipa> gmaxwell did some statistical analysis on it
+19:36:38 <gmaxwell> Sipa's data is interesting. 144 is to small for sure.  1008 is fine.  I'm of the view that we don't need more than a dozen or so blocks of headroom.  I think the BIP should be written based on what you should keep.  How you decide where to fetch depends on exactly what you're doing.
+19:37:05 <stickcuck> hm
+19:37:27 <gmaxwell> I found no really evidence of a real preference for N weeks in sipas data, but rather, advantages for doing 1-day 2-day 3-day ...  etc. But 'day' is a lot more than 144 blocks, because of hashrate increases.
+19:38:04 <gmaxwell> You can process the data to roughly remove IBDing peers and the fall off is pretty stark.
+19:38:18 <gmaxwell> note sipas graph ignores depth 0.
+19:38:33 <sipa> it'd be a hockeystick if it included 0
+19:38:44 <jonasschnelli> What would you recommend for "day" instead 144, calc in the historical hashrate increase?
+19:38:53 <gmaxwell> also 0 data is inaccurate because it excludes compact blocks
+19:39:18 <sipa> gmaxwell: didn't you suggest 288?
+19:39:20 <gmaxwell> jonasschnelli: I think we should make the first threshold 288. It's more than enough to cover a 'day' in practice.
+19:39:39 <jonasschnelli> 288 and 1008...
+19:39:59 <jonasschnelli> But then the current minimum (prune=550) would not allow to signal the LOW mode?
+19:40:08 <morcos> the current minimum is 288
+19:40:11 <gmaxwell> and then peers should estimate what they need (based on time, or headers if they have them) and choose where to connect. The estimate should be conservative but it doesn't need to be a 100 block headroom, a dozen blocks should be fine. If you get headers and find that you need more, you'll disconnect and go elsewhere.
+19:40:13 <jonasschnelli> Or is 288 including headroom?
+19:40:24 <morcos> the 550 is just so you don't set a prune limit which you have no hope of respecting
+19:40:26 <gmaxwell> the minimum is 288 blocks.
+19:40:30 <morcos> its out of date with segwit
+19:40:44 <gmaxwell> and we'll blow over the prune setting to preserve 288 blocks.
+19:40:55 <morcos> i think the calculation is presented in the code comments
+19:41:03 <jonasschnelli> Yes. 288 is the minimum. So we should remove the BIP headroom/buffer from the BIP
+19:41:22 <gmaxwell> I think eventually we should be changing the prune setting to be enum-like but thats another matter.
+19:41:58 <gmaxwell> jonasschnelli: I think the BIP shouldn't have any buffer.  "You store X from your tip" "You store Y from your tip"  it can then make advice to users on how to choose connections. but the requirement is just what you promise to store.
+19:42:13 <jonasschnelli> gmaxwell: ack
+19:43:12 <gmaxwell> The advice can say to use the best info you have available (time or headers if you have them) to figure out what you need, and then give enough headroom maybe 6 or 12 blocks that you can fetch parents.  The cost of connecting to someone that doesn't have what you need is not that great. You'll request headers from them, learn you need blocks they don't have and you'll disconnect them and connect
+19:43:18 <gmaxwell> to someone else.
+19:44:01 <jonasschnelli> For the 1008 I guess the BIP can no longer state blocks for 1 week. Now the question is to use 2016 or say it 3.5 days..
+19:44:17 <sipa> ?
+19:44:35 <sipa> i think it should just say 1008 or 2016 blocks or so, and not make any connection with time
+19:44:44 <jonasschnelli> From what I understood is that 144 is to little for a day regarding the increasing hash-rate
+19:44:54 <gmaxwell> jonasschnelli: I'll catch up with you later today, I don't have my processed results in front of me. But I think I found that after elimiating IBDs there were very few fetches in sipas data past 1000 blocks deep.    And indeed, it shouldn't mention time.
+19:45:37 <jonasschnelli> But light client implementations are really looking for "days" rather the blocks.. but, sure, they can do their homework... but would have been nice to mention day values in the BIP.
+19:45:43 <jonasschnelli> But maybe they are to inaccurate
+19:45:47 <gmaxwell> The bit(s) should just be defined as "I claim I will keep at least X blocks deep from my tip, maybe I keep more, maybe not."
+19:45:54 <sipa> jonasschnelli: light clients know how many blocks they are behind after header sync
+19:45:58 <gmaxwell> jonasschnelli: anyone using these bits will fetch headers.
+19:46:15 <jonasschnelli> Indeed.... okay. Got it.
+19:46:46 <gmaxwell> now, before you connect you won't have headers and you'll need to make a time based guess. If you guess wrong you'll need to disconnect and go elsewhere. Not the end of the world.
+19:47:16 <jonasschnelli> Yes. I agree on that. Re-connecting should be hard.
+19:47:37 <jonasschnelli> Maybe even an additional dns query may be involved (in case you filter)
+19:48:10 <sipa> even if it happens, it'll happen just once
+19:48:31 <jonasschnelli> Yeah,... shouldn't be a problem for clients
+19:48:34 <sipa> because even if you connect to a peer that does not have enough blocks, they'll have the headers to teach you how many blocks you are behind
+19:48:39 <sipa> so i don't think it's such a big issue
+19:49:03 <sipa> done topic?
+19:49:08 <gmaxwell> I think I mentioned it on the list, but it should be clear that these bits should still mean that you can serve headers for the whole chain.
+19:49:33 <wumpus> #topic bytes_serialized (sipa)
+19:49:38 <sipa> thanks
+19:49:42 <gmaxwell> Kill with fire (sorry wumpus)
+19:49:43 <jonasschnelli> gmaxwell: seems obvious.. but I'll mention it
+19:49:43 <gmaxwell> :P
+19:49:54 <sipa> so currently gettxoutsetinfo has a field called bytes_serialized
+19:50:03 <sipa> which is based on some theoretical serialization of the utxo set data
+19:50:09 <wumpus> I think there's something to be said for a neutral way of representing the utxo size, that doesn't represent on estimates of a specific database format
+19:50:17 <sipa> wumpus: agree with that
+19:50:20 <gmaxwell> what I said to sipa the other day was that if we list the total bytes in values and the txout counts, that lets you come up with whatever kind of seralized size estimate you want.
+19:50:45 <sipa> but would you be fine with it just being the size of keys+values in a neutral format, _not_ accounting for the leveldb prefix compression?
+19:50:51 <wumpus> sipa: yes
+19:50:52 <gmaxwell> If you want you could multiply that count by 36 and add the values and that gives you the size for the dumbest seralization that hopefully no one would use.
+19:50:52 <luke-jr> values counted as 8 bytes, or compressed?
+19:51:08 <wumpus> sipa: that's be fine really, and the format change provides oppertunity to change the definition
+19:51:14 <sipa> wumpus: agree
+19:51:22 <gmaxwell> okay if wumpus and sipa agree I'll shutup.
+19:51:31 <sipa> luke-jr: no strong opinion. do you?
+19:51:42 <luke-jr> sipa: I don't think the compression should be exposed, ideally.
+19:51:48 <sipa> luke-jr: seems fair
+19:51:49 <gmaxwell> wumpus: the only concern I had with a really neutral figure is that it's misleading.
+19:51:51 <luke-jr> not a strong opinion though
+19:51:51 <wumpus> luke-jr: just a fixed size seems ok to me
+19:52:01 <wumpus> luke-jr: that's more future proof likely
+19:52:07 <wumpus> luke-jr: so we can have a statistic to compare over time
+19:52:11 <morcos> can't we output more than one thing?
+19:52:27 <luke-jr> wumpus: indeed
+19:52:42 <gmaxwell> e.g. a naieve seralization would have 32 bytes for txid, but the reality is probably under 16 due to sharing.  But as long as it doesn't require scanning that data I guess I don't care.
+19:52:47 <sipa> morcos: so #10396 reports the actual disk usage
+19:52:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10396 | Report LevelDB estimate for chainstate size in gettxoutsetinfo by sipa · Pull Request #10396 · bitcoin/bitcoin · GitHub
+19:52:53 <sipa> morcos: and the total number of utxos is also reported
+19:53:15 <wumpus> we should definitely report the actual disk usage too!
+19:53:23 <morcos> yeah i'm sorry if i'm behind, but i think actual disk usage is useful, even if we want this .. ok, that's all i was saying
+19:53:30 <luke-jr> agreed
+19:53:30 <sipa> yes yes, absolutely
+19:53:44 <sipa> the point is that the current bytes_serialized tries to mimick disk usage, but fails
+19:53:45 <gmaxwell> the leveldb usage is a noisy thing that goes up and down based on the mood of the table compacting gods.
+19:53:47 <luke-jr> (although I guess users can just du the directory?)
+19:53:50 <sipa> and will fail even more post per-txout
+19:54:17 <sipa> so if we drop the requirement that bytes_serialized has anything to do with disk usage, all is good
+19:54:25 <wumpus> gmaxwell: yep, it's less useful for reporting as statistics
+19:54:34 <wumpus> sipa: indeed; I never assumed it did really
+19:54:58 <wumpus> to me it was just 'serialization size of utxo in an arbitrary, but constant, format'
+19:55:00 <phantomcircuit> huh what im here
+19:55:19 <wumpus> sipa: would make sense to rename the field too
+19:55:21 <sipa> wumpus: ok, so 10195 removes bytes_serialized - i'll create a separate PR afterwards to add a (new) bytes_serialized again
+19:55:25 <sipa> wumpus: agree
+19:55:32 <gmaxwell> wumpus: it will be odd if the serialized size is larger than the database but not that odd.
+19:55:47 <sipa> gmaxwell: at least it will be obvious that it has nothing to do with it then!
+19:55:49 <wumpus> (after all we don't want people to report weird jumps in statistics, renaming the field is ag ood hint)
+19:56:07 <luke-jr> sipa: maybe it should be renamed?
+19:56:13 <sipa> luke-jr: yes, it should be
+19:56:17 <wumpus> "bogosize"
+19:56:21 <gmaxwell> bogosize++
+19:56:22 <sipa> hash_serialized is renamed too
+19:56:28 <sipa> hahaha bogosize
+19:56:34 <sipa> ok, deal
+19:56:39 <gmaxwell> should be in nibbles.
+19:56:42 <gmaxwell> :P
+19:56:43 <luke-jr> lol
+19:56:44 <wumpus> :D
+19:56:46 <sipa> in nepers
+19:56:49 <instagibbs> buy one get one size?
+19:56:55 <gmaxwell> ehats the base e entropy unit?
+19:56:58 <sipa> gmaxwell: yes
+19:57:27 <luke-jr> can I add an OP_CHECKBOGOSIZE? *hides*
+19:57:28 <gmaxwell> Good. (that was supposted to be a "Whats?" but seems you were a step ahead of me)
+19:57:39 <sipa> ah, no, nats
+19:57:47 <sipa> nepers are just for ratios, like db
+19:57:53 <sipa> </offtopic>
+19:58:02 <wumpus> time to close the meeting I think
+19:58:02 <instagibbs> 2 minutes
+19:58:04 <instagibbs> review begging?
+19:58:09 <instagibbs> :P
+19:58:11 <wumpus> we already did that one
+19:58:13 <instagibbs> ah k
+19:58:17 <luke-jr> defer BIP148 to next week?
+19:58:22 <wumpus> (though if you have any proposals just say so)
+19:58:24 <instagibbs> https://github.com/bitcoin/bitcoin/pull/10333 <-- my beg
+19:58:33 <wumpus> luke-jr: oh forgot about that one
+19:58:43 <luke-jr> it's okay, a week might be good anyway
+19:58:50 <gmaxwell> I'm sure you can discuss it in one minute.
+19:59:00 <gmaxwell> :P
+19:59:03 <kanzure> we need a meeting extension block
+19:59:04 * morcos refrains
+19:59:09 <wumpus> #endmeeting
