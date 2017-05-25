@@ -1,0 +1,422 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:52</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu May 25 19:00:52 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:52</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> last i heard we were gonna try to just remove the trayicon
+<a name="l-5"></a><span class="tm">19:01:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic multiwallet-concept
+<a name="l-6"></a><span class="tm">19:01:21</span><span class="nk"> &lt;BlueMatt&gt;</span> (since it doesnt seem to be "the thing to do" anymore)
+<a name="l-7"></a><span class="tm">19:01:27</span><span class="nk"> &lt;sipa&gt;</span> woah, meeting!
+<a name="l-8"></a><span class="tm">19:01:35</span><span class="nk"> &lt;sipa&gt;</span> i totally forgot
+<a name="l-9"></a><span class="tm">19:01:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure blue matt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs</span>
+<a name="l-10"></a><span class="tm">19:01:56</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-11"></a><span class="tm">19:02:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">multiwallet-concept</span>
+<a name="l-12"></a><span class="tm">19:03:11</span><span class="nk"> &lt;luke-jr&gt;</span> ..
+<a name="l-13"></a><span class="tm">19:03:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> We should think about if we want run-time wallet creation/loading/unloading or per startup -wallet argument.
+<a name="l-14"></a><span class="tm">19:03:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> IMO both eventually, but the latter is a good first stpe
+<a name="l-15"></a><span class="tm">19:03:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also,.. what should we do with rescan/zapwallet/salvage/upgrade
+<a name="l-16"></a><span class="tm">19:03:43</span><span class="nk"> &lt;wumpus&gt;</span> yes, in the long term we want both
+<a name="l-17"></a><span class="tm">19:03:56</span><span class="nk"> &lt;wumpus&gt;</span> in the short term just do what is realistic for the (not too long!) timespan until 0.15
+<a name="l-18"></a><span class="tm">19:03:59</span><span class="nk"> &lt;sipa&gt;</span> i would disable rescan if you have more than one wallet configured
+<a name="l-19"></a><span class="tm">19:04:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> the -wallet= approach seems very confusing. You either -usehd on all wallte, -rescan all wallets, etc.
+<a name="l-20"></a><span class="tm">19:04:04</span><span class="nk"> &lt;sipa&gt;</span> and use the RPC instead
+<a name="l-21"></a><span class="tm">19:04:38</span><span class="nk"> &lt;sipa&gt;</span> or better, remove it
+<a name="l-22"></a><span class="tm">19:04:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> We can start with the all or nothing -wallet configuration. But ideally we move it to runtime over RPC
+<a name="l-23"></a><span class="tm">19:05:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> also,... creation-flags can then be passed in.
+<a name="l-24"></a><span class="tm">19:05:10</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-25"></a><span class="tm">19:05:11</span><span class="nk"> &lt;sipa&gt;</span> right, all those options that affect the creation of new wallets ideally go into a new-wallet-creation RPC
+<a name="l-26"></a><span class="tm">19:05:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes
+<a name="l-27"></a><span class="tm">19:05:21</span><span class="nk"> &lt;luke-jr&gt;</span> /GUI
+<a name="l-28"></a><span class="tm">19:05:24</span><span class="nk"> &lt;sipa&gt;</span> and rescan and upgrade become wallet-specific RPCs
+<a name="l-29"></a><span class="tm">19:05:25</span><span class="nk"> &lt;wumpus&gt;</span> so the command line options only work for the default wallet
+<a name="l-30"></a><span class="tm">19:05:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> The GUI can be done later
+<a name="l-31"></a><span class="tm">19:05:30</span><span class="nk"> &lt;wumpus&gt;</span> that's fine
+<a name="l-32"></a><span class="tm">19:05:33</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-33"></a><span class="tm">19:05:36</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> they already are?
+<a name="l-34"></a><span class="tm">19:05:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> they're not RPCs
+<a name="l-35"></a><span class="tm">19:05:47</span><span class="nk"> &lt;sipa&gt;</span> ?
+<a name="l-36"></a><span class="tm">19:05:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> rescan is, although maybe not merged in Core yet?
+<a name="l-37"></a><span class="tm">19:06:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> I ack luke-jr current PR but deploying that may cause confusion (because of lack of a concept)=
+<a name="l-38"></a><span class="tm">19:06:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> #7061
+<a name="l-39"></a><span class="tm">19:06:17</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7061 | [Wallet] Replace -rescan with a new RPC call "rescanblockchain" by jonasschnelli · Pull Request #7061 · bitcoin/bitcoin · GitHub
+<a name="l-40"></a><span class="tm">19:06:32 </span><span class="nka">* sipa</span> <span class="ac">really really really wants to see rescan go away entirely, but fears he cannot win this fight</span>
+<a name="l-41"></a><span class="tm">19:06:49</span><span class="nk"> &lt;luke-jr&gt;</span> actually, -rescan might be better with multiwallet
+<a name="l-42"></a><span class="tm">19:06:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> Heh. Its just to handy to remove rescan
+<a name="l-43"></a><span class="tm">19:07:00</span><span class="nk"> &lt;luke-jr&gt;</span> since you'd want to rescan all the wallets concurrently
+<a name="l-44"></a><span class="tm">19:07:14</span><span class="nk"> &lt;sipa&gt;</span> fair point
+<a name="l-45"></a><span class="tm">19:07:38</span><span class="nk"> &lt;luke-jr&gt;</span> the overhead for rescanning N wallets vs 1 is minimal IMO
+<a name="l-46"></a><span class="tm">19:07:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> Another point is that we should consider wallet flags combined with the new wallet db format we have introduced with the HD chain split.
+<a name="l-47"></a><span class="tm">19:08:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> wallet flags would probably better allow to store "creation flags"
+<a name="l-48"></a><span class="tm">19:08:07</span><span class="nk"> &lt;sipa&gt;</span> what do you mean by wallet flags?
+<a name="l-49"></a><span class="tm">19:08:27</span><span class="nk"> &lt;jtimon&gt;</span> labels?
+<a name="l-50"></a><span class="tm">19:08:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> I have first implemented wallet flags here: https://github.com/bitcoin/bitcoin/pull/9662
+<a name="l-51"></a><span class="tm">19:08:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/9662/files#diff-b2bb174788c7409b671c46ccc86034bdR1357
+<a name="l-52"></a><span class="tm">19:09:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> But maybe it's not required for the current feature set. But think like: "is the wallet using HD", "is it using chain split", .. "are pkeys diables"?
+<a name="l-53"></a><span class="tm">19:09:43</span><span class="nk"> &lt;sipa&gt;</span> yup
+<a name="l-54"></a><span class="tm">19:09:49</span><span class="nk"> &lt;luke-jr&gt;</span> eh, the wallet already supports that?
+<a name="l-55"></a><span class="tm">19:10:00</span><span class="nk"> &lt;sipa&gt;</span> but i think that's orthogonal to the new database format
+<a name="l-56"></a><span class="tm">19:10:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. But we already do a new wallet-format type in 0.15. Ideally we push in everything that usefull for 0.15+
+<a name="l-57"></a><span class="tm">19:10:32</span><span class="nk"> &lt;sipa&gt;</span> a new wallet format in 0.15?
+<a name="l-58"></a><span class="tm">19:10:34</span><span class="nk"> &lt;sipa&gt;</span> what?
+<a name="l-59"></a><span class="tm">19:10:42</span><span class="nk"> &lt;jtimon&gt;</span> sounds too optimistic
+<a name="l-60"></a><span class="tm">19:10:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> the HD chain-split is not backward compatible
+<a name="l-61"></a><span class="tm">19:10:51</span><span class="nk"> &lt;sipa&gt;</span> oh!
+<a name="l-62"></a><span class="tm">19:10:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not a new database format.
+<a name="l-63"></a><span class="tm">19:10:52</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-64"></a><span class="tm">19:10:53</span><span class="nk"> &lt;wumpus&gt;</span> let's not make multiwallet dependent on a new wallet format
+<a name="l-65"></a><span class="tm">19:10:57</span><span class="nk"> &lt;sipa&gt;</span> nvm
+<a name="l-66"></a><span class="tm">19:11:02</span><span class="nk"> &lt;wumpus&gt;</span> okay, makes sense
+<a name="l-67"></a><span class="tm">19:11:03</span><span class="nk"> &lt;sipa&gt;</span> i thought you were talking about logdb
+<a name="l-68"></a><span class="tm">19:11:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> nono...
+<a name="l-69"></a><span class="tm">19:11:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> Just saying that the 0.15er wallet.dat files will not be backward comp.
+<a name="l-70"></a><span class="tm">19:11:43</span><span class="nk"> &lt;sipa&gt;</span> yeah, sure
+<a name="l-71"></a><span class="tm">19:11:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> ideally we push in as much as we can... to avoid the same non -back com. in 0.16
+<a name="l-72"></a><span class="tm">19:11:50</span><span class="nk"> &lt;luke-jr&gt;</span> 0.15-created*?
+<a name="l-73"></a><span class="tm">19:12:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.15 created.. yes
+<a name="l-74"></a><span class="tm">19:12:12</span><span class="nk"> &lt;sipa&gt;</span> i think breaking backward compatibility in major releases is fine
+<a name="l-75"></a><span class="tm">19:12:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. But if we can avoid it with little effort we may want to do it.
+<a name="l-76"></a><span class="tm">19:12:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> But lets park this problem for now.
+<a name="l-77"></a><span class="tm">19:12:41</span><span class="nk"> &lt;jtimon&gt;</span> but his point is the more we get in now the less we have to break the next time
+<a name="l-78"></a><span class="tm">19:12:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> if you what to preserve rescan you need to make it faster.  I think rescan is already functionally dead for many users: It takes something like 8 hours on my laptop.
+<a name="l-79"></a><span class="tm">19:12:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> Way more important is what we do with -zap/-salvage/-upgrade in multiwallet
+<a name="l-80"></a><span class="tm">19:13:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> forbid them with &gt;1 -wallet?
+<a name="l-81"></a><span class="tm">19:13:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> yes. why not.
+<a name="l-82"></a><span class="tm">19:13:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I replied to your comment on that PR: I think zap and salvage should ultimately go away or move to another tool. Upgrade, I dunno.
+<a name="l-83"></a><span class="tm">19:13:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> How would you run a non-hd and a hd-wallet (seems to be a reasonable use case)
+<a name="l-84"></a><span class="tm">19:13:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> agree with you
+<a name="l-85"></a><span class="tm">19:13:56 </span><span class="nka">* sipa</span> <span class="ac">suggest removing zap in favor of abandontransaction, replacing salvage with a standalone tool, and leaving ugprade to apply to all wallets</span>
+<a name="l-86"></a><span class="tm">19:13:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it just works right now..
+<a name="l-87"></a><span class="tm">19:14:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> Can it work? If you call -usehd on a non-hd wallet is stops during init
+<a name="l-88"></a><span class="tm">19:14:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> don't set -usehd
+<a name="l-89"></a><span class="tm">19:14:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> The its 1 by default
+<a name="l-90"></a><span class="tm">19:14:47</span><span class="nk"> &lt;luke-jr&gt;</span> no, it's &lt;whatever&gt; by default, for existing wallets
+<a name="l-91"></a><span class="tm">19:14:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess you can't mix right now
+<a name="l-92"></a><span class="tm">19:15:06</span><span class="nk"> &lt;luke-jr&gt;</span> I test multiwallet with a combo of HD and non-HD
+<a name="l-93"></a><span class="tm">19:15:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Sorry then.
+<a name="l-94"></a><span class="tm">19:15:14</span><span class="nk"> &lt;sipa&gt;</span> -usehd should go away and become a parameter of the createnewwallet RPC
+<a name="l-95"></a><span class="tm">19:15:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes
+<a name="l-96"></a><span class="tm">19:15:25</span><span class="nk"> &lt;gmaxwell&gt;</span> what sipa said.
+<a name="l-97"></a><span class="tm">19:15:49</span><span class="nk"> &lt;luke-jr&gt;</span> createnewwallet won't make 0.15 IMO
+<a name="l-98"></a><span class="tm">19:15:54</span><span class="nk"> &lt;sipa&gt;</span> that's fine
+<a name="l-99"></a><span class="tm">19:16:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> I once stared with a standalone wallet tool but had problems with circular dependencies (cfields may know more): https://github.com/bitcoin/bitcoin/pull/8745
+<a name="l-100"></a><span class="tm">19:16:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Starting with luke-jr's current PR is fine..
+<a name="l-101"></a><span class="tm">19:16:56</span><span class="nk"> &lt;kanzure&gt;</span> is there interaction between multiwallet and accounts?
+<a name="l-102"></a><span class="tm">19:17:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">kanzure:</span> no
+<a name="l-103"></a><span class="tm">19:17:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> i'm sure we could get that worked out
+<a name="l-104"></a><span class="tm">19:17:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> okay. Great
+<a name="l-105"></a><span class="tm">19:17:34</span><span class="nk"> &lt;sipa&gt;</span> for the time being, i think that -usehd (if specified) should apply to all wallets, if not specified, every wallet can be whatever it already is
+<a name="l-106"></a><span class="tm">19:17:36</span><span class="nk"> &lt;wumpus&gt;</span> yes, that's fine, let's aim to get at least basic multiwallet support in 0.15 though
+<a name="l-107"></a><span class="tm">19:17:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree
+<a name="l-108"></a><span class="tm">19:18:07</span><span class="nk"> &lt;wumpus&gt;</span> not let it slip another release because we want too much from it, or make it conditional on other changes which haven't been done yet
+<a name="l-109"></a><span class="tm">19:18:14</span><span class="nk"> &lt;sipa&gt;</span> short topic suggestion: variable naming style
+<a name="l-110"></a><span class="tm">19:18:28</span><span class="nk"> &lt;gmaxwell&gt;</span> sha256 hashes for all variables!
+<a name="l-111"></a><span class="tm">19:18:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> I just think we should have a (the same) concept in the backhead to avoid extra loops
+<a name="l-112"></a><span class="tm">19:18:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> lol
+<a name="l-113"></a><span class="tm">19:18:39</span><span class="nk"> &lt;morcos&gt;</span> if this is better offline, fine, but sipa, how would we remove rescan?
+<a name="l-114"></a><span class="tm">19:18:45</span><span class="nk"> &lt;kanzure&gt;</span> no abbreviated variable names plzkthx. actually i would take sha256 hashes over abbreviations.
+<a name="l-115"></a><span class="tm">19:18:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> let's discuss after the meeting
+<a name="l-116"></a><span class="tm">19:18:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I was about to suggest xxd on /dev/urandom, but that works for me  too :p
+<a name="l-117"></a><span class="tm">19:18:57</span><span class="nk"> &lt;morcos&gt;</span> k
+<a name="l-118"></a><span class="tm">19:19:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">variable naming style</span>
+<a name="l-119"></a><span class="tm">19:19:04 </span><span class="nka">* cfields</span> <span class="ac">would kill for m_ == member</span>
+<a name="l-120"></a><span class="tm">19:19:27</span><span class="nk"> &lt;luke-jr&gt;</span> pls don't kill
+<a name="l-121"></a><span class="tm">19:19:32</span><span class="nk"> &lt;sipa&gt;</span> i've recently seen several people write patches with variable names that look like they're hungarian, but aren't
+<a name="l-122"></a><span class="tm">19:19:45</span><span class="nk"> &lt;sipa&gt;</span> i don't care personally for that particular style, but i like consistency
+<a name="l-123"></a><span class="tm">19:19:53</span><span class="nk"> &lt;wumpus&gt;</span> the hungerian onvention should die
+<a name="l-124"></a><span class="tm">19:20:03</span><span class="nk"> &lt;sipa&gt;</span> but what to replace it with?
+<a name="l-125"></a><span class="tm">19:20:05</span><span class="nk"> &lt;luke-jr&gt;</span> I particularly dislike hungarian-looking names that don't have the hungarian meaning :p
+<a name="l-126"></a><span class="tm">19:21:13</span><span class="nk"> &lt;gmaxwell&gt;</span> Greek characters.
+<a name="l-127"></a><span class="tm">19:21:16</span><span class="nk"> &lt;sipa&gt;</span> i guess the first question is, do we want any convention specified (in developer-notes) at all, and enforce it in new code?
+<a name="l-128"></a><span class="tm">19:21:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> exactly - and that's what happens, because we have abandoned the style a long time ago and don't describe it in the style doc
+<a name="l-129"></a><span class="tm">19:21:21</span><span class="nk"> &lt;cfields&gt;</span> any convention that ties a variable to a type is broken imo
+<a name="l-130"></a><span class="tm">19:21:22</span><span class="nk"> &lt;luke-jr&gt;</span> Unicode var names?
+<a name="l-131"></a><span class="tm">19:21:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> RIGHT
+<a name="l-132"></a><span class="tm">19:21:36</span><span class="nk"> &lt;jtimon&gt;</span> is this about gArgs ?
+<a name="l-133"></a><span class="tm">19:21:39</span><span class="nk"> &lt;luke-jr&gt;</span> no
+<a name="l-134"></a><span class="tm">19:21:43</span><span class="nk"> &lt;wumpus&gt;</span> people mimic the style but don't know what it means
+<a name="l-135"></a><span class="tm">19:21:49</span><span class="nk"> &lt;wumpus&gt;</span> they should stop mimicing the style too
+<a name="l-136"></a><span class="tm">19:22:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> the only way that's going to happen is by prescribing a style to use in new code
+<a name="l-137"></a><span class="tm">19:22:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> well, it's been common practice to mimic the code around your changes
+<a name="l-138"></a><span class="tm">19:22:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> yes but mimiking the style of hungarin notation and getting it wrong misses the point of it. :P
+<a name="l-139"></a><span class="tm">19:22:36</span><span class="nk"> &lt;sipa&gt;</span> i've come to dislike the "mimick the code around you" suggestion - it does not lead to consistency
+<a name="l-140"></a><span class="tm">19:22:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> haha exactly... something with cargo cults
+<a name="l-141"></a><span class="tm">19:22:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> okay, let's switch to tabs instead of spaces then
+<a name="l-142"></a><span class="tm">19:22:52</span><span class="nk"> &lt;luke-jr&gt;</span> :P
+<a name="l-143"></a><span class="tm">19:23:31</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not aware of any evidence supporting any of these highly structured variable name recommendations as actually providing benefits.
+<a name="l-144"></a><span class="tm">19:23:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> right, people do it naturally, but I don't think it should be a convention
+<a name="l-145"></a><span class="tm">19:23:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-146"></a><span class="tm">19:23:54</span><span class="nk"> &lt;paveljanik&gt;</span> nah, these TAB/spaces wars: delete all indentation and let editor choose the right indentation! ;-)
+<a name="l-147"></a><span class="tm">19:23:55</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> m_foo and g_foo are extremely helpful imo
+<a name="l-148"></a><span class="tm">19:23:59</span><span class="nk"> &lt;cfields&gt;</span> but not much else
+<a name="l-149"></a><span class="tm">19:24:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">paveljanik:</span> that's what tabs do
+<a name="l-150"></a><span class="tm">19:24:16</span><span class="nk"> &lt;gmaxwell&gt;</span> (esp since pretty much no one is sadistic to encode the full type into the name.)
+<a name="l-151"></a><span class="tm">19:24:28</span><span class="nk"> &lt;paveljanik&gt;</span> nono, tabsonly compress. No TABs/spaces...
+<a name="l-152"></a><span class="tm">19:24:29</span><span class="nk"> &lt;wumpus&gt;</span> sure, including the scope might be reasonably useful, unlike encoding the type
+<a name="l-153"></a><span class="tm">19:24:37</span><span class="nk"> &lt;luke-jr&gt;</span> maybe we should use C++ mangled names
+<a name="l-154"></a><span class="tm">19:24:38</span><span class="nk"> &lt;wumpus&gt;</span> but I'm not looking forward to sweeping code style changes
+<a name="l-155"></a><span class="tm">19:24:46</span><span class="nk"> &lt;sipa&gt;</span> sigh, nobody is talking about encouraging structured variable name recommendations
+<a name="l-156"></a><span class="tm">19:25:09</span><span class="nk"> &lt;wumpus&gt;</span> before you know it there are 10 PRs open for renaming variables (again, after the shadow fiasco)
+<a name="l-157"></a><span class="tm">19:25:23</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> I've seen some sadistic java code that was close
+<a name="l-158"></a><span class="tm">19:25:29</span><span class="nk"> &lt;luke-jr&gt;</span> I like the "style changes only affect new code" policy
+<a name="l-159"></a><span class="tm">19:25:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> me too
+<a name="l-160"></a><span class="tm">19:25:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> maybe suggest the kind of style policy you have in mind? you mean simple things like camelCase vs under_score?
+<a name="l-161"></a><span class="tm">19:25:43</span><span class="nk"> &lt;sipa&gt;</span> and even exclude purely moved code
+<a name="l-162"></a><span class="tm">19:25:46</span><span class="nk"> &lt;wumpus&gt;</span> yes - feel free to write up a style recommendation for new code
+<a name="l-163"></a><span class="tm">19:25:49</span><span class="nk"> &lt;kanzure&gt;</span> would be nice to have style preference mentioned in docs
+<a name="l-164"></a><span class="tm">19:25:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> either of those is fine
+<a name="l-165"></a><span class="tm">19:25:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> but one, not both
+<a name="l-166"></a><span class="tm">19:26:19</span><span class="nk"> &lt;wumpus&gt;</span> and consistency is good, but please don't be a jerk about it, especially not to new contributors
+<a name="l-167"></a><span class="tm">19:26:21</span><span class="nk"> &lt;jtimon&gt;</span> ack only one not both
+<a name="l-168"></a><span class="tm">19:26:45</span><span class="nk"> &lt;jcorgan&gt;</span> my experience is that code is read far more often than it is written, and especially so if it serves as documentation
+<a name="l-169"></a><span class="tm">19:26:51</span><span class="nk"> &lt;sipa&gt;</span> if i had to choose, i'd say under_score - that's what STL uses
+<a name="l-170"></a><span class="tm">19:27:05</span><span class="nk"> &lt;jcorgan&gt;</span> when code has disjoint styles, people reading it might wonder if it is different for a reason, or just an accident
+<a name="l-171"></a><span class="tm">19:27:13</span><span class="nk"> &lt;jtimon&gt;</span> or maybe camelCaseForVariables, UNDER_SCORE_FOR_CONSTANTS
+<a name="l-172"></a><span class="tm">19:27:22</span><span class="nk"> &lt;sipa&gt;</span> and i'm also fine m_X and g_X if that considered useful
+<a name="l-173"></a><span class="tm">19:27:32</span><span class="nk"> &lt;morcos&gt;</span> My only real contribution to this discussion is whatever we decide on should be clearly spelled out in developer documentation, so we can just point to it over and over gain.  Otherwise we'll come away with an agreement that means somethign different to each party.
+<a name="l-174"></a><span class="tm">19:27:32</span><span class="nk"> &lt;jtimon&gt;</span> since I believe that's closer to what we have
+<a name="l-175"></a><span class="tm">19:27:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes yes yes
+<a name="l-176"></a><span class="tm">19:27:47</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not a fan of the camelcase, because then you get things wrong based just on the case. seems weird.
+<a name="l-177"></a><span class="tm">19:27:53</span><span class="nk"> &lt;jcorgan&gt;</span> <span class="hi">morcos:</span> now when did that happen recently?
+<a name="l-178"></a><span class="tm">19:27:54</span><span class="nk"> &lt;luke-jr&gt;</span> camel case isn't bad, but it creates the hungarian confuson
+<a name="l-179"></a><span class="tm">19:28:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> that too
+<a name="l-180"></a><span class="tm">19:28:05</span><span class="nk"> &lt;sipa&gt;</span> camelcase also is easily confused with hungarian
+<a name="l-181"></a><span class="tm">19:28:07</span><span class="nk"> &lt;sipa&gt;</span> what luke-jr said
+<a name="l-182"></a><span class="tm">19:28:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> most important to get it into a document in the repository, as to make clear reviewrs aren't forcing their personal style preferences
+<a name="l-183"></a><span class="tm">19:28:31</span><span class="nk"> &lt;jtimon&gt;</span> super ack to morcos suggestion, if it's not documented, it is simply not a convention
+<a name="l-184"></a><span class="tm">19:29:05</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> ok, so camelCase today, and hard-fork in a month?
+<a name="l-185"></a><span class="tm">19:29:07</span><span class="nk"> &lt;cfields&gt;</span> :p
+<a name="l-186"></a><span class="tm">19:29:09</span><span class="nk"> &lt;jcorgan&gt;</span> my heuristic is, if you can't tell that a body of code was written my multiple authors over time, that's a win
+<a name="l-187"></a><span class="tm">19:29:16</span><span class="nk"> &lt;luke-jr&gt;</span> let's simply agree for variable names on bit 4. the rest can be subjective.
+<a name="l-188"></a><span class="tm">19:29:25</span><span class="nk"> &lt;sipa&gt;</span> so, if i would create a PR that added to the dev documentation "For new code, the following style for variables is encouraged: local_variable for local variables, m_variable for members, g_variable for globals"
+<a name="l-189"></a><span class="tm">19:29:40</span><span class="nk"> &lt;luke-jr&gt;</span> local_* seems annoying
+<a name="l-190"></a><span class="tm">19:29:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> oops, i didn't mean that as a prefix
+<a name="l-191"></a><span class="tm">19:29:54</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-192"></a><span class="tm">19:29:58</span><span class="nk"> &lt;gmaxwell&gt;</span> I still don't know when to ask someone touching code to fix things per documented style or not.  E.g. 10441 cfields introduces both new braced and unbraced iffs in a function that contains both.
+<a name="l-193"></a><span class="tm">19:30:14</span><span class="nk"> &lt;sipa&gt;</span> variable, a_variable, j, var, bla, foo, ... all good
+<a name="l-194"></a><span class="tm">19:30:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> he should fix that
+<a name="l-195"></a><span class="tm">19:30:33</span><span class="nk"> &lt;gmaxwell&gt;</span> okay. I'll nitpick then.
+<a name="l-196"></a><span class="tm">19:30:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> if it's cfields you should certainly make him aware of it, he's supposed to know better :)
+<a name="l-197"></a><span class="tm">19:31:00</span><span class="nk"> &lt;cfields&gt;</span> heh, yes. I think that was a mix of matching nearby code and copy/paste
+<a name="l-198"></a><span class="tm">19:31:03 </span><span class="nka">* wumpus</span> <span class="ac">ducks</span>
+<a name="l-199"></a><span class="tm">19:31:10</span><span class="nk"> &lt;jtimon&gt;</span> I think moving away from camel case it's the most disruptive option for local variables
+<a name="l-200"></a><span class="tm">19:31:19</span><span class="nk"> &lt;jtimon&gt;</span> but no strong opinion
+<a name="l-201"></a><span class="tm">19:31:37</span><span class="nk"> &lt;cfields&gt;</span> i'd certainly never make that mistake again if we added "don't attempt to match nearby code" to the style doc
+<a name="l-202"></a><span class="tm">19:31:37</span><span class="nk"> &lt;sipa&gt;</span> it's already often used for loop variables etc
+<a name="l-203"></a><span class="tm">19:31:44</span><span class="nk"> &lt;luke-jr&gt;</span> variables were never camel-case..?
+<a name="l-204"></a><span class="tm">19:31:47</span><span class="nk"> &lt;jtimon&gt;</span> just saying that it would be nicer if the style was as close as possible to what we have now
+<a name="l-205"></a><span class="tm">19:31:57</span><span class="nk"> &lt;cfields&gt;</span> without that, i'd never add another unbraced if :)
+<a name="l-206"></a><span class="tm">19:31:59</span><span class="nk"> &lt;wumpus&gt;</span> abandoning the camels for the snakes
+<a name="l-207"></a><span class="tm">19:32:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> sure some where, CBlockIndex* pindexBlock = ...
+<a name="l-208"></a><span class="tm">19:32:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> that's just hungarian
+<a name="l-209"></a><span class="tm">19:32:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> hungarian is just a more constrained camelcase
+<a name="l-210"></a><span class="tm">19:32:34</span><span class="nk"> &lt;luke-jr&gt;</span> camelcase is where you use it as a word separater..
+<a name="l-211"></a><span class="tm">19:32:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> ack on adding "Do not attempt to match nearby code, unless you're creating a move-only commit"
+<a name="l-212"></a><span class="tm">19:32:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> +!
+<a name="l-213"></a><span class="tm">19:32:53</span><span class="nk"> &lt;morcos&gt;</span> 1
+<a name="l-214"></a><span class="tm">19:32:54</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> well if camel case it's less common than underscore for variables then my argument goes away
+<a name="l-215"></a><span class="tm">19:33:16</span><span class="nk"> &lt;jtimon&gt;</span> I really don't know for sure, was just guessing
+<a name="l-216"></a><span class="tm">19:33:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> and hungarian is using case as word separator, plus the requirement that the first word is the type :)
+<a name="l-217"></a><span class="tm">19:33:55</span><span class="nk"> &lt;morcos&gt;</span> i'll defer to group, but i prefer camel to underscores, but do like at least identifying global variables with g_ or :: or something
+<a name="l-218"></a><span class="tm">19:34:13</span><span class="nk"> &lt;luke-jr&gt;</span> gCamel/mCamel wouldn't be terrible
+<a name="l-219"></a><span class="tm">19:34:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I would ACK doing something consistent for globals.
+<a name="l-220"></a><span class="tm">19:34:36</span><span class="nk"> &lt;sipa&gt;</span> anyway, any comments on those suggestions? encouraging lowercase + underscore for local variables, and m_ for members, g_ for globals, and a mention to not mimick surrounding code?
+<a name="l-221"></a><span class="tm">19:34:39</span><span class="nk"> &lt;wumpus&gt;</span> I prefer snakecase like sipa
+<a name="l-222"></a><span class="tm">19:34:49</span><span class="nk"> &lt;gmaxwell&gt;</span> One thing I don't like about C++ is that when there is a variable that isn't local I dunno if its coming from the class or if it's a global... without going and digging in other files.
+<a name="l-223"></a><span class="tm">19:35:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> hence m_ :)
+<a name="l-224"></a><span class="tm">19:35:26</span><span class="nk"> &lt;gmaxwell&gt;</span> so if naming helps disambiguate that I would not be unhappy.
+<a name="l-225"></a><span class="tm">19:35:40</span><span class="nk"> &lt;wumpus&gt;</span> for variable names, for method names we should obviously keep sticking to camelcase
+<a name="l-226"></a><span class="tm">19:35:48</span><span class="nk"> &lt;morcos&gt;</span> are we ok with combining small words without the udnerscore like feerate or blocksize or something?
+<a name="l-227"></a><span class="tm">19:35:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree, and class names as well
+<a name="l-228"></a><span class="tm">19:35:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-229"></a><span class="tm">19:35:56</span><span class="nk"> &lt;sdaftuar&gt;</span> bit_coin right?
+<a name="l-230"></a><span class="tm">19:35:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> ack from me
+<a name="l-231"></a><span class="tm">19:36:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> it's better than BitCoin
+<a name="l-232"></a><span class="tm">19:36:10</span><span class="nk"> &lt;sipa&gt;</span> one lowercase word is totally fine for local variables
+<a name="l-233"></a><span class="tm">19:36:14</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-234"></a><span class="tm">19:36:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> ack all of the above
+<a name="l-235"></a><span class="tm">19:36:18</span><span class="nk"> &lt;luke-jr&gt;</span> I prefer camelcase, except for the annoying conflict w/ hungarian
+<a name="l-236"></a><span class="tm">19:36:35</span><span class="nk"> &lt;luke-jr&gt;</span> I don't care strongly tho
+<a name="l-237"></a><span class="tm">19:36:56</span><span class="nk"> &lt;sipa&gt;</span> oh, what to do with the cs_* variables we have now?
+<a name="l-238"></a><span class="tm">19:37:02</span><span class="nk"> &lt;sipa&gt;</span> do we want an exception for that?
+<a name="l-239"></a><span class="tm">19:37:07</span><span class="nk"> &lt;morcos&gt;</span> oh ok, so we're keeping camel for class and method names and snake for variables..  ok someone write it up
+<a name="l-240"></a><span class="tm">19:37:13</span><span class="nk"> &lt;gmaxwell&gt;</span> I would be fine with an exception for cs_.
+<a name="l-241"></a><span class="tm">19:37:26</span><span class="nk"> &lt;wumpus&gt;</span> cs_ for locks? it's fine with me
+<a name="l-242"></a><span class="tm">19:37:33</span><span class="nk"> &lt;sipa&gt;</span> so... g_blockindex g_cs_blockindex?
+<a name="l-243"></a><span class="tm">19:37:37</span><span class="nk"> &lt;wumpus&gt;</span> though I still thing the scope is more useful
+<a name="l-244"></a><span class="tm">19:37:44</span><span class="nk"> &lt;morcos&gt;</span> but no exception for pblockindex ?
+<a name="l-245"></a><span class="tm">19:38:01</span><span class="nk"> &lt;sipa&gt;</span> that's hungarian - dia
+<a name="l-246"></a><span class="tm">19:38:02</span><span class="nk"> &lt;sipa&gt;</span> die
+<a name="l-247"></a><span class="tm">19:38:05</span><span class="nk"> &lt;sipa&gt;</span> ;)
+<a name="l-248"></a><span class="tm">19:38:15</span><span class="nk"> &lt;wumpus&gt;</span> pblockindex could just be block_index
+<a name="l-249"></a><span class="tm">19:38:21</span><span class="nk"> &lt;sipa&gt;</span> indeed
+<a name="l-250"></a><span class="tm">19:38:23</span><span class="nk"> &lt;wumpus&gt;</span> though we aren't actrually going to rename variables en-messe
+<a name="l-251"></a><span class="tm">19:38:24</span><span class="nk"> &lt;cfields&gt;</span> [11:17:50] -*- cfields would kill for m_ == member
+<a name="l-252"></a><span class="tm">19:38:24</span><span class="nk"> &lt;cfields&gt;</span> [11:18:13] &lt;luke-jr&gt; pls don't kill
+<a name="l-253"></a><span class="tm">19:38:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> indeed
+<a name="l-254"></a><span class="tm">19:38:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> thou shall not kill
+<a name="l-255"></a><span class="tm">19:38:48</span><span class="nk"> &lt;sipa&gt;</span> i'll write up a PR, and we discuss there further?
+<a name="l-256"></a><span class="tm">19:38:51</span><span class="nk"> &lt;gmaxwell&gt;</span> is all I think luke was saying.
+<a name="l-257"></a><span class="tm">19:38:57</span><span class="nk"> &lt;luke-jr&gt;</span> yes
+<a name="l-258"></a><span class="tm">19:38:58</span><span class="nk"> &lt;morcos&gt;</span> sounds good
+<a name="l-259"></a><span class="tm">19:39:01</span><span class="nk"> &lt;sipa&gt;</span> ok, topic closed
+<a name="l-260"></a><span class="tm">19:39:06</span><span class="nk"> &lt;gmaxwell&gt;</span> sipa to do all the work, agreed.
+<a name="l-261"></a><span class="tm">19:39:09</span><span class="nk"> &lt;wumpus&gt;</span> I don't want to see any more variable renaming PRs, the Wshadow war made me so tired of that
+<a name="l-262"></a><span class="tm">19:39:13</span><span class="nk"> &lt;wumpus&gt;</span> other topics?
+<a name="l-263"></a><span class="tm">19:39:19</span><span class="nk"> &lt;luke-jr&gt;</span> BIP148
+<a name="l-264"></a><span class="tm">19:39:46</span><span class="nk"> &lt;morcos&gt;</span> next topic
+<a name="l-265"></a><span class="tm">19:39:59</span><span class="nk"> &lt;wumpus&gt;</span> I have nothing to say about that, at least
+<a name="l-266"></a><span class="tm">19:40:25</span><span class="nk"> &lt;wumpus&gt;</span> but i f you insist
+<a name="l-267"></a><span class="tm">19:40:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">BIP148</span>
+<a name="l-268"></a><span class="tm">19:40:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess we have already enough comments on the PRs..
+<a name="l-269"></a><span class="tm">19:40:32</span><span class="nk"> &lt;sipa&gt;</span> my opinion is that it would go against our principles to merge BIP148 into core
+<a name="l-270"></a><span class="tm">19:40:40</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> how so?
+<a name="l-271"></a><span class="tm">19:40:59</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> +100
+<a name="l-272"></a><span class="tm">19:41:08</span><span class="nk"> &lt;sipa&gt;</span> i've given my opinion more than enough on existing PRs
+<a name="l-273"></a><span class="tm">19:41:25</span><span class="nk"> &lt;sipa&gt;</span> i strongly disagree with the "less safe" argument
+<a name="l-274"></a><span class="tm">19:41:26</span><span class="nk"> &lt;wumpus&gt;</span> right, I think everyone already had their say on this
+<a name="l-275"></a><span class="tm">19:41:37</span><span class="nk"> &lt;sipa&gt;</span> and we shouldn't encourage forks in the network
+<a name="l-276"></a><span class="tm">19:41:43</span><span class="nk"> &lt;sipa&gt;</span> nor is it out place to push for consensus changes
+<a name="l-277"></a><span class="tm">19:41:43</span><span class="nk"> &lt;luke-jr&gt;</span> so we should put users at risk by refusing to enforce the new rule?
+<a name="l-278"></a><span class="tm">19:41:44</span><span class="nk"> &lt;wumpus&gt;</span> let's merge BIP149 instead
+<a name="l-279"></a><span class="tm">19:41:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> refusing to merge is what encourages the fork in this case
+<a name="l-280"></a><span class="tm">19:41:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i strongly disagree that it puts users more at risk
+<a name="l-281"></a><span class="tm">19:42:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I brought up 149's timeout on the list, but its author hasn't replied, I think it is needlessly long.
+<a name="l-282"></a><span class="tm">19:42:33</span><span class="nk"> &lt;morcos&gt;</span> My opinion closely matches sdaftuars from : https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-May/014377.html
+<a name="l-283"></a><span class="tm">19:42:34</span><span class="nk"> &lt;luke-jr&gt;</span> not only does not-merging it encourage a chain split, it also puts users on the side vulnerable to reorg wipeout
+<a name="l-284"></a><span class="tm">19:42:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I think it's too early
+<a name="l-285"></a><span class="tm">19:43:01</span><span class="nk"> &lt;morcos&gt;</span> I'd be in favor of 149, but I think we should start by being a bit more public about the idea and building consensus for it before actually merging
+<a name="l-286"></a><span class="tm">19:43:06</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ack, your proposal of 6 months seemed reasonable to me
+<a name="l-287"></a><span class="tm">19:43:08</span><span class="nk"> &lt;morcos&gt;</span> And eys I agree we could tweak it a bit
+<a name="l-288"></a><span class="tm">19:43:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> +1
+<a name="l-289"></a><span class="tm">19:43:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes we need to agree on the timeout at lesat
+<a name="l-290"></a><span class="tm">19:43:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> the only condition under which it helps users avoid a huge reorg is one under which those who didn't upgrade already experienced a (temporary, but long) fork
+<a name="l-291"></a><span class="tm">19:43:53</span><span class="nk"> &lt;jtimon&gt;</span> as said on the mailing list I think bip148 is rushed and that makes it risky, bip8 on the other hand...(although I'm writing suggestions for changing bip8)
+<a name="l-292"></a><span class="tm">19:44:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> this seems tautological?
+<a name="l-293"></a><span class="tm">19:44:37</span><span class="nk"> &lt;jtimon&gt;</span> we can merge bip8 without merging bip149 yet, although the sooner it is released the more secure it will be
+<a name="l-294"></a><span class="tm">19:44:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> then how is merging it less risky?
+<a name="l-295"></a><span class="tm">19:44:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> it only helps in case a fork already happened!
+<a name="l-296"></a><span class="tm">19:45:06</span><span class="nk"> &lt;sipa&gt;</span> while at the same time encouraging said fork
+<a name="l-297"></a><span class="tm">19:45:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I haven't seen the kind of support required to justify your position on that; afaict so far no exchange or payment processor of note has said they would stick with 148.  I think you'd have an argument if there was any of that, but right now I think it's hard to distinguish a subsanstive level of support. (And I've seen some clearly malicious parties pumping support for it too.)
+<a name="l-298"></a><span class="tm">19:45:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> if a fork happens, it puts them on the side that isn't vulnerable to a reorg, and it helps avoid the fork in the first place
+<a name="l-299"></a><span class="tm">19:45:24</span><span class="nk"> &lt;sipa&gt;</span> not encouraging it seems far safer than slightly reducing the risk in case it does
+<a name="l-300"></a><span class="tm">19:45:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> under the assumption a hashrate majority adopts it
+<a name="l-301"></a><span class="tm">19:45:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> which i think is crazy
+<a name="l-302"></a><span class="tm">19:45:54</span><span class="nk"> &lt;gmaxwell&gt;</span> My discussions on reddit with people promoting BIP148 seemed to be because they earniestly believed it was the only choice.
+<a name="l-303"></a><span class="tm">19:45:57</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> BIP148 only needs about 25% hashrate to be successful
+<a name="l-304"></a><span class="tm">19:45:58</span><span class="nk"> &lt;morcos&gt;</span> At the end of the day I think most of us have no interest in greatly increasing the risk of a devastating currency split.  I think 148 does that..  But 149 has a decent chance of not doing that if there have been no other consensus rule changes in the interim.  But will require consensus building.
+<a name="l-305"></a><span class="tm">19:46:10</span><span class="nk"> &lt;gmaxwell&gt;</span> E.g. someone managed to convince them that the project would never adopt something like BIP149.
+<a name="l-306"></a><span class="tm">19:46:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> +1
+<a name="l-307"></a><span class="tm">19:46:19</span><span class="nk"> &lt;sipa&gt;</span> it will require consensus building
+<a name="l-308"></a><span class="tm">19:46:21</span><span class="nk"> &lt;sipa&gt;</span> not discussions here
+<a name="l-309"></a><span class="tm">19:46:38</span><span class="nk"> &lt;BlueMatt&gt;</span> yup
+<a name="l-310"></a><span class="tm">19:46:46</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> ack on making the period shorter
+<a name="l-311"></a><span class="tm">19:46:47</span><span class="nk"> &lt;gmaxwell&gt;</span> which seemed really weird to me, because I thought it was pretty obvious that a 149-like thing would be done.
+<a name="l-312"></a><span class="tm">19:47:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> it's only obvious if people say that
+<a name="l-313"></a><span class="tm">19:48:24</span><span class="nk"> &lt;morcos&gt;</span> And to be clear, I think we'd all like to activate segwit via UASF before we could do so with BIP149 (and it would be feasible I think to build support in a shorter time frame), but we just don't have the technical bandwidth to code that up safely in time.
+<a name="l-314"></a><span class="tm">19:48:34</span><span class="nk"> &lt;wumpus&gt;</span> I think that wasn't obvioius, no
+<a name="l-315"></a><span class="tm">19:48:36</span><span class="nk"> &lt;luke-jr&gt;</span> if businesses get to decide protocol changes, then I guess bit 4 SW it is
+<a name="l-316"></a><span class="tm">19:49:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> there is a big difference between saying 'businesses get to decide' and saying that the fact that virtually no industry participant is resolute with 148 is a strong sign the support isn't significant enough. If 148 and six months or a year on its clock that would be another matter.
+<a name="l-317"></a><span class="tm">19:49:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i don't think it's obvious that BIP149 will happen at all
+<a name="l-318"></a><span class="tm">19:49:39</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> no one even knows what bit 4 SW is?  we might like it, what if its compatible with BIP141 segwit...  lets not make decisions based on a single line in a medium post.
+<a name="l-319"></a><span class="tm">19:49:40</span><span class="nk"> &lt;luke-jr&gt;</span> in the meantime, a sizable portion of the community will be enforcing BIP148, and with success eventually replacing the non-compliant chain
+<a name="l-320"></a><span class="tm">19:50:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> it's only virtually none if you exclude the ones who have supported it
+<a name="l-321"></a><span class="tm">19:50:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> that's speculation
+<a name="l-322"></a><span class="tm">19:50:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">luke-jr:</span> while technically the result of bip148 may be a reorg, in practice if there is a non-trivial split the result will be two currencies, as someone will launch a currency based on a checkpoint
+<a name="l-323"></a><span class="tm">19:50:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> You can't measure "community"
+<a name="l-324"></a><span class="tm">19:50:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> maybe I'm just not aware then.
+<a name="l-325"></a><span class="tm">19:50:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i hope you're right, but my expectation is that every economically relevant full node will revert away from bip148 code hours after the hashrate fails to adopts it
+<a name="l-326"></a><span class="tm">19:50:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> I would hope that BIP148 and BIP149 supporters are able to agree at least that they should all support the same thing.
+<a name="l-327"></a><span class="tm">19:51:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> Bitfury has already agreed to enforce BIP148 if the bit-4 thing doesn't activate Segwit by August
+<a name="l-328"></a><span class="tm">19:51:08</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sipa:</span> depends on how much hash rate... lots of incentive for exchanges to support it and let the two coins trade against each other
+<a name="l-329"></a><span class="tm">19:51:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> I guess they have also agree (among others) to run Classic
+<a name="l-330"></a><span class="tm">19:51:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> (meant luke-jr)
+<a name="l-331"></a><span class="tm">19:51:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> well, i hope you're right
+<a name="l-332"></a><span class="tm">19:51:47</span><span class="nk"> &lt;sipa&gt;</span> but i'm very skeptical about that
+<a name="l-333"></a><span class="tm">19:52:34</span><span class="nk"> &lt;sipa&gt;</span> topic suggestion: high-priority PRs?
+<a name="l-334"></a><span class="tm">19:52:38</span><span class="nk"> &lt;luke-jr&gt;</span> if we're divided in opinion on this, we should at *least* give users the choice, even if they want to stick to Core releases
+<a name="l-335"></a><span class="tm">19:52:44</span><span class="nk"> &lt;gmaxwell&gt;</span> If 148 managed to get the kind of support needed to result in avoiding a chain split, I'm fine with that. But I think it's a very poor and needlessly risky approach.
+<a name="l-336"></a><span class="tm">19:52:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> users already have a choice to not run Core
+<a name="l-337"></a><span class="tm">19:52:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> you already have a release process, release Knots with the option.
+<a name="l-338"></a><span class="tm">19:53:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> many don't want to choose that
+<a name="l-339"></a><span class="tm">19:53:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> maybe for a reason?
+<a name="l-340"></a><span class="tm">19:53:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> for good reasons, because we don't do reckless things
+<a name="l-341"></a><span class="tm">19:53:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> then perhaps because the realize that we've usually had good judgement...
+<a name="l-342"></a><span class="tm">19:53:23</span><span class="nk"> &lt;kanzure&gt;</span> what was the default in the bip148 paramflag pull request?
+<a name="l-343"></a><span class="tm">19:53:29</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">kanzure:</span> false
+<a name="l-344"></a><span class="tm">19:53:32</span><span class="nk"> &lt;jcorgan&gt;</span> off
+<a name="l-345"></a><span class="tm">19:53:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> and in this case, we disagree on that judgement.
+<a name="l-346"></a><span class="tm">19:53:38</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">kanzure:</span> I wouldn't have concept acked it otherwise...
+<a name="l-347"></a><span class="tm">19:53:55</span><span class="nk"> &lt;BlueMatt&gt;</span> alright, next topic
+<a name="l-348"></a><span class="tm">19:53:57</span><span class="nk"> &lt;jtimon&gt;</span> alright, sent suggestions to change bip8 to the mailing list...
+<a name="l-349"></a><span class="tm">19:54:07</span><span class="nk"> &lt;sdfkjs23&gt;</span> deciding what choices users do or do not get seems overly political to me, if core developers want to make a political statement that's fine, but pretending to be neutral and not allowing an optional switch for bip148 seems disingenuous
+<a name="l-350"></a><span class="tm">19:54:14</span><span class="nk"> &lt;kanzure&gt;</span> with context of "default off" some of the above comments make less sense
+<a name="l-351"></a><span class="tm">19:54:39</span><span class="nk"> &lt;cfields&gt;</span> oh, quick topic suggestion: 0.14.2
+<a name="l-352"></a><span class="tm">19:54:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> sdfkjs23? You can offer it yourself by forking and deploying or patching?
+<a name="l-353"></a><span class="tm">19:54:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> I don't think we should change BIP8 generally: the reason we can do a shorter termination with SW is because we've already done one deployment-- so we know what the uptake looks like and how fast it went the first time.
+<a name="l-354"></a><span class="tm">19:54:52</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">sdfkjs23:</span> there's a multiple of optional switches that we could add to be neutral - we're not going to add them all, thus we have to make some kind of (hopefully conservative) political statement
+<a name="l-355"></a><span class="tm">19:54:59</span><span class="nk"> &lt;cfields&gt;</span> (sorry, forgot all about it. we can pick it up after the meeting)
+<a name="l-356"></a><span class="tm">19:55:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> too many people (and especially companies) refuse to run anything unless Core releases it
+<a name="l-357"></a><span class="tm">19:55:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it sucks, but it's reality
+<a name="l-358"></a><span class="tm">19:55:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdfkjs23:</span> Offering users settings we believe will harm third parties and the user is not 'neutral'.
+<a name="l-359"></a><span class="tm">19:55:23</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> they want default-off merged and that's what will get them interested in bip148?
+<a name="l-360"></a><span class="tm">19:55:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.14.2</span>
+<a name="l-361"></a><span class="tm">19:55:32</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> the changes are just for providing warnngs in unkown deployments, like bip9 did
+<a name="l-362"></a><span class="tm">19:55:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> But core is consensus among devs for a reason. And I guess we mostly (never?) merged controversial consensus changes
+<a name="l-363"></a><span class="tm">19:55:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdfkjs23:</span> if users want 'neutral' they have a copy of GCC, they can write their own node.
+<a name="l-364"></a><span class="tm">19:55:44</span><span class="nk"> &lt;petertodd&gt;</span> <span class="hi">gmaxwell:</span> +1
+<a name="l-365"></a><span class="tm">19:55:46</span><span class="nk"> &lt;wumpus&gt;</span> let's do a 0.14.2 soon, even if just for the UPNP CVE
+<a name="l-366"></a><span class="tm">19:55:47</span><span class="nk"> &lt;gmaxwell&gt;</span> (want neutral in that sense)
+<a name="l-367"></a><span class="tm">19:55:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> we don't all believe that in this case. some of us admit that it's riskier to NOT enforce BIP148
+<a name="l-368"></a><span class="tm">19:55:57</span><span class="nk"> &lt;wumpus&gt;</span> (of course we want to include some other fixes as well)
+<a name="l-369"></a><span class="tm">19:56:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdfkjs23:</span> sofware worth running is always opinionated in many ways, even if you don't realize it.
+<a name="l-370"></a><span class="tm">19:56:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it's controversial to fail to enforce the softfork now
+<a name="l-371"></a><span class="tm">19:56:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> ack on 0.14.2 I think there are a couple other fairly modest fixes that could be backported.
+<a name="l-372"></a><span class="tm">19:56:31</span><span class="nk"> &lt;cfields&gt;</span> I'd like to suggest a quick 0.14.2 for the upnp and recent peer visibility fix from marcos, along with whatever else has piled up in the meantime
+<a name="l-373"></a><span class="tm">19:56:40</span><span class="nk"> &lt;cfields&gt;</span> heh, far too slow
+<a name="l-374"></a><span class="tm">19:56:41</span><span class="nk"> &lt;sipa&gt;</span> sounds good to me
+<a name="l-375"></a><span class="tm">19:56:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack 0.14.2 ... there is also an important GUI fix
+<a name="l-376"></a><span class="tm">19:56:54</span><span class="nk"> &lt;sdfkjs23&gt;</span> if that's what the main core developers want to say sure, but it's pretty clear that core is then the implementation as defined by this small group here, it is their vision and not open really to general community.
+<a name="l-377"></a><span class="tm">19:56:58</span><span class="nk"> &lt;morcos&gt;</span> yes i think we could use more public notice on the peer visibility fix
+<a name="l-378"></a><span class="tm">19:57:13</span><span class="nk"> &lt;wumpus&gt;</span> ok, please mark anything that should be backported to 0,14,2 as such
+<a name="l-379"></a><span class="tm">19:57:19</span><span class="nk"> &lt;wumpus&gt;</span> (or ask us to do it)
+<a name="l-380"></a><span class="tm">19:57:24 </span><span class="nka">* jonasschnelli</span> <span class="ac">looking...</span>
+<a name="l-381"></a><span class="tm">19:57:41</span><span class="nk"> &lt;cfields&gt;</span> thanks, will do
+<a name="l-382"></a><span class="tm">19:57:42</span><span class="nk"> &lt;morcos&gt;</span> even people who have connections, but are behind NAT are going to want to upgrade b/c eventually they wont' have connections (maybe.. i can't remember now)
+<a name="l-383"></a><span class="tm">19:57:57</span><span class="nk"> &lt;sdaftuar&gt;</span> incoming connections*
+<a name="l-384"></a><span class="tm">19:58:01</span><span class="nk"> &lt;morcos&gt;</span> yes sorry
+<a name="l-385"></a><span class="tm">19:58:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> yes, so for backport the visiblity fix, cfields open PR with the connection stuff..
+<a name="l-386"></a><span class="tm">19:58:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> https://github.com/bitcoin/bitcoin/pull/10231 (closed 0.14.2 milestone... needs backport)
+<a name="l-387"></a><span class="tm">19:58:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> (should apply IMO)
+<a name="l-388"></a><span class="tm">19:59:28</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> ah, good one if it backports cleanly
+<a name="l-389"></a><span class="tm">19:59:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> that one is correctly marked, will port those in one go at some point (at lesat the ones that cleanly apply or need only small changes)
+<a name="l-390"></a><span class="tm">19:59:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdfkjs23:</span> it's open source, anyone can repackage the software in any way they like, and i encourage everyone to do so (as long as they don't misrepresent the choices made)... but Bitcoin Core as a project has established some practices, and those include not accepting consensus rule changes without broad support and weighing the risks - it seems most people in this room now believe that bar isn't
+<a name="l-391"></a><span class="tm">19:59:38</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdfkjs23:</span> in this case, it seems it's a minority of pessimistic devs holding back a softfork that the community largely wants and most of the devs are okay with merging, putting users who trust us collectively at a risk they shouldn't be :&lt;
+<a name="l-392"></a><span class="tm">19:59:41</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">sdfkjs23:</span> open-source does not mean the project must "merge anything", it means you can compile whatever patches you want.
+<a name="l-393"></a><span class="tm">19:59:41</span><span class="nk"> &lt;sipa&gt;</span> met for BIP148
+<a name="l-394"></a><span class="tm">20:00:19</span><span class="nk"> &lt;wumpus&gt;</span> it's time
+<a name="l-395"></a><span class="tm">20:00:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

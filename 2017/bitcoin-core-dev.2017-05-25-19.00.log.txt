@@ -1,0 +1,395 @@
+19:00:52 <wumpus> #startmeeting
+19:00:52 <lightningbot> Meeting started Thu May 25 19:00:52 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:52 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:57 <BlueMatt> sipa: last i heard we were gonna try to just remove the trayicon
+19:01:08 <jonasschnelli> proposed topic multiwallet-concept
+19:01:21 <BlueMatt> (since it doesnt seem to be "the thing to do" anymore)
+19:01:27 <sipa> woah, meeting!
+19:01:35 <sipa> i totally forgot
+19:01:38 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure blue matt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:01:56 <cfields> hi
+19:02:00 <wumpus> #topic multiwallet-concept
+19:03:11 <luke-jr> ..
+19:03:16 <jonasschnelli> We should think about if we want run-time wallet creation/loading/unloading or per startup -wallet argument.
+19:03:30 <luke-jr> jonasschnelli: IMO both eventually, but the latter is a good first stpe
+19:03:31 <jonasschnelli> Also,.. what should we do with rescan/zapwallet/salvage/upgrade
+19:03:43 <wumpus> yes, in the long term we want both
+19:03:56 <wumpus> in the short term just do what is realistic for the (not too long!) timespan until 0.15
+19:03:59 <sipa> i would disable rescan if you have more than one wallet configured
+19:04:03 <jonasschnelli> the -wallet= approach seems very confusing. You either -usehd on all wallte, -rescan all wallets, etc.
+19:04:04 <sipa> and use the RPC instead
+19:04:38 <sipa> or better, remove it
+19:04:48 <jonasschnelli> We can start with the all or nothing -wallet configuration. But ideally we move it to runtime over RPC
+19:05:03 <jonasschnelli> also,... creation-flags can then be passed in.
+19:05:10 <wumpus> yes
+19:05:11 <sipa> right, all those options that affect the creation of new wallets ideally go into a new-wallet-creation RPC
+19:05:21 <jonasschnelli> yes
+19:05:21 <luke-jr> /GUI
+19:05:24 <sipa> and rescan and upgrade become wallet-specific RPCs
+19:05:25 <wumpus> so the command line options only work for the default wallet
+19:05:29 <jonasschnelli> The GUI can be done later
+19:05:30 <wumpus> that's fine
+19:05:33 <wumpus> yes
+19:05:36 <luke-jr> sipa: they already are?
+19:05:46 <sipa> luke-jr: they're not RPCs
+19:05:47 <sipa> ?
+19:05:58 <luke-jr> sipa: rescan is, although maybe not merged in Core yet?
+19:06:03 <jonasschnelli> I ack luke-jr current PR but deploying that may cause confusion (because of lack of a concept)=
+19:06:14 <sipa> luke-jr: #7061
+19:06:17 <gribble> https://github.com/bitcoin/bitcoin/issues/7061 | [Wallet] Replace -rescan with a new RPC call "rescanblockchain" by jonasschnelli · Pull Request #7061 · bitcoin/bitcoin · GitHub
+19:06:32 * sipa really really really wants to see rescan go away entirely, but fears he cannot win this fight
+19:06:49 <luke-jr> actually, -rescan might be better with multiwallet
+19:06:53 <jonasschnelli> Heh. Its just to handy to remove rescan
+19:07:00 <luke-jr> since you'd want to rescan all the wallets concurrently
+19:07:14 <sipa> fair point
+19:07:38 <luke-jr> the overhead for rescanning N wallets vs 1 is minimal IMO
+19:07:40 <jonasschnelli> Another point is that we should consider wallet flags combined with the new wallet db format we have introduced with the HD chain split.
+19:08:01 <jonasschnelli> wallet flags would probably better allow to store "creation flags"
+19:08:07 <sipa> what do you mean by wallet flags?
+19:08:27 <jtimon> labels?
+19:08:37 <jonasschnelli> I have first implemented wallet flags here: https://github.com/bitcoin/bitcoin/pull/9662
+19:08:52 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/9662/files#diff-b2bb174788c7409b671c46ccc86034bdR1357
+19:09:35 <jonasschnelli> But maybe it's not required for the current feature set. But think like: "is the wallet using HD", "is it using chain split", .. "are pkeys diables"?
+19:09:43 <sipa> yup
+19:09:49 <luke-jr> eh, the wallet already supports that?
+19:10:00 <sipa> but i think that's orthogonal to the new database format
+19:10:20 <jonasschnelli> Yes. But we already do a new wallet-format type in 0.15. Ideally we push in everything that usefull for 0.15+
+19:10:32 <sipa> a new wallet format in 0.15?
+19:10:34 <sipa> what?
+19:10:42 <jtimon> sounds too optimistic
+19:10:48 <jonasschnelli> the HD chain-split is not backward compatible
+19:10:51 <sipa> oh!
+19:10:52 <jonasschnelli> Not a new database format.
+19:10:52 <sipa> ok
+19:10:53 <wumpus> let's not make multiwallet dependent on a new wallet format
+19:10:57 <sipa> nvm
+19:11:02 <wumpus> okay, makes sense
+19:11:03 <sipa> i thought you were talking about logdb
+19:11:08 <jonasschnelli> nono...
+19:11:32 <jonasschnelli> Just saying that the 0.15er wallet.dat files will not be backward comp.
+19:11:43 <sipa> yeah, sure
+19:11:46 <jonasschnelli> ideally we push in as much as we can... to avoid the same non -back com. in 0.16
+19:11:50 <luke-jr> 0.15-created*?
+19:12:05 <jonasschnelli> 0.15 created.. yes
+19:12:12 <sipa> i think breaking backward compatibility in major releases is fine
+19:12:35 <jonasschnelli> Yes. But if we can avoid it with little effort we may want to do it.
+19:12:40 <jonasschnelli> But lets park this problem for now.
+19:12:41 <jtimon> but his point is the more we get in now the less we have to break the next time
+19:12:47 <gmaxwell> luke-jr: if you what to preserve rescan you need to make it faster.  I think rescan is already functionally dead for many users: It takes something like 8 hours on my laptop.
+19:12:57 <jonasschnelli> Way more important is what we do with -zap/-salvage/-upgrade in multiwallet
+19:13:18 <luke-jr> jonasschnelli: forbid them with >1 -wallet?
+19:13:30 <jonasschnelli> luke-jr: yes. why not.
+19:13:45 <gmaxwell> jonasschnelli: I replied to your comment on that PR: I think zap and salvage should ultimately go away or move to another tool. Upgrade, I dunno.
+19:13:45 <jonasschnelli> How would you run a non-hd and a hd-wallet (seems to be a reasonable use case)
+19:13:52 <jonasschnelli> gmaxwell: agree with you
+19:13:56 * sipa suggest removing zap in favor of abandontransaction, replacing salvage with a standalone tool, and leaving ugprade to apply to all wallets
+19:13:58 <luke-jr> jonasschnelli: it just works right now..
+19:14:20 <jonasschnelli> luke-jr: Can it work? If you call -usehd on a non-hd wallet is stops during init
+19:14:28 <luke-jr> jonasschnelli: don't set -usehd
+19:14:37 <jonasschnelli> The its 1 by default
+19:14:47 <luke-jr> no, it's <whatever> by default, for existing wallets
+19:14:51 <jonasschnelli> I guess you can't mix right now
+19:15:06 <luke-jr> I test multiwallet with a combo of HD and non-HD
+19:15:13 <jonasschnelli> Okay. Sorry then.
+19:15:14 <sipa> -usehd should go away and become a parameter of the createnewwallet RPC
+19:15:20 <jonasschnelli> yes
+19:15:25 <gmaxwell> what sipa said.
+19:15:49 <luke-jr> createnewwallet won't make 0.15 IMO
+19:15:54 <sipa> that's fine
+19:16:16 <jonasschnelli> I once stared with a standalone wallet tool but had problems with circular dependencies (cfields may know more): https://github.com/bitcoin/bitcoin/pull/8745
+19:16:42 <jonasschnelli> Starting with luke-jr's current PR is fine..
+19:16:56 <kanzure> is there interaction between multiwallet and accounts?
+19:17:01 <sipa> kanzure: no
+19:17:06 <cfields> jonasschnelli: i'm sure we could get that worked out
+19:17:23 <jonasschnelli> cfields: okay. Great
+19:17:34 <sipa> for the time being, i think that -usehd (if specified) should apply to all wallets, if not specified, every wallet can be whatever it already is
+19:17:36 <wumpus> yes, that's fine, let's aim to get at least basic multiwallet support in 0.15 though
+19:17:54 <jonasschnelli> agree
+19:18:07 <wumpus> not let it slip another release because we want too much from it, or make it conditional on other changes which haven't been done yet
+19:18:14 <sipa> short topic suggestion: variable naming style
+19:18:28 <gmaxwell> sha256 hashes for all variables!
+19:18:31 <jonasschnelli> I just think we should have a (the same) concept in the backhead to avoid extra loops
+19:18:37 <jonasschnelli> lol
+19:18:39 <morcos> if this is better offline, fine, but sipa, how would we remove rescan?
+19:18:45 <kanzure> no abbreviated variable names plzkthx. actually i would take sha256 hashes over abbreviations.
+19:18:54 <sipa> morcos: let's discuss after the meeting
+19:18:56 <wumpus> gmaxwell: I was about to suggest xxd on /dev/urandom, but that works for me  too :p
+19:18:57 <morcos> k
+19:19:00 <wumpus> #topic variable naming style
+19:19:04 * cfields would kill for m_ == member
+19:19:27 <luke-jr> pls don't kill
+19:19:32 <sipa> i've recently seen several people write patches with variable names that look like they're hungarian, but aren't
+19:19:45 <sipa> i don't care personally for that particular style, but i like consistency
+19:19:53 <wumpus> the hungerian onvention should die
+19:20:03 <sipa> but what to replace it with?
+19:20:05 <luke-jr> I particularly dislike hungarian-looking names that don't have the hungarian meaning :p
+19:21:13 <gmaxwell> Greek characters.
+19:21:16 <sipa> i guess the first question is, do we want any convention specified (in developer-notes) at all, and enforce it in new code?
+19:21:19 <wumpus> luke-jr: exactly - and that's what happens, because we have abandoned the style a long time ago and don't describe it in the style doc
+19:21:21 <cfields> any convention that ties a variable to a type is broken imo
+19:21:22 <luke-jr> Unicode var names?
+19:21:31 <wumpus> cfields: RIGHT
+19:21:36 <jtimon> is this about gArgs ?
+19:21:39 <luke-jr> no
+19:21:43 <wumpus> people mimic the style but don't know what it means
+19:21:49 <wumpus> they should stop mimicing the style too
+19:22:02 <sipa> wumpus: the only way that's going to happen is by prescribing a style to use in new code
+19:22:06 <cfields> wumpus: well, it's been common practice to mimic the code around your changes
+19:22:32 <gmaxwell> cfields: yes but mimiking the style of hungarin notation and getting it wrong misses the point of it. :P
+19:22:36 <sipa> i've come to dislike the "mimick the code around you" suggestion - it does not lead to consistency
+19:22:43 <wumpus> gmaxwell: haha exactly... something with cargo cults
+19:22:50 <luke-jr> sipa: okay, let's switch to tabs instead of spaces then
+19:22:52 <luke-jr> :P
+19:23:31 <gmaxwell> I'm not aware of any evidence supporting any of these highly structured variable name recommendations as actually providing benefits.
+19:23:36 <jtimon> sipa: right, people do it naturally, but I don't think it should be a convention
+19:23:38 <wumpus> gmaxwell: +1
+19:23:54 <paveljanik> nah, these TAB/spaces wars: delete all indentation and let editor choose the right indentation! ;-)
+19:23:55 <cfields> gmaxwell: m_foo and g_foo are extremely helpful imo
+19:23:59 <cfields> but not much else
+19:24:13 <luke-jr> paveljanik: that's what tabs do
+19:24:16 <gmaxwell> (esp since pretty much no one is sadistic to encode the full type into the name.)
+19:24:28 <paveljanik> nono, tabsonly compress. No TABs/spaces...
+19:24:29 <wumpus> sure, including the scope might be reasonably useful, unlike encoding the type
+19:24:37 <luke-jr> maybe we should use C++ mangled names
+19:24:38 <wumpus> but I'm not looking forward to sweeping code style changes
+19:24:46 <sipa> sigh, nobody is talking about encouraging structured variable name recommendations
+19:25:09 <wumpus> before you know it there are 10 PRs open for renaming variables (again, after the shadow fiasco)
+19:25:23 <jtimon> gmaxwell: I've seen some sadistic java code that was close
+19:25:29 <luke-jr> I like the "style changes only affect new code" policy
+19:25:33 <sipa> luke-jr: me too
+19:25:42 <cfields> sipa: maybe suggest the kind of style policy you have in mind? you mean simple things like camelCase vs under_score?
+19:25:43 <sipa> and even exclude purely moved code
+19:25:46 <wumpus> yes - feel free to write up a style recommendation for new code
+19:25:49 <kanzure> would be nice to have style preference mentioned in docs
+19:25:50 <sipa> cfields: either of those is fine
+19:25:56 <sipa> cfields: but one, not both
+19:26:19 <wumpus> and consistency is good, but please don't be a jerk about it, especially not to new contributors
+19:26:21 <jtimon> ack only one not both
+19:26:45 <jcorgan> my experience is that code is read far more often than it is written, and especially so if it serves as documentation
+19:26:51 <sipa> if i had to choose, i'd say under_score - that's what STL uses
+19:27:05 <jcorgan> when code has disjoint styles, people reading it might wonder if it is different for a reason, or just an accident
+19:27:13 <jtimon> or maybe camelCaseForVariables, UNDER_SCORE_FOR_CONSTANTS
+19:27:22 <sipa> and i'm also fine m_X and g_X if that considered useful
+19:27:32 <morcos> My only real contribution to this discussion is whatever we decide on should be clearly spelled out in developer documentation, so we can just point to it over and over gain.  Otherwise we'll come away with an agreement that means somethign different to each party.
+19:27:32 <jtimon> since I believe that's closer to what we have
+19:27:44 <wumpus> morcos: yes yes yes
+19:27:47 <gmaxwell> I'm not a fan of the camelcase, because then you get things wrong based just on the case. seems weird.
+19:27:53 <jcorgan> morcos: now when did that happen recently?
+19:27:54 <luke-jr> camel case isn't bad, but it creates the hungarian confuson
+19:28:02 <gmaxwell> luke-jr: that too
+19:28:05 <sipa> camelcase also is easily confused with hungarian
+19:28:07 <sipa> what luke-jr said
+19:28:29 <wumpus> morcos: most important to get it into a document in the repository, as to make clear reviewrs aren't forcing their personal style preferences
+19:28:31 <jtimon> super ack to morcos suggestion, if it's not documented, it is simply not a convention
+19:29:05 <cfields> morcos: ok, so camelCase today, and hard-fork in a month?
+19:29:07 <cfields> :p
+19:29:09 <jcorgan> my heuristic is, if you can't tell that a body of code was written my multiple authors over time, that's a win
+19:29:16 <luke-jr> let's simply agree for variable names on bit 4. the rest can be subjective.
+19:29:25 <sipa> so, if i would create a PR that added to the dev documentation "For new code, the following style for variables is encouraged: local_variable for local variables, m_variable for members, g_variable for globals"
+19:29:40 <luke-jr> local_* seems annoying
+19:29:50 <sipa> luke-jr: oops, i didn't mean that as a prefix
+19:29:54 <luke-jr> k
+19:29:58 <gmaxwell> I still don't know when to ask someone touching code to fix things per documented style or not.  E.g. 10441 cfields introduces both new braced and unbraced iffs in a function that contains both.
+19:30:14 <sipa> variable, a_variable, j, var, bla, foo, ... all good
+19:30:26 <morcos> gmaxwell: he should fix that
+19:30:33 <gmaxwell> okay. I'll nitpick then.
+19:30:34 <wumpus> gmaxwell: if it's cfields you should certainly make him aware of it, he's supposed to know better :)
+19:31:00 <cfields> heh, yes. I think that was a mix of matching nearby code and copy/paste
+19:31:03 * wumpus ducks
+19:31:10 <jtimon> I think moving away from camel case it's the most disruptive option for local variables
+19:31:19 <jtimon> but no strong opinion
+19:31:37 <cfields> i'd certainly never make that mistake again if we added "don't attempt to match nearby code" to the style doc
+19:31:37 <sipa> it's already often used for loop variables etc
+19:31:44 <luke-jr> variables were never camel-case..?
+19:31:47 <jtimon> just saying that it would be nicer if the style was as close as possible to what we have now
+19:31:57 <cfields> without that, i'd never add another unbraced if :)
+19:31:59 <wumpus> abandoning the camels for the snakes
+19:32:02 <sipa> luke-jr: sure some where, CBlockIndex* pindexBlock = ...
+19:32:08 <luke-jr> sipa: that's just hungarian
+19:32:24 <sipa> luke-jr: hungarian is just a more constrained camelcase
+19:32:34 <luke-jr> camelcase is where you use it as a word separater..
+19:32:41 <sipa> cfields: ack on adding "Do not attempt to match nearby code, unless you're creating a move-only commit"
+19:32:52 <morcos> sipa: +!
+19:32:53 <morcos> 1
+19:32:54 <jtimon> luke-jr: well if camel case it's less common than underscore for variables then my argument goes away
+19:33:16 <jtimon> I really don't know for sure, was just guessing
+19:33:20 <sipa> luke-jr: and hungarian is using case as word separator, plus the requirement that the first word is the type :)
+19:33:55 <morcos> i'll defer to group, but i prefer camel to underscores, but do like at least identifying global variables with g_ or :: or something
+19:34:13 <luke-jr> gCamel/mCamel wouldn't be terrible
+19:34:20 <gmaxwell> I would ACK doing something consistent for globals.
+19:34:36 <sipa> anyway, any comments on those suggestions? encouraging lowercase + underscore for local variables, and m_ for members, g_ for globals, and a mention to not mimick surrounding code?
+19:34:39 <wumpus> I prefer snakecase like sipa
+19:34:49 <gmaxwell> One thing I don't like about C++ is that when there is a variable that isn't local I dunno if its coming from the class or if it's a global... without going and digging in other files.
+19:35:24 <cfields> gmaxwell: hence m_ :)
+19:35:26 <gmaxwell> so if naming helps disambiguate that I would not be unhappy.
+19:35:40 <wumpus> for variable names, for method names we should obviously keep sticking to camelcase
+19:35:48 <morcos> are we ok with combining small words without the udnerscore like feerate or blocksize or something?
+19:35:51 <sipa> wumpus: agree, and class names as well
+19:35:55 <wumpus> sipa: yes
+19:35:56 <sdaftuar> bit_coin right?
+19:35:56 <sipa> morcos: ack from me
+19:36:09 <wumpus> sdaftuar: it's better than BitCoin
+19:36:10 <sipa> one lowercase word is totally fine for local variables
+19:36:14 <wumpus> yes
+19:36:17 <cfields> sipa: ack all of the above
+19:36:18 <luke-jr> I prefer camelcase, except for the annoying conflict w/ hungarian
+19:36:35 <luke-jr> I don't care strongly tho
+19:36:56 <sipa> oh, what to do with the cs_* variables we have now?
+19:37:02 <sipa> do we want an exception for that?
+19:37:07 <morcos> oh ok, so we're keeping camel for class and method names and snake for variables..  ok someone write it up
+19:37:13 <gmaxwell> I would be fine with an exception for cs_.
+19:37:26 <wumpus> cs_ for locks? it's fine with me
+19:37:33 <sipa> so... g_blockindex g_cs_blockindex?
+19:37:37 <wumpus> though I still thing the scope is more useful
+19:37:44 <morcos> but no exception for pblockindex ?
+19:38:01 <sipa> that's hungarian - dia
+19:38:02 <sipa> die
+19:38:05 <sipa> ;)
+19:38:15 <wumpus> pblockindex could just be block_index
+19:38:21 <sipa> indeed
+19:38:23 <wumpus> though we aren't actrually going to rename variables en-messe
+19:38:24 <cfields> [11:17:50] -*- cfields would kill for m_ == member
+19:38:24 <cfields> [11:18:13] <luke-jr> pls don't kill
+19:38:27 <sipa> wumpus: indeed
+19:38:41 <gmaxwell> cfields: thou shall not kill
+19:38:48 <sipa> i'll write up a PR, and we discuss there further?
+19:38:51 <gmaxwell> is all I think luke was saying.
+19:38:57 <luke-jr> yes
+19:38:58 <morcos> sounds good
+19:39:01 <sipa> ok, topic closed
+19:39:06 <gmaxwell> sipa to do all the work, agreed.
+19:39:09 <wumpus> I don't want to see any more variable renaming PRs, the Wshadow war made me so tired of that
+19:39:13 <wumpus> other topics?
+19:39:19 <luke-jr> BIP148
+19:39:46 <morcos> next topic
+19:39:59 <wumpus> I have nothing to say about that, at least
+19:40:25 <wumpus> but i f you insist
+19:40:26 <wumpus> #topic BIP148
+19:40:27 <jonasschnelli> I guess we have already enough comments on the PRs..
+19:40:32 <sipa> my opinion is that it would go against our principles to merge BIP148 into core
+19:40:40 <luke-jr> sipa: how so?
+19:40:59 <BlueMatt> sipa: +100
+19:41:08 <sipa> i've given my opinion more than enough on existing PRs
+19:41:25 <sipa> i strongly disagree with the "less safe" argument
+19:41:26 <wumpus> right, I think everyone already had their say on this
+19:41:37 <sipa> and we shouldn't encourage forks in the network
+19:41:43 <sipa> nor is it out place to push for consensus changes
+19:41:43 <luke-jr> so we should put users at risk by refusing to enforce the new rule?
+19:41:44 <wumpus> let's merge BIP149 instead
+19:41:51 <luke-jr> sipa: refusing to merge is what encourages the fork in this case
+19:41:56 <sipa> luke-jr: i strongly disagree that it puts users more at risk
+19:42:26 <gmaxwell> wumpus: I brought up 149's timeout on the list, but its author hasn't replied, I think it is needlessly long.
+19:42:33 <morcos> My opinion closely matches sdaftuars from : https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-May/014377.html
+19:42:34 <luke-jr> not only does not-merging it encourage a chain split, it also puts users on the side vulnerable to reorg wipeout
+19:42:48 <luke-jr> gmaxwell: I think it's too early
+19:43:01 <morcos> I'd be in favor of 149, but I think we should start by being a bit more public about the idea and building consensus for it before actually merging
+19:43:06 <BlueMatt> gmaxwell: ack, your proposal of 6 months seemed reasonable to me
+19:43:08 <morcos> And eys I agree we could tweak it a bit
+19:43:11 <BlueMatt> morcos: +1
+19:43:16 <wumpus> gmaxwell: yes we need to agree on the timeout at lesat
+19:43:19 <sipa> luke-jr: the only condition under which it helps users avoid a huge reorg is one under which those who didn't upgrade already experienced a (temporary, but long) fork
+19:43:53 <jtimon> as said on the mailing list I think bip148 is rushed and that makes it risky, bip8 on the other hand...(although I'm writing suggestions for changing bip8)
+19:44:01 <luke-jr> sipa: this seems tautological?
+19:44:37 <jtimon> we can merge bip8 without merging bip149 yet, although the sooner it is released the more secure it will be
+19:44:39 <sipa> luke-jr: then how is merging it less risky?
+19:44:49 <sipa> luke-jr: it only helps in case a fork already happened!
+19:45:06 <sipa> while at the same time encouraging said fork
+19:45:17 <gmaxwell> luke-jr: I haven't seen the kind of support required to justify your position on that; afaict so far no exchange or payment processor of note has said they would stick with 148.  I think you'd have an argument if there was any of that, but right now I think it's hard to distinguish a subsanstive level of support. (And I've seen some clearly malicious parties pumping support for it too.)
+19:45:18 <luke-jr> sipa: if a fork happens, it puts them on the side that isn't vulnerable to a reorg, and it helps avoid the fork in the first place
+19:45:24 <sipa> not encouraging it seems far safer than slightly reducing the risk in case it does
+19:45:36 <sipa> luke-jr: under the assumption a hashrate majority adopts it
+19:45:40 <sipa> luke-jr: which i think is crazy
+19:45:54 <gmaxwell> My discussions on reddit with people promoting BIP148 seemed to be because they earniestly believed it was the only choice.
+19:45:57 <luke-jr> sipa: BIP148 only needs about 25% hashrate to be successful
+19:45:58 <morcos> At the end of the day I think most of us have no interest in greatly increasing the risk of a devastating currency split.  I think 148 does that..  But 149 has a decent chance of not doing that if there have been no other consensus rule changes in the interim.  But will require consensus building.
+19:46:10 <gmaxwell> E.g. someone managed to convince them that the project would never adopt something like BIP149.
+19:46:13 <sipa> morcos: +1
+19:46:19 <sipa> it will require consensus building
+19:46:21 <sipa> not discussions here
+19:46:38 <BlueMatt> yup
+19:46:46 <jtimon> gmaxwell: ack on making the period shorter
+19:46:47 <gmaxwell> which seemed really weird to me, because I thought it was pretty obvious that a 149-like thing would be done.
+19:47:08 <petertodd> gmaxwell: it's only obvious if people say that
+19:48:24 <morcos> And to be clear, I think we'd all like to activate segwit via UASF before we could do so with BIP149 (and it would be feasible I think to build support in a shorter time frame), but we just don't have the technical bandwidth to code that up safely in time.
+19:48:34 <wumpus> I think that wasn't obvioius, no
+19:48:36 <luke-jr> if businesses get to decide protocol changes, then I guess bit 4 SW it is
+19:49:36 <gmaxwell> luke-jr: there is a big difference between saying 'businesses get to decide' and saying that the fact that virtually no industry participant is resolute with 148 is a strong sign the support isn't significant enough. If 148 and six months or a year on its clock that would be another matter.
+19:49:39 <sipa> gmaxwell: i don't think it's obvious that BIP149 will happen at all
+19:49:39 <morcos> luke-jr: no one even knows what bit 4 SW is?  we might like it, what if its compatible with BIP141 segwit...  lets not make decisions based on a single line in a medium post.
+19:49:40 <luke-jr> in the meantime, a sizable portion of the community will be enforcing BIP148, and with success eventually replacing the non-compliant chain
+19:50:01 <luke-jr> gmaxwell: it's only virtually none if you exclude the ones who have supported it
+19:50:24 <jonasschnelli> luke-jr: that's speculation
+19:50:29 <petertodd> luke-jr: while technically the result of bip148 may be a reorg, in practice if there is a non-trivial split the result will be two currencies, as someone will launch a currency based on a checkpoint
+19:50:30 <jonasschnelli> You can't measure "community"
+19:50:33 <gmaxwell> luke-jr: maybe I'm just not aware then.
+19:50:34 <sipa> luke-jr: i hope you're right, but my expectation is that every economically relevant full node will revert away from bip148 code hours after the hashrate fails to adopts it
+19:50:49 <morcos> luke-jr: I would hope that BIP148 and BIP149 supporters are able to agree at least that they should all support the same thing.
+19:51:04 <luke-jr> sipa: Bitfury has already agreed to enforce BIP148 if the bit-4 thing doesn't activate Segwit by August
+19:51:08 <petertodd> sipa: depends on how much hash rate... lots of incentive for exchanges to support it and let the two coins trade against each other
+19:51:24 <jonasschnelli> sipa: I guess they have also agree (among others) to run Classic
+19:51:31 <jonasschnelli> (meant luke-jr)
+19:51:34 <sipa> luke-jr: well, i hope you're right
+19:51:47 <sipa> but i'm very skeptical about that
+19:52:34 <sipa> topic suggestion: high-priority PRs?
+19:52:38 <luke-jr> if we're divided in opinion on this, we should at *least* give users the choice, even if they want to stick to Core releases
+19:52:44 <gmaxwell> If 148 managed to get the kind of support needed to result in avoiding a chain split, I'm fine with that. But I think it's a very poor and needlessly risky approach.
+19:52:52 <sipa> luke-jr: users already have a choice to not run Core
+19:52:56 <morcos> luke-jr: you already have a release process, release Knots with the option.
+19:53:01 <luke-jr> sipa: many don't want to choose that
+19:53:13 <jonasschnelli> maybe for a reason?
+19:53:14 <sipa> luke-jr: for good reasons, because we don't do reckless things
+19:53:18 <gmaxwell> luke-jr: then perhaps because the realize that we've usually had good judgement...
+19:53:23 <kanzure> what was the default in the bip148 paramflag pull request?
+19:53:29 <petertodd> kanzure: false
+19:53:32 <jcorgan> off
+19:53:34 <luke-jr> gmaxwell: and in this case, we disagree on that judgement.
+19:53:38 <petertodd> kanzure: I wouldn't have concept acked it otherwise...
+19:53:55 <BlueMatt> alright, next topic
+19:53:57 <jtimon> alright, sent suggestions to change bip8 to the mailing list...
+19:54:07 <sdfkjs23> deciding what choices users do or do not get seems overly political to me, if core developers want to make a political statement that's fine, but pretending to be neutral and not allowing an optional switch for bip148 seems disingenuous
+19:54:14 <kanzure> with context of "default off" some of the above comments make less sense
+19:54:39 <cfields> oh, quick topic suggestion: 0.14.2
+19:54:41 <jonasschnelli> sdfkjs23? You can offer it yourself by forking and deploying or patching?
+19:54:49 <gmaxwell> jtimon: I don't think we should change BIP8 generally: the reason we can do a shorter termination with SW is because we've already done one deployment-- so we know what the uptake looks like and how fast it went the first time.
+19:54:52 <petertodd> sdfkjs23: there's a multiple of optional switches that we could add to be neutral - we're not going to add them all, thus we have to make some kind of (hopefully conservative) political statement
+19:54:59 <cfields> (sorry, forgot all about it. we can pick it up after the meeting)
+19:55:02 <luke-jr> jonasschnelli: too many people (and especially companies) refuse to run anything unless Core releases it
+19:55:06 <luke-jr> jonasschnelli: it sucks, but it's reality
+19:55:22 <gmaxwell> sdfkjs23: Offering users settings we believe will harm third parties and the user is not 'neutral'.
+19:55:23 <kanzure> luke-jr: they want default-off merged and that's what will get them interested in bip148?
+19:55:27 <wumpus> #topic 0.14.2
+19:55:32 <jtimon> gmaxwell: the changes are just for providing warnngs in unkown deployments, like bip9 did
+19:55:37 <jonasschnelli> luke-jr: But core is consensus among devs for a reason. And I guess we mostly (never?) merged controversial consensus changes
+19:55:37 <gmaxwell> sdfkjs23: if users want 'neutral' they have a copy of GCC, they can write their own node.
+19:55:44 <petertodd> gmaxwell: +1
+19:55:46 <wumpus> let's do a 0.14.2 soon, even if just for the UPNP CVE
+19:55:47 <gmaxwell> (want neutral in that sense)
+19:55:53 <luke-jr> gmaxwell: we don't all believe that in this case. some of us admit that it's riskier to NOT enforce BIP148
+19:55:57 <wumpus> (of course we want to include some other fixes as well)
+19:56:04 <gmaxwell> sdfkjs23: sofware worth running is always opinionated in many ways, even if you don't realize it.
+19:56:07 <luke-jr> jonasschnelli: it's controversial to fail to enforce the softfork now
+19:56:26 <gmaxwell> wumpus: ack on 0.14.2 I think there are a couple other fairly modest fixes that could be backported.
+19:56:31 <cfields> I'd like to suggest a quick 0.14.2 for the upnp and recent peer visibility fix from marcos, along with whatever else has piled up in the meantime
+19:56:40 <cfields> heh, far too slow
+19:56:41 <sipa> sounds good to me
+19:56:53 <jonasschnelli> ack 0.14.2 ... there is also an important GUI fix
+19:56:54 <sdfkjs23> if that's what the main core developers want to say sure, but it's pretty clear that core is then the implementation as defined by this small group here, it is their vision and not open really to general community.
+19:56:58 <morcos> yes i think we could use more public notice on the peer visibility fix
+19:57:13 <wumpus> ok, please mark anything that should be backported to 0,14,2 as such
+19:57:19 <wumpus> (or ask us to do it)
+19:57:24 * jonasschnelli looking...
+19:57:41 <cfields> thanks, will do
+19:57:42 <morcos> even people who have connections, but are behind NAT are going to want to upgrade b/c eventually they wont' have connections (maybe.. i can't remember now)
+19:57:57 <sdaftuar> incoming connections*
+19:58:01 <morcos> yes sorry
+19:58:20 <gmaxwell> morcos: yes, so for backport the visiblity fix, cfields open PR with the connection stuff..
+19:58:48 <jonasschnelli> wumpus: https://github.com/bitcoin/bitcoin/pull/10231 (closed 0.14.2 milestone... needs backport)
+19:58:55 <jonasschnelli> (should apply IMO)
+19:59:28 <cfields> jonasschnelli: ah, good one if it backports cleanly
+19:59:34 <wumpus> jonasschnelli: that one is correctly marked, will port those in one go at some point (at lesat the ones that cleanly apply or need only small changes)
+19:59:35 <sipa> sdfkjs23: it's open source, anyone can repackage the software in any way they like, and i encourage everyone to do so (as long as they don't misrepresent the choices made)... but Bitcoin Core as a project has established some practices, and those include not accepting consensus rule changes without broad support and weighing the risks - it seems most people in this room now believe that bar isn't
+19:59:38 <luke-jr> sdfkjs23: in this case, it seems it's a minority of pessimistic devs holding back a softfork that the community largely wants and most of the devs are okay with merging, putting users who trust us collectively at a risk they shouldn't be :<
+19:59:41 <kanzure> sdfkjs23: open-source does not mean the project must "merge anything", it means you can compile whatever patches you want.
+19:59:41 <sipa> met for BIP148
+20:00:19 <wumpus> it's time
+20:00:21 <wumpus> #endmeeting
