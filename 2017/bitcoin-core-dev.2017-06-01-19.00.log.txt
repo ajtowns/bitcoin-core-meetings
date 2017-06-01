@@ -1,0 +1,300 @@
+19:00:41 <wumpus> #startmeeting
+19:00:41 <lightningbot> Meeting started Thu Jun  1 19:00:41 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:41 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:43 <achow101> hi
+19:01:00 <wumpus> proposed topics?
+19:01:11 <luke-jr> suggested topic: safe DoS handling around softforks
+19:02:01 <wumpus> ok, we'll start with high-priority review as suggested by jtimon
+19:02:03 <gmaxwell> It was proposed we talk about PRs first.
+19:02:04 <wumpus> #topic High-priority review PRs
+19:02:17 <jonasschnelli> https://github.com/bitcoin/bitcoin/projects/8
+19:02:34 <wumpus> anything to add this week?
+19:02:46 <jonasschnelli> Please review HD auto restore... I whised we have this in 0.15. But seems to get late: https://github.com/bitcoin/bitcoin/pull/10240
+19:02:51 <jtimon> mine still is #10339  (which contains #9717 )
+19:02:53 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:02:55 <gribble> https://github.com/bitcoin/bitcoin/issues/9717 | Pow: Remove fCheckPOW from CheckBlockHeader by jtimon · Pull Request #9717 · bitcoin/bitcoin · GitHub
+19:03:06 <jtimon> did squash and the requested rename
+19:03:25 <cfields> wumpus: I _promise_ to review your unix socket changes this week. They slipped off my radar, but I'm aware they're painful rebases.
+19:03:29 <gmaxwell> Where have we gotten on multiwallet?
+19:03:45 <jonasschnelli> luke-jr: there are compile issues
+19:03:53 <sipa> i'm currently squashing #10195, after that i'd like to request review on #10321
+19:03:58 <gribble> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+19:03:58 <jonasschnelli> Gitian won't compile I guess because of the test fixtures
+19:03:59 <gribble> https://github.com/bitcoin/bitcoin/issues/10321 | Use FastRandomContext for all tests by sipa · Pull Request #10321 · bitcoin/bitcoin · GitHub
+19:04:07 <luke-jr> hmm
+19:04:23 <jonasschnelli> Once that is fixed, I guess we can merge luke-jr first step
+19:04:44 <jonasschnelli> But ideally we work on runtime-wallet loading
+19:04:54 <jonasschnelli> shouldn't be that hard
+19:05:25 <jtimon> #7729 needs rebase
+19:05:26 <wumpus> cfields: thanks!
+19:05:27 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+19:05:34 <cfields> jonasschnelli: if i'm understanding correctly, that's the tl;dr for fixing the wallet tool build issue as well :)
+19:05:46 <cfields> (my proposal, anyway)
+19:05:50 <wumpus> jtimon: yes
+19:05:58 <jonasschnelli> cfields: wallet-tool build issue could solve salvage, upgrade, etc.
+19:06:20 <jonasschnelli> currently multiwallet does only allow all-or-nothing rescans/salvages,zaps, etc.
+19:06:40 <gmaxwell> 7729 was mostly API review. I kind of got lost on it becuase I didn't see how the api can be cleanly extended to multiple lables per transaction, but I keep forgetting about it to go read in again what the api was in order to prodice more commentary. :(
+19:06:44 <cfields> i see
+19:06:48 <kanzure> hi.
+19:06:48 <jtimon> just giving heads up, also #10044's tests are failing
+19:06:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10044 | Run functional tests in `make check` by jnewbery · Pull Request #10044 · bitcoin/bitcoin · GitHub
+19:07:11 <gmaxwell> jonasschnelli: I think it was proposed to make salvage/zap only work when one wallet was loaded.
+19:07:17 <wumpus> gmaxwell: multiple labels per transactions simply wasn't a goal there
+19:07:20 <gmaxwell> which seemed like a fine stopgap to me.
+19:07:32 <wumpus> gmaxwell: I'm fine with doing it later, but let's not scope creep this, it's already getting late
+19:07:44 <jonasschnelli> gmaxwell: Seems reasonable.
+19:08:00 <gmaxwell> wumpus: I understand; I am not trying to suggest that it should do that, but not sure if the api can be cleanly extended later to support that.
+19:08:09 <wumpus> the goal of #7729 was explicitly to offer the same API as the GUI has for labels
+19:08:12 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+19:08:18 <wumpus> to be able to drop the account system
+19:08:26 <wumpus> after that, the label system can be improved, both in the GUI and RPC
+19:08:34 <jonasschnelli> ack
+19:08:50 <ryanofsky> #10244 would be my priority review, if it could be added
+19:08:52 <gribble> https://github.com/bitcoin/bitcoin/issues/10244 | [qt] Add abstraction layer for accessing node and wallet functionality from gui by ryanofsky · Pull Request #10244 · bitcoin/bitcoin · GitHub
+19:08:58 <gmaxwell> okay. so long as its not an omission. I feel like we end up with our hands tied by the rpc interface pretty often.
+19:08:58 <jtimon> sounds reasonable, certainly the priority is to remove the accounts system IMO
+19:09:00 <jonasschnelli> setlabel and deletelabel should be multi-label compatible (API wise)
+19:09:24 <gmaxwell> (by not an omission I mean that we don't put ourselves in a corner just because we didn't think of it. If you're aware, thats enough.)
+19:09:46 <jonasschnelli> 7729 can be perfectly extaned later
+19:09:58 <jonasschnelli> (without breaking the API)
+19:10:09 <gmaxwell> OK.
+19:10:11 <wumpus> I just think we shouldn't aim too far - we've been talking about deprecating the account system for so long and this is blocking it. But if there's suggesting for improving the API to (later) support multiple labels that's very welcome.
+19:10:42 <jonasschnelli> Yes. We finally should do it.
+19:10:51 <jtimon> other topics?
+19:11:13 <wumpus> ryanofsky: sure; though we should first get the multiwallet base in, I think more abstraction around the wallet right now will break various PRs there again
+19:11:56 <wumpus> #topic safe DoS handling around softforks (luke-jr)
+19:11:57 <cfields> proposed quick topic: 0.14.2
+19:12:30 <wumpus> ryanofsky: I'll add your PR to the high-priority PRs, but we need to keep that in mind
+19:12:50 <sipa> i think DoS scoring in general needs a rework, but especially for blocks, i think that few is needed after PoW checking
+19:12:57 <sdaftuar> #9530
+19:12:58 <gribble> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+19:13:02 <jtimon> just add it as a depdendency in the OP and rebase on top of it maybe?
+19:13:06 <luke-jr> it's come to light that blocks cause DoS penalties for invalid prev-blocks
+19:13:16 <ryanofsky> wumpus, thanks. there is barely anything that would have to be change with current multiwallet prs, but i don't know what multiwallet plans for qt are
+19:13:25 <luke-jr> which are liable to get triggered by outdated nodes following softforks
+19:13:40 <wumpus> ryanofsky: I don't know either - just that multiwallet is priority for 0.15.0, better abstraction for the wallet can theoretically wait until 0.16
+19:14:03 <luke-jr> part of this is easy to fix: just don't DoS-ban for invalid prevblocks
+19:14:13 <wumpus> (would be great to get everything in, but in practice resources are limited and we have to choose)
+19:14:27 <luke-jr> but there is also a ban for sending headers that "don't" connect (because we rejected an earlier invalid header)
+19:14:59 <luke-jr> would there be any harm to checking the PoW on headers earlier, banning for failure there, and not banning for unconnecting ones?
+19:15:35 <gmaxwell> luke-jr: if you do not disconnect peers on incompatible consensus rules you will likely become partitioned from nodes on consensus rules which are consistent with yourself.
+19:15:40 <morcos> Doesn't it seem safer to keep the current banning behavior unitl we've also improved the ability to make sure we're not partitioned from nodes following our rules
+19:16:04 <gmaxwell> One of the totally braindamaged element of BIP148 is that it does nothing to make the network of BIP148 users connected and it sounds like you'd like to make that even worse?
+19:16:11 <wumpus> ryanofsky: but if it hardly collides in practice then it isn't a problem (sorry, will shut up about previous topic now)
+19:16:20 <luke-jr> gmaxwell: softforks are backward compatible
+19:17:16 <gmaxwell> luke-jr: when there is a persistant chain on invalid rules there is a hardfork.
+19:17:22 <luke-jr> this is nothing specific to BIP148
+19:17:29 <luke-jr> it is an issue for all softforks
+19:17:33 <gmaxwell> BIP148 is a softfork but it creates a hardfork, its the hardfork that creates that partitioning issue.
+19:17:52 <sipa> gmaxwell: i'm confused
+19:17:54 <jtimon> can we stay on the issue as general to all softforks?
+19:18:03 <instagibbs> I'm not sure how this topic arose?
+19:18:17 <instagibbs> (I get the original topic)
+19:18:28 <luke-jr> instagibbs: it was an observation on the current BIP148 PR that I'm investigating; but it applies to any softfork
+19:18:37 <sipa> gmaxwell: i thought i understood your concern until you said it creates a hardfork
+19:19:09 <BlueMatt> i assume here "hardfork" means "nodes will not converge"
+19:19:20 <jtimon> I'm confused, are we talking about 2 different things? #9530 is from january
+19:19:21 <gribble> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+19:19:28 <instagibbs> Yes they dont' appear to be connected?
+19:19:34 <sdaftuar> perhaps this brainstorming should take place on #9530?  the current DoS scoring is broken, and potentially problematic for softforks (though not for segwit)
+19:19:35 <gribble> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+19:19:43 <sdaftuar> but there's no urgent issue here
+19:19:49 <morcos> sdaftuar: +1
+19:19:50 <sdaftuar> and lots of ways to solve, i suspect
+19:19:52 <instagibbs> ACK
+19:19:56 <sipa> BlueMatt: yes, nodes will risk not converging, but that's a P2P issue, not a consensus issue
+19:20:13 <gmaxwell> ::sigh:: I give up.
+19:20:22 <kanzure> sipa: from a payments angle, it's not just p2p.
+19:20:22 <luke-jr> jtimon: 9530 is unrelated afaik
+19:20:24 <gmaxwell> this terminology is too limited.
+19:20:41 <gmaxwell> In any case, if your peers are accepting a chain you will not accept you need different peers.
+19:20:47 <sipa> of course
+19:20:56 <luke-jr> gmaxwell: unless those peers will accept the chain you have too.
+19:21:11 <gmaxwell> luke-jr: not unless, you still need different peers.
+19:21:22 <gmaxwell> (or at least _some_ different peers)
+19:21:24 <luke-jr> or rather, they need you as a peer
+19:21:43 <gmaxwell> they might, but you're useless to them if you're only connected to other nodes that are also on chains you won't accept.
+19:22:18 <luke-jr> I wonder if we should have a different criteria for our outbound connections, than for inbound
+19:22:37 <luke-jr> eg, tolerate more from inbound peers, but be super-strong that we are on the same block as our outbound peers
+19:22:40 <gmaxwell> If you want to talk about making some fraction of your connection slots more agressive in enforcement than others that would be reasonable, but you can't have a case where you will never disconnect peers that accept different rules.
+19:22:57 <morcos> yes we need a more comprehensive solution..  ideally you could figure out whether they'd accept your chain or not, and that could be a factor as well you knowing whether you'd accept theirs, but we shouldn't make ad hoc changes
+19:23:06 <sipa> gmaxwell: am i summarizing correctly... even though DoS scoring for invalid blocks isn't needed as such, it's currently our only protection against accidentally ending up with only peers that will not accept the best chain you'd accept if you'd see it
+19:23:21 <cfields> luke-jr: I have a patch-set worked up for making that possible. It doesn't change any current policy, just makes it more flexible to do that kind of thing
+19:23:34 <gmaxwell> sipa: ya!
+19:23:46 <sipa> ok, in that case i agree with you
+19:23:58 <luke-jr> can we currently disconnect nodes, without banning them?
+19:24:04 <luke-jr> I guess just set fDisconnect?
+19:24:07 <morcos> which is what you guys said to each other on 9530
+19:24:21 <gmaxwell> I think it would be sufficient to disconnect in those cases, yes.
+19:24:44 <gmaxwell> (or very short ban)
+19:24:57 <luke-jr> gmaxwell: I'm thinking of a conditional disconnect-only-if-outgoing-conn
+19:25:27 <sdaftuar> in #9530, there's a suggestion of rotating outbound connections periodically
+19:25:28 <gribble> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+19:25:37 <sdaftuar> and whether your outbound peer is on the same chain as you could be a criteria
+19:27:16 <jtimon> action continue discussion on #9530 ?
+19:27:17 <gribble> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+19:27:57 <luke-jr> 9530 sounds like too much refactoring IMO. I'm thinking for a bugfix only right now.
+19:28:18 <luke-jr> but maybe there's enough overlap, dunno
+19:29:23 <jtimon> anyway, next topic?
+19:29:23 <luke-jr> in any case, is there a specific reason to disconnect for unconnectable headers, independently of the "same chain peers" issue?
+19:29:32 <jtimon> or not
+19:30:16 <luke-jr> we could move on if there's another topic, too; maybe someone can answer OOB if there's a need for the disconnect there
+19:30:29 <wumpus> ok
+19:30:43 <wumpus> #topic 0.14.2 (cfields)
+19:31:02 <wumpus> I think we've merged/backported everything that was tagged?
+19:31:15 <cfields> just wanted to keep that rolling. several backports went in this week, anything else need to go?
+19:31:18 <wumpus> if so, we can tag it after the meeting
+19:31:22 <jonasschnelli> not yet
+19:31:38 <wumpus> what's missing?
+19:31:40 <jonasschnelli> Wait.. has been merged. Nm
+19:32:17 <cfields> wumpus: +1 then
+19:32:19 <jonasschnelli> I check the backports and seems that now everything went in
+19:32:24 <jonasschnelli> checked
+19:32:39 <wumpus> right, great
+19:32:54 <jtimon> so rc?
+19:32:57 <wumpus> that was indeed a short topic
+19:33:15 <wumpus> yes
+19:34:03 <wumpus> other topics?
+19:34:27 <sipa> i wanted to bring up whether my writeup for style guidelines was acceptable, but i see it was already merged :)
+19:34:40 <jonasschnelli> heh. Yes.
+19:34:58 <jtimon> what was the pr?
+19:34:58 <luke-jr> no, it's terrible. I'm not following it. /s
+19:35:01 <wumpus> heh yes, it was exactly what was discussed in the previous meeting
+19:35:12 <wumpus> #topic variable name guidelines
+19:35:19 <luke-jr> wumpus: it was sarcasm :p
+19:35:30 <sipa> OK.
+19:35:31 <sipa> end topic
+19:35:35 <wumpus> wanted to merge it as soon as possible to be able to point people at it in reviews
+19:35:43 <sipa> yes, thank you for that
+19:36:26 <jtimon> ok, https://github.com/bitcoin/bitcoin/pull/10461 reading now, but I assume it will be acceptable to me
+19:36:31 <wumpus> more topics? this is becoming a high frequeny meeting
+19:37:16 <sipa> we have 1.5 months left until feature freeze for 0.15
+19:37:34 <sipa> anything to talk about there?
+19:37:41 <sipa> i guess not... things happen as they happen
+19:38:01 <wumpus> I... don't think so... would really love multiwallet to get in this time
+19:38:03 <sdaftuar> perhaps suggestions for high priority features for 0.15?
+19:38:16 <sdaftuar> as potentially distinct from high priority prs
+19:39:04 <wumpus> if no PRs exist for them it might be too late already, but sure
+19:39:14 <wumpus> #topic high priority features
+19:39:45 <jtimon> I would love https://github.com/bitcoin/bitcoin/pull/8994 , working on the blocksigning stuff again
+19:40:06 <sdaftuar> i'd suggest matt's #10192 (script cache).  huge validation win.
+19:40:08 <gribble> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+19:40:18 <sipa> ya
+19:40:38 <cfields> +1
+19:40:44 <jtimon> I have 2 PRs prefixed "Optimization", but didn't benchmark any of them...
+19:41:03 <luke-jr> 10192 sounds problematic for future softforks
+19:41:04 <wumpus> sdaftuar: any reason for not just adding that one to the high priority PRs though?
+19:41:13 <jonasschnelli> +1 on 10192,.. seems also madable for 0.15
+19:41:17 <bitcoin-git> [13bitcoin] 15ryanofsky opened pull request #10506: Fix bumpfee test after #10449 (06master...06pr/bumpdis) 02https://github.com/bitcoin/bitcoin/pull/10506
+19:41:18 <sdaftuar> wumpus: i was going to suggest it but thought matt might yell at me if it displaced his existing one :)
+19:41:41 <sipa> luke-jr: i believe it shouldn't be, unless i've misunderstood the design
+19:41:46 <wumpus> ohh okay, yes it's not really a blocker for his further work I guess, but before the feature freeze we can make an exception
+19:41:52 <BlueMatt> yes, i still want #10179 to get in :(
+19:41:54 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:42:04 <sipa> BlueMatt: will review
+19:42:13 <BlueMatt> so much stuff to build on top of things
+19:42:16 <sdaftuar> sipa: it interferes with script features that require chain-context.  i think luke has proposed such a thing.
+19:42:34 <luke-jr> sipa: specifically softforks where transactions are valid in some blocks, but not in others
+19:42:37 <jtimon> merging something like #10427 before #10192 (I don't care his commit or mine, but would really love the nits solved) would make it simpler to review
+19:42:37 <gribble> https://github.com/bitcoin/bitcoin/issues/10427 | Consensus: Introduce static GetScriptFlags (mostly MOVEONLY) by jtimon · Pull Request #10427 · bitcoin/bitcoin · GitHub
+19:42:40 <gribble> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+19:42:45 <jonasschnelli> I think we should add 10192 to the prio list (and credit sdaftuar for it)
+19:43:05 <wumpus> jonasschnelli: I've added it
+19:43:12 <cfields> I have a good bit of net changes still coming, working on making them reviewable and adding tests. Definitely coming in time for 0.15.
+19:43:41 <jonasschnelli> cfields: great!
+19:44:23 <cfields> sipa: are you aiming to have openssl nuked in time for 0.15 ?
+19:44:48 <sipa> luke-jr: fair enough, i agree - but i do think it's solvable (store the context-dependent script validation flags along with the entry in the cache)
+19:44:59 <wumpus> is 'nuking openssl' really a goal?
+19:45:14 <luke-jr> sipa: yes, but is it worth it?
+19:45:18 <jonasschnelli> For the PRNG, I though so
+19:45:25 <wumpus> ok
+19:45:56 <luke-jr> hmm, 1.7x
+19:46:01 <sipa> i'd like to be independent from OpenSSL, but that's more from a code management perspective than an actual fear for security
+19:46:05 <cfields> wumpus: I was referring to #10299
+19:46:06 <gribble> https://github.com/bitcoin/bitcoin/issues/10299 | Remove OpenSSL by sipa · Pull Request #10299 · bitcoin/bitcoin · GitHub
+19:46:27 <sipa> as such, i don't think removing openssl should be a priority, but i think it should eventually happen
+19:46:52 <wumpus> I'd agree about boost but I'm... not sure trying to nuke all dependencies is a wise path
+19:47:11 <luke-jr> dependencies are better than reinventing stuff
+19:47:31 <luke-jr> (all else being equal)
+19:47:40 <wumpus> that's an argument that should be considered, we can't do everything better, but yes everything else being equal
+19:47:44 <cfields> sure, I wasn't arguing for/against, was just curious if 10299 was still desired
+19:47:47 <jtimon> sorry for linking so many of my prs, but re boost: https://github.com/bitcoin/bitcoin/pull/10502
+19:48:14 <luke-jr> our binaries are getting annoyingly large btw..
+19:48:18 <jonasschnelli> sipa: IMO the rng mostly matters for the wallet keys, and long term, I'm not sure if wallet keys created on the environments we run (Linux/OSX/Windows) are in general a "good thing". Using our own PRNG (via Fortuna, etc,) seems fine to me
+19:48:50 <jonasschnelli> luke-jr: define "large"
+19:48:55 <wumpus> improving the PRNG is certainly a good goal
+19:49:18 <luke-jr> jonasschnelli: 215 MB excluding the debuginfo files
+19:49:21 <sipa> wumpus: i'd say removing OpenSSL will come naturally once our PRNG has undergone a few more improvement
+19:49:31 <wumpus> luke-jr: you certainly shouldn't cound debug info, no one ships that
+19:49:38 <luke-jr> wumpus: that's why I didn't.
+19:50:10 <cfields> luke-jr: wha?? stripped bitcoind is < 10mb on all platforms iirc
+19:50:16 <wumpus> luke-jr: where do you think it comes from? is it just bitcoin-qt being large or everything?
+19:50:19 <cfields> luke-jr: or did you mean all binaries combined?
+19:50:40 <wumpus> sipa: ok, makes sense
+19:50:49 <jonasschnelli> BitcoinD linux 64 is 9.3MB, Qt: ~33,
+19:50:56 <jonasschnelli> Perfectly fine
+19:51:04 <luke-jr> cfields: yes
+19:51:05 <jtimon> and if somebody can help with https://github.com/bitcoin/bitcoin/pull/10193/commits/3f404ca62c26dae8f5a4f321820a460bf7b5373e I am kind of stuck there
+19:51:10 <wumpus> qt is huge, but that's unavoidable,it's a lot of code...
+19:51:11 <luke-jr> wumpus: it might be
+19:51:34 <cfields> future builds should be much slimmer
+19:51:35 <jonasschnelli> Qt5.9 can shrink ~20% from what I have read
+19:51:40 <cfields> yes
+19:51:40 <wumpus> I recently had to compile qt on a single-core ARM system (don't ask), took about 2 week
+19:51:45 <cfields> and I'd be curious to see what lto does to bitcoin-qt ?
+19:51:50 <jonasschnelli> hehe
+19:51:56 <luke-jr> 2.7M bitcoin-cli; 33M bitcoin-qt; 3.0M bitcoin-tx; 8.9M bitcoind; 12M test_bitcoin
+19:52:24 <jonasschnelli> compared to the 100GB blockchain... what should I say
+19:52:32 <wumpus> luke-jr: it compresses very well though
+19:52:40 <jtimon> is it a worry that test_bitcoin is big?
+19:52:47 <jonasschnelli> no
+19:52:51 <wumpus> nope
+19:53:05 <wumpus> I think those numbers are pretty ok, compared to most desktop software
+19:53:11 <jonasschnelli> indeed
+19:53:14 <wumpus> (or even mobile software, nowadays)
+19:53:21 <luke-jr> it adds up though
+19:53:31 <luke-jr> but not too crazy I guess
+19:53:36 <jtimon> I mean, if it can get smaller I don't think anybody will oppose
+19:53:53 <luke-jr> I'd be curious what using shared libs would do for it.
+19:53:58 <wumpus> yeah... hardly a priority though, it's only such a small part of the memory use
+19:53:58 <luke-jr> at least for Windows, where it's trivial
+19:54:16 <cfields> luke-jr: there'd be a ton of circular deps to unravel
+19:54:23 <luke-jr> cfields: ?
+19:54:29 <wumpus> cfields: I think he just means for the deps
+19:54:39 <luke-jr> ah
+19:54:40 <cfields> ah
+19:54:57 <wumpus> yes on windows it's trivial
+19:55:07 <luke-jr> re internals as shared libs: on Linux, circular deps are not a problem, but IIRC they are for Windows
+19:55:10 <cfields> osx as well, fwiw
+19:55:27 <wumpus> on linux you can't simply ship .so's in the same directory and have it work
+19:55:44 <cfields> wumpus: you can but you have to use rpath hacks :\
+19:55:44 <luke-jr> right, we'd need wrapper scripts (maybe okay, iff it makes a big difference)
+19:55:50 <luke-jr> oh
+19:55:53 <luke-jr> forgot about rpath :D
+19:55:59 <cfields> there's a special rpath symbol that means pwd
+19:56:04 <cfields> s/symbol/value/
+19:56:07 <luke-jr> yes, I use it in BFGMiner
+19:56:08 <wumpus> cfields: doesn't that use the *current* directory instead of the application directory though?
+19:56:26 <luke-jr> $ORIGIN
+19:56:31 <luke-jr> the name suggests app dir
+19:56:31 <jtimon> other super fast topic?
+19:56:37 <wumpus> ok
+19:56:55 <wumpus> anyhow it's worth experimenting with, possibly, for a future version
+19:57:28 <jonasschnelli> Bitcoin Core ICO?
+19:57:37 <jonasschnelli> *duck*
+19:57:45 <wumpus> security might be slightly improved as well as different libs can be ASLRed relative to each other
+19:57:48 <BlueMatt> jonasschnelli: ack
+19:57:50 <wumpus> jonasschnelli: lol
+19:57:51 <jtimon> testnet 4 ico at most
+19:57:58 <luke-jr> jonasschnelli: IHO instead?
+19:58:02 <luke-jr> compromise.
+19:58:08 * sipa commits the Bitcoin Core.ico file
+19:58:09 <luke-jr> (Initial Hat Offering)
+19:58:15 <jonasschnelli> sipa: hahahaha
+19:58:20 <jtimon> ITO
+19:58:29 <jonasschnelli> Win32 had plenty if .ICO's
+19:58:31 <BlueMatt> Bitcoin Series A ICO
+19:58:49 <gmaxwell> We could sell international reply coupons... it would have a lot more substance than most ICOs. :)
+19:59:12 <luke-jr> reply coupons? O.o\
+19:59:32 <cfields> sipa: https://bitcoincore.org/assets/images/favicon.ico
+19:59:47 <wumpus> #endmeeting

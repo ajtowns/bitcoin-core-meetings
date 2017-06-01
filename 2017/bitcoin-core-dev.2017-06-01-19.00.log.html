@@ -1,0 +1,327 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:41</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun  1 19:00:41 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:41</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:43</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:00</span><span class="nk"> &lt;wumpus&gt;</span> proposed topics?
+<a name="l-6"></a><span class="tm">19:01:11</span><span class="nk"> &lt;luke-jr&gt;</span> suggested topic: safe DoS handling around softforks
+<a name="l-7"></a><span class="tm">19:02:01</span><span class="nk"> &lt;wumpus&gt;</span> ok, we'll start with high-priority review as suggested by jtimon
+<a name="l-8"></a><span class="tm">19:02:03</span><span class="nk"> &lt;gmaxwell&gt;</span> It was proposed we talk about PRs first.
+<a name="l-9"></a><span class="tm">19:02:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">High-priority review PRs</span>
+<a name="l-10"></a><span class="tm">19:02:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-11"></a><span class="tm">19:02:34</span><span class="nk"> &lt;wumpus&gt;</span> anything to add this week?
+<a name="l-12"></a><span class="tm">19:02:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> Please review HD auto restore... I whised we have this in 0.15. But seems to get late: https://github.com/bitcoin/bitcoin/pull/10240
+<a name="l-13"></a><span class="tm">19:02:51</span><span class="nk"> &lt;jtimon&gt;</span> mine still is #10339  (which contains #9717 )
+<a name="l-14"></a><span class="tm">19:02:53</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+<a name="l-15"></a><span class="tm">19:02:55</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9717 | Pow: Remove fCheckPOW from CheckBlockHeader by jtimon · Pull Request #9717 · bitcoin/bitcoin · GitHub
+<a name="l-16"></a><span class="tm">19:03:06</span><span class="nk"> &lt;jtimon&gt;</span> did squash and the requested rename
+<a name="l-17"></a><span class="tm">19:03:25</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> I _promise_ to review your unix socket changes this week. They slipped off my radar, but I'm aware they're painful rebases.
+<a name="l-18"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Where have we gotten on multiwallet?
+<a name="l-19"></a><span class="tm">19:03:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> there are compile issues
+<a name="l-20"></a><span class="tm">19:03:53</span><span class="nk"> &lt;sipa&gt;</span> i'm currently squashing #10195, after that i'd like to request review on #10321
+<a name="l-21"></a><span class="tm">19:03:58</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10195 | Switch chainstate db and cache to per-txout model by sipa · Pull Request #10195 · bitcoin/bitcoin · GitHub
+<a name="l-22"></a><span class="tm">19:03:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> Gitian won't compile I guess because of the test fixtures
+<a name="l-23"></a><span class="tm">19:03:59</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10321 | Use FastRandomContext for all tests by sipa · Pull Request #10321 · bitcoin/bitcoin · GitHub
+<a name="l-24"></a><span class="tm">19:04:07</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-25"></a><span class="tm">19:04:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> Once that is fixed, I guess we can merge luke-jr first step
+<a name="l-26"></a><span class="tm">19:04:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> But ideally we work on runtime-wallet loading
+<a name="l-27"></a><span class="tm">19:04:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> shouldn't be that hard
+<a name="l-28"></a><span class="tm">19:05:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="cmd">#7729 </span><span class="cmdline">needs rebase</span>
+<a name="l-29"></a><span class="tm">19:05:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> thanks!
+<a name="l-30"></a><span class="tm">19:05:27</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+<a name="l-31"></a><span class="tm">19:05:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> if i'm understanding correctly, that's the tl;dr for fixing the wallet tool build issue as well :)
+<a name="l-32"></a><span class="tm">19:05:46</span><span class="nk"> &lt;cfields&gt;</span> (my proposal, anyway)
+<a name="l-33"></a><span class="tm">19:05:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes
+<a name="l-34"></a><span class="tm">19:05:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> wallet-tool build issue could solve salvage, upgrade, etc.
+<a name="l-35"></a><span class="tm">19:06:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> currently multiwallet does only allow all-or-nothing rescans/salvages,zaps, etc.
+<a name="l-36"></a><span class="tm">19:06:40</span><span class="nk"> &lt;gmaxwell&gt;</span> 7729 was mostly API review. I kind of got lost on it becuase I didn't see how the api can be cleanly extended to multiple lables per transaction, but I keep forgetting about it to go read in again what the api was in order to prodice more commentary. :(
+<a name="l-37"></a><span class="tm">19:06:44</span><span class="nk"> &lt;cfields&gt;</span> i see
+<a name="l-38"></a><span class="tm">19:06:48</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-39"></a><span class="tm">19:06:48</span><span class="nk"> &lt;jtimon&gt;</span> just giving heads up, also #10044's tests are failing
+<a name="l-40"></a><span class="tm">19:06:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10044 | Run functional tests in `make check` by jnewbery · Pull Request #10044 · bitcoin/bitcoin · GitHub
+<a name="l-41"></a><span class="tm">19:07:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I think it was proposed to make salvage/zap only work when one wallet was loaded.
+<a name="l-42"></a><span class="tm">19:07:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> multiple labels per transactions simply wasn't a goal there
+<a name="l-43"></a><span class="tm">19:07:20</span><span class="nk"> &lt;gmaxwell&gt;</span> which seemed like a fine stopgap to me.
+<a name="l-44"></a><span class="tm">19:07:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I'm fine with doing it later, but let's not scope creep this, it's already getting late
+<a name="l-45"></a><span class="tm">19:07:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Seems reasonable.
+<a name="l-46"></a><span class="tm">19:08:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I understand; I am not trying to suggest that it should do that, but not sure if the api can be cleanly extended later to support that.
+<a name="l-47"></a><span class="tm">19:08:09</span><span class="nk"> &lt;wumpus&gt;</span> the goal of #7729 was explicitly to offer the same API as the GUI has for labels
+<a name="l-48"></a><span class="tm">19:08:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+<a name="l-49"></a><span class="tm">19:08:18</span><span class="nk"> &lt;wumpus&gt;</span> to be able to drop the account system
+<a name="l-50"></a><span class="tm">19:08:26</span><span class="nk"> &lt;wumpus&gt;</span> after that, the label system can be improved, both in the GUI and RPC
+<a name="l-51"></a><span class="tm">19:08:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-52"></a><span class="tm">19:08:50</span><span class="nk"> &lt;ryanofsky&gt;</span> <span class="cmd">#10244 </span><span class="cmdline">would be my priority review, if it could be added</span>
+<a name="l-53"></a><span class="tm">19:08:52</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10244 | [qt] Add abstraction layer for accessing node and wallet functionality from gui by ryanofsky · Pull Request #10244 · bitcoin/bitcoin · GitHub
+<a name="l-54"></a><span class="tm">19:08:58</span><span class="nk"> &lt;gmaxwell&gt;</span> okay. so long as its not an omission. I feel like we end up with our hands tied by the rpc interface pretty often.
+<a name="l-55"></a><span class="tm">19:08:58</span><span class="nk"> &lt;jtimon&gt;</span> sounds reasonable, certainly the priority is to remove the accounts system IMO
+<a name="l-56"></a><span class="tm">19:09:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> setlabel and deletelabel should be multi-label compatible (API wise)
+<a name="l-57"></a><span class="tm">19:09:24</span><span class="nk"> &lt;gmaxwell&gt;</span> (by not an omission I mean that we don't put ourselves in a corner just because we didn't think of it. If you're aware, thats enough.)
+<a name="l-58"></a><span class="tm">19:09:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> 7729 can be perfectly extaned later
+<a name="l-59"></a><span class="tm">19:09:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> (without breaking the API)
+<a name="l-60"></a><span class="tm">19:10:09</span><span class="nk"> &lt;gmaxwell&gt;</span> OK.
+<a name="l-61"></a><span class="tm">19:10:11</span><span class="nk"> &lt;wumpus&gt;</span> I just think we shouldn't aim too far - we've been talking about deprecating the account system for so long and this is blocking it. But if there's suggesting for improving the API to (later) support multiple labels that's very welcome.
+<a name="l-62"></a><span class="tm">19:10:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. We finally should do it.
+<a name="l-63"></a><span class="tm">19:10:51</span><span class="nk"> &lt;jtimon&gt;</span> other topics?
+<a name="l-64"></a><span class="tm">19:11:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> sure; though we should first get the multiwallet base in, I think more abstraction around the wallet right now will break various PRs there again
+<a name="l-65"></a><span class="tm">19:11:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">safe DoS handling around softforks (luke-jr)</span>
+<a name="l-66"></a><span class="tm">19:11:57</span><span class="nk"> &lt;cfields&gt;</span> proposed quick topic: 0.14.2
+<a name="l-67"></a><span class="tm">19:12:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> I'll add your PR to the high-priority PRs, but we need to keep that in mind
+<a name="l-68"></a><span class="tm">19:12:50</span><span class="nk"> &lt;sipa&gt;</span> i think DoS scoring in general needs a rework, but especially for blocks, i think that few is needed after PoW checking
+<a name="l-69"></a><span class="tm">19:12:57</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="cmd">#9530</span><span class="cmdline"></span>
+<a name="l-70"></a><span class="tm">19:12:58</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+<a name="l-71"></a><span class="tm">19:13:02</span><span class="nk"> &lt;jtimon&gt;</span> just add it as a depdendency in the OP and rebase on top of it maybe?
+<a name="l-72"></a><span class="tm">19:13:06</span><span class="nk"> &lt;luke-jr&gt;</span> it's come to light that blocks cause DoS penalties for invalid prev-blocks
+<a name="l-73"></a><span class="tm">19:13:16</span><span class="nk"> &lt;ryanofsky&gt;</span> wumpus, thanks. there is barely anything that would have to be change with current multiwallet prs, but i don't know what multiwallet plans for qt are
+<a name="l-74"></a><span class="tm">19:13:25</span><span class="nk"> &lt;luke-jr&gt;</span> which are liable to get triggered by outdated nodes following softforks
+<a name="l-75"></a><span class="tm">19:13:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> I don't know either - just that multiwallet is priority for 0.15.0, better abstraction for the wallet can theoretically wait until 0.16
+<a name="l-76"></a><span class="tm">19:14:03</span><span class="nk"> &lt;luke-jr&gt;</span> part of this is easy to fix: just don't DoS-ban for invalid prevblocks
+<a name="l-77"></a><span class="tm">19:14:13</span><span class="nk"> &lt;wumpus&gt;</span> (would be great to get everything in, but in practice resources are limited and we have to choose)
+<a name="l-78"></a><span class="tm">19:14:27</span><span class="nk"> &lt;luke-jr&gt;</span> but there is also a ban for sending headers that "don't" connect (because we rejected an earlier invalid header)
+<a name="l-79"></a><span class="tm">19:14:59</span><span class="nk"> &lt;luke-jr&gt;</span> would there be any harm to checking the PoW on headers earlier, banning for failure there, and not banning for unconnecting ones?
+<a name="l-80"></a><span class="tm">19:15:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> if you do not disconnect peers on incompatible consensus rules you will likely become partitioned from nodes on consensus rules which are consistent with yourself.
+<a name="l-81"></a><span class="tm">19:15:40</span><span class="nk"> &lt;morcos&gt;</span> Doesn't it seem safer to keep the current banning behavior unitl we've also improved the ability to make sure we're not partitioned from nodes following our rules
+<a name="l-82"></a><span class="tm">19:16:04</span><span class="nk"> &lt;gmaxwell&gt;</span> One of the totally braindamaged element of BIP148 is that it does nothing to make the network of BIP148 users connected and it sounds like you'd like to make that even worse?
+<a name="l-83"></a><span class="tm">19:16:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> but if it hardly collides in practice then it isn't a problem (sorry, will shut up about previous topic now)
+<a name="l-84"></a><span class="tm">19:16:20</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> softforks are backward compatible
+<a name="l-85"></a><span class="tm">19:17:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> when there is a persistant chain on invalid rules there is a hardfork.
+<a name="l-86"></a><span class="tm">19:17:22</span><span class="nk"> &lt;luke-jr&gt;</span> this is nothing specific to BIP148
+<a name="l-87"></a><span class="tm">19:17:29</span><span class="nk"> &lt;luke-jr&gt;</span> it is an issue for all softforks
+<a name="l-88"></a><span class="tm">19:17:33</span><span class="nk"> &lt;gmaxwell&gt;</span> BIP148 is a softfork but it creates a hardfork, its the hardfork that creates that partitioning issue.
+<a name="l-89"></a><span class="tm">19:17:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i'm confused
+<a name="l-90"></a><span class="tm">19:17:54</span><span class="nk"> &lt;jtimon&gt;</span> can we stay on the issue as general to all softforks?
+<a name="l-91"></a><span class="tm">19:18:03</span><span class="nk"> &lt;instagibbs&gt;</span> I'm not sure how this topic arose?
+<a name="l-92"></a><span class="tm">19:18:17</span><span class="nk"> &lt;instagibbs&gt;</span> (I get the original topic)
+<a name="l-93"></a><span class="tm">19:18:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">instagibbs:</span> it was an observation on the current BIP148 PR that I'm investigating; but it applies to any softfork
+<a name="l-94"></a><span class="tm">19:18:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i thought i understood your concern until you said it creates a hardfork
+<a name="l-95"></a><span class="tm">19:19:09</span><span class="nk"> &lt;BlueMatt&gt;</span> i assume here "hardfork" means "nodes will not converge"
+<a name="l-96"></a><span class="tm">19:19:20</span><span class="nk"> &lt;jtimon&gt;</span> I'm confused, are we talking about 2 different things? #9530 is from january
+<a name="l-97"></a><span class="tm">19:19:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+<a name="l-98"></a><span class="tm">19:19:28</span><span class="nk"> &lt;instagibbs&gt;</span> Yes they dont' appear to be connected?
+<a name="l-99"></a><span class="tm">19:19:34</span><span class="nk"> &lt;sdaftuar&gt;</span> perhaps this brainstorming should take place on #9530?  the current DoS scoring is broken, and potentially problematic for softforks (though not for segwit)
+<a name="l-100"></a><span class="tm">19:19:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+<a name="l-101"></a><span class="tm">19:19:43</span><span class="nk"> &lt;sdaftuar&gt;</span> but there's no urgent issue here
+<a name="l-102"></a><span class="tm">19:19:49</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> +1
+<a name="l-103"></a><span class="tm">19:19:50</span><span class="nk"> &lt;sdaftuar&gt;</span> and lots of ways to solve, i suspect
+<a name="l-104"></a><span class="tm">19:19:52</span><span class="nk"> &lt;instagibbs&gt;</span> ACK
+<a name="l-105"></a><span class="tm">19:19:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, nodes will risk not converging, but that's a P2P issue, not a consensus issue
+<a name="l-106"></a><span class="tm">19:20:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">::sigh::</span> I give up.
+<a name="l-107"></a><span class="tm">19:20:22</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">sipa:</span> from a payments angle, it's not just p2p.
+<a name="l-108"></a><span class="tm">19:20:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jtimon:</span> 9530 is unrelated afaik
+<a name="l-109"></a><span class="tm">19:20:24</span><span class="nk"> &lt;gmaxwell&gt;</span> this terminology is too limited.
+<a name="l-110"></a><span class="tm">19:20:41</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, if your peers are accepting a chain you will not accept you need different peers.
+<a name="l-111"></a><span class="tm">19:20:47</span><span class="nk"> &lt;sipa&gt;</span> of course
+<a name="l-112"></a><span class="tm">19:20:56</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> unless those peers will accept the chain you have too.
+<a name="l-113"></a><span class="tm">19:21:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> not unless, you still need different peers.
+<a name="l-114"></a><span class="tm">19:21:22</span><span class="nk"> &lt;gmaxwell&gt;</span> (or at least _some_ different peers)
+<a name="l-115"></a><span class="tm">19:21:24</span><span class="nk"> &lt;luke-jr&gt;</span> or rather, they need you as a peer
+<a name="l-116"></a><span class="tm">19:21:43</span><span class="nk"> &lt;gmaxwell&gt;</span> they might, but you're useless to them if you're only connected to other nodes that are also on chains you won't accept.
+<a name="l-117"></a><span class="tm">19:22:18</span><span class="nk"> &lt;luke-jr&gt;</span> I wonder if we should have a different criteria for our outbound connections, than for inbound
+<a name="l-118"></a><span class="tm">19:22:37</span><span class="nk"> &lt;luke-jr&gt;</span> eg, tolerate more from inbound peers, but be super-strong that we are on the same block as our outbound peers
+<a name="l-119"></a><span class="tm">19:22:40</span><span class="nk"> &lt;gmaxwell&gt;</span> If you want to talk about making some fraction of your connection slots more agressive in enforcement than others that would be reasonable, but you can't have a case where you will never disconnect peers that accept different rules.
+<a name="l-120"></a><span class="tm">19:22:57</span><span class="nk"> &lt;morcos&gt;</span> yes we need a more comprehensive solution..  ideally you could figure out whether they'd accept your chain or not, and that could be a factor as well you knowing whether you'd accept theirs, but we shouldn't make ad hoc changes
+<a name="l-121"></a><span class="tm">19:23:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> am i summarizing correctly... even though DoS scoring for invalid blocks isn't needed as such, it's currently our only protection against accidentally ending up with only peers that will not accept the best chain you'd accept if you'd see it
+<a name="l-122"></a><span class="tm">19:23:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> I have a patch-set worked up for making that possible. It doesn't change any current policy, just makes it more flexible to do that kind of thing
+<a name="l-123"></a><span class="tm">19:23:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> ya!
+<a name="l-124"></a><span class="tm">19:23:46</span><span class="nk"> &lt;sipa&gt;</span> ok, in that case i agree with you
+<a name="l-125"></a><span class="tm">19:23:58</span><span class="nk"> &lt;luke-jr&gt;</span> can we currently disconnect nodes, without banning them?
+<a name="l-126"></a><span class="tm">19:24:04</span><span class="nk"> &lt;luke-jr&gt;</span> I guess just set fDisconnect?
+<a name="l-127"></a><span class="tm">19:24:07</span><span class="nk"> &lt;morcos&gt;</span> which is what you guys said to each other on 9530
+<a name="l-128"></a><span class="tm">19:24:21</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it would be sufficient to disconnect in those cases, yes.
+<a name="l-129"></a><span class="tm">19:24:44</span><span class="nk"> &lt;gmaxwell&gt;</span> (or very short ban)
+<a name="l-130"></a><span class="tm">19:24:57</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I'm thinking of a conditional disconnect-only-if-outgoing-conn
+<a name="l-131"></a><span class="tm">19:25:27</span><span class="nk"> &lt;sdaftuar&gt;</span> in #9530, there's a suggestion of rotating outbound connections periodically
+<a name="l-132"></a><span class="tm">19:25:28</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+<a name="l-133"></a><span class="tm">19:25:37</span><span class="nk"> &lt;sdaftuar&gt;</span> and whether your outbound peer is on the same chain as you could be a criteria
+<a name="l-134"></a><span class="tm">19:27:16</span><span class="nk"> &lt;jtimon&gt;</span> action continue discussion on #9530 ?
+<a name="l-135"></a><span class="tm">19:27:17</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9530 | [brainstorm] DoS protection for blocks · Issue #9530 · bitcoin/bitcoin · GitHub
+<a name="l-136"></a><span class="tm">19:27:57</span><span class="nk"> &lt;luke-jr&gt;</span> 9530 sounds like too much refactoring IMO. I'm thinking for a bugfix only right now.
+<a name="l-137"></a><span class="tm">19:28:18</span><span class="nk"> &lt;luke-jr&gt;</span> but maybe there's enough overlap, dunno
+<a name="l-138"></a><span class="tm">19:29:23</span><span class="nk"> &lt;jtimon&gt;</span> anyway, next topic?
+<a name="l-139"></a><span class="tm">19:29:23</span><span class="nk"> &lt;luke-jr&gt;</span> in any case, is there a specific reason to disconnect for unconnectable headers, independently of the "same chain peers" issue?
+<a name="l-140"></a><span class="tm">19:29:32</span><span class="nk"> &lt;jtimon&gt;</span> or not
+<a name="l-141"></a><span class="tm">19:30:16</span><span class="nk"> &lt;luke-jr&gt;</span> we could move on if there's another topic, too; maybe someone can answer OOB if there's a need for the disconnect there
+<a name="l-142"></a><span class="tm">19:30:29</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-143"></a><span class="tm">19:30:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.14.2 (cfields)</span>
+<a name="l-144"></a><span class="tm">19:31:02</span><span class="nk"> &lt;wumpus&gt;</span> I think we've merged/backported everything that was tagged?
+<a name="l-145"></a><span class="tm">19:31:15</span><span class="nk"> &lt;cfields&gt;</span> just wanted to keep that rolling. several backports went in this week, anything else need to go?
+<a name="l-146"></a><span class="tm">19:31:18</span><span class="nk"> &lt;wumpus&gt;</span> if so, we can tag it after the meeting
+<a name="l-147"></a><span class="tm">19:31:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> not yet
+<a name="l-148"></a><span class="tm">19:31:38</span><span class="nk"> &lt;wumpus&gt;</span> what's missing?
+<a name="l-149"></a><span class="tm">19:31:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> Wait.. has been merged. Nm
+<a name="l-150"></a><span class="tm">19:32:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> +1 then
+<a name="l-151"></a><span class="tm">19:32:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> I check the backports and seems that now everything went in
+<a name="l-152"></a><span class="tm">19:32:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> checked
+<a name="l-153"></a><span class="tm">19:32:39</span><span class="nk"> &lt;wumpus&gt;</span> right, great
+<a name="l-154"></a><span class="tm">19:32:54</span><span class="nk"> &lt;jtimon&gt;</span> so rc?
+<a name="l-155"></a><span class="tm">19:32:57</span><span class="nk"> &lt;wumpus&gt;</span> that was indeed a short topic
+<a name="l-156"></a><span class="tm">19:33:15</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-157"></a><span class="tm">19:34:03</span><span class="nk"> &lt;wumpus&gt;</span> other topics?
+<a name="l-158"></a><span class="tm">19:34:27</span><span class="nk"> &lt;sipa&gt;</span> i wanted to bring up whether my writeup for style guidelines was acceptable, but i see it was already merged :)
+<a name="l-159"></a><span class="tm">19:34:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh. Yes.
+<a name="l-160"></a><span class="tm">19:34:58</span><span class="nk"> &lt;jtimon&gt;</span> what was the pr?
+<a name="l-161"></a><span class="tm">19:34:58</span><span class="nk"> &lt;luke-jr&gt;</span> no, it's terrible. I'm not following it. /s
+<a name="l-162"></a><span class="tm">19:35:01</span><span class="nk"> &lt;wumpus&gt;</span> heh yes, it was exactly what was discussed in the previous meeting
+<a name="l-163"></a><span class="tm">19:35:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">variable name guidelines</span>
+<a name="l-164"></a><span class="tm">19:35:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it was sarcasm :p
+<a name="l-165"></a><span class="tm">19:35:30</span><span class="nk"> &lt;sipa&gt;</span> OK.
+<a name="l-166"></a><span class="tm">19:35:31</span><span class="nk"> &lt;sipa&gt;</span> end topic
+<a name="l-167"></a><span class="tm">19:35:35</span><span class="nk"> &lt;wumpus&gt;</span> wanted to merge it as soon as possible to be able to point people at it in reviews
+<a name="l-168"></a><span class="tm">19:35:43</span><span class="nk"> &lt;sipa&gt;</span> yes, thank you for that
+<a name="l-169"></a><span class="tm">19:36:26</span><span class="nk"> &lt;jtimon&gt;</span> ok, https://github.com/bitcoin/bitcoin/pull/10461 reading now, but I assume it will be acceptable to me
+<a name="l-170"></a><span class="tm">19:36:31</span><span class="nk"> &lt;wumpus&gt;</span> more topics? this is becoming a high frequeny meeting
+<a name="l-171"></a><span class="tm">19:37:16</span><span class="nk"> &lt;sipa&gt;</span> we have 1.5 months left until feature freeze for 0.15
+<a name="l-172"></a><span class="tm">19:37:34</span><span class="nk"> &lt;sipa&gt;</span> anything to talk about there?
+<a name="l-173"></a><span class="tm">19:37:41</span><span class="nk"> &lt;sipa&gt;</span> i guess not... things happen as they happen
+<a name="l-174"></a><span class="tm">19:38:01</span><span class="nk"> &lt;wumpus&gt;</span> I... don't think so... would really love multiwallet to get in this time
+<a name="l-175"></a><span class="tm">19:38:03</span><span class="nk"> &lt;sdaftuar&gt;</span> perhaps suggestions for high priority features for 0.15?
+<a name="l-176"></a><span class="tm">19:38:16</span><span class="nk"> &lt;sdaftuar&gt;</span> as potentially distinct from high priority prs
+<a name="l-177"></a><span class="tm">19:39:04</span><span class="nk"> &lt;wumpus&gt;</span> if no PRs exist for them it might be too late already, but sure
+<a name="l-178"></a><span class="tm">19:39:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority features</span>
+<a name="l-179"></a><span class="tm">19:39:45</span><span class="nk"> &lt;jtimon&gt;</span> I would love https://github.com/bitcoin/bitcoin/pull/8994 , working on the blocksigning stuff again
+<a name="l-180"></a><span class="tm">19:40:06</span><span class="nk"> &lt;sdaftuar&gt;</span> i'd suggest matt's #10192 (script cache).  huge validation win.
+<a name="l-181"></a><span class="tm">19:40:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+<a name="l-182"></a><span class="tm">19:40:18</span><span class="nk"> &lt;sipa&gt;</span> ya
+<a name="l-183"></a><span class="tm">19:40:38</span><span class="nk"> &lt;cfields&gt;</span> +1
+<a name="l-184"></a><span class="tm">19:40:44</span><span class="nk"> &lt;jtimon&gt;</span> I have 2 PRs prefixed "Optimization", but didn't benchmark any of them...
+<a name="l-185"></a><span class="tm">19:41:03</span><span class="nk"> &lt;luke-jr&gt;</span> 10192 sounds problematic for future softforks
+<a name="l-186"></a><span class="tm">19:41:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sdaftuar:</span> any reason for not just adding that one to the high priority PRs though?
+<a name="l-187"></a><span class="tm">19:41:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1 on 10192,.. seems also madable for 0.15
+<a name="l-188"></a><span class="tm">19:41:17</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15ryanofsky opened pull request #10506: Fix bumpfee test after #10449 (06master...06pr/bumpdis) 02https://github.com/bitcoin/bitcoin/pull/10506
+<a name="l-189"></a><span class="tm">19:41:18</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> i was going to suggest it but thought matt might yell at me if it displaced his existing one :)
+<a name="l-190"></a><span class="tm">19:41:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i believe it shouldn't be, unless i've misunderstood the design
+<a name="l-191"></a><span class="tm">19:41:46</span><span class="nk"> &lt;wumpus&gt;</span> ohh okay, yes it's not really a blocker for his further work I guess, but before the feature freeze we can make an exception
+<a name="l-192"></a><span class="tm">19:41:52</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, i still want #10179 to get in :(
+<a name="l-193"></a><span class="tm">19:41:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-194"></a><span class="tm">19:42:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> will review
+<a name="l-195"></a><span class="tm">19:42:13</span><span class="nk"> &lt;BlueMatt&gt;</span> so much stuff to build on top of things
+<a name="l-196"></a><span class="tm">19:42:16</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> it interferes with script features that require chain-context.  i think luke has proposed such a thing.
+<a name="l-197"></a><span class="tm">19:42:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> specifically softforks where transactions are valid in some blocks, but not in others
+<a name="l-198"></a><span class="tm">19:42:37</span><span class="nk"> &lt;jtimon&gt;</span> merging something like #10427 before #10192 (I don't care his commit or mine, but would really love the nits solved) would make it simpler to review
+<a name="l-199"></a><span class="tm">19:42:37</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10427 | Consensus: Introduce static GetScriptFlags (mostly MOVEONLY) by jtimon · Pull Request #10427 · bitcoin/bitcoin · GitHub
+<a name="l-200"></a><span class="tm">19:42:40</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+<a name="l-201"></a><span class="tm">19:42:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think we should add 10192 to the prio list (and credit sdaftuar for it)
+<a name="l-202"></a><span class="tm">19:43:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> I've added it
+<a name="l-203"></a><span class="tm">19:43:12</span><span class="nk"> &lt;cfields&gt;</span> I have a good bit of net changes still coming, working on making them reviewable and adding tests. Definitely coming in time for 0.15.
+<a name="l-204"></a><span class="tm">19:43:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> great!
+<a name="l-205"></a><span class="tm">19:44:23</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> are you aiming to have openssl nuked in time for 0.15 ?
+<a name="l-206"></a><span class="tm">19:44:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> fair enough, i agree - but i do think it's solvable (store the context-dependent script validation flags along with the entry in the cache)
+<a name="l-207"></a><span class="tm">19:44:59</span><span class="nk"> &lt;wumpus&gt;</span> is 'nuking openssl' really a goal?
+<a name="l-208"></a><span class="tm">19:45:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> yes, but is it worth it?
+<a name="l-209"></a><span class="tm">19:45:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> For the PRNG, I though so
+<a name="l-210"></a><span class="tm">19:45:25</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-211"></a><span class="tm">19:45:56</span><span class="nk"> &lt;luke-jr&gt;</span> hmm, 1.7x
+<a name="l-212"></a><span class="tm">19:46:01</span><span class="nk"> &lt;sipa&gt;</span> i'd like to be independent from OpenSSL, but that's more from a code management perspective than an actual fear for security
+<a name="l-213"></a><span class="tm">19:46:05</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> I was referring to #10299
+<a name="l-214"></a><span class="tm">19:46:06</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10299 | Remove OpenSSL by sipa · Pull Request #10299 · bitcoin/bitcoin · GitHub
+<a name="l-215"></a><span class="tm">19:46:27</span><span class="nk"> &lt;sipa&gt;</span> as such, i don't think removing openssl should be a priority, but i think it should eventually happen
+<a name="l-216"></a><span class="tm">19:46:52</span><span class="nk"> &lt;wumpus&gt;</span> I'd agree about boost but I'm... not sure trying to nuke all dependencies is a wise path
+<a name="l-217"></a><span class="tm">19:47:11</span><span class="nk"> &lt;luke-jr&gt;</span> dependencies are better than reinventing stuff
+<a name="l-218"></a><span class="tm">19:47:31</span><span class="nk"> &lt;luke-jr&gt;</span> (all else being equal)
+<a name="l-219"></a><span class="tm">19:47:40</span><span class="nk"> &lt;wumpus&gt;</span> that's an argument that should be considered, we can't do everything better, but yes everything else being equal
+<a name="l-220"></a><span class="tm">19:47:44</span><span class="nk"> &lt;cfields&gt;</span> sure, I wasn't arguing for/against, was just curious if 10299 was still desired
+<a name="l-221"></a><span class="tm">19:47:47</span><span class="nk"> &lt;jtimon&gt;</span> sorry for linking so many of my prs, but re boost: https://github.com/bitcoin/bitcoin/pull/10502
+<a name="l-222"></a><span class="tm">19:48:14</span><span class="nk"> &lt;luke-jr&gt;</span> our binaries are getting annoyingly large btw..
+<a name="l-223"></a><span class="tm">19:48:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> IMO the rng mostly matters for the wallet keys, and long term, I'm not sure if wallet keys created on the environments we run (Linux/OSX/Windows) are in general a "good thing". Using our own PRNG (via Fortuna, etc,) seems fine to me
+<a name="l-224"></a><span class="tm">19:48:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> define "large"
+<a name="l-225"></a><span class="tm">19:48:55</span><span class="nk"> &lt;wumpus&gt;</span> improving the PRNG is certainly a good goal
+<a name="l-226"></a><span class="tm">19:49:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> 215 MB excluding the debuginfo files
+<a name="l-227"></a><span class="tm">19:49:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i'd say removing OpenSSL will come naturally once our PRNG has undergone a few more improvement
+<a name="l-228"></a><span class="tm">19:49:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> you certainly shouldn't cound debug info, no one ships that
+<a name="l-229"></a><span class="tm">19:49:38</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> that's why I didn't.
+<a name="l-230"></a><span class="tm">19:50:10</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> wha?? stripped bitcoind is &lt; 10mb on all platforms iirc
+<a name="l-231"></a><span class="tm">19:50:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> where do you think it comes from? is it just bitcoin-qt being large or everything?
+<a name="l-232"></a><span class="tm">19:50:19</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> or did you mean all binaries combined?
+<a name="l-233"></a><span class="tm">19:50:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> ok, makes sense
+<a name="l-234"></a><span class="tm">19:50:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> BitcoinD linux 64 is 9.3MB, Qt: ~33,
+<a name="l-235"></a><span class="tm">19:50:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Perfectly fine
+<a name="l-236"></a><span class="tm">19:51:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> yes
+<a name="l-237"></a><span class="tm">19:51:05</span><span class="nk"> &lt;jtimon&gt;</span> and if somebody can help with https://github.com/bitcoin/bitcoin/pull/10193/commits/3f404ca62c26dae8f5a4f321820a460bf7b5373e I am kind of stuck there
+<a name="l-238"></a><span class="tm">19:51:10</span><span class="nk"> &lt;wumpus&gt;</span> qt is huge, but that's unavoidable,it's a lot of code...
+<a name="l-239"></a><span class="tm">19:51:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it might be
+<a name="l-240"></a><span class="tm">19:51:34</span><span class="nk"> &lt;cfields&gt;</span> future builds should be much slimmer
+<a name="l-241"></a><span class="tm">19:51:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Qt5.9 can shrink ~20% from what I have read
+<a name="l-242"></a><span class="tm">19:51:40</span><span class="nk"> &lt;cfields&gt;</span> yes
+<a name="l-243"></a><span class="tm">19:51:40</span><span class="nk"> &lt;wumpus&gt;</span> I recently had to compile qt on a single-core ARM system (don't ask), took about 2 week
+<a name="l-244"></a><span class="tm">19:51:45</span><span class="nk"> &lt;cfields&gt;</span> and I'd be curious to see what lto does to bitcoin-qt ?
+<a name="l-245"></a><span class="tm">19:51:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> hehe
+<a name="l-246"></a><span class="tm">19:51:56</span><span class="nk"> &lt;luke-jr&gt;</span> 2.7M bitcoin-cli; 33M bitcoin-qt; 3.0M bitcoin-tx; 8.9M bitcoind; 12M test_bitcoin
+<a name="l-247"></a><span class="tm">19:52:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> compared to the 100GB blockchain... what should I say
+<a name="l-248"></a><span class="tm">19:52:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it compresses very well though
+<a name="l-249"></a><span class="tm">19:52:40</span><span class="nk"> &lt;jtimon&gt;</span> is it a worry that test_bitcoin is big?
+<a name="l-250"></a><span class="tm">19:52:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> no
+<a name="l-251"></a><span class="tm">19:52:51</span><span class="nk"> &lt;wumpus&gt;</span> nope
+<a name="l-252"></a><span class="tm">19:53:05</span><span class="nk"> &lt;wumpus&gt;</span> I think those numbers are pretty ok, compared to most desktop software
+<a name="l-253"></a><span class="tm">19:53:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> indeed
+<a name="l-254"></a><span class="tm">19:53:14</span><span class="nk"> &lt;wumpus&gt;</span> (or even mobile software, nowadays)
+<a name="l-255"></a><span class="tm">19:53:21</span><span class="nk"> &lt;luke-jr&gt;</span> it adds up though
+<a name="l-256"></a><span class="tm">19:53:31</span><span class="nk"> &lt;luke-jr&gt;</span> but not too crazy I guess
+<a name="l-257"></a><span class="tm">19:53:36</span><span class="nk"> &lt;jtimon&gt;</span> I mean, if it can get smaller I don't think anybody will oppose
+<a name="l-258"></a><span class="tm">19:53:53</span><span class="nk"> &lt;luke-jr&gt;</span> I'd be curious what using shared libs would do for it.
+<a name="l-259"></a><span class="tm">19:53:58</span><span class="nk"> &lt;wumpus&gt;</span> yeah... hardly a priority though, it's only such a small part of the memory use
+<a name="l-260"></a><span class="tm">19:53:58</span><span class="nk"> &lt;luke-jr&gt;</span> at least for Windows, where it's trivial
+<a name="l-261"></a><span class="tm">19:54:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> there'd be a ton of circular deps to unravel
+<a name="l-262"></a><span class="tm">19:54:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> ?
+<a name="l-263"></a><span class="tm">19:54:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I think he just means for the deps
+<a name="l-264"></a><span class="tm">19:54:39</span><span class="nk"> &lt;luke-jr&gt;</span> ah
+<a name="l-265"></a><span class="tm">19:54:40</span><span class="nk"> &lt;cfields&gt;</span> ah
+<a name="l-266"></a><span class="tm">19:54:57</span><span class="nk"> &lt;wumpus&gt;</span> yes on windows it's trivial
+<a name="l-267"></a><span class="tm">19:55:07</span><span class="nk"> &lt;luke-jr&gt;</span> re internals as shared libs: on Linux, circular deps are not a problem, but IIRC they are for Windows
+<a name="l-268"></a><span class="tm">19:55:10</span><span class="nk"> &lt;cfields&gt;</span> osx as well, fwiw
+<a name="l-269"></a><span class="tm">19:55:27</span><span class="nk"> &lt;wumpus&gt;</span> on linux you can't simply ship .so's in the same directory and have it work
+<a name="l-270"></a><span class="tm">19:55:44</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> you can but you have to use rpath hacks :\
+<a name="l-271"></a><span class="tm">19:55:44</span><span class="nk"> &lt;luke-jr&gt;</span> right, we'd need wrapper scripts (maybe okay, iff it makes a big difference)
+<a name="l-272"></a><span class="tm">19:55:50</span><span class="nk"> &lt;luke-jr&gt;</span> oh
+<a name="l-273"></a><span class="tm">19:55:53</span><span class="nk"> &lt;luke-jr&gt;</span> forgot about rpath :D
+<a name="l-274"></a><span class="tm">19:55:59</span><span class="nk"> &lt;cfields&gt;</span> there's a special rpath symbol that means pwd
+<a name="l-275"></a><span class="tm">19:56:04</span><span class="nk"> &lt;cfields&gt;</span> s/symbol/value/
+<a name="l-276"></a><span class="tm">19:56:07</span><span class="nk"> &lt;luke-jr&gt;</span> yes, I use it in BFGMiner
+<a name="l-277"></a><span class="tm">19:56:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> doesn't that use the *current* directory instead of the application directory though?
+<a name="l-278"></a><span class="tm">19:56:26</span><span class="nk"> &lt;luke-jr&gt;</span> $ORIGIN
+<a name="l-279"></a><span class="tm">19:56:31</span><span class="nk"> &lt;luke-jr&gt;</span> the name suggests app dir
+<a name="l-280"></a><span class="tm">19:56:31</span><span class="nk"> &lt;jtimon&gt;</span> other super fast topic?
+<a name="l-281"></a><span class="tm">19:56:37</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-282"></a><span class="tm">19:56:55</span><span class="nk"> &lt;wumpus&gt;</span> anyhow it's worth experimenting with, possibly, for a future version
+<a name="l-283"></a><span class="tm">19:57:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> Bitcoin Core ICO?
+<a name="l-284"></a><span class="tm">19:57:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> *duck*
+<a name="l-285"></a><span class="tm">19:57:45</span><span class="nk"> &lt;wumpus&gt;</span> security might be slightly improved as well as different libs can be ASLRed relative to each other
+<a name="l-286"></a><span class="tm">19:57:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> ack
+<a name="l-287"></a><span class="tm">19:57:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> lol
+<a name="l-288"></a><span class="tm">19:57:51</span><span class="nk"> &lt;jtimon&gt;</span> testnet 4 ico at most
+<a name="l-289"></a><span class="tm">19:57:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> IHO instead?
+<a name="l-290"></a><span class="tm">19:58:02</span><span class="nk"> &lt;luke-jr&gt;</span> compromise.
+<a name="l-291"></a><span class="tm">19:58:08 </span><span class="nka">* sipa</span> <span class="ac">commits the Bitcoin Core.ico file</span>
+<a name="l-292"></a><span class="tm">19:58:09</span><span class="nk"> &lt;luke-jr&gt;</span> (Initial Hat Offering)
+<a name="l-293"></a><span class="tm">19:58:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> hahahaha
+<a name="l-294"></a><span class="tm">19:58:20</span><span class="nk"> &lt;jtimon&gt;</span> ITO
+<a name="l-295"></a><span class="tm">19:58:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Win32 had plenty if .ICO's
+<a name="l-296"></a><span class="tm">19:58:31</span><span class="nk"> &lt;BlueMatt&gt;</span> Bitcoin Series A ICO
+<a name="l-297"></a><span class="tm">19:58:49</span><span class="nk"> &lt;gmaxwell&gt;</span> We could sell international reply coupons... it would have a lot more substance than most ICOs. :)
+<a name="l-298"></a><span class="tm">19:59:12</span><span class="nk"> &lt;luke-jr&gt;</span> reply coupons? O.o\
+<a name="l-299"></a><span class="tm">19:59:32</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> https://bitcoincore.org/assets/images/favicon.ico
+<a name="l-300"></a><span class="tm">19:59:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
