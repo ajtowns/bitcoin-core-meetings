@@ -1,0 +1,378 @@
+19:00:04 <wumpus> #startmeeting
+19:00:04 <lightningbot> Meeting started Thu Jun  8 19:00:04 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:04 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:07 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs
+19:00:10 <jonasschnelli> hi
+19:00:12 <sdaftuar> hi
+19:00:14 <sipa> hi
+19:00:15 <achow101> hi
+19:00:29 <wumpus> proposed topics?
+19:00:49 <kanzure> hi.
+19:00:51 <sipa> UI interaction with pertxout upgrade?
+19:00:57 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:01:07 <jonasschnelli> sipa: ack
+19:01:33 <wumpus> ok, let's do high priority for review first, then that
+19:01:37 <wumpus> #topic high priority for review
+19:01:54 <sipa> #10148
+19:01:56 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:01:59 <luke-jr> I've rebased multiwallet etc
+19:02:08 <wumpus> luke-jr: great!
+19:02:12 <sipa> (^ will double our effectively available dbcache)
+19:02:30 <wumpus> luke-jr: sae there were some new review comments, did you address them yet?
+19:03:00 <luke-jr> wumpus: I believe all review comments are addressed or answered
+19:03:12 <wumpus> added 10148
+19:03:15 <sipa> thanks!
+19:03:51 <jtimon> still waiting on my current one, thanks wumpus for benchmarking
+19:03:58 <jonasschnelli> #8694 now passes gitian, will re-utack soon
+19:04:01 <gribble> https://github.com/bitcoin/bitcoin/issues/8694 | Basic multiwallet support by luke-jr · Pull Request #8694 · bitcoin/bitcoin · GitHub
+19:04:13 <wumpus> jtimon: a very nice gain!
+19:04:38 <luke-jr> oh, there was a comment asking for tests..
+19:04:52 <luke-jr> I didn't write any, although I agree they would be nice
+19:04:55 <wumpus> jtimon: unfortunately bitcoind nuked my log so I can't get the timings, but 26% savings in block hash operations is noce
+19:05:06 <jtimon> wumpus: nice
+19:05:37 <jtimon> we're talking about #10339 in case someone is lost
+19:05:40 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:05:43 <wumpus> luke-jr: well I'd say add those later, this is only the first in a series towards multiwallet after all
+19:06:02 <sipa> wumpus: status on account to label conversion?
+19:06:02 <luke-jr> indeed, it might not be possible to test right now since it's not exposed to RPC
+19:06:06 <BlueMatt> wumpus: "in block hash operations" hmm? can you be more specific?
+19:06:08 <gmaxwell> Related to hashing, does anyone here have AMD ryzen yet?
+19:06:12 <BlueMatt> whats that compared to total runtime?
+19:06:32 <wumpus> BlueMatt: I don't know about time, I just instrumented the block header hash function
+19:06:34 <gmaxwell> BlueMatt: it's tiny vs total runtime, I assume-- but it should impact latency on block handling somewhat.
+19:06:38 <luke-jr> gmaxwell: no, but I'd been holding out for SHA2 acceleration before upgrading, so I might get one if AMD is competing with Intel again
+19:06:55 <sipa> related topic: sha2/crc32 hw accel?
+19:07:08 <wumpus> as I said, I lost the timings (blame bitcoind nuking the log if it's too large)
+19:07:11 <gmaxwell> luke-jr: Ryzen has the sha2 instructions... so I'm asking to find out if anyone will be able to test support for them. :)
+19:07:23 <luke-jr> gmaxwell: right, that's why ;)
+19:07:48 <luke-jr> I just haven't had time to investigate the pros/cons otherwise yet
+19:07:58 <wumpus> sipa: no progress on that yet
+19:08:02 <gmaxwell> In any case, 98% of the work needed to support sha2 instructions is the same as using SSE4 SHA2 which will itself be a non-trival speedup.
+19:08:29 <wumpus> crc speedup should be possible after the leveldb upgrade that sipa PRed
+19:08:39 <luke-jr> gmaxwell: we removed SSE4 stuff years ago, but I'm not sure if it was used for non-mining
+19:08:49 <sipa> luke-jr: it was only used for mining at the time
+19:08:50 <gmaxwell> BlueMatt: IIRC I instrumented and measured accepting a block at tip hashed the header ~6 times or so.
+19:08:53 <gmaxwell> luke-jr: it was mining only.
+19:09:00 <wumpus> luke-jr: that was a different one, the N-way-parallel
+19:09:11 <sipa> yup 4-way parallel SSE2, iirc
+19:09:11 <gmaxwell> and it was a vector SHA2 that had to work on 4 elements at a time.
+19:09:36 <jtimon> gmaxwell: that's before or after the patch?
+19:09:37 <gmaxwell> What we should be implementing now is the one at a time SIMD sha2.  I believe matt uses it in fibre but without autodetection.
+19:09:38 <sipa> it seems we've strayed from the topic?
+19:09:41 <gmaxwell> jtimon: before.
+19:09:41 <luke-jr> I wonder if it'd be worth using 4-way for merkle trees etc
+19:09:42 <BlueMatt> gmaxwell: yea, but if its not measurable on the total, unlikely to be worth the effort and complexity.....an alternative - do we have CBlockIndex*es in most of those places? pblockindex->GetBlockHash() is free and simpler than passing hashes around
+19:09:45 <jonasschnelli> Will have access to a Ryzen in a couple of days via Hetzner
+19:10:13 * luke-jr wonders if the GCC compile farm has a Ryzen
+19:10:37 <morcos> Without doing a thorough review of 10339, is the speedup worth it as opposed to the tradeoff on making the code a little more complicated/involved.  Who was it that said the primary point of source code is to communicate between developers
+19:10:51 <jonasschnelli> #10339
+19:10:53 <morcos> It just seems weird to pass a block and separately it's hash into a bunch of functions
+19:10:53 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:11:07 <jtimon> BlueMatt: what's wrong with passing hashes around?
+19:11:26 <BlueMatt> DoPartOfConnectBlock(42 args)
+19:11:27 <wumpus> #topic Optimization: Calculate block hash less times by jtimon
+19:11:35 <BlueMatt> we already have too many args in many of those functions
+19:11:38 <instagibbs> "fewer" :P
+19:11:54 <wumpus> well if hashing is a bottleneck, the obvious optimization is to just to it less
+19:11:56 <sipa> instagibbs: i didn't want to say anything :)
+19:12:04 <BlueMatt> wumpus: is it?
+19:12:08 <wumpus> if hashing is not a bottleneck, then going after SSE and such makes no sense either
+19:12:26 <sipa> BlueMatt: i believe that in all places where we already have CBlockIndex, no new block hashes are computed
+19:12:34 <sipa> all of the cases in 10339 are before having a CBlockIndex
+19:12:39 <wumpus> so if #10339 is not an improvement then we can leave hashing alone
+19:12:41 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:12:44 <gmaxwell> Well my suggestion on that hash thing was just to cache the hash in the block object, but Pieter said he prefered this.
+19:12:46 <jtimon> instagibbs: calculate fewer times? thanks
+19:12:59 <gmaxwell> (I also implemented that, though in a way that wasn't correct for the mining code.)
+19:13:06 <BlueMatt> gmaxwell: I highly prefer that, though making CBlock const ala CTransaction is a bit more involved
+19:13:09 <sipa> gmaxwell: if we create another CBlock for the cases where that's not needed
+19:13:18 <sipa> (like GetTransaction and mining code)
+19:13:26 <jtimon> Node also that we're sometimes getting the hash from the index and sometimes from the CBlock
+19:13:38 <wumpus> right, calculating it eagerly can also result in overhead
+19:13:43 <morcos> I'd just like to see some evidence, even a little bit, that this optimization is worth it.  26% fewer hashing operations results in what savings?  Or do people not agree it makes the code a bit more cumbersome
+19:14:07 <sipa> i don't see much problem in passing a hash along with a block if you know it
+19:14:21 <BlueMatt> passing in the hash as a part of ProcessNewBlock? yuck
+19:14:22 <sipa> it's certainly a bit of complication, but a trivial one
+19:14:22 <wumpus> morcos: sure, my point is just that if 26% fewer hashing operations isn't worth it, then using special intstructions to gain a few % is netiher worth it
+19:14:25 <CodeShark> seems like there are probably lower hanging fruit in optimizations but meh
+19:14:28 <BlueMatt> I just spent a bunch of time getting fewer args there
+19:14:45 <morcos> wumpus: well hashing occurs a lot more often than in the calculations of these block hashes
+19:14:52 <BlueMatt> to separate the consensus code from net_processing, now we're adding more coupling :(
+19:14:53 <jtimon> it seems to me that the reserve is mostly a question of style
+19:14:54 <gmaxwell> morcos: My reason for bringing it up is that I believe the repeated hashing is on the latency critical path for block propagation to the tune of maybe a millisecond-ish.
+19:15:08 <jtimon> I mean calculating it eagerly can penalize in some cases, right
+19:15:22 <gmaxwell> wumpus: these optimizations just prevent repeated hashing of the headers, in terms of total bytes hashed while syncing thats pretty small even though we do have a high repetition factor.
+19:15:36 <gmaxwell> jtimon: what case would computing it early peanalize?
+19:15:37 <wumpus> gmaxwell: ok...
+19:15:38 <CodeShark> BlueMatt: my preference is to sacrifice a little performance for better architecture ;)
+19:15:42 <sdaftuar> i will try to benchmark the effect on validation speed for this
+19:15:52 <wumpus> CodeShark: I think that's a fair argument
+19:15:56 <sipa> wumpus: transaction hashing accounts for far more than block header hashing, but not on the critical path
+19:16:02 <jtimon> gmaxwell: when the validation fails for some other reason before you need the hash?
+19:16:04 * BlueMatt would be more ok if we calculated it at the top of ProcessNewBlock and pass that one around, but still not ideal
+19:16:11 <BlueMatt> passing it in to ProcessNewBlock is.....ugh
+19:16:36 <gmaxwell> jtimon: I don't think there is any validation failure path where we don't hash... after all, we'll want to know _what_ block hash failed to validate.
+19:16:38 <jtimon> BlueMatt: you could have said that when each function had a separated commit, but I can leave that out
+19:16:46 <BlueMatt> or, really, chnging the signatures of stuff in validation.h for this without a benchmark showing its a real win :(
+19:16:58 <jtimon> gmaxwell: yeah, fair enough
+19:17:16 * morcos has said his piece and is willing to let the people who spent more time thinking about this decide
+19:17:22 <wumpus> ok, clear, better to close it I guess, would have made sense to have this discussion earlier
+19:17:24 <jtimon> so we come back to only the "ugh" argument
+19:17:40 <gmaxwell> But I still don't understand why sipa prefered to do this jtimon patch instead of making the object cache it.   FWIW, just monkey patching it 'works' and the only obvious issue is mining.
+19:17:57 <sipa> gmaxwell: and every other read from disk
+19:18:46 <jtimon> I preferred this because I think it's simpler than the cache, even if it's "ugh"
+19:18:49 <gmaxwell> sipa: I don't understand your comment.
+19:18:54 <sipa> i consider adding more arguments to validation-specific functions less invasively than changing a primitive datastructure
+19:18:58 <sipa> we can do both, if needed
+19:19:16 <wumpus> sipa: I tend to agree
+19:19:26 <sipa> gmaxwell: i believe we often read blocks from disk without caring about its hash, because we already know it
+19:19:35 <wumpus> sipa: just passing extra arguments is easier to reason about than extending primitive datastructures
+19:19:39 <gmaxwell> sipa: the read funcion computes it!
+19:19:46 <sipa> gmaxwell: ?
+19:20:01 <sipa> currently, yes, as a checksum
+19:20:17 <sipa> if we care about the checksum functionality, we should add a crc
+19:20:20 <gmaxwell> // Check the header
+19:20:20 <gmaxwell> if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
+19:20:20 <wumpus> jtimon: I agree, caching is always somewhat risky and error prone, this is more explicit and clear
+19:20:23 <gmaxwell> return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+19:20:48 <wumpus> then again if it's not worth it, performanec wise, we shouldn't do it at all
+19:20:52 <wumpus> not in another way either
+19:21:02 <sipa> making the block hash part of CBlock makes us unable to skip computing that hash
+19:21:09 <sipa> even in places where we don't care about it
+19:21:13 <gmaxwell> I think I previously gave figures on the latency impact of caching.
+19:21:17 <jtimon> how can I benchmark this to convince morcos?
+19:21:34 <gmaxwell> sipa: Where are those places?
+19:21:34 <wumpus> I don't know, I tried
+19:22:09 <sipa> gmaxwell: every time we read a block from disk, we already have its hash (because that's how we look it up!)
+19:22:26 <sdaftuar> sipa: don't we also hash all the transactions when we read a block from disk?
+19:22:28 <sipa> gmaxwell: recomputing it there serves as nothing more than a checksum
+19:22:30 <sdaftuar> surely that dominates all this
+19:22:34 <morcos> sipa: i know i said i'd shut up, but you just read from DISK, who cares if you hash 80 bytes?
+19:22:41 <wumpus> might be time for next topic, if this is not a perf issue, might be better to discuss it after meeting
+19:22:57 <sipa> sdaftuar: good point.
+19:23:02 <gmaxwell> sdaftuar: we don't. I used to think we did but we do not.
+19:23:15 <sipa> yes, we do
+19:23:23 <gmaxwell> sipa: where?
+19:23:32 <sipa> deserializing a transaction computes its hash
+19:23:50 <gmaxwell> oh right, what we don't do is validate the hashroot.
+19:23:53 <sipa> let's discuss this after the meeting
+19:23:59 <gmaxwell> k
+19:24:45 <sipa> next topic?
+19:24:56 <wumpus> #topic UI interaction with pertxout upgrade
+19:25:16 <jtimon> in any case, BlueMatt morcos if you already knew you didn't liked this, I would have appreaciated knowing it earlier, maybe a provisional concept NACK or something
+19:25:45 <sipa> so, since 10195, we'll have a possibly lengthy (minutes on decent hardware, possibly much longer elsewhere) upgrade process from the old per-txid utxo db to the per-txout one
+19:25:52 <morcos> jtimon: yes sorry, i only looked at the PR during todays meeting, also why i said i'd stop arguing about it
+19:26:04 <sipa> that needs some GUI interaction, i believe
+19:26:08 <wumpus> jtimon: same here, this should have been clear sooner, otherwise I wouldn't have spent as much time on it
+19:26:19 <sipa> or perhaps even in bitcoind
+19:26:36 <morcos> wumpus: in general perf improvements shoudl include data in the PR request when possible I think
+19:26:40 <wumpus> jtimon: it's kind of disappointing to discover this does what it says on the tin, save ~1/4th of block hash operations, just to discover that's not even important
+19:26:44 <jonasschnelli> Can you not just use uiInterface.Progress() like in VerifyDB?
+19:26:45 <wumpus> jtimon: that kind of annoys me
+19:26:57 <sipa> jonasschnelli: that doesn't let you interrupt
+19:27:07 <morcos> sipa: yeah i noticed that it doesn't even output to debug log that its doing an upgrade right?
+19:27:14 <sipa> it should log
+19:27:19 <sipa> "Upgrading database..."
+19:27:20 <luke-jr> jonasschnelli: I'd think users should be able to send txs during the upgrade.
+19:27:21 <morcos> oh
+19:27:40 <jonasschnelli> luke-jr: but RPC is also not ready in this case? RIght?
+19:27:44 <gmaxwell> morcos: it logs, but you won't see it if you have leveldb logging turned on. :P
+19:27:46 <sipa> nothing works during the upgrade
+19:27:51 <sipa> there is no full node available
+19:28:05 <jonasschnelli> why would you then need interruption?
+19:28:10 <wumpus> it should at least show a progress indicator and be interruptible indeed, ideally
+19:28:13 <sipa> because maybe it takes too long
+19:28:20 <sipa> and they want to continue another time
+19:28:36 <wumpus> yes, because the user may want to do something else with the computer, having not expected to have to spend a long time upgrading
+19:28:44 <gmaxwell> by interruption this means 'crash', not continue running without the upgrade.
+19:28:44 <jtimon> anyway, I would still like to benchmark it if anyone can help me (not sure what to do)
+19:28:50 <jonasschnelli> Ah.. the update can be done in multiple steps..
+19:28:57 <sipa> yes
+19:28:58 <jonasschnelli> well that would also need communication then
+19:28:59 <wumpus> gmaxwell: well 'exit' not crash
+19:29:07 <gmaxwell> same difference
+19:29:10 <morcos> sipa: yeah i missed that somehow, sorry
+19:29:13 <sipa> crashing "should" be fine
+19:29:29 <gmaxwell> it better be! :) (also, I've tested it a fair bit)
+19:29:30 <jonasschnelli> [Updating 0%] \n You can shutdown and continue later [Shutdown-Button] <-- something like that?
+19:29:37 <wumpus> jtimon: benchmarking the reindex chainstate maybe?
+19:29:39 <gmaxwell> jonasschnelli: like that.
+19:29:39 <luke-jr> what if you crash, run the old version, and then the new one again?
+19:29:47 <wumpus> jtimon: I still wonder why -stopatblock doesn't work
+19:30:18 <gmaxwell> luke-jr: you get to keep both pieces? (I believe the old version will tell you the database is corrupt and stop there.... but I haven't tested that, so it's a good question.)
+19:30:21 <sipa> wumpus: no; that's dominated by tx validation/deserialization... a good benchmark tests block validation given fully populated mempool and sigcache etc
+19:30:29 <jonasschnelli> How about logging? Can we log similar to the VerifyDB [the non-newline % steps]?
+19:30:38 <sipa> jonasschnelli: sure
+19:30:40 <wumpus> sipa: ok...
+19:30:48 <jonasschnelli> I can work on that. Seems to fit my skillset. :)
+19:30:51 <luke-jr> gmaxwell: IMO users may get tired of waiting and prefer to start the upgrade over in exchange for being able to use the old version in the meantime
+19:30:51 <jtimon> sipa: perhaps it could be as simple as using -upgradeutxodb=1 once or something of the sort?
+19:30:52 <wumpus> sipa: good luck doing that in a deterministic way, though
+19:30:53 <sipa> maybe VerifyDB or something like that can pass a bool saying "interruptible" ?
+19:31:04 <gmaxwell> luke-jr: sounds like a case we should handle.
+19:31:05 <sipa> jtimon: you can't not do it
+19:31:29 <sipa> jtimon: i mean, -upgradeutxodb=0 would mean just exiting immediately :)
+19:31:37 <wumpus> no, the upgrade needs to be done
+19:31:42 <luke-jr> we could prompt before starting to warn the user, but IMO we'd probably want to begin ASAP, even if we hold off destroying backward compat until the user OKs it
+19:31:51 <gmaxwell> meh.
+19:32:01 <wumpus> sure, you could warn...
+19:32:07 <gmaxwell> Keep in mind that on a reasonably fast computer the upgrade does not take long.
+19:32:07 <jtimon> no, I mean once you set -upgradeutxodb=1 once it doesn't matter what you set anymore
+19:32:09 <sipa> it's a new major release, i don't care about backward compatibility; the user can always reindex if they really need to
+19:32:13 <morcos> so just to be clear, right now if someone went back to an old version, there is some chance they'd screw themselves right?
+19:32:23 <morcos> (and need to reindex)
+19:32:32 <wumpus> morcos: yes, it simply doesn't work. We should warn in the release notes.
+19:32:37 <sipa> morcos: i believe that with very high probability the startup sanity check will fail
+19:32:38 <luke-jr> pruned nodes cant reindex
+19:32:44 <gmaxwell> morcos: old version rejects with a "your database is corrupted"  though luke was asking an interesting question about what happens if you do this mid-conversion.
+19:33:02 <wumpus> we coudl have added logic to 0.14.2 to detect the new format and give a more specific error
+19:33:03 <morcos> sipa: yeah that was my question, how far do you have to get along in the upgrade before your sanity check would fail with high probability
+19:33:07 <gmaxwell> sipa: I did test that case, how could it not fail?
+19:33:25 <sdaftuar> we only go back 6 blocks now in the startup sanity check i think
+19:33:26 <luke-jr> wumpus: IMO it'd be better to destroy the upgrade so it starts over, and work (for incomplete upgrades)
+19:33:31 <sdaftuar> isn't it possible you don't come across any bad entries?
+19:33:35 <gmaxwell> wumpus: hm? I don't think that would be the right way, the right way would be to make the new version more incompatible.
+19:33:53 <wumpus> gmaxwell: ok...
+19:34:02 <sipa> there is a trivial change we can make that guarantees old versions will treat it as an empty db
+19:34:24 <luke-jr> change the dir name?
+19:34:28 <sipa> haha
+19:34:31 <wumpus> gmaxwell: I just mean a specific error like 'the utxo database is in a newer format than supported by this version' would be clearer than a general sanity check error
+19:34:33 <sipa> yes, i've considered that too
+19:34:34 <morcos> empty db == corrupt and leave it so the new version can continue
+19:34:39 <gmaxwell> no there is just the height index entry.
+19:34:39 <morcos> wumpus +1
+19:34:45 <wumpus> but I don't know ,sorry for suggesting it
+19:34:46 <gmaxwell> wumpus: oh, sure that would have been okay!
+19:34:51 <morcos> thats at least somethign we shoudl do  for future changes
+19:34:51 <sipa> wumpus: unfortunately it doesn't have a version number
+19:34:55 <jtimon> luke-jr: we could move the main datadir to ./bitcoin/main maybe
+19:34:55 <sipa> agree
+19:34:57 <luke-jr> using a new db would also mean users from pre-obfuscation get that enabled..
+19:35:10 <sipa> a new db is a possibility
+19:35:18 <wumpus> sipa: we could have added one! but yes, too late.
+19:35:19 <sipa> though i'd prefer to not need 2x disk storage during the upgrade
+19:35:25 <sipa> not too late
+19:35:27 <morcos> sipa: what was the trivial change you were referring to
+19:35:45 <sipa> morcos: change the record name for the 'best block hash' entry
+19:35:52 <gmaxwell> the database stores a record to indicate the current tip; we can just change that.
+19:35:56 <sipa> and set the old one to something invalid
+19:36:23 <luke-jr> [19:35:19] <sipa> though i'd prefer to not need 2x disk storage during the upgrade <-- IMO unavoidable if the "user gets tired of waiting and runs old version" is desired to work okay
+19:36:32 <gmaxwell> FWIW the non-atomic flushing change already changes those records around.
+19:36:39 <sipa> yup
+19:36:46 <sipa> well, in a backward compatible way
+19:36:47 <gmaxwell> I don't think we should support user gets tired of waiting.
+19:36:59 <gmaxwell> too high a cost for too low a benefit.
+19:36:59 <sipa> it's even easier if it doesn't need to be backward compatible
+19:37:15 <morcos> gmaxwell: yes we shouldn't support it, but it might be nice to support they tried to do it and didn't corrupt their database by trying so they now have to reindex
+19:37:41 <gmaxwell> morcos: yes, in practice that is the case but it isn't guarenteed. We could make it guarenteed.
+19:37:44 <wumpus> gmaxwell: well just exiting and continuing the upgrade later would be ok
+19:38:02 <gmaxwell> wumpus: yea, that works except we don't have an exit button other than kill -9 :)
+19:38:03 <sipa> wumpus: also, i don't understand why the CompactRange doesn't work for you
+19:38:21 <sipa> if it's not guaranteed (or even not likely) to work, maybe the 2x disk storage is inevitable
+19:38:27 <sipa> and we're better off explicitly creating a new db
+19:38:36 <wumpus> sipa: I don't know either, could try it again if you think it's a fluke...
+19:38:48 <sipa> i'll test it myself again too
+19:38:51 <gmaxwell> I tested an earlier range compacting patch and it did work.
+19:39:00 <gmaxwell> I'll also test.
+19:39:21 <sipa> monitor disk usage during upgrade, with and without compactrange patch
+19:39:23 <sipa> would be nice
+19:39:37 <sipa> and maybe this discussion depends on the outcome there
+19:39:58 <gmaxwell> if indeed compacting isn't reliable we should change to create a new database. IMO
+19:40:05 <sipa> agree
+19:40:30 <wumpus> it might have to do with my test framework, I'll copy the database directory next time instead of using my usual hardlink hack
+19:41:02 <gmaxwell> (FWIW, the reason I checked compacting before is because I was going to suggest changing to a new database if it didn't work.)
+19:41:06 <wumpus> other topics?
+19:41:27 <sipa> crc32 leveldb 1.20?
+19:41:32 <gmaxwell> ^
+19:41:41 <wumpus> #topic crc32 leveldb 1.20
+19:41:41 <jtimon> gmaxwell: agreed on cost/benefit for supporting interruption, much easier to require confirmation with a warning "this may take a while and cannot be interrupted" or something
+19:42:07 <gmaxwell> sipa: Why is travis failing?
+19:42:09 <sipa> i personally really dislike the approach they're using (which seems to be the advised way even), which requires a separate object compiled with different flags
+19:42:25 <sipa> gmaxwell: i assume incompatibility with our own build system integration of leveldb
+19:42:35 <wumpus> compiling a separate object with special flags is  pretty much the standard way of doing it
+19:42:57 <sipa> they're even abusing it... they're calling the new object without knowing that the CPU supports it
+19:43:25 <wumpus> ok, that's not good
+19:43:27 <gmaxwell> Compiling a new object with different flags is standard and correct,  calling it without knowing, is wrong.
+19:43:33 <wumpus> yes
+19:43:45 <wumpus> the detection function should not be in that object
+19:43:46 <sipa> the approach in #10377 is so much easier
+19:43:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10377 | Use rdrand as entropy source on supported platforms by sipa · Pull Request #10377 · bitcoin/bitcoin · GitHub
+19:43:49 <wumpus> simple as that
+19:44:34 <wumpus> that only works because you don't spell out the instruction but put it in binary, if you spelled out the instruction it would have to be compiled with a special flag
+19:44:56 <wumpus> you can't use e.g. sse4.2 instructions if the object isn't compiled with that
+19:45:00 <gmaxwell> IIRC MSVC has banned inline ASM, if we don't care about MSVC then we're free to do other things.  However, you need to do the object thing if you want to use code that accesses simd via intrensics, for something like rdrand or clmul it's no big deal to use asm.
+19:45:07 <sipa> ok ok
+19:45:36 <wumpus> gmaxwell: yes, intrinsics are more compatible
+19:45:57 <cfields_> here!
+19:46:31 <gmaxwell> so we need to fix leveldb to now call into that object without having done the detection. Anything else needed there?
+19:46:41 <wumpus> I don't think leveldb's way is wrong, except for putting the detection function in the instruction-set specific object
+19:47:14 <BlueMatt> oh, i was supposed to mention cfields_ would be late
+19:47:25 <cfields_> heh, thanks
+19:47:34 <jtimon> maybe we can open an issue on their repo or something?
+19:47:38 <BlueMatt> you're welcome :)
+19:47:48 <sipa> jtimon: the issue is in our own build system integration, i'm sure
+19:47:51 <sipa> not upstream
+19:48:05 <sipa> oh, you mean for calling the machine specific object? yeah
+19:48:06 <wumpus> wouldn't upstream have the same problem then?
+19:48:08 <gmaxwell> jtimon might have been referring to the detection in the wrong object, thats just wrong.
+19:48:13 <sipa> yeah, agree
+19:48:18 <sipa> if they ever look at issues...
+19:48:18 <jtimon> gmaxwell: sipa right
+19:48:21 <gmaxwell> we should submit a fix, it should be trivial.
+19:48:27 <cfields_> that's done already: https://github.com/theuni/bitcoin/commit/2cb7dda13884e44105f33c16e7e2c1a9aed46295
+19:48:33 <wumpus> yes better to submit a fix, submitting an issue likely won't help
+19:48:35 <sipa> cfields_: oh!
+19:48:36 <cfields_> or are you guys talking about something else?
+19:48:56 <sipa> probably not
+19:48:58 <sipa> let's try
+19:49:09 <gmaxwell> okay, we have actions here.
+19:49:33 <wumpus> lol <long discussion> oh, cfields did it already
+19:49:37 <cfields_> that enables the runtime detection and separate object, but iirc there's still a little generic code that may end up with the wrong instructions
+19:49:45 <sipa> cfields_: yup...
+19:50:15 <gmaxwell> that just needs to be moved into another file, I expect.
+19:50:22 <sipa> yup
+19:50:26 <sipa> let's do that independently
+19:50:28 <wumpus> yes, move all the code out of it except for the function itself
+19:50:42 <gmaxwell> should be a trivial patch we can take locally and send upstream.
+19:50:51 <cfields_> i even linked it on the PR! :)
+19:50:51 <cfields_> heh, sorry I was late. Movers showed up at 3:00 exactly :\
+19:51:19 <gmaxwell> We'll need to do the same thing for SSE4 (and sha2 instruction) sha2.
+19:51:40 <jtimon> cfields_: that doesn't seem related the meeting started at 21:00 :p
+19:51:59 <wumpus> from what I remember that's actual assembly code from intel, in .s format, not using intrinsics
+19:52:07 <gmaxwell> ah. okay!
+19:52:18 <luke-jr> jtimon: 3:00 is meeting time for east USA
+19:52:29 <jtimon> luke-jr: sure, bad joke, sorry
+19:52:38 <cfields_> i suspect I missed this discussion too, but I have intrinsics done for sha2
+19:52:43 <gmaxwell> I usually expect corporate code to be intrinsics because having good performance is not enterprise enough. :P
+19:52:55 <wumpus> https://github.com/laanwj/bitcoin/commit/7e3e717892d96cae7f05dd1b6742425a298cc12e
+19:53:05 <wumpus> it's even in yasm format
+19:53:19 <cfields_> wumpus: ah, i'll shut up :)
+19:53:36 <gmaxwell> I'm very exicited about getting the faster hash in, with all our other improvements, I'm now expecting a 8% IBD speedup.
+19:53:46 <gmaxwell> if not more.
+19:53:55 <wumpus> cfields_: you mean sha-specific instructions? the stuff I quote is from before that
+19:54:12 * jtimon was used to the other notation and used assemble with nasm, but it's pretty sure we don't want that
+19:54:15 <cfields_> wumpus: yea, intrinsics for intel sha1/2
+19:54:27 <wumpus> it just implements a SHA using SSE4/AVX, so it works on older architectures..
+19:54:29 <sipa> jtimon: ha, cool
+19:54:44 <sipa> wumpus: no license issues?
+19:54:59 <jtimon> sipa: not cool, I should have learned with the at & t notation, no?
+19:55:01 <gmaxwell> sipa: it's permissively licensed IIRC.
+19:55:09 <cfields_> wumpus: ah, nice. I suspect that's where the leveldb discussion came from. We can re-use the build-time logic for sure.
+19:55:10 <wumpus> sipa: it's either MIT or BSD
+19:55:20 <sipa> jtimon: just swap the argument order :)
+19:55:52 <wumpus> spot-the-license https://github.com/laanwj/bitcoin/blob/7e3e717892d96cae7f05dd1b6742425a298cc12e/src/crypto/sha256_avx1.asm#L10
+19:55:55 <gmaxwell> Before the metting closes, I'd like to remind people that Matt's caching change #10192 is a 31% block connection speedup.  It's done, rebased current, and needs review.
+19:55:59 <gribble> https://github.com/bitcoin/bitcoin/issues/10192 | Cache full script execution results in addition to signatures by TheBlueMatt · Pull Request #10192 · bitcoin/bitcoin · GitHub
+19:56:24 <wumpus> #topic cache full script execution
+19:56:24 <jtimon> sipa: yeah, I think that's mostly it, and some minor things I think, but I was too lazzy to translate the programs I had
+19:57:41 <gmaxwell> I don't know that there is too much to say about 10192. It saves a lot of operations when checking if an already validated tx is cached.  It's fairly straight forward.
+19:58:14 <sipa> yeah, let's do it
+19:58:28 <wumpus> seems it had a lot of review, no (ut)ACKs though
+19:58:57 <gmaxwell> I'm working on an ACK now. Just want other people to look, it sat for a long time needing rebase.
+19:59:16 <wumpus> right
+19:59:18 <morcos> on the list
+19:59:20 <sdaftuar> +1
+19:59:48 <wumpus> it's already on the high priority for review list
+19:59:57 <gmaxwell> The non-atomic flush stuff is also still outstanding, but I think it might get slightly changed based on todays per txo discussion.
+19:59:58 <sipa> cfields_: yours commit (after trivial cherry pick) works
+20:00:33 <wumpus> #endmeeting
