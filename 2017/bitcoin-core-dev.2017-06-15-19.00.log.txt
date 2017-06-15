@@ -1,0 +1,450 @@
+19:00:07 <wumpus> #startmeeting
+19:00:07 <lightningbot> Meeting started Thu Jun 15 19:00:07 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:07 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:24 <wumpus> PSA: v0.14.2 has been tagged, please start your gitian builders
+19:00:30 <wumpus> topics?
+19:00:34 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:34 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 instagibbs achow101
+19:00:36 <kanzure> hi.
+19:00:40 <paveljanik> Hi
+19:00:41 <achow101> hi
+19:00:42 <cfields> jonasschnelli: i just wrote a quick mutex locktime reporter, ping me after meeting if you'd like to discuss
+19:00:44 <sdaftuar> here
+19:00:45 <sipa> yow
+19:00:49 <gmaxwell> (I guess I should update my list)
+19:00:57 <jonasschnelli> cfields: awesome!
+19:01:03 <sipa> wumpus: you're requesting the presence of 2 instagibbses?
+19:01:07 <gmaxwell> cfields: finally someone did that, awesome.
+19:01:20 <cfields> well it's very dumb, but it's something :)
+19:01:21 <wumpus> sipa: yes!
+19:01:34 <sipa> cfields: -DDEBUG_LOCKCONTENTION?
+19:01:38 <luke-jr> lol
+19:01:38 <jonasschnelli> cfields: dumb is good
+19:01:51 <wumpus> #topic high priority for review
+19:02:04 <gmaxwell> https://github.com/bitcoin/bitcoin/projects/8
+19:02:08 <sipa> #10148 plz *puppyeyes*
+19:02:10 <gribble> https://github.com/bitcoin/bitcoin/issues/10148 | Use non-atomic flushing with block replay by sipa · Pull Request #10148 · bitcoin/bitcoin · GitHub
+19:02:26 <wumpus> 10148 is already on the list, I'm testing it
+19:02:30 <sipa> cool
+19:02:33 <sdaftuar> i'm working on an rpc test as well
+19:02:39 <sipa> sdaftuar: awesome!
+19:02:42 <sipa> can i help?
+19:03:00 <sdaftuar> i'll let you know!
+19:03:05 <sdaftuar> i think i almos thave it
+19:04:08 <sipa> having thought more about it, i don't think #10339 will have any significant performance impact
+19:04:11 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:04:22 <luke-jr> basic multiwallet was merged. I hope to have the next step (RPC support) later today. ACK to add to priority then?
+19:04:48 <jonasschnelli> RPC support would be great
+19:04:53 <sipa> agree
+19:04:55 <jonasschnelli> You mean addressing wallet via RPC endpoint?
+19:04:55 <achow101> luke-jr: yes please
+19:05:08 <luke-jr> jonasschnelli: I mean each username has a different single wallet
+19:05:22 <jonasschnelli> luke-jr: hmm...
+19:05:24 <wumpus> sipa: ok, removing it from high priority then
+19:05:27 <jonasschnelli> I'd prefere endpoints
+19:05:39 <jonasschnelli> AUTH for wallet switching seems hackish
+19:05:41 <luke-jr> jonasschnelli: endpoints can be done later; I'm just trying to get the simplest stuff done first
+19:05:50 <jonasschnelli> endpoint is 10lines of code
+19:05:54 <wumpus> I'd also prefer endpoints, makes it easier to move wallets to external processes etc just by changing the url
+19:05:57 <jonasschnelli> I can post it to you later
+19:06:00 <luke-jr> jonasschnelli: not securely ;p
+19:06:10 <luke-jr> jonasschnelli: I don't want JoinMarket to have access to my main wallet
+19:06:21 <jonasschnelli> there is no security in our RPC implementation :/
+19:06:24 <sipa> yay, wallet ACLs
+19:06:25 * sipa hides
+19:06:30 <wumpus> please don't use auth, it's not supposed to be a multi-user authentication mult-wallet, that just adds another nightmare difficult to support like accounts
+19:06:31 <achow101> you could do some combination of both?
+19:06:31 <luke-jr> wumpus: different username is also a simple change to the URI
+19:06:43 <wumpus> we already support different usernames/passwords
+19:06:49 <jonasschnelli> use a passphase as wallet name
+19:06:55 <wumpus> it's an authentication feature, should not affect the wallet
+19:06:56 <jonasschnelli> same security as basic auth?
+19:07:23 <sipa> i think the first step should be either endpoint or a generic optional named parameter to select the wallet
+19:07:24 <luke-jr> wumpus: I see no distinction
+19:07:28 <wumpus> sipa: yes
+19:07:28 <gmaxwell> endpoints won't be ten lines of code. After all, we'll need to add support for them to bitcoin-cli, the test framework, etc.
+19:07:34 <achow101> sipa: agreed
+19:07:43 <sipa> the choice of which user can access which wallets is orthogonal, i think
+19:07:50 <wumpus> gmaxwell: which is easy, the underlying stuff (rpcproxy, libevent) obviously supports it
+19:07:55 <sipa> but i would prefer not to tie users to wallets at the auth level
+19:07:57 <jonasschnelli> gmaxwell: yes Indeed
+19:08:48 <jonasschnelli> first stage, each user should be able to access each wallet....
+19:08:48 <gmaxwell> obviously we do want to have username/wallet binding, right?  This lets you be more confident e.g. that your joinmarket install isn't going to screw up your ordinary wallet, for example.
+19:08:48 <wumpus> sipa: me neither, it just seems a level violation, and causes wrong expectations that giving access to RPC to one wallet is secure in any way
+19:08:54 <gmaxwell> (eventually)
+19:08:57 <luke-jr> jonasschnelli: no -.-
+19:09:11 <wumpus> gmaxwell: I really think that's going too far
+19:09:23 <gmaxwell> then why are we bothering?
+19:09:27 <wumpus> securing RPC for multiple users is absolutely a nightmare
+19:09:32 <jonasschnelli> luke-jr: the first logical extendable step would be that, no? Adding wallet selecting via AUTH is something you need to throw away later
+19:09:49 <luke-jr> well, if I can't isolate JoinMarket this way, I have no interest in doing it.. so I can just move on to GUI and leave RPC support in Knots only
+19:09:51 <sipa> wumpus: i think it's inevitable that we'll need that
+19:09:53 <wumpus> anyhow a security layer could always be added could be later if endpoint-based multiwallet is in place
+19:09:58 <wumpus> sipa: I think it's a mistake
+19:10:05 <wumpus> sipa: just like accounts was
+19:10:13 <wumpus> it's something that bitcoind shouldn't handle
+19:10:27 <gmaxwell> I think what luke would like to accomplish is making multiwallet immediately useful for the application of combining multiple applicatoins onto one bitcoind; rather than having to run seperate bitcoinds for each thing that needs a wallet that you're running.
+19:10:30 <luke-jr> jonasschnelli: no?
+19:10:59 <sipa> gmaxwell: i think that's an interesting use case; i don't think it should be the first step
+19:11:04 <wumpus> that's just inviting bugs, there's no way we can make that secure, the RPC is not a secure endpoint and is regarded as compeltely  trusted
+19:11:34 <wumpus> it would escalate a bug in e.g. a single RPC command to a security issue, right now RPC access = fully trusted
+19:11:36 <jonasschnelli> luke-jr: I don't know the JoinMarket use case very well.. but if you give it access to your node, it could shutdown, add peers, etc. (in case you don't trust that software)
+19:11:45 <gmaxwell> This is also important to us at blockstream and we will end up maintaining a fork of Bitcoin with it. (though luke wasn't doing this work at our request).
+19:11:58 <luke-jr> jonasschnelli: even if we add endpoint multiwallet and ACLs later, we still want a way to select a default wallet for each user
+19:12:20 <luke-jr> wumpus: then why do we have auth at all?
+19:12:32 <jonasschnelli> I really think we should keep hands away from multi-user/multi-wallet setup
+19:12:34 <wumpus> luke-jr: to gain access
+19:12:47 <wumpus> jonasschnelli: me too... seems something that needs to be a level on top, not handled by bitcoind itself
+19:12:55 <jonasschnelli> For now we should focus on single-user/multi-wallet (1:n)
+19:13:15 <jonasschnelli> n:n smells like a account-like-problem-re-incarnation
+19:13:20 <wumpus> anyhow if we have endpoint multi-wallet access, it'spossible to slap on a wallet/user auth mapping later
+19:13:34 <luke-jr> or vice-versa..
+19:13:38 <wumpus> that's "just" a matter of access control
+19:13:44 <jonasschnelli> yes. n:n may make sense.. but endpoint first seems much more logical
+19:13:48 <wumpus> yes
+19:13:51 <gmaxwell> jonasschnelli: I do not follow your comment with account like problems. The problem with accounts is that they weren't wallets but users expected them to be and treated them like ones.
+19:14:06 <jonasschnelli> gmaxwell: Yes. Not directly related.
+19:14:10 <sipa> i don't think access control is necessarily that complicated; have a global permission and wallet specific permission; configure which users have which
+19:14:13 <wumpus> I just think that making bitcoind multi-user is a grave mistake
+19:14:18 <wumpus> but I"ll shut up about it...
+19:14:24 <jonasschnelli> I think the complexity is huge,.. leads to permission groups, etc.
+19:14:35 <wumpus> yes, exactly, some people wnat everything in bitcoind
+19:14:44 <gmaxwell> jonasschnelli: what? no it doesn't.
+19:14:47 <sipa> well it seems that multiple people want multiwallet for multiple reasons
+19:14:53 <sipa> i don't think that's a problem
+19:15:04 <sipa> and should not be a blocker for the basic functionality
+19:15:07 <wumpus> this is one the reason why the wallet should have been split off to a separate process / library I guess... now it all needs to be compounded
+19:15:11 <wumpus> making bitcoind some kind of systemd
+19:15:11 <jonasschnelli> if we start to use n:n, enterprises will probably use it for multi-user wallet backends...
+19:15:32 <luke-jr> wumpus: user:wallet makes a split off later simpler
+19:15:33 <jonasschnelli> and removing – if it gets to complicated – is hard or even impossible (like the accounting)
+19:15:34 <wumpus> jonasschnelli: yes exactly... and what if there's a bug in that
+19:15:37 <luke-jr> endpoints makes splitting off later complex
+19:15:54 <wumpus> it moves all the (perceived) responsiblity for managing multi-user setups secure to us
+19:16:00 <jonasschnelli> luke-jr: endpoint would even work if each wallet runs in its own process
+19:16:04 <gmaxwell> How do we split wallets if we are using endpoints?
+19:16:08 <jonasschnelli> (though auth probably also)
+19:16:17 <luke-jr> jonasschnelli: huh? not really..?
+19:16:23 <jtimon> but multi-wallet doesn't imply multi-user, does it?
+19:16:25 <wumpus> gmaxwell: what do you mean with "split wallets"?
+19:16:36 <gmaxwell> split wallets int oseperate processes
+19:16:51 <wumpus> gmaxwell: different wallets have different URLs then
+19:17:04 <wumpus> gmaxwell: so it's just another change: change the port...
+19:17:17 <luke-jr> wumpus: ALL of these options are simple URI changes..
+19:17:27 <achow101> how would different endpoints work with bitcoin-cli or the debug console?
+19:17:28 <luke-jr> although some tools don't allow changing the URI right now
+19:17:31 <wumpus> http://127.0.0.1:8333/wallet1 versus http://127.0.0.1:8334/wallet2
+19:17:39 <gmaxwell> achow101: thats why it isn't ten lines of code.
+19:17:42 <jonasschnelli> achow101: you can add: -wallet=filename
+19:17:55 <wumpus> achow101: just add an option
+19:18:03 <sipa> s/filename/name/
+19:18:09 <jonasschnelli> endpoints in bitcoin-cli is not really complex...
+19:18:10 <luke-jr> achow101: debug console isn't via RPC anyway
+19:18:11 <jonasschnelli> sipa: yes
+19:18:14 <achow101> but it certainly wouldn't work with debug console
+19:18:14 <gmaxwell> sipa +1
+19:18:39 <wumpus> as for debug console: you could ask the same question about authentication
+19:18:40 <gmaxwell> luke-jr: I think we'll need endpoints in any case regardless of auth to set a default.
+19:18:52 <luke-jr> gmaxwell: maybe
+19:18:52 <jonasschnelli> achow101: the whole GUI has no multiwallet interface
+19:18:58 <gmaxwell> luke-jr: because that will be what you need to make it usable to work with multiple wallets as a single user.
+19:18:59 <wumpus> debug console is not authenticated at all - so adding endpoint/auth support is likely the similar amount of work
+19:19:24 <wumpus> if access control is implemented, a single user could want to have access to multiple wallets anyhow
+19:19:25 <gmaxwell> debug console should perhaps get a dropdown, and yes, it will be the same work either way.. probably easier with endpoints.
+19:19:31 <wumpus> so user=wallet is a bad abstraction
+19:19:36 <luke-jr> I already have the GUI done BTW
+19:19:43 <gmaxwell> yes you'll want to have access to multiple wallets from a single user regardless.
+19:19:44 <luke-jr> it's just based on the RPC branch
+19:19:51 <sipa> luke-jr: how does it let you select the wallet?
+19:19:52 <gmaxwell> luke-jr: how does gui handle the debug console?
+19:19:56 <jonasschnelli> A very hackish (and very old) endpoint impl
+19:19:57 <luke-jr> sipa: comboboxes
+19:20:03 <jonasschnelli> A very hackish (and very old) endpoint impl for bitcoin-cli: https://github.com/jonasschnelli/bitcoin/blob/2015/05/corewallet/src/bitcoin-cli.cpp#L134
+19:20:05 <luke-jr> one in the main window, and one in the debug window
+19:20:20 <gmaxwell> sounds more or less okay.
+19:20:56 <gmaxwell> luke-jr: so why not implement endpoints first?  surely even if your own use needs account you can carry a 5 line patch to allow accounts to select the default wallet.
+19:20:57 <luke-jr> wumpus: even if a single user can access multiple wallets, we still want a way to choose the default
+19:21:05 <gmaxwell> see above
+19:21:21 <luke-jr> gmaxwell: it's more code, and not done yet
+19:21:23 <wumpus> well the default wallet could depend on the user, I don't really care
+19:21:31 <luke-jr> I can implement it, but IMO it will delay things to make it the next step
+19:21:32 <wumpus> though I'd prefer to get rid of 'default wallet', in time
+19:21:35 <jonasschnelli> maybe the GUI should have a node window (network, peers) and a wallet-window per wallet...
+19:21:52 <sipa> jonasschnelli: ugh
+19:21:58 <luke-jr> the user=>wallet stuff is literally done and well-tested (in Knots), just needs to be rebased
+19:21:59 <gmaxwell> jonasschnelli: that doesn't sound like a good UI. :P
+19:22:07 <sipa> jonasschnelli: /me remembers browsers before tabs
+19:22:08 <gmaxwell> at least not mandatory.
+19:22:13 <gmaxwell> what sipa says. :P
+19:22:20 <jonasschnelli> yeah... I like windows.. but I'm pretty alone nowadays with that
+19:22:31 <jonasschnelli> Yeah. Tabs make more sense I guess.
+19:22:37 <sipa> anyway, separate discussion
+19:22:52 * jonasschnelli think sipa certainly browses with lynx
+19:23:04 <sipa> i would really prefer endpoints or optional named argument to select a wallet, and deal with the authentication question later
+19:23:15 <jonasschnelli> sipa: +1
+19:23:16 <gmaxwell> luke-jr: in any case, seems to me the path forward is to do the endpoints thing, and having auth pick default is a simple change which is either sufficiently non-objectionable or at least a trivial patch to carry.
+19:23:21 <achow101> sipa: ack
+19:23:22 <wumpus> sipa: same for me
+19:23:27 <luke-jr> would anyone NACK if I go forward with user->wallet mappings since they're basically ready, and then do endpoints based on that?
+19:24:07 <achow101> probably
+19:24:09 <gmaxwell> luke-jr: does it also support one user with many wallets?
+19:24:12 <wumpus> well as we determined above, a user may want to have access to multiple wallets, so a single user->wallet mapping just doesn't cut it, even if you want to add access control
+19:24:20 <gmaxwell> what wumpus says.
+19:24:28 <luke-jr> gmaxwell: the current code does not, but there's no reason the endpoints couldn't add that
+19:24:29 <wumpus> I really think we should just start with endpoints as sipa says
+19:24:52 <jnewbery> Isn't rpcuser deprecated anyway?
+19:24:54 <jonasschnelli> Yes. Let's start with endpoint.. I'll can write it next week because I already did once...
+19:24:57 <wumpus> I'm not going to NACK anything that makes progress though
+19:24:59 <luke-jr> jnewbery: it's rpcauth
+19:25:00 <sipa> jnewbery: rpcauth isn't
+19:25:01 <jonasschnelli> *I can
+19:25:29 <gmaxwell> jnewbery: rpcuser is, but this is rpcauth (rpcuser doesn't even have multiple users)
+19:25:29 <jtimon> jnewbery: is rpcuser deprecated? since when?
+19:25:38 <gmaxwell> jtimon: a year?
+19:25:39 <achow101> jtimon: it's deprecated since a long time ago
+19:25:42 <gmaxwell> it prints out a notice!
+19:25:50 <wumpus> rpcuser is deprecated, people are encouraged to use either rpcauth or cookie auth
+19:25:59 <wumpus> we won't remove it just yet ofcourse
+19:26:09 <jtimon> oh, deprecated as in "we want to remove this", but it actually still works, no?
+19:26:14 <paveljanik> 26 minutes...
+19:26:14 <luke-jr> right
+19:26:15 <achow101> yes
+19:26:17 <wumpus> that is what deprecated means, yes
+19:26:28 <jtimon> yeah, sorry
+19:26:29 <instagibbs> paveljanik, 34 to go :P
+19:26:43 <wumpus> paveljanik: what's so special about 26?
+19:26:49 <sipa> jonasschnelli: any progress on GUI for database upgrade?
+19:26:58 <wumpus> #topic GUI for database upgrade?
+19:27:00 <gmaxwell> And we've wasted a perfectly good half hour. :P  luke should put up patches and we can yell at him on github, but I think I would really prefer if the first cut does multiple wallets for a user... (if nothing else, that is the easiest thing to test)
+19:27:00 <jonasschnelli> sipa: I sadly had only little time last and this week
+19:27:07 <luke-jr> wumpus: 21 is half of 42
+19:27:18 <jonasschnelli> sipa: I looked into it and wanted to ask you how I get the max size of a db cursor (to calc progress)
+19:27:42 <sipa> jonasschnelli: it's not hard to estimate as txids are randomly distributed
+19:27:51 <gmaxwell> so you just look at the txid...
+19:27:54 <sipa> i can add code for that
+19:27:55 <gmaxwell> they're done in order.
+19:28:07 <gmaxwell> if it's at 0x01... then it's done 1/256 of it.
+19:28:12 <sipa> txid -> arith_uint256 -> * 100/2^256
+19:28:29 <jonasschnelli> Okay. The rest is simple (debug.log non newline [10%] progress   /  GUI splash screen progress with abort)
+19:28:39 <wumpus> BTW: jnewbery rebased the label API pull (#7729), a lot of thanks for that
+19:28:41 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+19:28:50 <sipa> jonasschnelli: i'll write code for the progress estimation
+19:29:08 <jonasschnelli> sipa: Okay. Pass me over a commit and I'll finish the rest
+19:29:14 <jnewbery> wumpus: no problem. I wanted to test drive it :)
+19:30:38 <gmaxwell> wumpus: \O/ on the label rebase.
+19:30:53 <wumpus> must have been a nightmare
+19:31:27 <wumpus> any other topics?
+19:31:51 <jonasschnelli> what about the rpc splitting,... has that been discussed so far?
+19:32:04 <jnewbery> There had been quite a few refactors. I think the rebase was good, but reviewers should look out for anything that looks off
+19:32:06 <jonasschnelli> signrawwithkey, etc.?
+19:32:09 <wumpus> rpc splitting?
+19:32:26 <achow101> the PRs I made to unfuck signrawtx and validateaddress
+19:32:42 <wumpus> ah https://github.com/bitcoin/bitcoin/pull/10583
+19:32:47 <wumpus> #10583
+19:32:48 <jonasschnelli> achow101: yes. Those..
+19:32:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10583 | [RPC] Split part of validateaddress into getaddressinfo by achow101 · Pull Request #10583 · bitcoin/bitcoin · GitHub
+19:33:04 <wumpus> #topic split off wallet functionality from mixed wallet/non-wallet RPC calls
+19:33:08 <wumpus> or something
+19:33:22 <achow101> #10570
+19:33:23 <gribble> https://github.com/bitcoin/bitcoin/issues/10570 | [RPC] Split signrawtransaction into multiple distinct RPCs · Issue #10570 · bitcoin/bitcoin · GitHub
+19:33:45 <wumpus> concept ack (haven't gotten around to reviewing anything)
+19:33:48 <gmaxwell> I think those changes all make sense.  Someone commented about breaking compatibility, but its for a new major version and it will be easy for callers to update their behavior.
+19:33:59 <morcos> i'm here now.. haven't caught up on backlog
+19:34:06 <sipa> it breaks compatibility with a never documented or advertized feature :)
+19:34:07 <wumpus> well we could allow both, for one major version
+19:34:10 <gmaxwell> Though we might want to rename the old calls at the same time. (a suggestion for discussion)
+19:34:20 <sipa> (concatenating multiple tx hex strings, yuck)
+19:34:25 <wumpus> wut?
+19:34:32 <wumpus> ok, we're talking about different things
+19:34:37 <instagibbs> aside from mixing wallet/nonwallet, what's the issue with validateaddress?
+19:34:38 <gmaxwell> sipa: it was certantly advertised and known.
+19:34:40 <wumpus> I mean validateaddress/getaddressinfo
+19:34:42 <instagibbs> (or is that the issue)
+19:34:50 <achow101> instagibbs: that's the issue
+19:34:51 <sipa> wumpus: ah, i'm talking about signrawtransaction
+19:34:52 <gmaxwell> wumpus: he's talking about the signraw split to create the combine call.
+19:34:52 <wumpus> instagibbs: that is the issue
+19:34:57 <instagibbs> ok, are we killing off getinfo then too:
+19:34:59 <instagibbs> :)
+19:35:05 <achow101> hopefully :D
+19:35:11 <wumpus> instagibbs: yes, but that's not the topic now
+19:35:16 <gmaxwell> I would miss getinfo. all the other commands take more typing. :P
+19:35:17 <wumpus> we're already confusing two things, let's add more!
+19:35:25 <gmaxwell> wumpus: okay!
+19:35:25 <instagibbs> eh, we're talking about blowing away validateaddress as is, sorry
+19:35:26 <wumpus> gmaxwell: hey I have a pull that implements it client side
+19:35:46 <gmaxwell> wumpus: lol.  can you name the rpc call "gi" :P even less typing.
+19:35:47 <jonasschnelli> IMO having a non wallet sign rawtx where priv keys are passed aroung in a shell over a possible TCP channel is not ideal.. but we already have it... I though instead of splitting it off, move it to the tool
+19:35:55 <jonasschnelli> But I see the point with getting the UTXOs
+19:36:01 <sipa> let's rename all RPCs to get*info... for example s/sendtoaddress/getnewpaymenttxid/
+19:36:08 <gmaxwell> jonasschnelli: we need the UTXOs or its all awfulsauce.
+19:36:11 <instagibbs> sipa, lol
+19:36:16 <wumpus> #8843
+19:36:17 <gribble> https://github.com/bitcoin/bitcoin/issues/8843 | rpc: Handle `getinfo` client-side in bitcoin-cli w/ `-getinfo` by laanwj · Pull Request #8843 · bitcoin/bitcoin · GitHub
+19:36:18 <luke-jr> lol
+19:36:28 <luke-jr> getsignedtransaction
+19:36:31 <jonasschnelli> gmaxwell: I though the node RPC can spitout what you need to pass it into bitcoin-tx or so...
+19:36:48 <jonasschnelli> but I know... very inconvinient
+19:36:48 <luke-jr> getthistransactionbroadcast
+19:36:50 <luke-jr> :p
+19:36:51 <sipa> jonasschnelli: sure it can; it's just more convenient to not need that
+19:36:51 <wumpus> eventually closed it because the only person responding was luke-jr and he kept arguing against it
+19:37:08 <gmaxwell> jonasschnelli: and that adds steps to the process.. which is already long enough that it's prone to error.
+19:37:14 <sipa> jonasschnelli: it's called listunspent
+19:37:16 <jonasschnelli> It's just another source how people can shoot themselfs with exposing priv keys
+19:37:28 <gmaxwell> luke-jr: why do you hate freedom?
+19:37:32 <luke-jr> gmaxwell: !⁈
+19:37:35 <gmaxwell> haha
+19:38:30 <sipa> jonasschnelli: but the functionality already exists, and i very much like removing it from the wallet (so people at least won't accidentally mix up privkey based operations with wallet stuff)
+19:38:54 <instagibbs> sipa, ok I see the motivation there
+19:38:58 <gmaxwell> anyways, I can just say that I have tried to stop using getinfo and failed. Mostly because typing getnetworkinfo getblockchainfo getfooooooooooinfo and then wading through a bunch of things when I want to see: How many connections, which block am I at, and what wallet am I running (which I can tell via the balance). :P  just personal feedback.
+19:39:01 <luke-jr> gmaxwell: I didn't even NACK it :o
+19:39:04 <jonasschnelli> Yes... I guess that makes sense. I kinda hoped once we touch that we could move it away from the node into a sep. process
+19:39:21 <luke-jr> gmaxwell: use the GUI for that! :p
+19:39:31 <sipa> jonasschnelli: i have a vague proposal for that too, but it's more complicated
+19:39:37 <gmaxwell> luke-jr: again, why do you hate freedom? :P
+19:39:50 <sipa> jonasschnelli: and involves a new format for partially signed transactions...
+19:39:57 <wumpus> gmaxwell: anyhow we can easily reopen and rebase that PR, bitcoin-cli hardly changed since then
+19:40:01 <sipa> wumpus: ack
+19:40:03 <jonasschnelli> sipa: that contains everything you need to sign?
+19:40:08 <luke-jr> gmaxwell: make a shell alias to all the calls ;)
+19:40:23 <gmaxwell> it's so much easier to have a signing blob thing post segwit. :(
+19:40:37 <bitcoin-git> [13bitcoin] 15laanwj reopened pull request #8843: rpc: Handle `getinfo` client-side in bitcoin-cli w/ `-getinfo` (06master...062016_09_getinfo_clientside) 02https://github.com/bitcoin/bitcoin/pull/8843
+19:40:39 <sipa> jonasschnelli: yes, contains amounts, change info, prevouts being spent, ...
+19:40:40 <wumpus> yes, let's activate segwit
+19:40:46 <gmaxwell> luke-jr: I don't like customizing my expirence of bitcoin too much because then I'll just patch around everything that stinks.
+19:40:47 * sipa revives segnet
+19:41:09 <jonasschnelli> sipa: That's also something we could re-use for the detatched signing standard (a.k.a hardware wallet standard)
+19:41:11 <luke-jr> we could just leave getinfo how it is ;)
+19:41:26 <gmaxwell> in any case, we're offtopic. I think that achow's PRs are all nice incremental improvements and we should take them (after review)
+19:41:28 <sipa> jonasschnelli: pre-segwit however, it also needs to contain the full spent transactions :(
+19:41:33 <luke-jr> bitcoin-cli -getinfo only handles 1 sortof-use-case, and leaves the other 2 supported use cases unaddressed
+19:41:35 <sipa> gmaxwell: agree
+19:41:37 <wumpus> after promising to deprecate it for years... yeah, of course....
+19:41:52 <sipa> (disclaimer: achow101'w my intern this summer, i asked him to work on those)
+19:42:02 <jonasschnelli> sipa: [full spent transactions], I guess that's okay.
+19:42:25 <sipa> jonasschnelli: bitcoind unfortunately can't do that generically (you need the wallet for that)
+19:42:25 <wumpus> getinfo is going away, there's no going back now
+19:42:44 <luke-jr> let's add a getallinfo then
+19:42:46 <luke-jr> /s
+19:42:47 <wumpus> I've exactly documented what information you can find on what get*info command
+19:42:54 <gmaxwell> I am fine with it going away, but I don't believe we replaced it as well as we thought we did.
+19:43:01 <wumpus> and the client-side getinfo is ther for user friendlyness, if people want it
+19:43:01 <sipa> i have no problem with removing it, with or without 8843
+19:43:15 <luke-jr> wumpus: it doesn't work in the debug window
+19:43:16 <sipa> i'm sure i'll curse a bit that getinfo isn't around anymore, and then change my habits
+19:43:34 <gmaxwell> sipa: I tried blocking it, you won't. the replacements right now are not usable.
+19:43:43 <luke-jr> :/
+19:43:50 <gmaxwell> But thats okay, wumpus suggestion would be fine, though luke has a point about the debug console.
+19:43:53 <wumpus> luke-jr: isn't all the information in the debug window *without* typing anything?
+19:43:57 <achow101> removing getinfo will mess with a ton of things that use getinfo for basic rpc connection checking too...
+19:44:11 <wumpus> achow101: and you're starting to bring that up *now*?
+19:44:12 <achow101> but I think it should be removed anyways
+19:44:12 <sipa> let's merge the getuptime rpc thing
+19:44:13 <gmaxwell> wumpus: if it isn't we should make it. problem solved.
+19:44:22 <bitcoin-git> [13bitcoin] 15ryanofsky opened pull request #10605: Add AssertLockHeld assertions in CWallet::ListCoins (06master...06pr/listlock) 02https://github.com/bitcoin/bitcoin/pull/10605
+19:44:23 <instagibbs> achow101, move to dumpprivkey obv
+19:44:33 <wumpus> gmaxwell: the first tab of the debug window pretty much shows everything, and indeed, if it isn't it could be added
+19:44:49 <sipa> oh, another topic: non-hardened key derivation
+19:44:51 <achow101> wumpus: well most of those things are old website scripts that were written once and never touched again by the authors
+19:44:54 <instagibbs> sipa, ACK
+19:44:54 <gmaxwell> luke-jr: I think ^ is how we should handle the gui.  (also important to make it copy/pasteable if it isn't.)
+19:45:01 <wumpus> I'm really disappointed that years after deciding to deprecate getinfo we're still having this discussion
+19:45:12 <luke-jr> wumpus: lol maybe :D
+19:45:14 <wumpus> anyhow next topic
+19:45:20 <gmaxwell> wumpus: sometimes you have to try things out to know their effects completely!
+19:45:30 <wumpus> #topic non-hardened key derivation
+19:45:32 <sipa> so
+19:45:53 <sipa> non-hardened key derivation has many use cases in addition to hardened
+19:46:02 <jonasschnelli> I guess NicolasDorier made good work there
+19:46:07 <wumpus> achow101: we should carefully note it in the release notes of course
+19:46:13 <sipa> however, they also have a gaping wide security hole when child private keys are exposed
+19:46:23 <wumpus> achow101: we could even make getinfo fail with a custom message
+19:46:29 <instagibbs> that plus dumpwallet will give you sads
+19:46:30 <sipa> thus, suggestion: allow a new wallet to be created with either harderned or unhardened keys
+19:46:40 <sipa> when you choose unhardened, dumpprivkey is disabled
+19:46:44 <instagibbs> xpub is only accessible through dumpwallet right now AFAIK
+19:46:45 <achow101> wumpus: returning null would probably not mess with anything
+19:46:49 <sipa> (but dumpmasterkey or whatever is still available)
+19:47:11 <achow101> sipa: there is no dumpmasterkey
+19:47:11 <jonasschnelli> instagibbs: dumpprivkey must be disabled anyways
+19:47:19 <luke-jr> sipa: I'd want to be able to mix them..
+19:47:23 <jonasschnelli> achow101: dumpmasterkey must be added
+19:47:30 <instagibbs> luke-jr, .... why
+19:47:31 <gmaxwell> this is a lot more interesting with multiwallet support in place, since the cases where you want that are mostly secondary wallets (like incoming payments with keys generated by your webserver)
+19:47:37 <wumpus> dumpmasterkey, isn't there a PR for that?
+19:47:42 <jonasschnelli> no
+19:47:47 <luke-jr> instagibbs: to generate reusable payment tokens
+19:47:49 <sipa> luke-jr: i guess that's fine; just disable dumpwallet, and dumpprivkey selectively for keys derived in a non-hardened fashion
+19:47:51 <gmaxwell> sipa said or whatever for a reason. :P
+19:47:54 <achow101> jonasschnelli: I'm stil lwaiting #9504
+19:47:55 <gribble> https://github.com/bitcoin/bitcoin/issues/9504 | [RPC] dumpmasterprivkey command by achow101 · Pull Request #9504 · bitcoin/bitcoin · GitHub
+19:48:04 <jonasschnelli> oh...
+19:48:05 <luke-jr> sipa: sgtm
+19:48:09 <wumpus> see, I wasn't crazy
+19:48:25 <gmaxwell> wumpus: well, technically it doesn't prove that...
+19:48:26 <jonasschnelli> achow101: how can I not be aware of that PR... sorry for the missinfo
+19:48:34 <wumpus> gmaxwell: true
+19:48:37 <sipa> getmissinfo
+19:48:47 <jonasschnelli> :/
+19:48:56 <jonasschnelli> (I even commited on the PR ^^)
+19:48:59 <jonasschnelli> commented
+19:49:15 <wumpus> getmisinfo would really fit with the spirit of the times
+19:49:19 <gmaxwell> Anyways, I think that sounds okay. These applications will likely need a couple of extra RPCs too. no need to design here however.  (e.g. it will need to export the extended public key.)
+19:49:33 <sipa> not much more to say about the topic - just pointing out that if we disable dumping child private keys, my concern with non-hardered derivation largely goes away
+19:49:47 <wumpus> anyhow, no problem with non-hardened key support
+19:49:58 <jonasschnelli> I guess with allowing xpub derivation, flexible keypath would be welcome..
+19:50:04 <jonasschnelli> People want to use BIP44
+19:50:06 <wumpus> as an option, not as default
+19:50:08 <gmaxwell> w/ disabling and it not being a default thing. sounds great to me.
+19:50:25 <achow101> sgtm
+19:50:51 <jonasschnelli> Yes. Would be a great change...
+19:50:59 <gmaxwell> also so long as we do the extra rpcs to make it actually useful (like extract the extended public keys, and whatever else is needed to handle an external address generator.)
+19:51:13 <jonasschnelli> I guess keypool handling would be much simpler with xpub derivation
+19:51:22 <gmaxwell> I doubt it?
+19:51:30 <instagibbs> I think it's the same-ish
+19:51:33 <jonasschnelli> Why would you need a keypool with xpub derivation?
+19:51:41 <gmaxwell> for scanning.
+19:51:41 <jonasschnelli> you derive when you need
+19:51:50 <instagibbs> you have master seed already, you can already do that
+19:51:50 <jonasschnelli> you always derive the lookup window in mem
+19:51:53 <gmaxwell> you need to scan forward to know when you're paid.
+19:52:05 <jonasschnelli> +1000 keys in mem should be ackish
+19:52:18 <jonasschnelli> (pubkeys)
+19:52:26 <gmaxwell> yes, the keypool doesn't technically need to be saved on disk, though it may be faster to do so then to generate thousands of addresses at every wallet load.
+19:52:39 <gmaxwell> but otherwise I think its the same.
+19:52:56 <jonasschnelli> I'd say loading the keypool at wallet load takes almost the same (or longer)
+19:53:28 <jtimon> sipa: why would people want to dump child private keys?
+19:53:32 <gmaxwell> okay, this would make the change much more intrusive then I think.
+19:53:39 <instagibbs> jtimon, you want to stop them from doing so
+19:53:47 <gmaxwell> jtimon: same reason some people eat paste.  (they don't know better)
+19:53:52 <jonasschnelli> heh
+19:53:57 <sipa> jonasschnelli: the reason creating new keys is slow, is because we flush them all individually to disk
+19:54:11 <wumpus> yes...
+19:54:17 <jtimon> gmaxwell: I see
+19:54:21 <jonasschnelli> Yes. In-mem non-bdb "keypool" would be much faster
+19:54:41 <gmaxwell> that flushing is not required anymore with hdwallets regardless, I believe.
+19:54:45 <sipa> gmaxwell: exactly
+19:55:00 <jonasschnelli> With xpub derivation, would there be really a need to write the pool to disk? I doubt it
+19:55:07 <gmaxwell> (we will still need a flush to know how many we've given out...)
+19:55:09 <wumpus> gmaxwell: good point!
+19:55:29 <jonasschnelli> All you need is the seed
+19:55:44 <gmaxwell> jonasschnelli: no, not a need, though why result in more distinct codepaths?  I would expect it to also make loading faster.
+19:55:47 <achow101> you just need to write the path of the most recent key
+19:55:48 <jonasschnelli> gmaxwell: yes. thats a good point
+19:56:11 <jonasschnelli> achow101: Yes.
+19:56:14 <gmaxwell> achow101: yes, every new address still needs to do a wallet flush.  But on bulk key creation we do not need a flush for each operation.
+19:56:38 <gmaxwell> e.g. starting up for the first time with a keypoool of 10000.
+19:58:26 <wumpus> two minutes to go
+19:58:33 <gmaxwell> jonasschnelli: did you ever get around to implementing the change where any key that is noticed used on the blockchain marks all the earlier keys in its chain as used?
+19:58:52 <jonasschnelli> gmaxwell: HD restore?
+19:59:12 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/10240
+19:59:16 <gmaxwell> it's part of your restore pr? okay.
+19:59:25 <jonasschnelli> That makes all keys as used up to the one found
+19:59:30 <gmaxwell> great.
+19:59:34 <jonasschnelli> It can even temp. halt the sync if you prune, etc.
+19:59:39 <jonasschnelli> Needs overhaul and rebase...
+19:59:46 <jonasschnelli> It's already (too) big
+19:59:54 <jonasschnelli> ryanofsky gave me a hard time
+20:00:01 <sipa> #getmeetingendinfo
+20:00:12 <wumpus> #endmeeting
