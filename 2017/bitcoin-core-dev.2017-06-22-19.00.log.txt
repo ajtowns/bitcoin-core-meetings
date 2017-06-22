@@ -1,0 +1,378 @@
+19:00:45 <wumpus> #startmeeting
+19:00:45 <lightningbot> Meeting started Thu Jun 22 19:00:45 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:45 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:52 <achow101> hi
+19:00:56 <jonasschnelli> hi
+19:00:58 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:05 <cfields> hi
+19:01:07 <wumpus> topics?
+19:01:16 <sipa> ohai
+19:01:46 <wumpus> #topic high priority for review
+19:01:48 <wumpus> #link https://github.com/bitcoin/bitcoin/projects/8
+19:02:10 <wumpus> any new ones?
+19:02:32 <BlueMatt> should i give up on #10179 (+ #10286)?
+19:02:35 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:02:36 <BlueMatt> at least for 15
+19:02:38 <gribble> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+19:02:49 <sipa> BlueMatt: no
+19:02:51 <kanzure> hi.
+19:03:11 <BlueMatt> sipa: well i mean point being that is something that really needs to stew in master for a month (or more) before a release
+19:03:17 <BlueMatt> so its hitting up against the 15 deadline already
+19:03:22 <wumpus> why give up?
+19:03:28 <instagibbs> hi
+19:03:29 <BlueMatt> not a huge deal to push to 16
+19:03:44 <BlueMatt> because i dont want to ship 10286 right after merging it
+19:03:56 <BlueMatt> its a real not-gonna-see-the-issues-unless-its-in-master-for-a-month kinda thing :(
+19:04:26 <wumpus> that's about the risk - what would be the main gain for merging it for 0.15?
+19:04:46 <wumpus> eh it's already in high-priority for review category
+19:05:10 <wumpus> we can't bump it anything higher :p
+19:05:14 <BlueMatt> well im asking if we should drop it from high priority, unless we still think we can get both in pretty quick i think we should say we wont until its 16
+19:05:17 <jtimon> I would like review on #8498
+19:05:21 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:05:56 <wumpus> ok, but I mean, what would we lose if we decide to drop it for 0.15. Is there something else would be prioritized before it?
+19:06:16 <wumpus> I don't think it collides with e.g. multiwallet
+19:06:27 <BlueMatt> just 10286 - the dont-really-block-on-wallet-for-block-connection thing
+19:06:42 <BlueMatt> its not itself a huge win, but iterative steps towards better disconnection
+19:06:46 <cfields> BlueMatt: I'll try to get through it today, I've put it off long enough :)
+19:06:54 <BlueMatt> i know ryanofsky wanted it for the separate-process-wallet stuff he was working on
+19:07:00 <sipa> BlueMatt: how about we re-assess it next week?
+19:07:06 <BlueMatt> ok, sounds good
+19:07:07 <jtimon> and #8994 too, not sure which one is more likely to get it
+19:07:07 <wumpus> looks like they're both getting reviews
+19:07:08 <sipa> and hope for review in the mean time
+19:07:10 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:07:12 <wumpus> yeah...
+19:07:27 <ryanofsky> yeah i'd prefer 10286 not to be delayed for months
+19:08:21 <jonasschnelli> #10286
+19:08:24 <gribble> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+19:09:00 <wumpus> ok, any other topics?
+19:09:02 <jtimon> wumpus: well, maybe none of my prs should be in project 8, I don't know
+19:09:27 <phantomcircuit> pong
+19:09:28 <sipa> wumpus: coin selection / effective feerate / bnb
+19:09:31 <wumpus> jtimon: I'm not sure that one warrants extra priority pre-0.15
+19:09:32 <BlueMatt> random PSA: there is now a copy of binaries hosted on https://bitcoincore.org/bin as well as https://bitcoin.org/bin. This will be the new "official" download site (though the bitcoin.org folks said they were gonna keep their mirror up for those who are used to bitcoin.org to not have to hop to another site)
+19:10:05 <wumpus> sipa: that's one topic or three?
+19:10:10 <sipa> wumpus: one
+19:10:18 <wumpus> #topic coin selection / effective feerate / bnb
+19:10:41 <sipa> we have a number of open PRs (and one just merged I think) that interact with coin selection
+19:10:44 <jtimon> wumpus: egoistically for elements project, it would be very nice to have #8994 before 0.15 for next elements rebase (not that bitcoin should care)
+19:10:46 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:11:23 <sipa> #10637 #10360 #10333
+19:11:24 <jtimon> regarding #8498 it's an optimization (perhaps again "not worth it", like #10339)
+19:11:25 <gribble> https://github.com/bitcoin/bitcoin/issues/10360 | [WIP] [Wallet] Target effective value during transaction creation by instagibbs · Pull Request #10360 · bitcoin/bitcoin · GitHub
+19:11:27 <gribble> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+19:11:29 <gribble> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+19:11:30 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:11:32 <gribble> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+19:11:59 <sipa> are instagibbs, achow101, ... here?
+19:12:02 <instagibbs> I'm not sure many are even close to merge.
+19:12:04 <instagibbs> yeah
+19:12:10 <sipa> i agree
+19:12:17 <achow101> i'm here
+19:12:18 <gmaxwell> Hellow meeting.
+19:12:18 <instagibbs> 10333 is closest, but needs more revision
+19:12:22 <sipa> but i think there are two approaches to follow here
+19:12:36 <wumpus> jtimon: I really think we should have #8994, but it seems to collide with a lot of other things
+19:12:39 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:13:14 <sipa> one is to aim for overhauling coin selection... which will take a long time, and probably should be merged early in a cycle, so not for 0.15
+19:13:27 <gmaxwell> 10333 needs to get in (in some form) because it's an important fix.
+19:13:46 <instagibbs> I can do suggested change that gmaxwell gave, which I noted.
+19:13:50 <sipa> another is to make changes that 1) fix existing bugs and 2) work as a preprocessing step (in the form "let's see if algorithm X finds a good solution... otherwise fallback to what exists"
+19:14:11 <wumpus> agree with doing coin selection changes early in a release cycle
+19:14:15 <sipa> if 10333 is considered a bug fix, perhaps it should be prioritized for 0.15?
+19:14:15 <jtimon> wumpus: I guess that will wait forever then, previous versions were closed because they "collided with mempool/fee stuff", like more than 1 year ago? I'm happy to help people do the trivial rebases for people if that's the problem
+19:14:34 <jtimon> anyway, topic changed...
+19:14:37 <gmaxwell> 10333 should do nothing other than prevent serious overpayment in some corner cases.
+19:14:44 <instagibbs> sipa, It's marked as such, but if people deem it higher priority I'll make it one
+19:15:05 <gmaxwell> (at least once it's twiddled some)
+19:15:38 <sipa> would 10333 + 10637  be reasonable to aim for in 0.15?
+19:15:43 <instagibbs> It needs rebasing likely due to recent dust change merge
+19:15:47 <instagibbs> #10637
+19:15:49 <gribble> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+19:16:03 <wumpus> I don't think so
+19:16:22 <instagibbs> latter seems a stretch imo, as great as it would be.
+19:16:23 <wumpus> #10637 would be better for 0.16 IMO
+19:16:26 <gribble> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+19:16:30 <sipa> to clarify, 10637 is just a preprocessing step that makes it much more likely to find a match without change, reducing UTXO set size
+19:16:32 <wumpus> the other one is already marked for 0.15
+19:16:37 <sipa> if it fails, it falls back to what we have
+19:16:46 <achow101> I don't think 10637 would be good for 0.15. I haven't entirely made sure that it doesn't do anything stupid
+19:16:52 <instagibbs> sipa, if the code is correct, sure, earlier it wasn't (I'd have to do lots of review to make sure)
+19:16:53 <sipa> ok
+19:16:58 <sipa> instagibbs: of course
+19:17:02 <gmaxwell> I am not in favor of takin total overhaul as a general strategy. The problem is that each logical change has a complex 'whole system impact' question connected to it, which is really hard to reasona about for "hay guies, I replaced the whole thing!"  So I would much rather see a series of 'obviously sane' changes followed by "I reworked it to make the code clearer with no substantive change in b
+19:17:05 <wumpus> achow101: agree, no need to hurry it just to make a release
+19:17:07 <instagibbs> it's a nasty web of code, not his fault, just a fact
+19:17:08 <gmaxwell> ehavior".
+19:17:36 <sipa> ok, so let's aim for all coin selection changes in 0.16
+19:17:39 <sipa> apart from bug fixes
+19:17:47 <wumpus> the problem is that at some point the code is so convoluted that no option remains but 'redesign the whole thing'
+19:17:58 <jtimon> yeah, I've been trying to do something like #8494 since at least   Jun 10, 2015, but I think actually earlier
+19:17:58 <gmaxwell> :( is it so late to the end of 0.15 that we're slipping things out of it?
+19:18:00 <gribble> https://github.com/bitcoin/bitcoin/issues/8494 | [init, wallet] ParameterInteraction() iff wallet enabled by MarcoFalke · Pull Request #8494 · bitcoin/bitcoin · GitHub
+19:18:07 <wumpus> most of that has been replaced by now, but the coin selection code is arguably some of that
+19:18:20 <sipa> gmaxwell: i wish you were right, but i believe at some point we'll need to bite the bullet
+19:18:38 <sipa> though a number of steps can be taken before that point
+19:18:41 <wumpus> gmaxwell: well it starts to be important, even now, to prioritize things
+19:18:50 <instagibbs> With BnB in place, lays decent groundwork for more extensions
+19:18:52 <gmaxwell> wumpus: will then we stay where we've been stuck for years then?  I think it improved a lot, changes we made in 0.14 cleaned up CreateTransaction a lot.
+19:19:30 <jtimon> gmaxwell: agree on that way of doing big refactors, that's the sanest way to review them at least
+19:19:32 <instagibbs> making sane change-making policy could come next
+19:19:45 <instagibbs> sane steps exist i think
+19:21:34 <gmaxwell> sipa: obviously it needs to be reworked, but I cannot review something that is just "here is replacement code that does everything subtly differently" against threats like "will this cause runaway upbidding" or "will this potentially cause the utxo set size to skyrocket relative to the current code" or "will this trash user privacy" (well hard do to worse than the current on that mark. :P).  But
+19:21:40 <gmaxwell> I can review things like instagibbs's effective rate change against those criteria.
+19:22:17 <gmaxwell> I think it's important to seperate intentional behavioral changes from implementation structure.
+19:22:18 <jtimon> so why not try to get merged 10333 first which seems the simpler to review and then revisit the other 2 ?
+19:22:35 <gmaxwell> jtimon: instagibbs has changes he needs to make.
+19:22:40 <gmaxwell> And sure.
+19:22:43 * jtimon nods
+19:22:48 <sipa> gmaxwell: i'm worried about something like 10360 to cause unintended runaway behaviour due to some interaction as well
+19:22:49 <wumpus> jtimon: yes
+19:23:07 <sipa> gmaxwell: even if it looks perfectly fine by all metrics we considered
+19:23:17 <gmaxwell> Though if integrated correctly (not saying it is yet) 10637 is just a preprocessing stage that can't make things worse. (not saying that it's yet integrated correctly).
+19:23:30 <instagibbs> Action item is me incorporating suggestion to 10333 make more robust and beg for review again here
+19:23:46 <wumpus> so should we add 10333 to high priority for review?
+19:24:39 <achow101> imo, yes
+19:25:01 <gmaxwell> sipa: I don't think it looks fine, I think it fixes a flaw we depend on due to a ~total lack of other mechenisms to sweep txins.
+19:25:54 <sipa> gmaxwell: yes, but i can't reason about its total effect
+19:26:16 <gmaxwell> (it's easy to show that 10360 will abandon more txouts than current code; and also the current code will _create_ txouts that an immediate second run under that patch would not consider spending)
+19:26:17 <sipa> i like the change as such, but who knows what interaction we missed
+19:26:58 <sipa> anyway, probably a discussion for later
+19:26:58 <gmaxwell> So the only thing I don't know if the effect would be castrophic or just merely not perfect.
+19:27:11 <sipa> yes, i think 10333 should be prioritized
+19:27:17 <gmaxwell> ack on 10333.
+19:27:44 <wumpus> ok, added
+19:28:19 <gmaxwell> sipa: I think a simple invarient is that we must spend everything we create at least under more or less stationary conditions. Anything less leads to runaway utxo set growth (though perhaps slowly...).
+19:29:02 <gmaxwell> but thats a minimum and perhaps not sufficient. But still 10360 fails it.
+19:29:50 <gmaxwell> to be fair, it's not 10360's fault so much as that we only pass that criteria now due to bugs that 10360 fixes.
+19:30:31 <sipa> other topics?
+19:31:05 <cfields> quick topic suggestion: add "strongly discourage/forbit default function arguments" to the style guide?
+19:31:28 <luke-jr> cfields: eh, I don't think that's a good idea
+19:31:30 <wumpus> #topic  add "strongly discourage/forbit default function arguments" to the style guide
+19:31:31 <cfields> *forbid. forbitting would be too much :p
+19:31:32 <BlueMatt> not always
+19:31:37 <wumpus> f-orbitting
+19:31:47 <gmaxwell> default arguments are a footgun for sure, can we articluate where they are okay-- if they aren't forbidden?
+19:31:49 <sipa> f(ire from) orbit?
+19:31:52 <wumpus> no, I don't think that's a good rule in general either
+19:31:52 <luke-jr> the important thing should be making sure the behaviour doesn't change, when func signatures change
+19:31:57 <BlueMatt> if theres 20 arguments to the function or its a big many-callers function, maybe
+19:32:12 <cfields> gmaxwell: yes, i think that's the discussion I was looking for.
+19:32:24 <luke-jr> "if code calling it before compiles with the new signature, it must behave the same"
+19:32:25 <wumpus> if there's 20 arguments to a function there's something wrong in general
+19:32:30 <BlueMatt> but depends on where, eg I think https://github.com/bitcoin/bitcoin/pull/10179/commits/dd53c6f0a3f9fa34b0d8d0f6b9a3e4df51a3eda7 is probably fine
+19:32:31 <wumpus> please make a rule not to have 20 arguments please
+19:32:35 <wumpus> certainly not booleans :(
+19:32:39 <BlueMatt> (adds a default arg to CScheduler::schedule())
+19:32:44 <BlueMatt> wumpus: lol, yes, indeed
+19:32:48 <sipa> "It is strongly encouraged to have 19 arguments to functions."
+19:32:49 <wumpus> Foo(false, true, false, true, false, true, true)
+19:33:09 <BlueMatt> wumpus: you forgot the NULL for good measure which may or may not be a pointer :p
+19:33:16 <wumpus> BlueMatt: oh yes
+19:33:42 <wumpus> default arguments are mostly good for one thing: transitions without touching all the code
+19:33:43 <gmaxwell> I think the default arg is okay when going from 0 to 1 arguments to add a flag, for example.
+19:33:55 <sipa> well i think defaults arguments are often used to reduce code impact of a patch... adding an optional argument at the end (especially directly after a non-optional one, and with a type incompatible with the first optional one if any) is perfectly safe and can strongly reduce the amount of code touched
+19:34:13 <sipa> the same can be achieved by adding a fewer-arguments wrapper, though
+19:34:17 <wumpus> e.g. if you add an argument to a function that's called from 400 places, it's usually better to add a default argument, at least temporarily
+19:34:49 <wumpus> right. I think that's a valid use.
+19:34:58 <sipa> i like the approach of creating a new function (with more args, and perhaps even a different name), and changing the old one to be a wrapper around the new one
+19:35:07 <luke-jr> indeed, I have been rebasing the rescanblockchain RPC, and this is needed to minimise the conflicts
+19:35:18 <gmaxwell> The defaults lead to negative interactions with the fact that arguments aren't named.  I like sipa's suggestion.
+19:35:22 <wumpus> well if it has the same name there is no effective difference
+19:35:27 <luke-jr> (it adds an argument for a stop-scanning index)
+19:35:33 <BlueMatt> sipa: thats how you end up with AcceptToMemoryPoolWorker(tx, true, false, false, true, NULL, (default) false)
+19:35:34 <BlueMatt> :(
+19:35:46 <gmaxwell> wumpus: because when you make further additions to the arguments, you don't mess things up.
+19:35:52 <sipa> that wrapper approach also is more restrictive: it _just_ allows the exact old use case, and a new one - not a variety of combinations based on multiple optional args
+19:36:10 <wumpus> absent argument naming, I like enums better than booleans
+19:36:23 <wumpus> anyhow, no, I don't think we should add a general rule about this
+19:36:28 <gmaxwell> We had a near consensus fault in the main split as a result of something related to this. IIRC.
+19:36:29 <wumpus> just pay attention at reviews to the specific case
+19:36:49 * luke-jr wishes there was a tool to audit such changes for us
+19:36:49 <cfields> ok
+19:36:54 <wumpus> not everything has to be spelled out in the style guide, that just makes for laziness *we've checked all the checkboxes*
+19:37:05 <gmaxwell> right
+19:37:23 <sipa> also, i wish there was a sed-like took that understood our AST a bit better, so you could add a new argument to a function everywhere
+19:37:37 <sipa> but regexps are fundamentally not strong enough to do that :(
+19:37:42 <wumpus> if only c++ was easier to parse...
+19:37:52 <gmaxwell> though I still think sipa's suggestion is good: if you need to introduce an argument to a function called in many places, wrap it with something that provides the default. Then over time we change call sites to call the new function.
+19:37:54 <luke-jr> at least it's not Perl
+19:37:57 <wumpus> you can do things like that using python + clang, but it's pretty involved, and not fun
+19:38:28 <jtimon> ack on strongly discouraging optional arguments, we have way too many and some are really stupid IMO (ehem, ehem #9717 )
+19:38:30 <gribble> https://github.com/bitcoin/bitcoin/issues/9717 | Pow: Remove fCheckPOW from CheckBlockHeader by jtimon · Pull Request #9717 · bitcoin/bitcoin · GitHub
+19:38:33 <gmaxwell> then we don't end up with function signatures that are full of a mix of default and non-default arguments.
+19:38:52 <wumpus> even if you have a c++ parser you get such a lot of information into your mutation function, so many cases to handle
+19:39:33 <wumpus> gmaxwell: I fully agree, just don't think it makes sense as a rule
+19:39:39 <gmaxwell> ACK
+19:40:08 <jtimon> you can also have simpler wrappers on functions with less parameters and "default values" instead of optional arguments
+19:40:22 <wumpus> yes
+19:40:31 <gmaxwell> yea, thats what sipa was just saying.
+19:40:33 <sipa> jtimon: that's what i was suggestion
+19:40:52 <jtimon> sipa: sorry, catching up...
+19:40:59 <wumpus> though the advantage of default arguments is that they're self-documenting in the function signature
+19:42:08 <wumpus> anyhow, more topics?
+19:42:22 <sipa> do we want to bring up multiwallet API again?
+19:42:25 <jonasschnelli> yes
+19:42:29 <gmaxwell> I don't think I've personally found that too useful except for functions with just a couple arguments with one or two simple flags.  FrobThing(&thing,FrobHarder=true).
+19:42:33 <wumpus> #topic multiwallet API
+19:42:39 <jonasschnelli> can we decide what we want to use? path or query string and or versioning?
+19:42:46 <wumpus> path
+19:42:49 <jonasschnelli> I think /v1/wallet/<walletid> seems ideal
+19:43:01 <gmaxwell> can we at least put a version in first?
+19:43:01 <wumpus> we've decided that last time, that wallet will be based on endpoints
+19:43:01 <luke-jr> query string <.<
+19:43:12 <jonasschnelli> gmaxwell: yes. See above
+19:43:19 <sipa> luke-jr: i've been thinking about the advantages and disadvantages of both
+19:43:23 <jonasschnelli> luke-jr: what advantages do you see with query strings?
+19:43:25 <wumpus> oh sure /v1/something is fine with me
+19:43:43 <luke-jr> jonasschnelli: it's not hacking the path into a parameter? it's extensible?
+19:43:45 <wumpus> if we can use /v1 as the general node endpoint hten
+19:43:54 <sipa> query string has the advantage that it's more flexible - there could be multiple things to direct the RPC, and they don't need to be in a hierarchical pattern
+19:43:57 <wumpus> and /v1/walletname for the wallet
+19:44:05 <wumpus> don't use query strings with POST
+19:44:06 <wumpus> just don't
+19:44:09 <jonasschnelli> luke-jr: you can still add a query string later if you need non-hirarichal inputs later
+19:44:10 <gmaxwell> path seems fine to me, so long as there is a version, but I'm clueless.  I do have some questions though.
+19:44:19 <jonasschnelli> what wumpus sais
+19:44:37 <wumpus> POST has always been used with the idea that the parameters are in the payload
+19:44:44 * luke-jr wants to hear the rest of sipa's thoughts. ☺
+19:44:46 <wumpus> POST should not have URI parameters
+19:44:48 <jonasschnelli> wumpus: exactly
+19:44:50 <ryanofsky> i think query strings are analogous to command line options, paths are analogous to positional command line arguments
+19:44:51 <sipa> however, most things that would go into the path/query string as well, can just become RPC arguments as well
+19:45:04 <wumpus> if you confuse them, it will be hard to use from some languages
+19:45:09 <sipa> i think that perhaps the wallet name is different, in that it's actually a different "module" you're sending it to
+19:45:18 <jonasschnelli> sipa: indeed... but the /wallet/ endpoint could have a different rpc server once
+19:45:22 <ryanofsky> options are better for non required things that tweak the current operation, arguments are better for required values that determine operation
+19:45:25 <gmaxwell> I think it's likely in the future that we'll support doing this "create transaction in wallet A but also able using coins from wallet B,C"-- seems clear to me how this could work in the GUI.  How could we RPC call that?
+19:45:31 <sipa> so i think my preference is path - and for things that don't fit in the normal hierarchical structure, use named RPC arguments
+19:45:39 <wumpus> oh no... not commands from multiple wallets
+19:45:58 <sipa> gmaxwell: ugh...
+19:45:59 <wumpus> can we at least agree on one object to apply commands too
+19:46:03 <luke-jr> BTW, did we consider a generic JSON-RPC "wallet" named param?
+19:46:08 <gmaxwell> it's not really 'from multiple wallets'.
+19:46:13 <sipa> luke-jr: i suggested that before, yes
+19:46:23 <wumpus> gmaxwell: in that case you should just use the raw transactions api
+19:46:35 <wumpus> you can listunspent on multiple wallets, then use thei r utxos
+19:46:36 <sipa> luke-jr: i'd be fine with it, except it's less compatible with a future change that moves it to a different process (which will necessarily have a new endpoint)
+19:46:45 <jonasschnelli> luke-jr: generic wallet named parameter seems fine. Is it mixable with the non-named parameter?
+19:46:51 <wumpus> no need to do some obscure voodoo calling a method on multiple objects on the same time
+19:46:54 <gmaxwell> in any case, without that you are forced to make idiotic pay wallet A from wallet B transactions just to make a large payment.  (or as wumpus notes, do something with raw transactions)
+19:46:55 <jonasschnelli> I guess we then would only allow wallet selecting with name bases params?
+19:46:57 <wumpus> that way madness lies
+19:47:06 <luke-jr> sipa: ah, right
+19:47:33 <sipa> so i think this guideline may help: arguments that select something that may in the future move to another process, should go into the path
+19:47:36 <gmaxwell> wumpus: fair enough that you wouldn't want to do a ?wallet=a&wallet=b  voodoo in any case there, so no interaction with this question.
+19:47:39 <sipa> other things should be RPC named args
+19:47:40 <jonasschnelli> I guess endpoints will also make process separation simpler
+19:47:47 <sipa> jonasschnelli: that's what i was saying
+19:48:10 <wumpus> sipa: +1
+19:48:19 <jonasschnelli> Okay. Lets then go for /v1/wallet/walletID for now
+19:48:27 <wumpus> yes
+19:48:30 <sipa> ack
+19:48:32 <luke-jr> v0? :P
+19:48:38 <jonasschnelli> WalletID is the wallet filename for now... not sure if this is a problem
+19:48:45 <sipa> luke-jr: v0 already exists :p
+19:48:47 <jonasschnelli> v0 is not what users are expecting..
+19:48:47 <wumpus> no, v1, v0 is what we had before :)
+19:48:54 <luke-jr> but this isn't changing the API
+19:49:03 <sipa> no, it's creating a new API
+19:49:04 <jonasschnelli> it's just a prevention for future api changes
+19:49:09 <wumpus> yes.
+19:49:12 <gmaxwell> adding /wallet/ is a new API.
+19:49:19 <gmaxwell> even though its a trivial one.
+19:49:32 <wumpus> I think it's good to add it just in case, we should be able to use /v1 as endpoint for non-wallet methods
+19:49:47 <luke-jr> oh, that's a point: how do we specify "no wallet"?
+19:49:47 <wumpus> and / for both wallet methos and non-wallet methods (wallet will use 'the default wallet')
+19:49:55 <jonasschnelli> Yes. /v1 should do the same / (selecting the default wallet)
+19:49:56 <gmaxwell> oh nice, though if we're going to do that, we need to ban wallet methods on /v1/  right away.
+19:50:03 <wumpus> gmaxwell: yes please
+19:50:09 <sipa> how about we also add /v1/node for all non-wallet RPCs?
+19:50:30 <wumpus> /v1 should do away with wallet methods, / should have them for backward compat
+19:50:35 <sipa> yes
+19:50:36 <jonasschnelli> Wait, do we want to ban non wallet methods sent to /v1/wallet/?
+19:50:39 <jtimon> wumpus: why not use query string with POST? we do everything with POST in the rpc, there's no GET, perhaps a link I could read?
+19:50:41 <wumpus> jonasschnelli: yes
+19:50:43 <sipa> jonasschnelli: yes
+19:50:46 <gmaxwell> well we have node rpcs but we also have pure function rpcs.   though I don't know how good it is to bother callers with the fine details of how an rpc is implemented.
+19:50:49 <luke-jr> :|
+19:50:54 <jonasschnelli> Okay. That makes it a bit more complex. :)
+19:50:58 <jonasschnelli> And not user friendly.
+19:51:03 <jtimon> oh, the params after ?, right, sorry
+19:51:07 <sipa> jonasschnelli: how so?
+19:51:13 <instagibbs> we should just ban all calls, start fresh :P
+19:51:17 <luke-jr> sipa: can't just change the endpoint for existing software..
+19:51:22 <jonasschnelli> what about createrawtransaction?
+19:51:32 <sipa> luke-jr: then use the old API, which keeps working
+19:51:39 <luke-jr> sipa: then you can't select the wallet
+19:51:53 <wumpus> jonasschnelli: well... the methods thaat have both wallet and non-wallet functionality are obviously special here
+19:51:54 <jtimon> sipa: most things? all things I believe, even for GET
+19:51:55 <jonasschnelli> switch over to /wallet when you call fundrawtransaction and back to /node when using signrawtransactionwithkey?
+19:52:05 <wumpus> jonasschnelli: they could be on both, I don't care
+19:52:08 <gmaxwell> having them track that "x is a wallet rpc" vs "y is a node" rpc is already asking a lot.  and following this there should be something for pure rpcs that interact not with the node state or wallet. and so on.
+19:52:17 <gmaxwell> I guess I'm raising the same concern as jonasschnelli
+19:52:28 <wumpus> gmaxwell: it's a good preparation for beginning to split off the wallet though
+19:52:28 <sipa> i see there is a usability issue in doing so
+19:52:36 <jonasschnelli> Not sure if we can/should already seperate the calls in endpoints
+19:52:38 <wumpus> gmaxwell: when the wallet would be a separate process it also won't have the node methods
+19:52:57 <gmaxwell> Yes, and I think the wallet split is reasonable, I'm cautioning about what happens if you continue the logic.
+19:53:00 <jonasschnelli> Once we have process separation, then we would need it. Yes.
+19:53:02 <wumpus> also it's a bit starnge to have the same non-wallet methods aliased for every wallet
+19:53:05 <jonasschnelli> We could warn in the release notes.
+19:53:10 <wumpus> aliasing is usually a bad idea
+19:53:35 <luke-jr> I suppose if people want backward compatibility, they can just user per-username default wallets, and have multiple users
+19:53:55 <gmaxwell> Maybe there really are only three kinds:  Things that talk to the node, things that talk to a wallet (and maybe also a node),  and  things that are pure functions.
+19:54:03 <wumpus> what makes /v1/wallet/mywallet getnetworkinfo different from /v1/otherwallet netnetworkinfo
+19:54:13 <wumpus> none has anything to do with wallets
+19:54:20 <wumpus> gmaxwell: yes, those three kinds exist
+19:54:24 <jonasschnelli> Yes. Agree that it looks bad.
+19:54:31 <sipa> can you give an example of the middle one?
+19:54:41 <wumpus> gmaxwell: we've been trying to get rid of " things that talk to a wallet (and maybe also a node)"
+19:54:43 <sipa> oh, signrawtransaction needing UTXO access
+19:54:50 <jonasschnelli> hm... wumpus: not sure. The wallet could have it's own network rules in future
+19:54:52 <wumpus> sipa: getinfo
+19:55:00 <sipa> wumpus: i don't care about getinfo :)
+19:55:10 <gmaxwell> it's a little unfortunate to expose the three kinds to users though.  decoderawtransaction and createrawtransaction are pure, signrawtransaction is not.
+19:55:12 <wumpus> jonasschnelli: sure, then it could have a *different* getnetworkinfo
+19:55:31 <wumpus> sipa: there are more, I've listed them in some issue, let me see
+19:55:58 <jonasschnelli> I don't think it's wrong to have node calls in /v1/wallet/mywallet .. it allows us to – in theory – have different peering for different wallets. Also chaintips can be different.
+19:56:04 <wumpus> sipa: #7965
+19:56:05 <sipa> i think i'm fine with making v1 support all non-deprecated non-wallet RPCs as well
+19:56:06 <gribble> https://github.com/bitcoin/bitcoin/issues/7965 | Remaining instances of ENABLE_WALLET in `libbitcoin_server.a` · Issue #7965 · bitcoin/bitcoin · GitHub
+19:56:08 <gmaxwell> I think a split on anything other than wallet vs non-wallet basically exposes implementation details to users.
+19:56:19 <bitcoin-git> [13bitcoin] 15TheBlueMatt opened pull request #10652: Small step towards demangling cs_main from CNodeState (06master...062017-06-cnodestateaccessors-1) 02https://github.com/bitcoin/bitcoin/pull/10652
+19:56:23 <gmaxwell> jonasschnelli: those don't sound like very interesting things to accomplish. IMO.
+19:56:25 <luke-jr> I think we're adding too much complexity to make 0.15 :<
+19:56:48 <wumpus> "RPC still has some calls that vary depending on wallet support. We should split these up. This is the more annoying part as it will involve API changes. No non-wallet RPC call should make an assumption about "a wallet"."
+19:56:52 <sipa> can we please at least remove getinfo from v1?
+19:56:58 <BlueMatt> YES
+19:57:00 <wumpus> YES
+19:57:04 <gmaxwell> (and by wallet vs non-wallet, I mean a logical split where the address and transaction manipulating functions which are technically pure would still be wallet functions)
+19:57:25 <jonasschnelli> Okay. Should the call split be in the same PR that introduces the endpoint?
+19:57:35 <wumpus> jonasschnelli: not necessarily, small steps are fine
+19:57:38 <sipa> jonasschnelli: i don't care
+19:57:55 <jonasschnelli> I think it may get pretty big.
+19:57:58 <gmaxwell> we shouldn't ship a release with /v1/ though that has a lot of calls we intend to remove, however.
+19:57:58 <jonasschnelli> And ideally the endpoint is in 0.15 (otherwise multiwallet is not really useful)
+19:58:01 <wumpus> at this point it's better to make progress at all
+19:58:02 <luke-jr> let's get rid of BTC amounts while we're at it! :x
+19:58:04 <sipa> gmaxwell: agree
+19:58:26 <wumpus> gmaxwell: if it's in a release it means it needs to be /v2
+19:58:29 <sipa> jonasschnelli: we have time, i think
+19:58:31 <wumpus> gmaxwell: simple as that
+19:58:38 <gmaxwell> luke-jr: I'd like that but switching to integers could be a v2 thing too...
+19:58:44 <wumpus> sigh
+19:58:57 <sipa> wumpus: sure; but i think we can merge endpoints now, and do another PR before 0.15 to remove some of the unnecessary stuff from the wallet endpoints
+19:58:59 <gmaxwell> wumpus: well will we want to continue supporting v1 for a long time in th case?
+19:59:00 <jtimon> I would not apps anything in the uri, just /v1/wallet/ with {"wallet": "mywalley", "otherparam" : "other value"}
+19:59:30 <sipa> jtimon: the downside of that is that doesn't prepare downstream apps well for a future process split
+19:59:37 <jonasschnelli> jtimon: having it in the JSON layer would make process seperation harder...
+19:59:38 <wumpus> (sorry, just tired of the whole 'switching to integers' thing)
+19:59:55 <sipa> wumpus: i think the current solutions which accepts strings everywhere is perfectly fine
+20:00:01 <gmaxwell> wumpus: oh I thought other people wanted to do that, but the inability to change the api was holding it off.
+20:00:45 <sipa> PLOINK
+20:00:54 <jtimon> luke-jr: super ACK on finally moving from BTC to satoshi once and for all, but last time I tried I had to close the PR
+20:00:56 <luke-jr> sipa fell in the ocean?
+20:00:58 <instagibbs> that's dutch for "meeting over"
+20:00:59 <wumpus> gmaxwell:  I mean the problem is that JSON doesn't have integers
+20:01:02 <wumpus> #endmeeting

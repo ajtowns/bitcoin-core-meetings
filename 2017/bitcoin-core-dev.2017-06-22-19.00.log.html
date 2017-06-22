@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:45</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun 22 19:00:45 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:45</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:52</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:00:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-7"></a><span class="tm">19:01:05</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:01:07</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-9"></a><span class="tm">19:01:16</span><span class="nk"> &lt;sipa&gt;</span> ohai
+<a name="l-10"></a><span class="tm">19:01:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority for review</span>
+<a name="l-11"></a><span class="tm">19:01:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/projects/8</span>
+<a name="l-12"></a><span class="tm">19:02:10</span><span class="nk"> &lt;wumpus&gt;</span> any new ones?
+<a name="l-13"></a><span class="tm">19:02:32</span><span class="nk"> &lt;BlueMatt&gt;</span> should i give up on #10179 (+ #10286)?
+<a name="l-14"></a><span class="tm">19:02:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-15"></a><span class="tm">19:02:36</span><span class="nk"> &lt;BlueMatt&gt;</span> at least for 15
+<a name="l-16"></a><span class="tm">19:02:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+<a name="l-17"></a><span class="tm">19:02:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> no
+<a name="l-18"></a><span class="tm">19:02:51</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-19"></a><span class="tm">19:03:11</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> well i mean point being that is something that really needs to stew in master for a month (or more) before a release
+<a name="l-20"></a><span class="tm">19:03:17</span><span class="nk"> &lt;BlueMatt&gt;</span> so its hitting up against the 15 deadline already
+<a name="l-21"></a><span class="tm">19:03:22</span><span class="nk"> &lt;wumpus&gt;</span> why give up?
+<a name="l-22"></a><span class="tm">19:03:28</span><span class="nk"> &lt;instagibbs&gt;</span> hi
+<a name="l-23"></a><span class="tm">19:03:29</span><span class="nk"> &lt;BlueMatt&gt;</span> not a huge deal to push to 16
+<a name="l-24"></a><span class="tm">19:03:44</span><span class="nk"> &lt;BlueMatt&gt;</span> because i dont want to ship 10286 right after merging it
+<a name="l-25"></a><span class="tm">19:03:56</span><span class="nk"> &lt;BlueMatt&gt;</span> its a real not-gonna-see-the-issues-unless-its-in-master-for-a-month kinda thing :(
+<a name="l-26"></a><span class="tm">19:04:26</span><span class="nk"> &lt;wumpus&gt;</span> that's about the risk - what would be the main gain for merging it for 0.15?
+<a name="l-27"></a><span class="tm">19:04:46</span><span class="nk"> &lt;wumpus&gt;</span> eh it's already in high-priority for review category
+<a name="l-28"></a><span class="tm">19:05:10</span><span class="nk"> &lt;wumpus&gt;</span> we can't bump it anything higher :p
+<a name="l-29"></a><span class="tm">19:05:14</span><span class="nk"> &lt;BlueMatt&gt;</span> well im asking if we should drop it from high priority, unless we still think we can get both in pretty quick i think we should say we wont until its 16
+<a name="l-30"></a><span class="tm">19:05:17</span><span class="nk"> &lt;jtimon&gt;</span> I would like review on #8498
+<a name="l-31"></a><span class="tm">19:05:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-32"></a><span class="tm">19:05:56</span><span class="nk"> &lt;wumpus&gt;</span> ok, but I mean, what would we lose if we decide to drop it for 0.15. Is there something else would be prioritized before it?
+<a name="l-33"></a><span class="tm">19:06:16</span><span class="nk"> &lt;wumpus&gt;</span> I don't think it collides with e.g. multiwallet
+<a name="l-34"></a><span class="tm">19:06:27</span><span class="nk"> &lt;BlueMatt&gt;</span> just 10286 - the dont-really-block-on-wallet-for-block-connection thing
+<a name="l-35"></a><span class="tm">19:06:42</span><span class="nk"> &lt;BlueMatt&gt;</span> its not itself a huge win, but iterative steps towards better disconnection
+<a name="l-36"></a><span class="tm">19:06:46</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> I'll try to get through it today, I've put it off long enough :)
+<a name="l-37"></a><span class="tm">19:06:54</span><span class="nk"> &lt;BlueMatt&gt;</span> i know ryanofsky wanted it for the separate-process-wallet stuff he was working on
+<a name="l-38"></a><span class="tm">19:07:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> how about we re-assess it next week?
+<a name="l-39"></a><span class="tm">19:07:06</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, sounds good
+<a name="l-40"></a><span class="tm">19:07:07</span><span class="nk"> &lt;jtimon&gt;</span> and #8994 too, not sure which one is more likely to get it
+<a name="l-41"></a><span class="tm">19:07:07</span><span class="nk"> &lt;wumpus&gt;</span> looks like they're both getting reviews
+<a name="l-42"></a><span class="tm">19:07:08</span><span class="nk"> &lt;sipa&gt;</span> and hope for review in the mean time
+<a name="l-43"></a><span class="tm">19:07:10</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+<a name="l-44"></a><span class="tm">19:07:12</span><span class="nk"> &lt;wumpus&gt;</span> yeah...
+<a name="l-45"></a><span class="tm">19:07:27</span><span class="nk"> &lt;ryanofsky&gt;</span> yeah i'd prefer 10286 not to be delayed for months
+<a name="l-46"></a><span class="tm">19:08:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#10286</span><span class="cmdline"></span>
+<a name="l-47"></a><span class="tm">19:08:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+<a name="l-48"></a><span class="tm">19:09:00</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-49"></a><span class="tm">19:09:02</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> well, maybe none of my prs should be in project 8, I don't know
+<a name="l-50"></a><span class="tm">19:09:27</span><span class="nk"> &lt;phantomcircuit&gt;</span> pong
+<a name="l-51"></a><span class="tm">19:09:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> coin selection / effective feerate / bnb
+<a name="l-52"></a><span class="tm">19:09:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I'm not sure that one warrants extra priority pre-0.15
+<a name="l-53"></a><span class="tm">19:09:32</span><span class="nk"> &lt;BlueMatt&gt;</span> random PSA: there is now a copy of binaries hosted on https://bitcoincore.org/bin as well as https://bitcoin.org/bin. This will be the new "official" download site (though the bitcoin.org folks said they were gonna keep their mirror up for those who are used to bitcoin.org to not have to hop to another site)
+<a name="l-54"></a><span class="tm">19:10:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> that's one topic or three?
+<a name="l-55"></a><span class="tm">19:10:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> one
+<a name="l-56"></a><span class="tm">19:10:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">coin selection / effective feerate / bnb</span>
+<a name="l-57"></a><span class="tm">19:10:41</span><span class="nk"> &lt;sipa&gt;</span> we have a number of open PRs (and one just merged I think) that interact with coin selection
+<a name="l-58"></a><span class="tm">19:10:44</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> egoistically for elements project, it would be very nice to have #8994 before 0.15 for next elements rebase (not that bitcoin should care)
+<a name="l-59"></a><span class="tm">19:10:46</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+<a name="l-60"></a><span class="tm">19:11:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#10637 </span><span class="cmdline">#10360 #10333</span>
+<a name="l-61"></a><span class="tm">19:11:24</span><span class="nk"> &lt;jtimon&gt;</span> regarding #8498 it's an optimization (perhaps again "not worth it", like #10339)
+<a name="l-62"></a><span class="tm">19:11:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10360 | [WIP] [Wallet] Target effective value during transaction creation by instagibbs · Pull Request #10360 · bitcoin/bitcoin · GitHub
+<a name="l-63"></a><span class="tm">19:11:27</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+<a name="l-64"></a><span class="tm">19:11:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+<a name="l-65"></a><span class="tm">19:11:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-66"></a><span class="tm">19:11:32</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10339 | Optimization: Calculate block hash less times by jtimon · Pull Request #10339 · bitcoin/bitcoin · GitHub
+<a name="l-67"></a><span class="tm">19:11:59</span><span class="nk"> &lt;sipa&gt;</span> are instagibbs, achow101, ... here?
+<a name="l-68"></a><span class="tm">19:12:02</span><span class="nk"> &lt;instagibbs&gt;</span> I'm not sure many are even close to merge.
+<a name="l-69"></a><span class="tm">19:12:04</span><span class="nk"> &lt;instagibbs&gt;</span> yeah
+<a name="l-70"></a><span class="tm">19:12:10</span><span class="nk"> &lt;sipa&gt;</span> i agree
+<a name="l-71"></a><span class="tm">19:12:17</span><span class="nk"> &lt;achow101&gt;</span> i'm here
+<a name="l-72"></a><span class="tm">19:12:18</span><span class="nk"> &lt;gmaxwell&gt;</span> Hellow meeting.
+<a name="l-73"></a><span class="tm">19:12:18</span><span class="nk"> &lt;instagibbs&gt;</span> 10333 is closest, but needs more revision
+<a name="l-74"></a><span class="tm">19:12:22</span><span class="nk"> &lt;sipa&gt;</span> but i think there are two approaches to follow here
+<a name="l-75"></a><span class="tm">19:12:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I really think we should have #8994, but it seems to collide with a lot of other things
+<a name="l-76"></a><span class="tm">19:12:39</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+<a name="l-77"></a><span class="tm">19:13:14</span><span class="nk"> &lt;sipa&gt;</span> one is to aim for overhauling coin selection... which will take a long time, and probably should be merged early in a cycle, so not for 0.15
+<a name="l-78"></a><span class="tm">19:13:27</span><span class="nk"> &lt;gmaxwell&gt;</span> 10333 needs to get in (in some form) because it's an important fix.
+<a name="l-79"></a><span class="tm">19:13:46</span><span class="nk"> &lt;instagibbs&gt;</span> I can do suggested change that gmaxwell gave, which I noted.
+<a name="l-80"></a><span class="tm">19:13:50</span><span class="nk"> &lt;sipa&gt;</span> another is to make changes that 1) fix existing bugs and 2) work as a preprocessing step (in the form "let's see if algorithm X finds a good solution... otherwise fallback to what exists"
+<a name="l-81"></a><span class="tm">19:14:11</span><span class="nk"> &lt;wumpus&gt;</span> agree with doing coin selection changes early in a release cycle
+<a name="l-82"></a><span class="tm">19:14:15</span><span class="nk"> &lt;sipa&gt;</span> if 10333 is considered a bug fix, perhaps it should be prioritized for 0.15?
+<a name="l-83"></a><span class="tm">19:14:15</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I guess that will wait forever then, previous versions were closed because they "collided with mempool/fee stuff", like more than 1 year ago? I'm happy to help people do the trivial rebases for people if that's the problem
+<a name="l-84"></a><span class="tm">19:14:34</span><span class="nk"> &lt;jtimon&gt;</span> anyway, topic changed...
+<a name="l-85"></a><span class="tm">19:14:37</span><span class="nk"> &lt;gmaxwell&gt;</span> 10333 should do nothing other than prevent serious overpayment in some corner cases.
+<a name="l-86"></a><span class="tm">19:14:44</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, It's marked as such, but if people deem it higher priority I'll make it one
+<a name="l-87"></a><span class="tm">19:15:05</span><span class="nk"> &lt;gmaxwell&gt;</span> (at least once it's twiddled some)
+<a name="l-88"></a><span class="tm">19:15:38</span><span class="nk"> &lt;sipa&gt;</span> would 10333 + 10637  be reasonable to aim for in 0.15?
+<a name="l-89"></a><span class="tm">19:15:43</span><span class="nk"> &lt;instagibbs&gt;</span> It needs rebasing likely due to recent dust change merge
+<a name="l-90"></a><span class="tm">19:15:47</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#10637</span><span class="cmdline"></span>
+<a name="l-91"></a><span class="tm">19:15:49</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+<a name="l-92"></a><span class="tm">19:16:03</span><span class="nk"> &lt;wumpus&gt;</span> I don't think so
+<a name="l-93"></a><span class="tm">19:16:22</span><span class="nk"> &lt;instagibbs&gt;</span> latter seems a stretch imo, as great as it would be.
+<a name="l-94"></a><span class="tm">19:16:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#10637 </span><span class="cmdline">would be better for 0.16 IMO</span>
+<a name="l-95"></a><span class="tm">19:16:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+<a name="l-96"></a><span class="tm">19:16:30</span><span class="nk"> &lt;sipa&gt;</span> to clarify, 10637 is just a preprocessing step that makes it much more likely to find a match without change, reducing UTXO set size
+<a name="l-97"></a><span class="tm">19:16:32</span><span class="nk"> &lt;wumpus&gt;</span> the other one is already marked for 0.15
+<a name="l-98"></a><span class="tm">19:16:37</span><span class="nk"> &lt;sipa&gt;</span> if it fails, it falls back to what we have
+<a name="l-99"></a><span class="tm">19:16:46</span><span class="nk"> &lt;achow101&gt;</span> I don't think 10637 would be good for 0.15. I haven't entirely made sure that it doesn't do anything stupid
+<a name="l-100"></a><span class="tm">19:16:52</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, if the code is correct, sure, earlier it wasn't (I'd have to do lots of review to make sure)
+<a name="l-101"></a><span class="tm">19:16:53</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-102"></a><span class="tm">19:16:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> of course
+<a name="l-103"></a><span class="tm">19:17:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I am not in favor of takin total overhaul as a general strategy. The problem is that each logical change has a complex 'whole system impact' question connected to it, which is really hard to reasona about for "hay guies, I replaced the whole thing!"  So I would much rather see a series of 'obviously sane' changes followed by "I reworked it to make the code clearer with no substantive change in b
+<a name="l-104"></a><span class="tm">19:17:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> agree, no need to hurry it just to make a release
+<a name="l-105"></a><span class="tm">19:17:07</span><span class="nk"> &lt;instagibbs&gt;</span> it's a nasty web of code, not his fault, just a fact
+<a name="l-106"></a><span class="tm">19:17:08</span><span class="nk"> &lt;gmaxwell&gt;</span> ehavior".
+<a name="l-107"></a><span class="tm">19:17:36</span><span class="nk"> &lt;sipa&gt;</span> ok, so let's aim for all coin selection changes in 0.16
+<a name="l-108"></a><span class="tm">19:17:39</span><span class="nk"> &lt;sipa&gt;</span> apart from bug fixes
+<a name="l-109"></a><span class="tm">19:17:47</span><span class="nk"> &lt;wumpus&gt;</span> the problem is that at some point the code is so convoluted that no option remains but 'redesign the whole thing'
+<a name="l-110"></a><span class="tm">19:17:58</span><span class="nk"> &lt;jtimon&gt;</span> yeah, I've been trying to do something like #8494 since at least   Jun 10, 2015, but I think actually earlier
+<a name="l-111"></a><span class="tm">19:17:58</span><span class="nk"> &lt;gmaxwell&gt;</span> :( is it so late to the end of 0.15 that we're slipping things out of it?
+<a name="l-112"></a><span class="tm">19:18:00</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8494 | [init, wallet] ParameterInteraction() iff wallet enabled by MarcoFalke · Pull Request #8494 · bitcoin/bitcoin · GitHub
+<a name="l-113"></a><span class="tm">19:18:07</span><span class="nk"> &lt;wumpus&gt;</span> most of that has been replaced by now, but the coin selection code is arguably some of that
+<a name="l-114"></a><span class="tm">19:18:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i wish you were right, but i believe at some point we'll need to bite the bullet
+<a name="l-115"></a><span class="tm">19:18:38</span><span class="nk"> &lt;sipa&gt;</span> though a number of steps can be taken before that point
+<a name="l-116"></a><span class="tm">19:18:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well it starts to be important, even now, to prioritize things
+<a name="l-117"></a><span class="tm">19:18:50</span><span class="nk"> &lt;instagibbs&gt;</span> With BnB in place, lays decent groundwork for more extensions
+<a name="l-118"></a><span class="tm">19:18:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> will then we stay where we've been stuck for years then?  I think it improved a lot, changes we made in 0.14 cleaned up CreateTransaction a lot.
+<a name="l-119"></a><span class="tm">19:19:30</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> agree on that way of doing big refactors, that's the sanest way to review them at least
+<a name="l-120"></a><span class="tm">19:19:32</span><span class="nk"> &lt;instagibbs&gt;</span> making sane change-making policy could come next
+<a name="l-121"></a><span class="tm">19:19:45</span><span class="nk"> &lt;instagibbs&gt;</span> sane steps exist i think
+<a name="l-122"></a><span class="tm">19:21:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> obviously it needs to be reworked, but I cannot review something that is just "here is replacement code that does everything subtly differently" against threats like "will this cause runaway upbidding" or "will this potentially cause the utxo set size to skyrocket relative to the current code" or "will this trash user privacy" (well hard do to worse than the current on that mark. :P).  But
+<a name="l-123"></a><span class="tm">19:21:40</span><span class="nk"> &lt;gmaxwell&gt;</span> I can review things like instagibbs's effective rate change against those criteria.
+<a name="l-124"></a><span class="tm">19:22:17</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's important to seperate intentional behavioral changes from implementation structure.
+<a name="l-125"></a><span class="tm">19:22:18</span><span class="nk"> &lt;jtimon&gt;</span> so why not try to get merged 10333 first which seems the simpler to review and then revisit the other 2 ?
+<a name="l-126"></a><span class="tm">19:22:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> instagibbs has changes he needs to make.
+<a name="l-127"></a><span class="tm">19:22:40</span><span class="nk"> &lt;gmaxwell&gt;</span> And sure.
+<a name="l-128"></a><span class="tm">19:22:43 </span><span class="nka">* jtimon</span> <span class="ac">nods</span>
+<a name="l-129"></a><span class="tm">19:22:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> i'm worried about something like 10360 to cause unintended runaway behaviour due to some interaction as well
+<a name="l-130"></a><span class="tm">19:22:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> yes
+<a name="l-131"></a><span class="tm">19:23:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> even if it looks perfectly fine by all metrics we considered
+<a name="l-132"></a><span class="tm">19:23:17</span><span class="nk"> &lt;gmaxwell&gt;</span> Though if integrated correctly (not saying it is yet) 10637 is just a preprocessing stage that can't make things worse. (not saying that it's yet integrated correctly).
+<a name="l-133"></a><span class="tm">19:23:30</span><span class="nk"> &lt;instagibbs&gt;</span> Action item is me incorporating suggestion to 10333 make more robust and beg for review again here
+<a name="l-134"></a><span class="tm">19:23:46</span><span class="nk"> &lt;wumpus&gt;</span> so should we add 10333 to high priority for review?
+<a name="l-135"></a><span class="tm">19:24:39</span><span class="nk"> &lt;achow101&gt;</span> imo, yes
+<a name="l-136"></a><span class="tm">19:25:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I don't think it looks fine, I think it fixes a flaw we depend on due to a ~total lack of other mechenisms to sweep txins.
+<a name="l-137"></a><span class="tm">19:25:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yes, but i can't reason about its total effect
+<a name="l-138"></a><span class="tm">19:26:16</span><span class="nk"> &lt;gmaxwell&gt;</span> (it's easy to show that 10360 will abandon more txouts than current code; and also the current code will _create_ txouts that an immediate second run under that patch would not consider spending)
+<a name="l-139"></a><span class="tm">19:26:17</span><span class="nk"> &lt;sipa&gt;</span> i like the change as such, but who knows what interaction we missed
+<a name="l-140"></a><span class="tm">19:26:58</span><span class="nk"> &lt;sipa&gt;</span> anyway, probably a discussion for later
+<a name="l-141"></a><span class="tm">19:26:58</span><span class="nk"> &lt;gmaxwell&gt;</span> So the only thing I don't know if the effect would be castrophic or just merely not perfect.
+<a name="l-142"></a><span class="tm">19:27:11</span><span class="nk"> &lt;sipa&gt;</span> yes, i think 10333 should be prioritized
+<a name="l-143"></a><span class="tm">19:27:17</span><span class="nk"> &lt;gmaxwell&gt;</span> ack on 10333.
+<a name="l-144"></a><span class="tm">19:27:44</span><span class="nk"> &lt;wumpus&gt;</span> ok, added
+<a name="l-145"></a><span class="tm">19:28:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> I think a simple invarient is that we must spend everything we create at least under more or less stationary conditions. Anything less leads to runaway utxo set growth (though perhaps slowly...).
+<a name="l-146"></a><span class="tm">19:29:02</span><span class="nk"> &lt;gmaxwell&gt;</span> but thats a minimum and perhaps not sufficient. But still 10360 fails it.
+<a name="l-147"></a><span class="tm">19:29:50</span><span class="nk"> &lt;gmaxwell&gt;</span> to be fair, it's not 10360's fault so much as that we only pass that criteria now due to bugs that 10360 fixes.
+<a name="l-148"></a><span class="tm">19:30:31</span><span class="nk"> &lt;sipa&gt;</span> other topics?
+<a name="l-149"></a><span class="tm">19:31:05</span><span class="nk"> &lt;cfields&gt;</span> quick topic suggestion: add "strongly discourage/forbit default function arguments" to the style guide?
+<a name="l-150"></a><span class="tm">19:31:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> eh, I don't think that's a good idea
+<a name="l-151"></a><span class="tm">19:31:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic  </span><span class="topicline">add "strongly discourage/forbit default function arguments" to the style guide</span>
+<a name="l-152"></a><span class="tm">19:31:31</span><span class="nk"> &lt;cfields&gt;</span> *forbid. forbitting would be too much :p
+<a name="l-153"></a><span class="tm">19:31:32</span><span class="nk"> &lt;BlueMatt&gt;</span> not always
+<a name="l-154"></a><span class="tm">19:31:37</span><span class="nk"> &lt;wumpus&gt;</span> f-orbitting
+<a name="l-155"></a><span class="tm">19:31:47</span><span class="nk"> &lt;gmaxwell&gt;</span> default arguments are a footgun for sure, can we articluate where they are okay-- if they aren't forbidden?
+<a name="l-156"></a><span class="tm">19:31:49</span><span class="nk"> &lt;sipa&gt;</span> f(ire from) orbit?
+<a name="l-157"></a><span class="tm">19:31:52</span><span class="nk"> &lt;wumpus&gt;</span> no, I don't think that's a good rule in general either
+<a name="l-158"></a><span class="tm">19:31:52</span><span class="nk"> &lt;luke-jr&gt;</span> the important thing should be making sure the behaviour doesn't change, when func signatures change
+<a name="l-159"></a><span class="tm">19:31:57</span><span class="nk"> &lt;BlueMatt&gt;</span> if theres 20 arguments to the function or its a big many-callers function, maybe
+<a name="l-160"></a><span class="tm">19:32:12</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> yes, i think that's the discussion I was looking for.
+<a name="l-161"></a><span class="tm">19:32:24</span><span class="nk"> &lt;luke-jr&gt;</span> "if code calling it before compiles with the new signature, it must behave the same"
+<a name="l-162"></a><span class="tm">19:32:25</span><span class="nk"> &lt;wumpus&gt;</span> if there's 20 arguments to a function there's something wrong in general
+<a name="l-163"></a><span class="tm">19:32:30</span><span class="nk"> &lt;BlueMatt&gt;</span> but depends on where, eg I think https://github.com/bitcoin/bitcoin/pull/10179/commits/dd53c6f0a3f9fa34b0d8d0f6b9a3e4df51a3eda7 is probably fine
+<a name="l-164"></a><span class="tm">19:32:31</span><span class="nk"> &lt;wumpus&gt;</span> please make a rule not to have 20 arguments please
+<a name="l-165"></a><span class="tm">19:32:35</span><span class="nk"> &lt;wumpus&gt;</span> certainly not booleans :(
+<a name="l-166"></a><span class="tm">19:32:39</span><span class="nk"> &lt;BlueMatt&gt;</span> (adds a default arg to CScheduler::schedule())
+<a name="l-167"></a><span class="tm">19:32:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> lol, yes, indeed
+<a name="l-168"></a><span class="tm">19:32:48</span><span class="nk"> &lt;sipa&gt;</span> "It is strongly encouraged to have 19 arguments to functions."
+<a name="l-169"></a><span class="tm">19:32:49</span><span class="nk"> &lt;wumpus&gt;</span> Foo(false, true, false, true, false, true, true)
+<a name="l-170"></a><span class="tm">19:33:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> you forgot the NULL for good measure which may or may not be a pointer :p
+<a name="l-171"></a><span class="tm">19:33:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> oh yes
+<a name="l-172"></a><span class="tm">19:33:42</span><span class="nk"> &lt;wumpus&gt;</span> default arguments are mostly good for one thing: transitions without touching all the code
+<a name="l-173"></a><span class="tm">19:33:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I think the default arg is okay when going from 0 to 1 arguments to add a flag, for example.
+<a name="l-174"></a><span class="tm">19:33:55</span><span class="nk"> &lt;sipa&gt;</span> well i think defaults arguments are often used to reduce code impact of a patch... adding an optional argument at the end (especially directly after a non-optional one, and with a type incompatible with the first optional one if any) is perfectly safe and can strongly reduce the amount of code touched
+<a name="l-175"></a><span class="tm">19:34:13</span><span class="nk"> &lt;sipa&gt;</span> the same can be achieved by adding a fewer-arguments wrapper, though
+<a name="l-176"></a><span class="tm">19:34:17</span><span class="nk"> &lt;wumpus&gt;</span> e.g. if you add an argument to a function that's called from 400 places, it's usually better to add a default argument, at least temporarily
+<a name="l-177"></a><span class="tm">19:34:49</span><span class="nk"> &lt;wumpus&gt;</span> right. I think that's a valid use.
+<a name="l-178"></a><span class="tm">19:34:58</span><span class="nk"> &lt;sipa&gt;</span> i like the approach of creating a new function (with more args, and perhaps even a different name), and changing the old one to be a wrapper around the new one
+<a name="l-179"></a><span class="tm">19:35:07</span><span class="nk"> &lt;luke-jr&gt;</span> indeed, I have been rebasing the rescanblockchain RPC, and this is needed to minimise the conflicts
+<a name="l-180"></a><span class="tm">19:35:18</span><span class="nk"> &lt;gmaxwell&gt;</span> The defaults lead to negative interactions with the fact that arguments aren't named.  I like sipa's suggestion.
+<a name="l-181"></a><span class="tm">19:35:22</span><span class="nk"> &lt;wumpus&gt;</span> well if it has the same name there is no effective difference
+<a name="l-182"></a><span class="tm">19:35:27</span><span class="nk"> &lt;luke-jr&gt;</span> (it adds an argument for a stop-scanning index)
+<a name="l-183"></a><span class="tm">19:35:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> thats how you end up with AcceptToMemoryPoolWorker(tx, true, false, false, true, NULL, (default) false)
+<a name="l-184"></a><span class="tm">19:35:34</span><span class="nk"> &lt;BlueMatt&gt;</span> :(
+<a name="l-185"></a><span class="tm">19:35:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> because when you make further additions to the arguments, you don't mess things up.
+<a name="l-186"></a><span class="tm">19:35:52</span><span class="nk"> &lt;sipa&gt;</span> that wrapper approach also is more restrictive: it _just_ allows the exact old use case, and a new one - not a variety of combinations based on multiple optional args
+<a name="l-187"></a><span class="tm">19:36:10</span><span class="nk"> &lt;wumpus&gt;</span> absent argument naming, I like enums better than booleans
+<a name="l-188"></a><span class="tm">19:36:23</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, no, I don't think we should add a general rule about this
+<a name="l-189"></a><span class="tm">19:36:28</span><span class="nk"> &lt;gmaxwell&gt;</span> We had a near consensus fault in the main split as a result of something related to this. IIRC.
+<a name="l-190"></a><span class="tm">19:36:29</span><span class="nk"> &lt;wumpus&gt;</span> just pay attention at reviews to the specific case
+<a name="l-191"></a><span class="tm">19:36:49 </span><span class="nka">* luke-jr</span> <span class="ac">wishes there was a tool to audit such changes for us</span>
+<a name="l-192"></a><span class="tm">19:36:49</span><span class="nk"> &lt;cfields&gt;</span> ok
+<a name="l-193"></a><span class="tm">19:36:54</span><span class="nk"> &lt;wumpus&gt;</span> not everything has to be spelled out in the style guide, that just makes for laziness *we've checked all the checkboxes*
+<a name="l-194"></a><span class="tm">19:37:05</span><span class="nk"> &lt;gmaxwell&gt;</span> right
+<a name="l-195"></a><span class="tm">19:37:23</span><span class="nk"> &lt;sipa&gt;</span> also, i wish there was a sed-like took that understood our AST a bit better, so you could add a new argument to a function everywhere
+<a name="l-196"></a><span class="tm">19:37:37</span><span class="nk"> &lt;sipa&gt;</span> but regexps are fundamentally not strong enough to do that :(
+<a name="l-197"></a><span class="tm">19:37:42</span><span class="nk"> &lt;wumpus&gt;</span> if only c++ was easier to parse...
+<a name="l-198"></a><span class="tm">19:37:52</span><span class="nk"> &lt;gmaxwell&gt;</span> though I still think sipa's suggestion is good: if you need to introduce an argument to a function called in many places, wrap it with something that provides the default. Then over time we change call sites to call the new function.
+<a name="l-199"></a><span class="tm">19:37:54</span><span class="nk"> &lt;luke-jr&gt;</span> at least it's not Perl
+<a name="l-200"></a><span class="tm">19:37:57</span><span class="nk"> &lt;wumpus&gt;</span> you can do things like that using python + clang, but it's pretty involved, and not fun
+<a name="l-201"></a><span class="tm">19:38:28</span><span class="nk"> &lt;jtimon&gt;</span> ack on strongly discouraging optional arguments, we have way too many and some are really stupid IMO (ehem, ehem #9717 )
+<a name="l-202"></a><span class="tm">19:38:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9717 | Pow: Remove fCheckPOW from CheckBlockHeader by jtimon · Pull Request #9717 · bitcoin/bitcoin · GitHub
+<a name="l-203"></a><span class="tm">19:38:33</span><span class="nk"> &lt;gmaxwell&gt;</span> then we don't end up with function signatures that are full of a mix of default and non-default arguments.
+<a name="l-204"></a><span class="tm">19:38:52</span><span class="nk"> &lt;wumpus&gt;</span> even if you have a c++ parser you get such a lot of information into your mutation function, so many cases to handle
+<a name="l-205"></a><span class="tm">19:39:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I fully agree, just don't think it makes sense as a rule
+<a name="l-206"></a><span class="tm">19:39:39</span><span class="nk"> &lt;gmaxwell&gt;</span> ACK
+<a name="l-207"></a><span class="tm">19:40:08</span><span class="nk"> &lt;jtimon&gt;</span> you can also have simpler wrappers on functions with less parameters and "default values" instead of optional arguments
+<a name="l-208"></a><span class="tm">19:40:22</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-209"></a><span class="tm">19:40:31</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, thats what sipa was just saying.
+<a name="l-210"></a><span class="tm">19:40:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> that's what i was suggestion
+<a name="l-211"></a><span class="tm">19:40:52</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> sorry, catching up...
+<a name="l-212"></a><span class="tm">19:40:59</span><span class="nk"> &lt;wumpus&gt;</span> though the advantage of default arguments is that they're self-documenting in the function signature
+<a name="l-213"></a><span class="tm">19:42:08</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, more topics?
+<a name="l-214"></a><span class="tm">19:42:22</span><span class="nk"> &lt;sipa&gt;</span> do we want to bring up multiwallet API again?
+<a name="l-215"></a><span class="tm">19:42:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> yes
+<a name="l-216"></a><span class="tm">19:42:29</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't think I've personally found that too useful except for functions with just a couple arguments with one or two simple flags.  FrobThing(&amp;thing,FrobHarder=true).
+<a name="l-217"></a><span class="tm">19:42:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">multiwallet API</span>
+<a name="l-218"></a><span class="tm">19:42:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> can we decide what we want to use? path or query string and or versioning?
+<a name="l-219"></a><span class="tm">19:42:46</span><span class="nk"> &lt;wumpus&gt;</span> path
+<a name="l-220"></a><span class="tm">19:42:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think /v1/wallet/&lt;walletid&gt; seems ideal
+<a name="l-221"></a><span class="tm">19:43:01</span><span class="nk"> &lt;gmaxwell&gt;</span> can we at least put a version in first?
+<a name="l-222"></a><span class="tm">19:43:01</span><span class="nk"> &lt;wumpus&gt;</span> we've decided that last time, that wallet will be based on endpoints
+<a name="l-223"></a><span class="tm">19:43:01</span><span class="nk"> &lt;luke-jr&gt;</span> query string &lt;.&lt;
+<a name="l-224"></a><span class="tm">19:43:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> yes. See above
+<a name="l-225"></a><span class="tm">19:43:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i've been thinking about the advantages and disadvantages of both
+<a name="l-226"></a><span class="tm">19:43:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> what advantages do you see with query strings?
+<a name="l-227"></a><span class="tm">19:43:25</span><span class="nk"> &lt;wumpus&gt;</span> oh sure /v1/something is fine with me
+<a name="l-228"></a><span class="tm">19:43:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it's not hacking the path into a parameter? it's extensible?
+<a name="l-229"></a><span class="tm">19:43:45</span><span class="nk"> &lt;wumpus&gt;</span> if we can use /v1 as the general node endpoint hten
+<a name="l-230"></a><span class="tm">19:43:54</span><span class="nk"> &lt;sipa&gt;</span> query string has the advantage that it's more flexible - there could be multiple things to direct the RPC, and they don't need to be in a hierarchical pattern
+<a name="l-231"></a><span class="tm">19:43:57</span><span class="nk"> &lt;wumpus&gt;</span> and /v1/walletname for the wallet
+<a name="l-232"></a><span class="tm">19:44:05</span><span class="nk"> &lt;wumpus&gt;</span> don't use query strings with POST
+<a name="l-233"></a><span class="tm">19:44:06</span><span class="nk"> &lt;wumpus&gt;</span> just don't
+<a name="l-234"></a><span class="tm">19:44:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> you can still add a query string later if you need non-hirarichal inputs later
+<a name="l-235"></a><span class="tm">19:44:10</span><span class="nk"> &lt;gmaxwell&gt;</span> path seems fine to me, so long as there is a version, but I'm clueless.  I do have some questions though.
+<a name="l-236"></a><span class="tm">19:44:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> what wumpus sais
+<a name="l-237"></a><span class="tm">19:44:37</span><span class="nk"> &lt;wumpus&gt;</span> POST has always been used with the idea that the parameters are in the payload
+<a name="l-238"></a><span class="tm">19:44:44 </span><span class="nka">* luke-jr</span> <span class="ac">wants to hear the rest of sipa's thoughts. ☺</span>
+<a name="l-239"></a><span class="tm">19:44:46</span><span class="nk"> &lt;wumpus&gt;</span> POST should not have URI parameters
+<a name="l-240"></a><span class="tm">19:44:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> exactly
+<a name="l-241"></a><span class="tm">19:44:50</span><span class="nk"> &lt;ryanofsky&gt;</span> i think query strings are analogous to command line options, paths are analogous to positional command line arguments
+<a name="l-242"></a><span class="tm">19:44:51</span><span class="nk"> &lt;sipa&gt;</span> however, most things that would go into the path/query string as well, can just become RPC arguments as well
+<a name="l-243"></a><span class="tm">19:45:04</span><span class="nk"> &lt;wumpus&gt;</span> if you confuse them, it will be hard to use from some languages
+<a name="l-244"></a><span class="tm">19:45:09</span><span class="nk"> &lt;sipa&gt;</span> i think that perhaps the wallet name is different, in that it's actually a different "module" you're sending it to
+<a name="l-245"></a><span class="tm">19:45:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> indeed... but the /wallet/ endpoint could have a different rpc server once
+<a name="l-246"></a><span class="tm">19:45:22</span><span class="nk"> &lt;ryanofsky&gt;</span> options are better for non required things that tweak the current operation, arguments are better for required values that determine operation
+<a name="l-247"></a><span class="tm">19:45:25</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's likely in the future that we'll support doing this "create transaction in wallet A but also able using coins from wallet B,C"-- seems clear to me how this could work in the GUI.  How could we RPC call that?
+<a name="l-248"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sipa&gt;</span> so i think my preference is path - and for things that don't fit in the normal hierarchical structure, use named RPC arguments
+<a name="l-249"></a><span class="tm">19:45:39</span><span class="nk"> &lt;wumpus&gt;</span> oh no... not commands from multiple wallets
+<a name="l-250"></a><span class="tm">19:45:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> ugh...
+<a name="l-251"></a><span class="tm">19:45:59</span><span class="nk"> &lt;wumpus&gt;</span> can we at least agree on one object to apply commands too
+<a name="l-252"></a><span class="tm">19:46:03</span><span class="nk"> &lt;luke-jr&gt;</span> BTW, did we consider a generic JSON-RPC "wallet" named param?
+<a name="l-253"></a><span class="tm">19:46:08</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not really 'from multiple wallets'.
+<a name="l-254"></a><span class="tm">19:46:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i suggested that before, yes
+<a name="l-255"></a><span class="tm">19:46:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> in that case you should just use the raw transactions api
+<a name="l-256"></a><span class="tm">19:46:35</span><span class="nk"> &lt;wumpus&gt;</span> you can listunspent on multiple wallets, then use thei r utxos
+<a name="l-257"></a><span class="tm">19:46:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i'd be fine with it, except it's less compatible with a future change that moves it to a different process (which will necessarily have a new endpoint)
+<a name="l-258"></a><span class="tm">19:46:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> generic wallet named parameter seems fine. Is it mixable with the non-named parameter?
+<a name="l-259"></a><span class="tm">19:46:51</span><span class="nk"> &lt;wumpus&gt;</span> no need to do some obscure voodoo calling a method on multiple objects on the same time
+<a name="l-260"></a><span class="tm">19:46:54</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, without that you are forced to make idiotic pay wallet A from wallet B transactions just to make a large payment.  (or as wumpus notes, do something with raw transactions)
+<a name="l-261"></a><span class="tm">19:46:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess we then would only allow wallet selecting with name bases params?
+<a name="l-262"></a><span class="tm">19:46:57</span><span class="nk"> &lt;wumpus&gt;</span> that way madness lies
+<a name="l-263"></a><span class="tm">19:47:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> ah, right
+<a name="l-264"></a><span class="tm">19:47:33</span><span class="nk"> &lt;sipa&gt;</span> so i think this guideline may help: arguments that select something that may in the future move to another process, should go into the path
+<a name="l-265"></a><span class="tm">19:47:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> fair enough that you wouldn't want to do a ?wallet=a&amp;wallet=b  voodoo in any case there, so no interaction with this question.
+<a name="l-266"></a><span class="tm">19:47:39</span><span class="nk"> &lt;sipa&gt;</span> other things should be RPC named args
+<a name="l-267"></a><span class="tm">19:47:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess endpoints will also make process separation simpler
+<a name="l-268"></a><span class="tm">19:47:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> that's what i was saying
+<a name="l-269"></a><span class="tm">19:48:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> +1
+<a name="l-270"></a><span class="tm">19:48:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Lets then go for /v1/wallet/walletID for now
+<a name="l-271"></a><span class="tm">19:48:27</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-272"></a><span class="tm">19:48:30</span><span class="nk"> &lt;sipa&gt;</span> ack
+<a name="l-273"></a><span class="tm">19:48:32</span><span class="nk"> &lt;luke-jr&gt;</span> v0? :P
+<a name="l-274"></a><span class="tm">19:48:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> WalletID is the wallet filename for now... not sure if this is a problem
+<a name="l-275"></a><span class="tm">19:48:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> v0 already exists :p
+<a name="l-276"></a><span class="tm">19:48:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> v0 is not what users are expecting..
+<a name="l-277"></a><span class="tm">19:48:47</span><span class="nk"> &lt;wumpus&gt;</span> no, v1, v0 is what we had before :)
+<a name="l-278"></a><span class="tm">19:48:54</span><span class="nk"> &lt;luke-jr&gt;</span> but this isn't changing the API
+<a name="l-279"></a><span class="tm">19:49:03</span><span class="nk"> &lt;sipa&gt;</span> no, it's creating a new API
+<a name="l-280"></a><span class="tm">19:49:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> it's just a prevention for future api changes
+<a name="l-281"></a><span class="tm">19:49:09</span><span class="nk"> &lt;wumpus&gt;</span> yes.
+<a name="l-282"></a><span class="tm">19:49:12</span><span class="nk"> &lt;gmaxwell&gt;</span> adding /wallet/ is a new API.
+<a name="l-283"></a><span class="tm">19:49:19</span><span class="nk"> &lt;gmaxwell&gt;</span> even though its a trivial one.
+<a name="l-284"></a><span class="tm">19:49:32</span><span class="nk"> &lt;wumpus&gt;</span> I think it's good to add it just in case, we should be able to use /v1 as endpoint for non-wallet methods
+<a name="l-285"></a><span class="tm">19:49:47</span><span class="nk"> &lt;luke-jr&gt;</span> oh, that's a point: how do we specify "no wallet"?
+<a name="l-286"></a><span class="tm">19:49:47</span><span class="nk"> &lt;wumpus&gt;</span> and / for both wallet methos and non-wallet methods (wallet will use 'the default wallet')
+<a name="l-287"></a><span class="tm">19:49:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. /v1 should do the same / (selecting the default wallet)
+<a name="l-288"></a><span class="tm">19:49:56</span><span class="nk"> &lt;gmaxwell&gt;</span> oh nice, though if we're going to do that, we need to ban wallet methods on /v1/  right away.
+<a name="l-289"></a><span class="tm">19:50:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes please
+<a name="l-290"></a><span class="tm">19:50:09</span><span class="nk"> &lt;sipa&gt;</span> how about we also add /v1/node for all non-wallet RPCs?
+<a name="l-291"></a><span class="tm">19:50:30</span><span class="nk"> &lt;wumpus&gt;</span> /v1 should do away with wallet methods, / should have them for backward compat
+<a name="l-292"></a><span class="tm">19:50:35</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-293"></a><span class="tm">19:50:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Wait, do we want to ban non wallet methods sent to /v1/wallet/?
+<a name="l-294"></a><span class="tm">19:50:39</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> why not use query string with POST? we do everything with POST in the rpc, there's no GET, perhaps a link I could read?
+<a name="l-295"></a><span class="tm">19:50:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-296"></a><span class="tm">19:50:43</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-297"></a><span class="tm">19:50:46</span><span class="nk"> &lt;gmaxwell&gt;</span> well we have node rpcs but we also have pure function rpcs.   though I don't know how good it is to bother callers with the fine details of how an rpc is implemented.
+<a name="l-298"></a><span class="tm">19:50:49</span><span class="nk"> &lt;luke-jr&gt;</span> :|
+<a name="l-299"></a><span class="tm">19:50:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. That makes it a bit more complex. :)
+<a name="l-300"></a><span class="tm">19:50:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> And not user friendly.
+<a name="l-301"></a><span class="tm">19:51:03</span><span class="nk"> &lt;jtimon&gt;</span> oh, the params after ?, right, sorry
+<a name="l-302"></a><span class="tm">19:51:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> how so?
+<a name="l-303"></a><span class="tm">19:51:13</span><span class="nk"> &lt;instagibbs&gt;</span> we should just ban all calls, start fresh :P
+<a name="l-304"></a><span class="tm">19:51:17</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> can't just change the endpoint for existing software..
+<a name="l-305"></a><span class="tm">19:51:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> what about createrawtransaction?
+<a name="l-306"></a><span class="tm">19:51:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> then use the old API, which keeps working
+<a name="l-307"></a><span class="tm">19:51:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> then you can't select the wallet
+<a name="l-308"></a><span class="tm">19:51:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> well... the methods thaat have both wallet and non-wallet functionality are obviously special here
+<a name="l-309"></a><span class="tm">19:51:54</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> most things? all things I believe, even for GET
+<a name="l-310"></a><span class="tm">19:51:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> switch over to /wallet when you call fundrawtransaction and back to /node when using signrawtransactionwithkey?
+<a name="l-311"></a><span class="tm">19:52:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> they could be on both, I don't care
+<a name="l-312"></a><span class="tm">19:52:08</span><span class="nk"> &lt;gmaxwell&gt;</span> having them track that "x is a wallet rpc" vs "y is a node" rpc is already asking a lot.  and following this there should be something for pure rpcs that interact not with the node state or wallet. and so on.
+<a name="l-313"></a><span class="tm">19:52:17</span><span class="nk"> &lt;gmaxwell&gt;</span> I guess I'm raising the same concern as jonasschnelli
+<a name="l-314"></a><span class="tm">19:52:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it's a good preparation for beginning to split off the wallet though
+<a name="l-315"></a><span class="tm">19:52:28</span><span class="nk"> &lt;sipa&gt;</span> i see there is a usability issue in doing so
+<a name="l-316"></a><span class="tm">19:52:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not sure if we can/should already seperate the calls in endpoints
+<a name="l-317"></a><span class="tm">19:52:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> when the wallet would be a separate process it also won't have the node methods
+<a name="l-318"></a><span class="tm">19:52:57</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, and I think the wallet split is reasonable, I'm cautioning about what happens if you continue the logic.
+<a name="l-319"></a><span class="tm">19:53:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Once we have process separation, then we would need it. Yes.
+<a name="l-320"></a><span class="tm">19:53:02</span><span class="nk"> &lt;wumpus&gt;</span> also it's a bit starnge to have the same non-wallet methods aliased for every wallet
+<a name="l-321"></a><span class="tm">19:53:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> We could warn in the release notes.
+<a name="l-322"></a><span class="tm">19:53:10</span><span class="nk"> &lt;wumpus&gt;</span> aliasing is usually a bad idea
+<a name="l-323"></a><span class="tm">19:53:35</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose if people want backward compatibility, they can just user per-username default wallets, and have multiple users
+<a name="l-324"></a><span class="tm">19:53:55</span><span class="nk"> &lt;gmaxwell&gt;</span> Maybe there really are only three kinds:  Things that talk to the node, things that talk to a wallet (and maybe also a node),  and  things that are pure functions.
+<a name="l-325"></a><span class="tm">19:54:03</span><span class="nk"> &lt;wumpus&gt;</span> what makes /v1/wallet/mywallet getnetworkinfo different from /v1/otherwallet netnetworkinfo
+<a name="l-326"></a><span class="tm">19:54:13</span><span class="nk"> &lt;wumpus&gt;</span> none has anything to do with wallets
+<a name="l-327"></a><span class="tm">19:54:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, those three kinds exist
+<a name="l-328"></a><span class="tm">19:54:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Agree that it looks bad.
+<a name="l-329"></a><span class="tm">19:54:31</span><span class="nk"> &lt;sipa&gt;</span> can you give an example of the middle one?
+<a name="l-330"></a><span class="tm">19:54:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> we've been trying to get rid of " things that talk to a wallet (and maybe also a node)"
+<a name="l-331"></a><span class="tm">19:54:43</span><span class="nk"> &lt;sipa&gt;</span> oh, signrawtransaction needing UTXO access
+<a name="l-332"></a><span class="tm">19:54:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> hm... wumpus: not sure. The wallet could have it's own network rules in future
+<a name="l-333"></a><span class="tm">19:54:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> getinfo
+<a name="l-334"></a><span class="tm">19:55:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i don't care about getinfo :)
+<a name="l-335"></a><span class="tm">19:55:10</span><span class="nk"> &lt;gmaxwell&gt;</span> it's a little unfortunate to expose the three kinds to users though.  decoderawtransaction and createrawtransaction are pure, signrawtransaction is not.
+<a name="l-336"></a><span class="tm">19:55:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> sure, then it could have a *different* getnetworkinfo
+<a name="l-337"></a><span class="tm">19:55:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> there are more, I've listed them in some issue, let me see
+<a name="l-338"></a><span class="tm">19:55:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> I don't think it's wrong to have node calls in /v1/wallet/mywallet .. it allows us to – in theory – have different peering for different wallets. Also chaintips can be different.
+<a name="l-339"></a><span class="tm">19:56:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> #7965
+<a name="l-340"></a><span class="tm">19:56:05</span><span class="nk"> &lt;sipa&gt;</span> i think i'm fine with making v1 support all non-deprecated non-wallet RPCs as well
+<a name="l-341"></a><span class="tm">19:56:06</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7965 | Remaining instances of ENABLE_WALLET in `libbitcoin_server.a` · Issue #7965 · bitcoin/bitcoin · GitHub
+<a name="l-342"></a><span class="tm">19:56:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I think a split on anything other than wallet vs non-wallet basically exposes implementation details to users.
+<a name="l-343"></a><span class="tm">19:56:19</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15TheBlueMatt opened pull request #10652: Small step towards demangling cs_main from CNodeState (06master...062017-06-cnodestateaccessors-1) 02https://github.com/bitcoin/bitcoin/pull/10652
+<a name="l-344"></a><span class="tm">19:56:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> those don't sound like very interesting things to accomplish. IMO.
+<a name="l-345"></a><span class="tm">19:56:25</span><span class="nk"> &lt;luke-jr&gt;</span> I think we're adding too much complexity to make 0.15 :&lt;
+<a name="l-346"></a><span class="tm">19:56:48</span><span class="nk"> &lt;wumpus&gt;</span> "RPC still has some calls that vary depending on wallet support. We should split these up. This is the more annoying part as it will involve API changes. No non-wallet RPC call should make an assumption about "a wallet"."
+<a name="l-347"></a><span class="tm">19:56:52</span><span class="nk"> &lt;sipa&gt;</span> can we please at least remove getinfo from v1?
+<a name="l-348"></a><span class="tm">19:56:58</span><span class="nk"> &lt;BlueMatt&gt;</span> YES
+<a name="l-349"></a><span class="tm">19:57:00</span><span class="nk"> &lt;wumpus&gt;</span> YES
+<a name="l-350"></a><span class="tm">19:57:04</span><span class="nk"> &lt;gmaxwell&gt;</span> (and by wallet vs non-wallet, I mean a logical split where the address and transaction manipulating functions which are technically pure would still be wallet functions)
+<a name="l-351"></a><span class="tm">19:57:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay. Should the call split be in the same PR that introduces the endpoint?
+<a name="l-352"></a><span class="tm">19:57:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> not necessarily, small steps are fine
+<a name="l-353"></a><span class="tm">19:57:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i don't care
+<a name="l-354"></a><span class="tm">19:57:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think it may get pretty big.
+<a name="l-355"></a><span class="tm">19:57:58</span><span class="nk"> &lt;gmaxwell&gt;</span> we shouldn't ship a release with /v1/ though that has a lot of calls we intend to remove, however.
+<a name="l-356"></a><span class="tm">19:57:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> And ideally the endpoint is in 0.15 (otherwise multiwallet is not really useful)
+<a name="l-357"></a><span class="tm">19:58:01</span><span class="nk"> &lt;wumpus&gt;</span> at this point it's better to make progress at all
+<a name="l-358"></a><span class="tm">19:58:02</span><span class="nk"> &lt;luke-jr&gt;</span> let's get rid of BTC amounts while we're at it! :x
+<a name="l-359"></a><span class="tm">19:58:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> agree
+<a name="l-360"></a><span class="tm">19:58:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> if it's in a release it means it needs to be /v2
+<a name="l-361"></a><span class="tm">19:58:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> we have time, i think
+<a name="l-362"></a><span class="tm">19:58:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> simple as that
+<a name="l-363"></a><span class="tm">19:58:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I'd like that but switching to integers could be a v2 thing too...
+<a name="l-364"></a><span class="tm">19:58:44</span><span class="nk"> &lt;wumpus&gt;</span> sigh
+<a name="l-365"></a><span class="tm">19:58:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> sure; but i think we can merge endpoints now, and do another PR before 0.15 to remove some of the unnecessary stuff from the wallet endpoints
+<a name="l-366"></a><span class="tm">19:58:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well will we want to continue supporting v1 for a long time in th case?
+<a name="l-367"></a><span class="tm">19:59:00</span><span class="nk"> &lt;jtimon&gt;</span> I would not apps anything in the uri, just /v1/wallet/ with {"wallet": "mywalley", "otherparam" : "other value"}
+<a name="l-368"></a><span class="tm">19:59:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> the downside of that is that doesn't prepare downstream apps well for a future process split
+<a name="l-369"></a><span class="tm">19:59:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jtimon:</span> having it in the JSON layer would make process seperation harder...
+<a name="l-370"></a><span class="tm">19:59:38</span><span class="nk"> &lt;wumpus&gt;</span> (sorry, just tired of the whole 'switching to integers' thing)
+<a name="l-371"></a><span class="tm">19:59:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i think the current solutions which accepts strings everywhere is perfectly fine
+<a name="l-372"></a><span class="tm">20:00:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> oh I thought other people wanted to do that, but the inability to change the api was holding it off.
+<a name="l-373"></a><span class="tm">20:00:45</span><span class="nk"> &lt;sipa&gt;</span> PLOINK
+<a name="l-374"></a><span class="tm">20:00:54</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">luke-jr:</span> super ACK on finally moving from BTC to satoshi once and for all, but last time I tried I had to close the PR
+<a name="l-375"></a><span class="tm">20:00:56</span><span class="nk"> &lt;luke-jr&gt;</span> sipa fell in the ocean?
+<a name="l-376"></a><span class="tm">20:00:58</span><span class="nk"> &lt;instagibbs&gt;</span> that's dutch for "meeting over"
+<a name="l-377"></a><span class="tm">20:00:59</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span>  I mean the problem is that JSON doesn't have integers
+<a name="l-378"></a><span class="tm">20:01:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
