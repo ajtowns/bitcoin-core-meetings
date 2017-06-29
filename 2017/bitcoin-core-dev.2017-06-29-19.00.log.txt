@@ -1,0 +1,357 @@
+19:00:12 <wumpus> #startmeeting
+19:00:12 <lightningbot> Meeting started Thu Jun 29 19:00:12 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:12 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:41 <sipa> oi
+19:00:46 <instagibbs> #meetingbegin
+19:00:58 <wumpus> topics?
+19:00:59 <morcos> i'd like to discuss the fee changes needed for 0.15
+19:01:06 <sipa> i have a few topics
+19:01:16 <instagibbs> morcos, ack
+19:01:19 <sipa> short update on signature aggregation
+19:01:29 * BlueMatt wants to change priority review to #10652
+19:01:31 <gribble> https://github.com/bitcoin/bitcoin/issues/10652 | Small step towards demangling cs_main from CNodeState by TheBlueMatt · Pull Request #10652 · bitcoin/bitcoin · GitHub
+19:01:34 <gmaxwell> hurray for merges.
+19:01:44 <sipa> the need for the watchonly rpc flag after multiwallet
+19:01:47 <cfields> hi, here
+19:02:09 <sipa> rolling utxo hashes
+19:02:22 <wumpus> thanks for the topic suggestions, yes let's as usual start with high priority for review
+19:02:33 <wumpus> #topic high priority for review
+19:02:35 <wumpus> https://github.com/bitcoin/bitcoin/projects/8
+19:02:38 <jonasschnelli> suggesting: again multiwallet endpoint vs json parameter
+19:03:08 <wumpus> BlueMatt: instead of #10179?
+19:03:11 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:03:15 <BlueMatt> correct
+19:03:17 <kanzure> hi.
+19:03:22 <BlueMatt> well, actually, its built on
+19:03:22 <jonasschnelli> Replaced BlueMatt's 10179 with 10652
+19:03:23 <BlueMatt> so...ehh
+19:03:29 <BlueMatt> but, yea
+19:03:46 <jonasschnelli> aha.. double pull binding strategy. :)
+19:04:04 <BlueMatt> i mean 10179 is like one ack away, just want cfields to confirm i addressed his feedback sufficiently
+19:04:25 <morcos> So I don't think I've had any there for a couple weeks, if I could add two?  It would be the first two of the fee changes, both have been open a little while, #10543 and #10589
+19:04:26 <gribble> https://github.com/bitcoin/bitcoin/issues/10543 | Change API to estimaterawfee by morcos · Pull Request #10543 · bitcoin/bitcoin · GitHub
+19:04:27 <gribble> https://github.com/bitcoin/bitcoin/issues/10589 | More economical fee estimates for RBF and RPC options to control by morcos · Pull Request #10589 · bitcoin/bitcoin · GitHub
+19:04:35 <morcos> I apologize I have not been around to do more reviewing recently
+19:05:09 <wumpus> BlueMatt: yes, as we discussed: it should still be merged, but it's no longer high-priority because you don't expect the dependent PR to get in in time to be safe for 0.15
+19:05:22 <jonasschnelli> morcos: which one di you want to add to the high-prio list?
+19:05:29 <jonasschnelli> *do
+19:05:31 <wumpus> both
+19:05:55 <morcos> both! :)  but i suppose 10589, if i can only have one
+19:05:56 <jonasschnelli> Good
+19:06:00 <BlueMatt> wumpus: well I want some glances at 10652 pre-15 to see if its too much or if it can go ahead...if its small enough for 15 I do want it for 15
+19:06:19 <cfields> BlueMatt: yes, good enough. Will ACK it.
+19:06:19 <jonasschnelli> We need both for 0.15
+19:06:20 <BlueMatt> (since it fixes the kinda-not-a-big-deal provide-invalid-block attack thing)
+19:07:15 <wumpus> ok - any other suggestions?
+19:07:23 <wumpus> enough other topics otherwise
+19:07:40 <wumpus> #topic short update on signature aggregation
+19:07:43 <sipa> hi
+19:07:43 <wumpus> (sipa)
+19:07:54 <praxeology> Whats the status on the mempool data structure change?
+19:08:05 <praxeology> woops not mempool
+19:08:07 <sipa> this is just a status update of what gmaxwell, apoelstra and me have been working on lately
+19:08:08 <praxeology> utxo
+19:08:11 <wumpus> praxeology: you're interrupting a meeting
+19:08:31 <sipa> i presented on this in milan, and later we wrote a paper for bitcoin17
+19:08:37 <gmaxwell> praxeology: long since done.
+19:08:50 <sipa> the paper was rejected with the very valuable feedback that a solution already existed
+19:09:05 <sipa> namely a paper by Bellare & Neven from 2006
+19:09:42 <sipa> it only solves one of the problems we were trying to solve (signature aggregation, not key aggregation)... but that's the only consensus-critical part if we'd want aggregation in bitcoin trnasactions
+19:09:53 <gmaxwell> (which irritatingly never turned up in eons of searching for us)
+19:10:15 <wumpus> so that solution is usable for bitcoin?
+19:10:18 <sipa> yes
+19:10:24 <sipa> the advantage is that this is peer-reviewed scheme with a strong security proof under very wide assumptions
+19:10:26 <wumpus> nice!
+19:10:29 <gmaxwell> Their solution is almost equivilent to ours (or is equivient with the right kind of squinting about hash function definitions).
+19:10:31 <jonasschnelli> https://eprint.iacr.org/2006/285.pdf
+19:10:38 <gmaxwell> so thats good too.
+19:11:08 <wumpus> yes
+19:11:12 <wumpus> good news
+19:11:16 <gmaxwell> jonasschnelli: doesn't look like the right paper (though maybe its one they published to another venue)
+19:11:17 <BlueMatt> cool!
+19:11:48 <sipa> so what this scheme gives us is a way for transactions to have a single signature (as long as all signers cooperate, so even in the case of coinjoin) overall... regardless of the number of inputs or multisig
+19:11:51 <wumpus> do we have a good link?
+19:12:08 <sipa> https://cseweb.ucsd.edu/~mihir/papers/multisignatures-ccs.pdf
+19:12:14 <sipa> ^
+19:12:24 <gmaxwell> ^ thats it.
+19:12:26 <wumpus> #link https://cseweb.ucsd.edu/~mihir/papers/multisignatures-ccs.pdf
+19:12:35 <sipa> what it does not do is an ability to turn multisig into signle sig (but that could be added on top later, as it's purely a wallet interaction thing)
+19:12:43 <sipa> it also supports batch validation
+19:12:53 <cfields> ooh
+19:12:56 <sipa> meaning that a whole block (or even multiple blocks) could be validated at once
+19:13:16 <sipa> the speedup depends on the size of the batch, but may go as high as 5x (for 4000 signatures)
+19:13:21 <gmaxwell> Unfortunately our paper isn't available because we need to update it to reflect that work,  but it is much more targeted for the Bitcoin application (and would probably be much more clear for people here).
+19:13:50 <sipa> in the batch validation case (without aggregated signatures) the speedup would likely be restricted to 3.5x or so
+19:13:55 <morcos> gmaxwell: is that something that'll happen?  can we just wait to read yours?
+19:14:08 <sipa> yes, we'll definitely finish up the paper
+19:14:18 <sipa> and discuss the change more widely
+19:14:24 <sipa> just wanted to give a heads up here
+19:14:31 <wumpus> yes, thanks for the update!
+19:14:37 <morcos> if i could have next topic, i have to leave early
+19:14:40 <cfields> sipa: what about that per-block aggregation that was briefly discussed? does this get us any closer to that?
+19:14:50 <cfields> nm, will follow-up after meeting
+19:15:07 <wumpus> morcos: what was your topic?
+19:15:13 <gmaxwell> ~2.3x speedup for 32 signatures in the aggregate, fwiw.
+19:15:17 <morcos> Fee changes for 0.15
+19:15:27 <wumpus> #topic fee changes needed for 0.15
+19:15:31 <wumpus> morcos: sorry, missed that one
+19:15:50 <wumpus> morcos: you were actually first to propose a topic :)
+19:16:05 <morcos> I'll be relatively quick for my part, I think I've got all the PR's out now that I think need to go in for 0.15, but I want to encourage people to think about a bunch of the RPC API changes so they are good in their first release
+19:16:24 <morcos> But the other thign is there is one piece of missing functionality wheich I think is needed
+19:16:36 <morcos> #10590
+19:16:36 <gribble> https://github.com/bitcoin/bitcoin/issues/10590 | Access to longer fee estimates using GUI · Issue #10590 · bitcoin/bitcoin · GitHub
+19:17:15 <morcos> Given how volatile fee estimates are and how much they change between short targets and long, I think it's important to give the GUI access to longer fee estimates
+19:17:31 <morcos> But someone more familar with QT can probably whip that up a lot quicker than me
+19:17:53 <morcos> Might be best to build it on top of all my other changes, #10707 shoudl have everything in one
+19:17:54 <gribble> https://github.com/bitcoin/bitcoin/issues/10707 | Better API for estimatesmartfee RPC by morcos · Pull Request #10707 · bitcoin/bitcoin · GitHub
+19:17:55 <jonasschnelli> I'll have a look.
+19:18:13 <morcos> Thanks!  That's what I was hoping for. :)  instagibbs might have more on this topic?
+19:18:21 <instagibbs> #10333 for fee bug fix :)
+19:18:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+19:18:36 <instagibbs> not much else, maybe I'll summon energy to review your PRs
+19:18:39 <morcos> is that the only thing you feel is critical for 0.15?
+19:18:46 <instagibbs> only realistic merge yeah
+19:18:51 <morcos> most of mine are now easy to review i think
+19:18:59 <gmaxwell> Do we have a feel for when bump will be generally usable enough to start making replacability a default? (or at least more visible?)
+19:19:03 <instagibbs> some of my other work has been sucked up by achow101 so waiting on 0.16 for that stuff
+19:19:54 <morcos> gmaxwell: at least it'll be easily accessible to choose RBF given the RPC and GUI options in 0.15
+19:20:09 <instagibbs> I'd really like it to be able to add additional inputs as needed
+19:20:13 <gmaxwell> Oh!  I often miss gui changes, I'll check that out.
+19:20:20 <jonasschnelli> Yes. Not sure if we persist the RBF state across restarts (in the GUI)
+19:20:21 <morcos> Might help us learn if there are other bump features needed...
+19:20:23 <instagibbs> but it seems to me the logic is much simpler with effective value....
+19:20:26 <jonasschnelli> Ideally we should
+19:20:28 <instagibbs> some disagree
+19:20:43 <gmaxwell> instagibbs: IIRC that was the big usability blocker for further use.
+19:21:05 <wumpus> gmaxwell: https://github.com/bitcoin/bitcoin/pull/9527#issuecomment-311659024
+19:21:09 <instagibbs> it randomly doesn't work which is disappointing UX
+19:21:20 <morcos> gmaxwell: the ability to addother inputs?  isn't it pretty rare to not have change?
+19:21:45 <jonasschnelli> But can happen...
+19:21:46 <wumpus> no, we don't persist RBF state, it has to be selected per transaction
+19:22:02 <jonasschnelli> wumpus: maybe the GUI should remember it
+19:22:03 <instagibbs> morcos, we are going to target more exact matches in future, fwiw
+19:22:04 <wumpus> the only way to make it persist is the command line option
+19:22:15 <morcos> wumpus: the gui initializes with the the command line argument, and then persists during the session
+19:22:15 <wumpus> jonasschnelli: meh, better to have it as "option" then
+19:22:24 <gmaxwell> FWIW, I believe electrum defaults to replacable now and pushes pretty hard in that direction, though users can flip it off on a per tx basis.
+19:22:29 <morcos> via checkbox
+19:22:47 <wumpus> jonasschnelli: persisting non-option settings between restarts would be unexpected
+19:23:03 <jonasschnelli> Yes. I guess your right..
+19:23:03 <gmaxwell> In any case, I think the default is kind of moot until bumping is sufficiently mature.
+19:23:21 <wumpus> between transactions in the same session makes sense I guess
+19:23:25 <morcos> I suppose I have one more question on that
+19:23:31 <jonasschnelli> Yes. If the bump won't work because it can't add another input the default should remain at the current state
+19:23:37 <wumpus> yes
+19:23:51 <jonasschnelli> It can happen quickly when fees are rising
+19:23:59 <achow101> hi. I'm late
+19:24:01 <morcos> Right now there are no options to the "Increase transaction fee" option in the GUI and it uses the default tx confirm target.  Should it instead use whatever the slider is set to?
+19:24:19 <jonasschnelli> Yes
+19:24:19 <morcos> If the slider is not in use and custom fee is set, shoudl it use that?
+19:24:23 <wumpus> morcos: the slider is on another tab
+19:24:24 <jonasschnelli> I'd like to work on the replacability in the GUI for 0.16
+19:24:31 <morcos> Those would be easy changes to make after my PR
+19:24:39 <BlueMatt> the slider is in another tab, thats strange
+19:24:47 <wumpus> morcos: not sure that would be intuitive, people assume the slider is for new transactions, the bump option should probably have its own choice dialog
+19:24:50 <jonasschnelli> First I though of bringing back to tx to the original send-tx screen (you could even add recipients... ) but meh
+19:25:01 <morcos> wumpus: that seems maybe too much optionality
+19:25:08 <jonasschnelli> The bump window should just be lager and has the slider
+19:25:16 <wumpus> jonasschnelli: yes
+19:25:27 <morcos> ok, thats fine.. so leave it as the wallet default confirm target for now?
+19:25:35 <wumpus> yes
+19:25:41 <BlueMatt> yea, sucks, but its easy and reasonable
+19:25:47 <jonasschnelli> And also we have never really discussed the pre-signed bumps.. but that we should probably do in another meeting
+19:25:57 <BlueMatt> yea, that sounds like a 16
+19:25:59 <instagibbs> jonasschnelli, that will involve new strategy
+19:26:00 <instagibbs> :)
+19:26:17 <instagibbs> reasonably diff from after the fact fix imo
+19:26:43 <jonasschnelli> I'd say focus on fee opt. in 0.15, rbf in 0.16
+19:27:15 <wumpus> agreed
+19:27:22 <wumpus> #topic the need for the watchonly rpc flag after multiwallet (sipa)
+19:27:27 <sipa> hi!
+19:27:38 <wumpus> (we need to move forward a bit, lots of topics)
+19:27:43 <sipa> currently many RPCs have an optional flag "include watchonly"
+19:27:44 <jonasschnelli> is that similar to the -disablehot?
+19:27:53 * jonasschnelli is listening
+19:28:14 <sipa> at the time the need for that flag existed because of a desire to keep your "hot" wallet separated from your "watch only" wallet
+19:28:20 <sipa> i think that was a mistake
+19:28:24 <wumpus> disablehot: #9662
+19:28:25 <gribble> https://github.com/bitcoin/bitcoin/issues/9662 | Add `-disablehot` mode: a sane mode for watchonly-wallets by jonasschnelli · Pull Request #9662 · bitcoin/bitcoin · GitHub
+19:28:41 <wumpus> sipa: yes, on the long term I agree with you
+19:28:50 <jonasschnelli> sipa: you think with multiwallet the wallet should either be watch or hot?
+19:28:55 <sipa> jonasschnelli: no
+19:29:03 <wumpus> sipa: makes more sense to have a wallet either full-watchonly or has-keys
+19:29:16 <sipa> wumpus: perhaps, but that's orthogonal
+19:29:22 <wumpus> sipa: I don't understand you then
+19:29:24 <instagibbs> ok get to the point :)
+19:29:25 <BlueMatt> why is that a mistake?
+19:29:32 <jonasschnelli> Let sipa explain...
+19:29:33 <sipa> what i'm trying to get at is that the within-a-wallet separation is no longer needed
+19:29:51 <wumpus> how is that different from what I said?
+19:30:11 <wumpus> instead of watchonly within a wallet you'd have a watchonly wallet and a normal wallet
+19:30:18 <sipa> i'm not arguing to remove the ability to have both keys and watchonly in one wallet
+19:30:18 <gmaxwell> because if you want to have a mixed thing thats fine too, then you just have a mixed thing. No need to flag, if you want seperation, use two wallets.
+19:30:19 <jonasschnelli> but I fail to see the difference then between only allowing watch-only or hot
+19:30:32 <sipa> just that there is no need to just select coins that affect one part
+19:30:38 <gmaxwell> you're suggesting an extra restriction.
+19:30:38 <sipa> or see a 'balance' of just one part
+19:30:51 <sipa> a wallet is a wallet, and has a single balance
+19:31:01 <sipa> some of the keys may require decrypting your wallet
+19:31:05 <wumpus> oh, right
+19:31:06 <sipa> some of the keys may require a hardware wallet
+19:31:18 <jonasschnelli> I see... yes.
+19:31:21 <sipa> some of the key may be just watchonly and you need to use raw transactions to interact with thing
+19:31:26 <BlueMatt> fair, this sounds like an 0.17 or 0.18 thing, though
+19:31:30 <gmaxwell> Now, logically you probably will seperate or something, for convience, but I don't see a particular reason to require that right now.
+19:31:32 <BlueMatt> are you asking if we should deprecate?
+19:31:33 <sipa> i was hoping 0.15
+19:31:33 <wumpus> BlueMatt: agree, long term
+19:31:47 <sipa> just make the watchonly flag ignored and always set it to true
+19:31:49 <wumpus> this is not something we're going to change in the RPC interface pre-0.15
+19:31:54 <sipa> ok
+19:31:55 <wumpus> peopel rely on this
+19:32:01 <wumpus> we could document it as deprecated
+19:32:03 <BlueMatt> we'd need to mark it deprecated
+19:32:04 <morcos> sipa: that seems reasonable except what about identifying which things you have keys for and which you dont..
+19:32:11 <BlueMatt> probably deprecate after we have working multiwallet that is stable
+19:32:19 <wumpus> then remove the flag for 0.16 or 0.17, but this seems over-hurried
+19:32:20 <BlueMatt> so maybe deprecate in 0.16...
+19:32:24 <morcos> that seems a useful distinction to keep to me
+19:32:25 <gmaxwell> with 0.15 and multiwallet we can start deprication at least-- e.g. advise that this will happen in the future, suggest people use seperate wallets. . The one problem with that however is that your seperate watchonly wallet still needs the stupid flag everywhere. :(
+19:32:26 <BlueMatt> remove in 17 or 18
+19:32:46 <wumpus> let's focus on actually getting multiwallet into 0.15
+19:32:48 <jonasschnelli> I somehow think mixed wallets can be a footgun source... but right, it orthogonal
+19:32:48 <instagibbs> related topic: some way to signal that the funds are "safe" when you expect a hardware wallet to have the privkey
+19:32:52 <instagibbs> post-0.15 ofc
+19:32:57 <sipa> maybe i haven't made this clear, but how do you deal with hardware wallets, for example?
+19:33:07 <jonasschnelli> we need a standard!
+19:33:08 <sipa> add a 2nd option everyone 'include hw wallet keys'
+19:33:09 <morcos> +1 better support for hardware wallets!
+19:33:14 <sipa> jonasschnelli: orthogonal
+19:33:18 <wumpus> hardware wallets in bitcoin core is a different topic
+19:33:23 <BlueMatt> we dont need to add a flag for hw wallets
+19:33:30 <sipa> BlueMatt: then why do we need a flag for watchonly?
+19:33:35 <wumpus> important, but certainly not one that's going to make it into 0.15
+19:33:38 <BlueMatt> we can say "hw wallets are always included in balance, flag for watchonly is deprecated" starting in the version that supports hw wallets
+19:33:40 <gmaxwell> sipa is pointing out that the model of 'watch only' when applied to also having hardware wallets starts adding combinitoric blowup.
+19:33:54 <sipa> BlueMatt: fair enough
+19:34:01 <jonasschnelli> If a wallet has no clear cur between hot and cold (watch-only), a code-level guarantee, I would not use it for hot funds...
+19:34:02 <BlueMatt> yes, agreed, we should not make it worse, but we dont need to worry about this until at least 16, I think
+19:34:06 <jonasschnelli> *cut
+19:34:14 <wumpus> agree on not making it worse
+19:34:15 <BlueMatt> need useable working good multiwallet first, which likely wont be 15
+19:34:18 <gmaxwell> BlueMatt: thats a point. now just give me a flag for importmulti that gives me a watching key imported that way and it's good to go. :P
+19:34:19 <sipa> jonasschnelli: again, orthogonal
+19:34:34 <instagibbs> I have a working Core+Ledger system, and have a couple thoughts, but this is a different topic yep
+19:34:39 <gmaxwell> BlueMatt: uhh, it's like done.
+19:34:50 <jonasschnelli> sipa: but why not just separating pure watch-only wallets from hot wallets? Why would that be orthogonal?
+19:35:03 <BlueMatt> gmaxwell: I know, but we need a cycle of finding more use-cases and making sure we've got it all covered, was my piont
+19:35:11 <wumpus> yes multiwallet is almost done, but in 0.15 it will at least be experimental
+19:35:15 <BlueMatt> eg createwallet flows within rpc, disconectwallet, etc
+19:35:16 <sipa> jonasschnelli: "orthogonal" means you can still do that
+19:35:23 <sipa> jonasschnelli: it has nothing to do with this issue
+19:35:24 <wumpus> it's the first release it is in, after all
+19:35:27 <gmaxwell> jonasschnelli: because that is an additional restriction that AFAIK isn't needed. maybe later its needed to not support mixed but it seems like a seperate issue to me.
+19:35:46 <jonasschnelli> Okay
+19:36:01 <BlueMatt> ok, so we all agree, eventually push people towards multiwallet away from watchonly :)
+19:36:05 <BlueMatt> next topic? :p
+19:36:07 <sipa> what i want to get add is that a wallet is just a collection of keys it considers "mine" - independent of its ability to actually fully sign
+19:36:12 <sipa> BlueMatt: yes, agree
+19:36:19 <wumpus> #topic rolling utxo hashes
+19:36:22 <wumpus> (sipa again)
+19:36:22 <sipa> hi!
+19:36:30 <instagibbs> sipa, ISMINE_* tho :)
+19:36:34 <instagibbs> ok next topic
+19:36:54 <sipa> with pertxout we changed the serialized_hash because the new format no longer maintains the tx version of the utxo
+19:37:11 <sipa> i posted about rolling utxo hashes a while ago on the ML
+19:37:35 <sipa> i'm not proposing actually implementing that, but would it be worthwhile to immediately switch to a scheme that is compatible with it?
+19:37:43 <sipa> so that there is no need to break the API again
+19:38:01 <gmaxwell> sipa: as in don't do the rolling thing, but have the oneshot thing compute the same hash?
+19:38:06 <sipa> yes
+19:38:16 <sipa> downside: makes gettxoutsetinfo slower
+19:38:30 <wumpus> how much slower?
+19:38:32 <sipa> upside: allows us to make gettxoutsetinfo super fast in the future
+19:38:42 <gmaxwell> lots slower.
+19:38:44 <sipa> several times
+19:38:56 <wumpus> could add a new RPC for it
+19:39:02 <gmaxwell> sipa: Well a challenge there is that I'm not sure that we've settled on the field. So that isn't a guarentee of compatiblity.
+19:39:03 <wumpus> instead of gettxoutsetinfo
+19:39:27 <sipa> interesting, i hadn't considered that
+19:39:30 <sipa> gmaxwell: yeah, i know
+19:39:47 <gmaxwell> actually if we drop the hash from gettxoutsetinfo i think thats the only thing now that requires scanning the whole thing.
+19:39:55 <sipa> no, everything does
+19:40:01 <sipa> (txout count etc)
+19:40:03 <wumpus> yes it's all aggregate statistics
+19:40:06 <gmaxwell> yes but it wouldn't have to with rather trivial changes.
+19:40:08 <sipa> though those things can be maintained on the fly
+19:40:20 <gmaxwell> which would be robust and wouldn't change.
+19:40:27 <sdaftuar> i think we will want an RPC that can scan the disk to calculate the answer, even if we are able to calculate everything on the fly
+19:40:34 <sdaftuar> so that we know our on-disk data is correct
+19:40:35 <sipa> sdaftuar: good point
+19:40:39 <gmaxwell> sdaftuar: restart your node. :P
+19:41:02 <sipa> an advantage of the fast hash is that you can compare it with a recompute-the-whole-thing
+19:41:17 <wumpus> that'd be very nice
+19:41:17 <gmaxwell> okay interesting points.
+19:41:45 <wumpus> a utxo hash that would be quick to compute for every block would be very nice to have
+19:42:20 <gmaxwell> (I was momentarily overestimating how easy it would be to switch to summary statistics, I forgot that they have to be saved and loaded across restart... or otherwise every startup needs the equal of a stats call)
+19:43:03 <gmaxwell> wumpus: right thats the goal of pieter's work. It's just a bit immature now, and if we implmenet it at the moment we may want to switch to an incompatible version later.
+19:43:39 <wumpus> I like to check that all my nodes have the same utxo hash, but calling getutxosetinfo for every block takes too much time, I've tried and given up :)
+19:43:52 <gmaxwell> Assuming we stay with the multiplicative group hash,  we need to pick a prime where multiplication mod that prime is as fast as possible.  Sipa has done some work there, but it's a research project that can sink as much time as we want to put into it.
+19:44:32 <sipa> or we could just use the elliptic curve version, which can probably be made ~2 slower than the GMP-based MuHash
+19:44:38 <sipa> which is just a few lines of code
+19:44:57 <wumpus> now doing it intermittently, but that means that when it fails we don't know exacly where it started to diverge
+19:45:17 <gmaxwell> right, I want to have UpdateTip log the value.
+19:45:23 <sipa> ^ that
+19:45:31 <sdaftuar> wumpus: it's actually not clear to me how much the fast utxo hash calculation helps in comparing running nodes
+19:46:11 <sipa> well the fast utxo hash lets you do a consistency check on just a single node
+19:46:31 <sdaftuar> but what is exactly being compared as consistent?
+19:46:32 <sipa> by having a fast incrementally-updated version, and a slow recompute-from-scratch one
+19:46:33 <gmaxwell> sdaftuar: because you can log the utxo hash at each point, and so if they diverge in a way that the hash sees (e.g. not underlying disk corruption) you'll learn.   Also you could run a command that checks the disk against the running value to catch that disk corrouption.
+19:46:56 <gmaxwell> so  your disk <> your running <> my running <> my disk
+19:47:13 <sdaftuar> yes, i agree if you do the comparison with disk, then you get something valuable
+19:47:25 <sdaftuar> but just comparing the fast calculation between nodes doesn't seem like it does much, does it?
+19:47:28 <wumpus> hm yes good point
+19:47:31 <gmaxwell> right now it is a PITA to compare you and I at disk because we have to do it at the same time (and hope there isn't a block at that instant. :P )
+19:47:40 <sdaftuar> gmaxwell: agreed
+19:47:47 <gmaxwell> sdaftuar: it depends on where the errors you're concerned about are happening.
+19:48:23 <wumpus> gmaxwell: yes, even when you time the RPC command on blocknotify, it sometimes misses the block :)
+19:48:31 <gmaxwell> if they're below the layer where the running hash runs you only gain if you also do periodic checks between it and the disk.  Above it, however, you have constant checking.
+19:49:08 <gmaxwell> but the nice thing is that disk and running can be async checked... You and I don't need to do our disk comparisons at the same time.
+19:49:36 <wumpus> indeed
+19:49:49 <gmaxwell> sdaftuar: this is all also machinery we almost certantly need for a reasonable UTXO-assume-valid kind of sync in the future.
+19:49:55 <wumpus> all in all a rolling utxo hash is an improvement, it creates more options, but you can still do the same as now if you want
+19:50:03 <sdaftuar> gmaxwell: yeah i agree and that's the use case i'm most excited about :)
+19:50:19 <sdaftuar> i was just trying to figure out exactly how i'd use to compare my own nodes, and wasn't sure of the utility
+19:50:44 <gmaxwell> wumpus: the challange though is that it isn't free. muhash on the whole utxo set takes CPU minutes.
+19:51:02 <wumpus> gmaxwell: yes I'm not sure it should replace the faster hash
+19:51:15 <wumpus> maybe it should justb e an additional thing
+19:51:23 <gmaxwell> well once it's a running hash its very fast. :P
+19:51:41 <sdaftuar> hash_serialized_3? :P
+19:51:41 <wumpus> OTOH we're already breaking the hash for 0.15
+19:51:56 <wumpus> (which is kind of sad, as it makes it impossible to compare against older versions)
+19:52:32 <gmaxwell> sipa backported the new hash to the old system for development testing, FWIW.
+19:52:54 <gmaxwell> (it's a pretty trivial change, IIRC, just drop the version from it)
+19:53:03 <wumpus> cool, that'd be useful, especially with the 0.14 to 0.15 database change it's important to be able to check synchronization
+19:54:05 <gmaxwell> This patch existed at one point already, dunno if sipa still has it.
+19:54:07 <sipa> the problem is that #10434 is quite a bit of intricate code
+19:54:09 <gribble> https://github.com/bitcoin/bitcoin/issues/10434 | [WIP] 3072-bit MuHash based hash_serialized by sipa · Pull Request #10434 · bitcoin/bitcoin · GitHub
+19:54:43 <sipa> the EC version would be many times less code (given that we already have secp256k1), but be a few times slower
+19:55:36 <wumpus> I don't have a strong opinion on it
+19:55:37 <sipa> on the other hand, MuHash is very simple to implement in anything that already has big integers (it's a few lines in python)
+19:55:58 <sipa> ok
+19:56:06 <wumpus> though in general I'd say higher performance seems preferable to the ability to re-use code
+19:56:23 <sipa> in that case, some review would be welcome :)
+19:56:32 <wumpus> but I haven't seen the code
+19:56:42 <wumpus> yeah, hope to get around to it
+19:56:59 <sipa> i can drop the asm optimized version from the first PR if wanted
+19:57:06 <praxeology> Couldn't you put a delay on insert/remove from the rolling hash... say only for utxos that are 1 day of blocks old? isn't a hash for N blocks ago just about as good as the current hash?
+19:57:18 <sipa> praxeology: totally irrelevant
+19:57:43 <sipa> that would mean you need to keep those utxos around for processing later
+19:57:59 <sipa> we have an approach that can combine them into a running hash in _microseconds_
+19:58:06 <gmaxwell> All doing that does is perhaps saves you 1% of computation for blocks that are reorged out but at the expense of complexifying everything because the data is inconsistently available.
+19:58:29 <praxeology> What percent of utxos are spent within a day?
+19:58:37 <instagibbs> 2 minutes left
+19:58:41 <instagibbs> if anyone has microtopic
+19:58:43 <wumpus> that seems irrelevant to this discussion
+19:58:54 <wumpus> (although it's interesting to know in its own right)
+19:59:07 <praxeology> Sounds like you guys are concerned about performance on the rolling hash
+19:59:24 <wumpus> #endmeeting

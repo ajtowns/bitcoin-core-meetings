@@ -1,0 +1,384 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:12</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jun 29 19:00:12 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:12</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:41</span><span class="nk"> &lt;sipa&gt;</span> oi
+<a name="l-5"></a><span class="tm">19:00:46</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#meetingbegin</span><span class="cmdline"></span>
+<a name="l-6"></a><span class="tm">19:00:58</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-7"></a><span class="tm">19:00:59</span><span class="nk"> &lt;morcos&gt;</span> i'd like to discuss the fee changes needed for 0.15
+<a name="l-8"></a><span class="tm">19:01:06</span><span class="nk"> &lt;sipa&gt;</span> i have a few topics
+<a name="l-9"></a><span class="tm">19:01:16</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, ack
+<a name="l-10"></a><span class="tm">19:01:19</span><span class="nk"> &lt;sipa&gt;</span> short update on signature aggregation
+<a name="l-11"></a><span class="tm">19:01:29 </span><span class="nka">* BlueMatt</span> <span class="ac">wants to change priority review to #10652</span>
+<a name="l-12"></a><span class="tm">19:01:31</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10652 | Small step towards demangling cs_main from CNodeState by TheBlueMatt · Pull Request #10652 · bitcoin/bitcoin · GitHub
+<a name="l-13"></a><span class="tm">19:01:34</span><span class="nk"> &lt;gmaxwell&gt;</span> hurray for merges.
+<a name="l-14"></a><span class="tm">19:01:44</span><span class="nk"> &lt;sipa&gt;</span> the need for the watchonly rpc flag after multiwallet
+<a name="l-15"></a><span class="tm">19:01:47</span><span class="nk"> &lt;cfields&gt;</span> hi, here
+<a name="l-16"></a><span class="tm">19:02:09</span><span class="nk"> &lt;sipa&gt;</span> rolling utxo hashes
+<a name="l-17"></a><span class="tm">19:02:22</span><span class="nk"> &lt;wumpus&gt;</span> thanks for the topic suggestions, yes let's as usual start with high priority for review
+<a name="l-18"></a><span class="tm">19:02:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority for review</span>
+<a name="l-19"></a><span class="tm">19:02:35</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-20"></a><span class="tm">19:02:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">suggesting:</span> again multiwallet endpoint vs json parameter
+<a name="l-21"></a><span class="tm">19:03:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> instead of #10179?
+<a name="l-22"></a><span class="tm">19:03:11</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-23"></a><span class="tm">19:03:15</span><span class="nk"> &lt;BlueMatt&gt;</span> correct
+<a name="l-24"></a><span class="tm">19:03:17</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-25"></a><span class="tm">19:03:22</span><span class="nk"> &lt;BlueMatt&gt;</span> well, actually, its built on
+<a name="l-26"></a><span class="tm">19:03:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> Replaced BlueMatt's 10179 with 10652
+<a name="l-27"></a><span class="tm">19:03:23</span><span class="nk"> &lt;BlueMatt&gt;</span> so...ehh
+<a name="l-28"></a><span class="tm">19:03:29</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yea
+<a name="l-29"></a><span class="tm">19:03:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> aha.. double pull binding strategy. :)
+<a name="l-30"></a><span class="tm">19:04:04</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean 10179 is like one ack away, just want cfields to confirm i addressed his feedback sufficiently
+<a name="l-31"></a><span class="tm">19:04:25</span><span class="nk"> &lt;morcos&gt;</span> So I don't think I've had any there for a couple weeks, if I could add two?  It would be the first two of the fee changes, both have been open a little while, #10543 and #10589
+<a name="l-32"></a><span class="tm">19:04:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10543 | Change API to estimaterawfee by morcos · Pull Request #10543 · bitcoin/bitcoin · GitHub
+<a name="l-33"></a><span class="tm">19:04:27</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10589 | More economical fee estimates for RBF and RPC options to control by morcos · Pull Request #10589 · bitcoin/bitcoin · GitHub
+<a name="l-34"></a><span class="tm">19:04:35</span><span class="nk"> &lt;morcos&gt;</span> I apologize I have not been around to do more reviewing recently
+<a name="l-35"></a><span class="tm">19:05:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes, as we discussed: it should still be merged, but it's no longer high-priority because you don't expect the dependent PR to get in in time to be safe for 0.15
+<a name="l-36"></a><span class="tm">19:05:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> which one di you want to add to the high-prio list?
+<a name="l-37"></a><span class="tm">19:05:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> *do
+<a name="l-38"></a><span class="tm">19:05:31</span><span class="nk"> &lt;wumpus&gt;</span> both
+<a name="l-39"></a><span class="tm">19:05:55</span><span class="nk"> &lt;morcos&gt;</span> both! :)  but i suppose 10589, if i can only have one
+<a name="l-40"></a><span class="tm">19:05:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> Good
+<a name="l-41"></a><span class="tm">19:06:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> well I want some glances at 10652 pre-15 to see if its too much or if it can go ahead...if its small enough for 15 I do want it for 15
+<a name="l-42"></a><span class="tm">19:06:19</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> yes, good enough. Will ACK it.
+<a name="l-43"></a><span class="tm">19:06:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> We need both for 0.15
+<a name="l-44"></a><span class="tm">19:06:20</span><span class="nk"> &lt;BlueMatt&gt;</span> (since it fixes the kinda-not-a-big-deal provide-invalid-block attack thing)
+<a name="l-45"></a><span class="tm">19:07:15</span><span class="nk"> &lt;wumpus&gt;</span> ok - any other suggestions?
+<a name="l-46"></a><span class="tm">19:07:23</span><span class="nk"> &lt;wumpus&gt;</span> enough other topics otherwise
+<a name="l-47"></a><span class="tm">19:07:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">short update on signature aggregation</span>
+<a name="l-48"></a><span class="tm">19:07:43</span><span class="nk"> &lt;sipa&gt;</span> hi
+<a name="l-49"></a><span class="tm">19:07:43</span><span class="nk"> &lt;wumpus&gt;</span> (sipa)
+<a name="l-50"></a><span class="tm">19:07:54</span><span class="nk"> &lt;praxeology&gt;</span> Whats the status on the mempool data structure change?
+<a name="l-51"></a><span class="tm">19:08:05</span><span class="nk"> &lt;praxeology&gt;</span> woops not mempool
+<a name="l-52"></a><span class="tm">19:08:07</span><span class="nk"> &lt;sipa&gt;</span> this is just a status update of what gmaxwell, apoelstra and me have been working on lately
+<a name="l-53"></a><span class="tm">19:08:08</span><span class="nk"> &lt;praxeology&gt;</span> utxo
+<a name="l-54"></a><span class="tm">19:08:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">praxeology:</span> you're interrupting a meeting
+<a name="l-55"></a><span class="tm">19:08:31</span><span class="nk"> &lt;sipa&gt;</span> i presented on this in milan, and later we wrote a paper for bitcoin17
+<a name="l-56"></a><span class="tm">19:08:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">praxeology:</span> long since done.
+<a name="l-57"></a><span class="tm">19:08:50</span><span class="nk"> &lt;sipa&gt;</span> the paper was rejected with the very valuable feedback that a solution already existed
+<a name="l-58"></a><span class="tm">19:09:05</span><span class="nk"> &lt;sipa&gt;</span> namely a paper by Bellare &amp; Neven from 2006
+<a name="l-59"></a><span class="tm">19:09:42</span><span class="nk"> &lt;sipa&gt;</span> it only solves one of the problems we were trying to solve (signature aggregation, not key aggregation)... but that's the only consensus-critical part if we'd want aggregation in bitcoin trnasactions
+<a name="l-60"></a><span class="tm">19:09:53</span><span class="nk"> &lt;gmaxwell&gt;</span> (which irritatingly never turned up in eons of searching for us)
+<a name="l-61"></a><span class="tm">19:10:15</span><span class="nk"> &lt;wumpus&gt;</span> so that solution is usable for bitcoin?
+<a name="l-62"></a><span class="tm">19:10:18</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-63"></a><span class="tm">19:10:24</span><span class="nk"> &lt;sipa&gt;</span> the advantage is that this is peer-reviewed scheme with a strong security proof under very wide assumptions
+<a name="l-64"></a><span class="tm">19:10:26</span><span class="nk"> &lt;wumpus&gt;</span> nice!
+<a name="l-65"></a><span class="tm">19:10:29</span><span class="nk"> &lt;gmaxwell&gt;</span> Their solution is almost equivilent to ours (or is equivient with the right kind of squinting about hash function definitions).
+<a name="l-66"></a><span class="tm">19:10:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://eprint.iacr.org/2006/285.pdf
+<a name="l-67"></a><span class="tm">19:10:38</span><span class="nk"> &lt;gmaxwell&gt;</span> so thats good too.
+<a name="l-68"></a><span class="tm">19:11:08</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-69"></a><span class="tm">19:11:12</span><span class="nk"> &lt;wumpus&gt;</span> good news
+<a name="l-70"></a><span class="tm">19:11:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> doesn't look like the right paper (though maybe its one they published to another venue)
+<a name="l-71"></a><span class="tm">19:11:17</span><span class="nk"> &lt;BlueMatt&gt;</span> cool!
+<a name="l-72"></a><span class="tm">19:11:48</span><span class="nk"> &lt;sipa&gt;</span> so what this scheme gives us is a way for transactions to have a single signature (as long as all signers cooperate, so even in the case of coinjoin) overall... regardless of the number of inputs or multisig
+<a name="l-73"></a><span class="tm">19:11:51</span><span class="nk"> &lt;wumpus&gt;</span> do we have a good link?
+<a name="l-74"></a><span class="tm">19:12:08</span><span class="nk"> &lt;sipa&gt;</span> https://cseweb.ucsd.edu/~mihir/papers/multisignatures-ccs.pdf
+<a name="l-75"></a><span class="tm">19:12:14</span><span class="nk"> &lt;sipa&gt;</span> ^
+<a name="l-76"></a><span class="tm">19:12:24</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ thats it.
+<a name="l-77"></a><span class="tm">19:12:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://cseweb.ucsd.edu/~mihir/papers/multisignatures-ccs.pdf</span>
+<a name="l-78"></a><span class="tm">19:12:35</span><span class="nk"> &lt;sipa&gt;</span> what it does not do is an ability to turn multisig into signle sig (but that could be added on top later, as it's purely a wallet interaction thing)
+<a name="l-79"></a><span class="tm">19:12:43</span><span class="nk"> &lt;sipa&gt;</span> it also supports batch validation
+<a name="l-80"></a><span class="tm">19:12:53</span><span class="nk"> &lt;cfields&gt;</span> ooh
+<a name="l-81"></a><span class="tm">19:12:56</span><span class="nk"> &lt;sipa&gt;</span> meaning that a whole block (or even multiple blocks) could be validated at once
+<a name="l-82"></a><span class="tm">19:13:16</span><span class="nk"> &lt;sipa&gt;</span> the speedup depends on the size of the batch, but may go as high as 5x (for 4000 signatures)
+<a name="l-83"></a><span class="tm">19:13:21</span><span class="nk"> &lt;gmaxwell&gt;</span> Unfortunately our paper isn't available because we need to update it to reflect that work,  but it is much more targeted for the Bitcoin application (and would probably be much more clear for people here).
+<a name="l-84"></a><span class="tm">19:13:50</span><span class="nk"> &lt;sipa&gt;</span> in the batch validation case (without aggregated signatures) the speedup would likely be restricted to 3.5x or so
+<a name="l-85"></a><span class="tm">19:13:55</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> is that something that'll happen?  can we just wait to read yours?
+<a name="l-86"></a><span class="tm">19:14:08</span><span class="nk"> &lt;sipa&gt;</span> yes, we'll definitely finish up the paper
+<a name="l-87"></a><span class="tm">19:14:18</span><span class="nk"> &lt;sipa&gt;</span> and discuss the change more widely
+<a name="l-88"></a><span class="tm">19:14:24</span><span class="nk"> &lt;sipa&gt;</span> just wanted to give a heads up here
+<a name="l-89"></a><span class="tm">19:14:31</span><span class="nk"> &lt;wumpus&gt;</span> yes, thanks for the update!
+<a name="l-90"></a><span class="tm">19:14:37</span><span class="nk"> &lt;morcos&gt;</span> if i could have next topic, i have to leave early
+<a name="l-91"></a><span class="tm">19:14:40</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> what about that per-block aggregation that was briefly discussed? does this get us any closer to that?
+<a name="l-92"></a><span class="tm">19:14:50</span><span class="nk"> &lt;cfields&gt;</span> nm, will follow-up after meeting
+<a name="l-93"></a><span class="tm">19:15:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> what was your topic?
+<a name="l-94"></a><span class="tm">19:15:13</span><span class="nk"> &lt;gmaxwell&gt;</span> ~2.3x speedup for 32 signatures in the aggregate, fwiw.
+<a name="l-95"></a><span class="tm">19:15:17</span><span class="nk"> &lt;morcos&gt;</span> Fee changes for 0.15
+<a name="l-96"></a><span class="tm">19:15:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">fee changes needed for 0.15</span>
+<a name="l-97"></a><span class="tm">19:15:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> sorry, missed that one
+<a name="l-98"></a><span class="tm">19:15:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> you were actually first to propose a topic :)
+<a name="l-99"></a><span class="tm">19:16:05</span><span class="nk"> &lt;morcos&gt;</span> I'll be relatively quick for my part, I think I've got all the PR's out now that I think need to go in for 0.15, but I want to encourage people to think about a bunch of the RPC API changes so they are good in their first release
+<a name="l-100"></a><span class="tm">19:16:24</span><span class="nk"> &lt;morcos&gt;</span> But the other thign is there is one piece of missing functionality wheich I think is needed
+<a name="l-101"></a><span class="tm">19:16:36</span><span class="nk"> &lt;morcos&gt;</span> <span class="cmd">#10590</span><span class="cmdline"></span>
+<a name="l-102"></a><span class="tm">19:16:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10590 | Access to longer fee estimates using GUI · Issue #10590 · bitcoin/bitcoin · GitHub
+<a name="l-103"></a><span class="tm">19:17:15</span><span class="nk"> &lt;morcos&gt;</span> Given how volatile fee estimates are and how much they change between short targets and long, I think it's important to give the GUI access to longer fee estimates
+<a name="l-104"></a><span class="tm">19:17:31</span><span class="nk"> &lt;morcos&gt;</span> But someone more familar with QT can probably whip that up a lot quicker than me
+<a name="l-105"></a><span class="tm">19:17:53</span><span class="nk"> &lt;morcos&gt;</span> Might be best to build it on top of all my other changes, #10707 shoudl have everything in one
+<a name="l-106"></a><span class="tm">19:17:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10707 | Better API for estimatesmartfee RPC by morcos · Pull Request #10707 · bitcoin/bitcoin · GitHub
+<a name="l-107"></a><span class="tm">19:17:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll have a look.
+<a name="l-108"></a><span class="tm">19:18:13</span><span class="nk"> &lt;morcos&gt;</span> Thanks!  That's what I was hoping for. :)  instagibbs might have more on this topic?
+<a name="l-109"></a><span class="tm">19:18:21</span><span class="nk"> &lt;instagibbs&gt;</span> <span class="cmd">#10333 </span><span class="cmdline">for fee bug fix :)</span>
+<a name="l-110"></a><span class="tm">19:18:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10333 | [wallet] fee fixes: always create change, adjust value, and p… by instagibbs · Pull Request #10333 · bitcoin/bitcoin · GitHub
+<a name="l-111"></a><span class="tm">19:18:36</span><span class="nk"> &lt;instagibbs&gt;</span> not much else, maybe I'll summon energy to review your PRs
+<a name="l-112"></a><span class="tm">19:18:39</span><span class="nk"> &lt;morcos&gt;</span> is that the only thing you feel is critical for 0.15?
+<a name="l-113"></a><span class="tm">19:18:46</span><span class="nk"> &lt;instagibbs&gt;</span> only realistic merge yeah
+<a name="l-114"></a><span class="tm">19:18:51</span><span class="nk"> &lt;morcos&gt;</span> most of mine are now easy to review i think
+<a name="l-115"></a><span class="tm">19:18:59</span><span class="nk"> &lt;gmaxwell&gt;</span> Do we have a feel for when bump will be generally usable enough to start making replacability a default? (or at least more visible?)
+<a name="l-116"></a><span class="tm">19:19:03</span><span class="nk"> &lt;instagibbs&gt;</span> some of my other work has been sucked up by achow101 so waiting on 0.16 for that stuff
+<a name="l-117"></a><span class="tm">19:19:54</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> at least it'll be easily accessible to choose RBF given the RPC and GUI options in 0.15
+<a name="l-118"></a><span class="tm">19:20:09</span><span class="nk"> &lt;instagibbs&gt;</span> I'd really like it to be able to add additional inputs as needed
+<a name="l-119"></a><span class="tm">19:20:13</span><span class="nk"> &lt;gmaxwell&gt;</span> Oh!  I often miss gui changes, I'll check that out.
+<a name="l-120"></a><span class="tm">19:20:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Not sure if we persist the RBF state across restarts (in the GUI)
+<a name="l-121"></a><span class="tm">19:20:21</span><span class="nk"> &lt;morcos&gt;</span> Might help us learn if there are other bump features needed...
+<a name="l-122"></a><span class="tm">19:20:23</span><span class="nk"> &lt;instagibbs&gt;</span> but it seems to me the logic is much simpler with effective value....
+<a name="l-123"></a><span class="tm">19:20:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ideally we should
+<a name="l-124"></a><span class="tm">19:20:28</span><span class="nk"> &lt;instagibbs&gt;</span> some disagree
+<a name="l-125"></a><span class="tm">19:20:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> IIRC that was the big usability blocker for further use.
+<a name="l-126"></a><span class="tm">19:21:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> https://github.com/bitcoin/bitcoin/pull/9527#issuecomment-311659024
+<a name="l-127"></a><span class="tm">19:21:09</span><span class="nk"> &lt;instagibbs&gt;</span> it randomly doesn't work which is disappointing UX
+<a name="l-128"></a><span class="tm">19:21:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> the ability to addother inputs?  isn't it pretty rare to not have change?
+<a name="l-129"></a><span class="tm">19:21:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> But can happen...
+<a name="l-130"></a><span class="tm">19:21:46</span><span class="nk"> &lt;wumpus&gt;</span> no, we don't persist RBF state, it has to be selected per transaction
+<a name="l-131"></a><span class="tm">19:22:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> maybe the GUI should remember it
+<a name="l-132"></a><span class="tm">19:22:03</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, we are going to target more exact matches in future, fwiw
+<a name="l-133"></a><span class="tm">19:22:04</span><span class="nk"> &lt;wumpus&gt;</span> the only way to make it persist is the command line option
+<a name="l-134"></a><span class="tm">19:22:15</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> the gui initializes with the the command line argument, and then persists during the session
+<a name="l-135"></a><span class="tm">19:22:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> meh, better to have it as "option" then
+<a name="l-136"></a><span class="tm">19:22:24</span><span class="nk"> &lt;gmaxwell&gt;</span> FWIW, I believe electrum defaults to replacable now and pushes pretty hard in that direction, though users can flip it off on a per tx basis.
+<a name="l-137"></a><span class="tm">19:22:29</span><span class="nk"> &lt;morcos&gt;</span> via checkbox
+<a name="l-138"></a><span class="tm">19:22:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> persisting non-option settings between restarts would be unexpected
+<a name="l-139"></a><span class="tm">19:23:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. I guess your right..
+<a name="l-140"></a><span class="tm">19:23:03</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, I think the default is kind of moot until bumping is sufficiently mature.
+<a name="l-141"></a><span class="tm">19:23:21</span><span class="nk"> &lt;wumpus&gt;</span> between transactions in the same session makes sense I guess
+<a name="l-142"></a><span class="tm">19:23:25</span><span class="nk"> &lt;morcos&gt;</span> I suppose I have one more question on that
+<a name="l-143"></a><span class="tm">19:23:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. If the bump won't work because it can't add another input the default should remain at the current state
+<a name="l-144"></a><span class="tm">19:23:37</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-145"></a><span class="tm">19:23:51</span><span class="nk"> &lt;jonasschnelli&gt;</span> It can happen quickly when fees are rising
+<a name="l-146"></a><span class="tm">19:23:59</span><span class="nk"> &lt;achow101&gt;</span> hi. I'm late
+<a name="l-147"></a><span class="tm">19:24:01</span><span class="nk"> &lt;morcos&gt;</span> Right now there are no options to the "Increase transaction fee" option in the GUI and it uses the default tx confirm target.  Should it instead use whatever the slider is set to?
+<a name="l-148"></a><span class="tm">19:24:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes
+<a name="l-149"></a><span class="tm">19:24:19</span><span class="nk"> &lt;morcos&gt;</span> If the slider is not in use and custom fee is set, shoudl it use that?
+<a name="l-150"></a><span class="tm">19:24:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> the slider is on another tab
+<a name="l-151"></a><span class="tm">19:24:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd like to work on the replacability in the GUI for 0.16
+<a name="l-152"></a><span class="tm">19:24:31</span><span class="nk"> &lt;morcos&gt;</span> Those would be easy changes to make after my PR
+<a name="l-153"></a><span class="tm">19:24:39</span><span class="nk"> &lt;BlueMatt&gt;</span> the slider is in another tab, thats strange
+<a name="l-154"></a><span class="tm">19:24:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> not sure that would be intuitive, people assume the slider is for new transactions, the bump option should probably have its own choice dialog
+<a name="l-155"></a><span class="tm">19:24:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> First I though of bringing back to tx to the original send-tx screen (you could even add recipients... ) but meh
+<a name="l-156"></a><span class="tm">19:25:01</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> that seems maybe too much optionality
+<a name="l-157"></a><span class="tm">19:25:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> The bump window should just be lager and has the slider
+<a name="l-158"></a><span class="tm">19:25:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-159"></a><span class="tm">19:25:27</span><span class="nk"> &lt;morcos&gt;</span> ok, thats fine.. so leave it as the wallet default confirm target for now?
+<a name="l-160"></a><span class="tm">19:25:35</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-161"></a><span class="tm">19:25:41</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, sucks, but its easy and reasonable
+<a name="l-162"></a><span class="tm">19:25:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> And also we have never really discussed the pre-signed bumps.. but that we should probably do in another meeting
+<a name="l-163"></a><span class="tm">19:25:57</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, that sounds like a 16
+<a name="l-164"></a><span class="tm">19:25:59</span><span class="nk"> &lt;instagibbs&gt;</span> jonasschnelli, that will involve new strategy
+<a name="l-165"></a><span class="tm">19:26:00</span><span class="nk"> &lt;instagibbs&gt;</span> :)
+<a name="l-166"></a><span class="tm">19:26:17</span><span class="nk"> &lt;instagibbs&gt;</span> reasonably diff from after the fact fix imo
+<a name="l-167"></a><span class="tm">19:26:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd say focus on fee opt. in 0.15, rbf in 0.16
+<a name="l-168"></a><span class="tm">19:27:15</span><span class="nk"> &lt;wumpus&gt;</span> agreed
+<a name="l-169"></a><span class="tm">19:27:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">the need for the watchonly rpc flag after multiwallet (sipa)</span>
+<a name="l-170"></a><span class="tm">19:27:27</span><span class="nk"> &lt;sipa&gt;</span> hi!
+<a name="l-171"></a><span class="tm">19:27:38</span><span class="nk"> &lt;wumpus&gt;</span> (we need to move forward a bit, lots of topics)
+<a name="l-172"></a><span class="tm">19:27:43</span><span class="nk"> &lt;sipa&gt;</span> currently many RPCs have an optional flag "include watchonly"
+<a name="l-173"></a><span class="tm">19:27:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> is that similar to the -disablehot?
+<a name="l-174"></a><span class="tm">19:27:53 </span><span class="nka">* jonasschnelli</span> <span class="ac">is listening</span>
+<a name="l-175"></a><span class="tm">19:28:14</span><span class="nk"> &lt;sipa&gt;</span> at the time the need for that flag existed because of a desire to keep your "hot" wallet separated from your "watch only" wallet
+<a name="l-176"></a><span class="tm">19:28:20</span><span class="nk"> &lt;sipa&gt;</span> i think that was a mistake
+<a name="l-177"></a><span class="tm">19:28:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">disablehot:</span> #9662
+<a name="l-178"></a><span class="tm">19:28:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9662 | Add `-disablehot` mode: a sane mode for watchonly-wallets by jonasschnelli · Pull Request #9662 · bitcoin/bitcoin · GitHub
+<a name="l-179"></a><span class="tm">19:28:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes, on the long term I agree with you
+<a name="l-180"></a><span class="tm">19:28:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> you think with multiwallet the wallet should either be watch or hot?
+<a name="l-181"></a><span class="tm">19:28:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> no
+<a name="l-182"></a><span class="tm">19:29:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> makes more sense to have a wallet either full-watchonly or has-keys
+<a name="l-183"></a><span class="tm">19:29:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> perhaps, but that's orthogonal
+<a name="l-184"></a><span class="tm">19:29:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I don't understand you then
+<a name="l-185"></a><span class="tm">19:29:24</span><span class="nk"> &lt;instagibbs&gt;</span> ok get to the point :)
+<a name="l-186"></a><span class="tm">19:29:25</span><span class="nk"> &lt;BlueMatt&gt;</span> why is that a mistake?
+<a name="l-187"></a><span class="tm">19:29:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> Let sipa explain...
+<a name="l-188"></a><span class="tm">19:29:33</span><span class="nk"> &lt;sipa&gt;</span> what i'm trying to get at is that the within-a-wallet separation is no longer needed
+<a name="l-189"></a><span class="tm">19:29:51</span><span class="nk"> &lt;wumpus&gt;</span> how is that different from what I said?
+<a name="l-190"></a><span class="tm">19:30:11</span><span class="nk"> &lt;wumpus&gt;</span> instead of watchonly within a wallet you'd have a watchonly wallet and a normal wallet
+<a name="l-191"></a><span class="tm">19:30:18</span><span class="nk"> &lt;sipa&gt;</span> i'm not arguing to remove the ability to have both keys and watchonly in one wallet
+<a name="l-192"></a><span class="tm">19:30:18</span><span class="nk"> &lt;gmaxwell&gt;</span> because if you want to have a mixed thing thats fine too, then you just have a mixed thing. No need to flag, if you want seperation, use two wallets.
+<a name="l-193"></a><span class="tm">19:30:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> but I fail to see the difference then between only allowing watch-only or hot
+<a name="l-194"></a><span class="tm">19:30:32</span><span class="nk"> &lt;sipa&gt;</span> just that there is no need to just select coins that affect one part
+<a name="l-195"></a><span class="tm">19:30:38</span><span class="nk"> &lt;gmaxwell&gt;</span> you're suggesting an extra restriction.
+<a name="l-196"></a><span class="tm">19:30:38</span><span class="nk"> &lt;sipa&gt;</span> or see a 'balance' of just one part
+<a name="l-197"></a><span class="tm">19:30:51</span><span class="nk"> &lt;sipa&gt;</span> a wallet is a wallet, and has a single balance
+<a name="l-198"></a><span class="tm">19:31:01</span><span class="nk"> &lt;sipa&gt;</span> some of the keys may require decrypting your wallet
+<a name="l-199"></a><span class="tm">19:31:05</span><span class="nk"> &lt;wumpus&gt;</span> oh, right
+<a name="l-200"></a><span class="tm">19:31:06</span><span class="nk"> &lt;sipa&gt;</span> some of the keys may require a hardware wallet
+<a name="l-201"></a><span class="tm">19:31:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> I see... yes.
+<a name="l-202"></a><span class="tm">19:31:21</span><span class="nk"> &lt;sipa&gt;</span> some of the key may be just watchonly and you need to use raw transactions to interact with thing
+<a name="l-203"></a><span class="tm">19:31:26</span><span class="nk"> &lt;BlueMatt&gt;</span> fair, this sounds like an 0.17 or 0.18 thing, though
+<a name="l-204"></a><span class="tm">19:31:30</span><span class="nk"> &lt;gmaxwell&gt;</span> Now, logically you probably will seperate or something, for convience, but I don't see a particular reason to require that right now.
+<a name="l-205"></a><span class="tm">19:31:32</span><span class="nk"> &lt;BlueMatt&gt;</span> are you asking if we should deprecate?
+<a name="l-206"></a><span class="tm">19:31:33</span><span class="nk"> &lt;sipa&gt;</span> i was hoping 0.15
+<a name="l-207"></a><span class="tm">19:31:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> agree, long term
+<a name="l-208"></a><span class="tm">19:31:47</span><span class="nk"> &lt;sipa&gt;</span> just make the watchonly flag ignored and always set it to true
+<a name="l-209"></a><span class="tm">19:31:49</span><span class="nk"> &lt;wumpus&gt;</span> this is not something we're going to change in the RPC interface pre-0.15
+<a name="l-210"></a><span class="tm">19:31:54</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-211"></a><span class="tm">19:31:55</span><span class="nk"> &lt;wumpus&gt;</span> peopel rely on this
+<a name="l-212"></a><span class="tm">19:32:01</span><span class="nk"> &lt;wumpus&gt;</span> we could document it as deprecated
+<a name="l-213"></a><span class="tm">19:32:03</span><span class="nk"> &lt;BlueMatt&gt;</span> we'd need to mark it deprecated
+<a name="l-214"></a><span class="tm">19:32:04</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> that seems reasonable except what about identifying which things you have keys for and which you dont..
+<a name="l-215"></a><span class="tm">19:32:11</span><span class="nk"> &lt;BlueMatt&gt;</span> probably deprecate after we have working multiwallet that is stable
+<a name="l-216"></a><span class="tm">19:32:19</span><span class="nk"> &lt;wumpus&gt;</span> then remove the flag for 0.16 or 0.17, but this seems over-hurried
+<a name="l-217"></a><span class="tm">19:32:20</span><span class="nk"> &lt;BlueMatt&gt;</span> so maybe deprecate in 0.16...
+<a name="l-218"></a><span class="tm">19:32:24</span><span class="nk"> &lt;morcos&gt;</span> that seems a useful distinction to keep to me
+<a name="l-219"></a><span class="tm">19:32:25</span><span class="nk"> &lt;gmaxwell&gt;</span> with 0.15 and multiwallet we can start deprication at least-- e.g. advise that this will happen in the future, suggest people use seperate wallets. . The one problem with that however is that your seperate watchonly wallet still needs the stupid flag everywhere. :(
+<a name="l-220"></a><span class="tm">19:32:26</span><span class="nk"> &lt;BlueMatt&gt;</span> remove in 17 or 18
+<a name="l-221"></a><span class="tm">19:32:46</span><span class="nk"> &lt;wumpus&gt;</span> let's focus on actually getting multiwallet into 0.15
+<a name="l-222"></a><span class="tm">19:32:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> I somehow think mixed wallets can be a footgun source... but right, it orthogonal
+<a name="l-223"></a><span class="tm">19:32:48</span><span class="nk"> &lt;instagibbs&gt;</span> related topic: some way to signal that the funds are "safe" when you expect a hardware wallet to have the privkey
+<a name="l-224"></a><span class="tm">19:32:52</span><span class="nk"> &lt;instagibbs&gt;</span> post-0.15 ofc
+<a name="l-225"></a><span class="tm">19:32:57</span><span class="nk"> &lt;sipa&gt;</span> maybe i haven't made this clear, but how do you deal with hardware wallets, for example?
+<a name="l-226"></a><span class="tm">19:33:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> we need a standard!
+<a name="l-227"></a><span class="tm">19:33:08</span><span class="nk"> &lt;sipa&gt;</span> add a 2nd option everyone 'include hw wallet keys'
+<a name="l-228"></a><span class="tm">19:33:09</span><span class="nk"> &lt;morcos&gt;</span> +1 better support for hardware wallets!
+<a name="l-229"></a><span class="tm">19:33:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> orthogonal
+<a name="l-230"></a><span class="tm">19:33:18</span><span class="nk"> &lt;wumpus&gt;</span> hardware wallets in bitcoin core is a different topic
+<a name="l-231"></a><span class="tm">19:33:23</span><span class="nk"> &lt;BlueMatt&gt;</span> we dont need to add a flag for hw wallets
+<a name="l-232"></a><span class="tm">19:33:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> then why do we need a flag for watchonly?
+<a name="l-233"></a><span class="tm">19:33:35</span><span class="nk"> &lt;wumpus&gt;</span> important, but certainly not one that's going to make it into 0.15
+<a name="l-234"></a><span class="tm">19:33:38</span><span class="nk"> &lt;BlueMatt&gt;</span> we can say "hw wallets are always included in balance, flag for watchonly is deprecated" starting in the version that supports hw wallets
+<a name="l-235"></a><span class="tm">19:33:40</span><span class="nk"> &lt;gmaxwell&gt;</span> sipa is pointing out that the model of 'watch only' when applied to also having hardware wallets starts adding combinitoric blowup.
+<a name="l-236"></a><span class="tm">19:33:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> fair enough
+<a name="l-237"></a><span class="tm">19:34:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> If a wallet has no clear cur between hot and cold (watch-only), a code-level guarantee, I would not use it for hot funds...
+<a name="l-238"></a><span class="tm">19:34:02</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, agreed, we should not make it worse, but we dont need to worry about this until at least 16, I think
+<a name="l-239"></a><span class="tm">19:34:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> *cut
+<a name="l-240"></a><span class="tm">19:34:14</span><span class="nk"> &lt;wumpus&gt;</span> agree on not making it worse
+<a name="l-241"></a><span class="tm">19:34:15</span><span class="nk"> &lt;BlueMatt&gt;</span> need useable working good multiwallet first, which likely wont be 15
+<a name="l-242"></a><span class="tm">19:34:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> thats a point. now just give me a flag for importmulti that gives me a watching key imported that way and it's good to go. :P
+<a name="l-243"></a><span class="tm">19:34:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> again, orthogonal
+<a name="l-244"></a><span class="tm">19:34:34</span><span class="nk"> &lt;instagibbs&gt;</span> I have a working Core+Ledger system, and have a couple thoughts, but this is a different topic yep
+<a name="l-245"></a><span class="tm">19:34:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> uhh, it's like done.
+<a name="l-246"></a><span class="tm">19:34:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> but why not just separating pure watch-only wallets from hot wallets? Why would that be orthogonal?
+<a name="l-247"></a><span class="tm">19:35:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I know, but we need a cycle of finding more use-cases and making sure we've got it all covered, was my piont
+<a name="l-248"></a><span class="tm">19:35:11</span><span class="nk"> &lt;wumpus&gt;</span> yes multiwallet is almost done, but in 0.15 it will at least be experimental
+<a name="l-249"></a><span class="tm">19:35:15</span><span class="nk"> &lt;BlueMatt&gt;</span> eg createwallet flows within rpc, disconectwallet, etc
+<a name="l-250"></a><span class="tm">19:35:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> "orthogonal" means you can still do that
+<a name="l-251"></a><span class="tm">19:35:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> it has nothing to do with this issue
+<a name="l-252"></a><span class="tm">19:35:24</span><span class="nk"> &lt;wumpus&gt;</span> it's the first release it is in, after all
+<a name="l-253"></a><span class="tm">19:35:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> because that is an additional restriction that AFAIK isn't needed. maybe later its needed to not support mixed but it seems like a seperate issue to me.
+<a name="l-254"></a><span class="tm">19:35:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay
+<a name="l-255"></a><span class="tm">19:36:01</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so we all agree, eventually push people towards multiwallet away from watchonly :)
+<a name="l-256"></a><span class="tm">19:36:05</span><span class="nk"> &lt;BlueMatt&gt;</span> next topic? :p
+<a name="l-257"></a><span class="tm">19:36:07</span><span class="nk"> &lt;sipa&gt;</span> what i want to get add is that a wallet is just a collection of keys it considers "mine" - independent of its ability to actually fully sign
+<a name="l-258"></a><span class="tm">19:36:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, agree
+<a name="l-259"></a><span class="tm">19:36:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">rolling utxo hashes</span>
+<a name="l-260"></a><span class="tm">19:36:22</span><span class="nk"> &lt;wumpus&gt;</span> (sipa again)
+<a name="l-261"></a><span class="tm">19:36:22</span><span class="nk"> &lt;sipa&gt;</span> hi!
+<a name="l-262"></a><span class="tm">19:36:30</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, ISMINE_* tho :)
+<a name="l-263"></a><span class="tm">19:36:34</span><span class="nk"> &lt;instagibbs&gt;</span> ok next topic
+<a name="l-264"></a><span class="tm">19:36:54</span><span class="nk"> &lt;sipa&gt;</span> with pertxout we changed the serialized_hash because the new format no longer maintains the tx version of the utxo
+<a name="l-265"></a><span class="tm">19:37:11</span><span class="nk"> &lt;sipa&gt;</span> i posted about rolling utxo hashes a while ago on the ML
+<a name="l-266"></a><span class="tm">19:37:35</span><span class="nk"> &lt;sipa&gt;</span> i'm not proposing actually implementing that, but would it be worthwhile to immediately switch to a scheme that is compatible with it?
+<a name="l-267"></a><span class="tm">19:37:43</span><span class="nk"> &lt;sipa&gt;</span> so that there is no need to break the API again
+<a name="l-268"></a><span class="tm">19:38:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> as in don't do the rolling thing, but have the oneshot thing compute the same hash?
+<a name="l-269"></a><span class="tm">19:38:06</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-270"></a><span class="tm">19:38:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">downside:</span> makes gettxoutsetinfo slower
+<a name="l-271"></a><span class="tm">19:38:30</span><span class="nk"> &lt;wumpus&gt;</span> how much slower?
+<a name="l-272"></a><span class="tm">19:38:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">upside:</span> allows us to make gettxoutsetinfo super fast in the future
+<a name="l-273"></a><span class="tm">19:38:42</span><span class="nk"> &lt;gmaxwell&gt;</span> lots slower.
+<a name="l-274"></a><span class="tm">19:38:44</span><span class="nk"> &lt;sipa&gt;</span> several times
+<a name="l-275"></a><span class="tm">19:38:56</span><span class="nk"> &lt;wumpus&gt;</span> could add a new RPC for it
+<a name="l-276"></a><span class="tm">19:39:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> Well a challenge there is that I'm not sure that we've settled on the field. So that isn't a guarentee of compatiblity.
+<a name="l-277"></a><span class="tm">19:39:03</span><span class="nk"> &lt;wumpus&gt;</span> instead of gettxoutsetinfo
+<a name="l-278"></a><span class="tm">19:39:27</span><span class="nk"> &lt;sipa&gt;</span> interesting, i hadn't considered that
+<a name="l-279"></a><span class="tm">19:39:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yeah, i know
+<a name="l-280"></a><span class="tm">19:39:47</span><span class="nk"> &lt;gmaxwell&gt;</span> actually if we drop the hash from gettxoutsetinfo i think thats the only thing now that requires scanning the whole thing.
+<a name="l-281"></a><span class="tm">19:39:55</span><span class="nk"> &lt;sipa&gt;</span> no, everything does
+<a name="l-282"></a><span class="tm">19:40:01</span><span class="nk"> &lt;sipa&gt;</span> (txout count etc)
+<a name="l-283"></a><span class="tm">19:40:03</span><span class="nk"> &lt;wumpus&gt;</span> yes it's all aggregate statistics
+<a name="l-284"></a><span class="tm">19:40:06</span><span class="nk"> &lt;gmaxwell&gt;</span> yes but it wouldn't have to with rather trivial changes.
+<a name="l-285"></a><span class="tm">19:40:08</span><span class="nk"> &lt;sipa&gt;</span> though those things can be maintained on the fly
+<a name="l-286"></a><span class="tm">19:40:20</span><span class="nk"> &lt;gmaxwell&gt;</span> which would be robust and wouldn't change.
+<a name="l-287"></a><span class="tm">19:40:27</span><span class="nk"> &lt;sdaftuar&gt;</span> i think we will want an RPC that can scan the disk to calculate the answer, even if we are able to calculate everything on the fly
+<a name="l-288"></a><span class="tm">19:40:34</span><span class="nk"> &lt;sdaftuar&gt;</span> so that we know our on-disk data is correct
+<a name="l-289"></a><span class="tm">19:40:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> good point
+<a name="l-290"></a><span class="tm">19:40:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> restart your node. :P
+<a name="l-291"></a><span class="tm">19:41:02</span><span class="nk"> &lt;sipa&gt;</span> an advantage of the fast hash is that you can compare it with a recompute-the-whole-thing
+<a name="l-292"></a><span class="tm">19:41:17</span><span class="nk"> &lt;wumpus&gt;</span> that'd be very nice
+<a name="l-293"></a><span class="tm">19:41:17</span><span class="nk"> &lt;gmaxwell&gt;</span> okay interesting points.
+<a name="l-294"></a><span class="tm">19:41:45</span><span class="nk"> &lt;wumpus&gt;</span> a utxo hash that would be quick to compute for every block would be very nice to have
+<a name="l-295"></a><span class="tm">19:42:20</span><span class="nk"> &lt;gmaxwell&gt;</span> (I was momentarily overestimating how easy it would be to switch to summary statistics, I forgot that they have to be saved and loaded across restart... or otherwise every startup needs the equal of a stats call)
+<a name="l-296"></a><span class="tm">19:43:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> right thats the goal of pieter's work. It's just a bit immature now, and if we implmenet it at the moment we may want to switch to an incompatible version later.
+<a name="l-297"></a><span class="tm">19:43:39</span><span class="nk"> &lt;wumpus&gt;</span> I like to check that all my nodes have the same utxo hash, but calling getutxosetinfo for every block takes too much time, I've tried and given up :)
+<a name="l-298"></a><span class="tm">19:43:52</span><span class="nk"> &lt;gmaxwell&gt;</span> Assuming we stay with the multiplicative group hash,  we need to pick a prime where multiplication mod that prime is as fast as possible.  Sipa has done some work there, but it's a research project that can sink as much time as we want to put into it.
+<a name="l-299"></a><span class="tm">19:44:32</span><span class="nk"> &lt;sipa&gt;</span> or we could just use the elliptic curve version, which can probably be made ~2 slower than the GMP-based MuHash
+<a name="l-300"></a><span class="tm">19:44:38</span><span class="nk"> &lt;sipa&gt;</span> which is just a few lines of code
+<a name="l-301"></a><span class="tm">19:44:57</span><span class="nk"> &lt;wumpus&gt;</span> now doing it intermittently, but that means that when it fails we don't know exacly where it started to diverge
+<a name="l-302"></a><span class="tm">19:45:17</span><span class="nk"> &lt;gmaxwell&gt;</span> right, I want to have UpdateTip log the value.
+<a name="l-303"></a><span class="tm">19:45:23</span><span class="nk"> &lt;sipa&gt;</span> ^ that
+<a name="l-304"></a><span class="tm">19:45:31</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> it's actually not clear to me how much the fast utxo hash calculation helps in comparing running nodes
+<a name="l-305"></a><span class="tm">19:46:11</span><span class="nk"> &lt;sipa&gt;</span> well the fast utxo hash lets you do a consistency check on just a single node
+<a name="l-306"></a><span class="tm">19:46:31</span><span class="nk"> &lt;sdaftuar&gt;</span> but what is exactly being compared as consistent?
+<a name="l-307"></a><span class="tm">19:46:32</span><span class="nk"> &lt;sipa&gt;</span> by having a fast incrementally-updated version, and a slow recompute-from-scratch one
+<a name="l-308"></a><span class="tm">19:46:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> because you can log the utxo hash at each point, and so if they diverge in a way that the hash sees (e.g. not underlying disk corruption) you'll learn.   Also you could run a command that checks the disk against the running value to catch that disk corrouption.
+<a name="l-309"></a><span class="tm">19:46:56</span><span class="nk"> &lt;gmaxwell&gt;</span> so  your disk &lt;&gt; your running &lt;&gt; my running &lt;&gt; my disk
+<a name="l-310"></a><span class="tm">19:47:13</span><span class="nk"> &lt;sdaftuar&gt;</span> yes, i agree if you do the comparison with disk, then you get something valuable
+<a name="l-311"></a><span class="tm">19:47:25</span><span class="nk"> &lt;sdaftuar&gt;</span> but just comparing the fast calculation between nodes doesn't seem like it does much, does it?
+<a name="l-312"></a><span class="tm">19:47:28</span><span class="nk"> &lt;wumpus&gt;</span> hm yes good point
+<a name="l-313"></a><span class="tm">19:47:31</span><span class="nk"> &lt;gmaxwell&gt;</span> right now it is a PITA to compare you and I at disk because we have to do it at the same time (and hope there isn't a block at that instant. :P )
+<a name="l-314"></a><span class="tm">19:47:40</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> agreed
+<a name="l-315"></a><span class="tm">19:47:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> it depends on where the errors you're concerned about are happening.
+<a name="l-316"></a><span class="tm">19:48:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, even when you time the RPC command on blocknotify, it sometimes misses the block :)
+<a name="l-317"></a><span class="tm">19:48:31</span><span class="nk"> &lt;gmaxwell&gt;</span> if they're below the layer where the running hash runs you only gain if you also do periodic checks between it and the disk.  Above it, however, you have constant checking.
+<a name="l-318"></a><span class="tm">19:49:08</span><span class="nk"> &lt;gmaxwell&gt;</span> but the nice thing is that disk and running can be async checked... You and I don't need to do our disk comparisons at the same time.
+<a name="l-319"></a><span class="tm">19:49:36</span><span class="nk"> &lt;wumpus&gt;</span> indeed
+<a name="l-320"></a><span class="tm">19:49:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> this is all also machinery we almost certantly need for a reasonable UTXO-assume-valid kind of sync in the future.
+<a name="l-321"></a><span class="tm">19:49:55</span><span class="nk"> &lt;wumpus&gt;</span> all in all a rolling utxo hash is an improvement, it creates more options, but you can still do the same as now if you want
+<a name="l-322"></a><span class="tm">19:50:03</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yeah i agree and that's the use case i'm most excited about :)
+<a name="l-323"></a><span class="tm">19:50:19</span><span class="nk"> &lt;sdaftuar&gt;</span> i was just trying to figure out exactly how i'd use to compare my own nodes, and wasn't sure of the utility
+<a name="l-324"></a><span class="tm">19:50:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> the challange though is that it isn't free. muhash on the whole utxo set takes CPU minutes.
+<a name="l-325"></a><span class="tm">19:51:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes I'm not sure it should replace the faster hash
+<a name="l-326"></a><span class="tm">19:51:15</span><span class="nk"> &lt;wumpus&gt;</span> maybe it should justb e an additional thing
+<a name="l-327"></a><span class="tm">19:51:23</span><span class="nk"> &lt;gmaxwell&gt;</span> well once it's a running hash its very fast. :P
+<a name="l-328"></a><span class="tm">19:51:41</span><span class="nk"> &lt;sdaftuar&gt;</span> hash_serialized_3? :P
+<a name="l-329"></a><span class="tm">19:51:41</span><span class="nk"> &lt;wumpus&gt;</span> OTOH we're already breaking the hash for 0.15
+<a name="l-330"></a><span class="tm">19:51:56</span><span class="nk"> &lt;wumpus&gt;</span> (which is kind of sad, as it makes it impossible to compare against older versions)
+<a name="l-331"></a><span class="tm">19:52:32</span><span class="nk"> &lt;gmaxwell&gt;</span> sipa backported the new hash to the old system for development testing, FWIW.
+<a name="l-332"></a><span class="tm">19:52:54</span><span class="nk"> &lt;gmaxwell&gt;</span> (it's a pretty trivial change, IIRC, just drop the version from it)
+<a name="l-333"></a><span class="tm">19:53:03</span><span class="nk"> &lt;wumpus&gt;</span> cool, that'd be useful, especially with the 0.14 to 0.15 database change it's important to be able to check synchronization
+<a name="l-334"></a><span class="tm">19:54:05</span><span class="nk"> &lt;gmaxwell&gt;</span> This patch existed at one point already, dunno if sipa still has it.
+<a name="l-335"></a><span class="tm">19:54:07</span><span class="nk"> &lt;sipa&gt;</span> the problem is that #10434 is quite a bit of intricate code
+<a name="l-336"></a><span class="tm">19:54:09</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10434 | [WIP] 3072-bit MuHash based hash_serialized by sipa · Pull Request #10434 · bitcoin/bitcoin · GitHub
+<a name="l-337"></a><span class="tm">19:54:43</span><span class="nk"> &lt;sipa&gt;</span> the EC version would be many times less code (given that we already have secp256k1), but be a few times slower
+<a name="l-338"></a><span class="tm">19:55:36</span><span class="nk"> &lt;wumpus&gt;</span> I don't have a strong opinion on it
+<a name="l-339"></a><span class="tm">19:55:37</span><span class="nk"> &lt;sipa&gt;</span> on the other hand, MuHash is very simple to implement in anything that already has big integers (it's a few lines in python)
+<a name="l-340"></a><span class="tm">19:55:58</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-341"></a><span class="tm">19:56:06</span><span class="nk"> &lt;wumpus&gt;</span> though in general I'd say higher performance seems preferable to the ability to re-use code
+<a name="l-342"></a><span class="tm">19:56:23</span><span class="nk"> &lt;sipa&gt;</span> in that case, some review would be welcome :)
+<a name="l-343"></a><span class="tm">19:56:32</span><span class="nk"> &lt;wumpus&gt;</span> but I haven't seen the code
+<a name="l-344"></a><span class="tm">19:56:42</span><span class="nk"> &lt;wumpus&gt;</span> yeah, hope to get around to it
+<a name="l-345"></a><span class="tm">19:56:59</span><span class="nk"> &lt;sipa&gt;</span> i can drop the asm optimized version from the first PR if wanted
+<a name="l-346"></a><span class="tm">19:57:06</span><span class="nk"> &lt;praxeology&gt;</span> Couldn't you put a delay on insert/remove from the rolling hash... say only for utxos that are 1 day of blocks old? isn't a hash for N blocks ago just about as good as the current hash?
+<a name="l-347"></a><span class="tm">19:57:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">praxeology:</span> totally irrelevant
+<a name="l-348"></a><span class="tm">19:57:43</span><span class="nk"> &lt;sipa&gt;</span> that would mean you need to keep those utxos around for processing later
+<a name="l-349"></a><span class="tm">19:57:59</span><span class="nk"> &lt;sipa&gt;</span> we have an approach that can combine them into a running hash in _microseconds_
+<a name="l-350"></a><span class="tm">19:58:06</span><span class="nk"> &lt;gmaxwell&gt;</span> All doing that does is perhaps saves you 1% of computation for blocks that are reorged out but at the expense of complexifying everything because the data is inconsistently available.
+<a name="l-351"></a><span class="tm">19:58:29</span><span class="nk"> &lt;praxeology&gt;</span> What percent of utxos are spent within a day?
+<a name="l-352"></a><span class="tm">19:58:37</span><span class="nk"> &lt;instagibbs&gt;</span> 2 minutes left
+<a name="l-353"></a><span class="tm">19:58:41</span><span class="nk"> &lt;instagibbs&gt;</span> if anyone has microtopic
+<a name="l-354"></a><span class="tm">19:58:43</span><span class="nk"> &lt;wumpus&gt;</span> that seems irrelevant to this discussion
+<a name="l-355"></a><span class="tm">19:58:54</span><span class="nk"> &lt;wumpus&gt;</span> (although it's interesting to know in its own right)
+<a name="l-356"></a><span class="tm">19:59:07</span><span class="nk"> &lt;praxeology&gt;</span> Sounds like you guys are concerned about performance on the rolling hash
+<a name="l-357"></a><span class="tm">19:59:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
