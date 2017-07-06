@@ -1,0 +1,324 @@
+19:00:44 <wumpus> #startmeeting
+19:00:44 <lightningbot> Meeting started Thu Jul  6 19:00:44 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:44 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:51 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:56 <jonasschnelli> proposed topic: multiwallet endpoint vs json item
+19:00:56 <sipa> LO
+19:00:56 <wumpus> topics?
+19:01:01 <achow101> hi
+19:01:04 <cfields> hi
+19:01:10 <kanzure> hi.
+19:01:15 <wumpus> jonasschnelli: yeah, apparently we have to discuss that again, with all the competing PRs
+19:01:22 <jonasschnelli> heh. Yes
+19:01:29 <wumpus> jonasschnelli: though in principle we settled on endpoint a few weeks ago
+19:01:31 <morcos> begging for review... lots of fee/wallet/estimate stuff that needs to make 0.15
+19:01:41 <morcos> i already have 3 on high priority... sheepish grin
+19:01:53 <wumpus> yes, high priority for review will as usual be first topic
+19:01:54 <gmaxwell> morcos: We should do the things.
+19:01:55 <jonasschnelli> We set endpoints, but some where also in favor of the JSON item solution
+19:02:01 <wumpus> #topic high priority for review
+19:02:04 <BlueMatt> PSA: if you're running master, be very careful not to swap -txindex on your db: the check to prevent you from doing so is broken and you could corrupt your chainstate
+19:02:17 <wumpus> https://github.com/bitcoin/bitcoin/projects/8
+19:02:29 <gmaxwell> by swap txindex he means turn it on/off on an already running node.
+19:02:44 <jonasschnelli> I'll remove my #10240 from the list for now
+19:02:46 <instagibbs> good to know...
+19:02:47 <wumpus> without a reindex-chainstate I guess
+19:02:49 <sipa> gmaxwell: you mean already created db?
+19:02:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:03:01 <wumpus> jonasschnelli: ok
+19:03:22 <jonasschnelli> It's to big and will re-focus during early 0.16
+19:03:27 <jtimon> maybe put #8498 in project 8 ?
+19:03:30 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:03:33 <luke-jr> wumpus: the arguments for endpoint seem strong IMO
+19:03:38 <instagibbs> morcos, doesn;t help that they're an unconfirmed chain of PRs :)
+19:04:06 <morcos> instagibbs: i know! :)  high priority review ones arent though
+19:04:07 <sipa> we need a chain length limit on PRs
+19:04:08 <luke-jr> guess we're not on that topic yet
+19:04:11 <wumpus> jtimon: is that high priority to get into 0.15?
+19:04:17 <wumpus> luke-jr: next topic
+19:04:25 <BlueMatt> wumpus: I think 10179 is ready(ish) for a merge, which makes my high-prio of 10652 cleaner
+19:04:49 <jtimon> wumpus: I haven't benchmarked, but it's an optimization and now also a "near bugfix"
+19:04:56 <morcos> BlueMatt: i was just rereviewing that, but don't wait on me, i'm out of sync these days and doing all posthumous review
+19:05:51 <wumpus> BlueMatt: agree
+19:06:16 <sipa> #10179
+19:06:19 <gribble> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+19:07:13 <BlueMatt> yes, second PSA: never shy away from postumous review! the feeling that its not contributing to moving things forward is wrong, if you think something got merged without enough acks, just review it!
+19:07:27 <morcos> or if you want to be sure to understand the new code!
+19:07:32 <BlueMatt> well, that too
+19:07:44 <Murch> Or if you want to understand the code in the first place! :)
+19:08:21 <wumpus> :)
+19:08:51 <wumpus> ok, so anything that needs to be added to project 8?
+19:09:15 <morcos> i have other things needed for 0.15, but they are dependent on the ones i already have in 8
+19:09:28 <morcos> also i already have 3
+19:09:28 <wumpus> ok, just tag them for 0.15 then, don't need to be in that project
+19:09:36 <wumpus> #topic RPC interface for multiwallet (again)
+19:09:36 <jtimon> wumpus: doesn't that qualify for priority?
+19:09:55 <instagibbs> can someone give an overview of what people are thinking on interface for multiwallet... i missed this
+19:09:56 <wumpus> jtimon: if the gain is unclear, I don't think so
+19:09:57 <jonasschnelli> Again we should decide wether we use Endpoints of JSON objects for multiwallet switch... helps to continue on PRs
+19:10:05 <wumpus> instagibbs: please read the current PRs:
+19:10:08 <sipa> wumpus: can we have #10571 #10579 in 0.15?
+19:10:09 <gribble> https://github.com/bitcoin/bitcoin/issues/10571 | [RPC]Move transaction combining from signrawtransaction to new RPC by achow101 · Pull Request #10571 · bitcoin/bitcoin · GitHub
+19:10:10 <gribble> https://github.com/bitcoin/bitcoin/issues/10579 | [RPC] Split signrawtransaction into wallet and non-wallet RPC command by achow101 · Pull Request #10579 · bitcoin/bitcoin · GitHub
+19:10:10 <jonasschnelli> The JSON object is simpler... less impect
+19:10:10 <jtimon> wumpus: I think it's clearly a gain
+19:10:36 <jonasschnelli> the endpoint approach may allow more in future...
+19:11:02 <jtimon> I don't understand the criterion then
+19:11:16 <wumpus> #10650 #10653
+19:11:17 <jonasschnelli> In the JSON object approach (where you choose the wallet bases on a JSON array item), I don't like that the actual switch in in the JSON layer.
+19:11:17 <gribble> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+19:11:18 <gribble> https://github.com/bitcoin/bitcoin/issues/10653 | Simple, backwards compatible RPC multiwallet support by ryanofsky · Pull Request #10653 · bitcoin/bitcoin · GitHub
+19:11:26 <luke-jr> I like the JSON interface, but I worry that when we split out the wallet it will break
+19:11:29 <instagibbs> wumpus, add those to multiwallet project?
+19:11:35 <wumpus> #10650
+19:11:36 <jonasschnelli> It also only works with the new named based argumenst
+19:11:36 <gribble> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+19:11:40 <wumpus> eh what's the third one?
+19:12:00 <luke-jr> endpoints seemed okay, until the API bump got tacked on..
+19:12:02 <jonasschnelli> I guess the third one (based on Auth) has already been "rejected"? right?
+19:12:08 <wumpus> I don't like the JSON based interface, having to add an optional wallet argument on every wallet call is easy to forget
+19:12:14 <ryanofsky> #10661 works with positional arguments, not just named arguments
+19:12:15 <gribble> https://github.com/bitcoin/bitcoin/issues/10661 | Add optional wallet=filename arguments to wallet RPCs by ryanofsky · Pull Request #10661 · bitcoin/bitcoin · GitHub
+19:12:21 <wumpus> and if you forget it it defaults to the 'default wallet'
+19:12:26 <wumpus> that's just too easy to mess up
+19:12:38 <jonasschnelli> ryanofsky: thanks for clearing this up... wasn't aware, sry
+19:12:40 <wumpus> the endpoint makes sure you can be connected to only one wallet with one RPC connection
+19:12:49 <wumpus> jonasschnelli: right!
+19:12:54 <ryanofsky> i think we should just get rid of the concept of default wallet
+19:13:04 <wumpus> ryanofsky: on the long run, yes, but that's no option for 0.15
+19:13:05 <luke-jr> ryanofsky: definitely not in 0.15
+19:13:13 <kanzure> what about, if more than one wallet, then default wallet must be explicitly specified
+19:13:17 <ryanofsky> if there's more than one wallet, it should just be an error not to specify a wallet
+19:13:20 <wumpus> let's focus on what we want to do now
+19:13:30 <luke-jr> then you break all existing sw
+19:13:31 <wumpus> I think for 0.15 we should simply do the endpoint-based interface
+19:13:34 <ryanofsky> we can do that right now
+19:13:36 <gmaxwell> wumpus: what do you think about the concern that the endpoint stuff establishes a new API that we'll be stuck supporting but haven't given much thought to?
+19:13:37 <ryanofsky> no need to wait
+19:13:52 <sipa> i think as an end goal, endpoint-based selection is awesome, because it prepares for process separation
+19:13:53 <wumpus> gmaxwell: the same is true for any RPC change
+19:13:56 <jonasschnelli> gmaxwell: we can mark it unstable?
+19:14:00 <jonasschnelli> v1 == unstable?
+19:14:09 <jonasschnelli> use / (v0) if you want stability
+19:14:15 <sipa> but if endpoints can't for example remove the non-wallet RPCs, that's sort of not really achieving that goal anyway
+19:14:18 <wumpus> gmaxwell: adding an argument to every wallet RPC call is also such a massive change
+19:14:29 <sipa> wumpus: with named args it's trivial, no?
+19:14:41 <jonasschnelli> I can work on splitting the RPC calls in wallet / nonwallet
+19:14:47 <gmaxwell> (I don't have strong opinions, just raising it)
+19:14:48 <jonasschnelli> if we agree on endpoints
+19:14:51 <ryanofsky> wumpus, are you saying 10661 is a massive change?
+19:14:51 <sipa> and it shouldn't be adding it to every RPC; just catch it in the rpc handler
+19:14:55 <wumpus> but the point is that it'd be something that has to be supported virtually forever
+19:14:58 <luke-jr> (only supporting the default wallet, per rpcauth user, seems the best for backward/forward compatibility still)
+19:14:59 <wumpus> and imo it's poorly thought out
+19:15:16 <wumpus> but I don't care deeply
+19:15:21 <wumpus> at this point we should simply make a choice
+19:15:25 <wumpus> if we don't make a choice today and stick with it
+19:15:26 <gmaxwell> I don't really think named arguments is a great thing. It would make support easier in some software in the short term.
+19:15:30 <wumpus> we can forget multiwallet for 0.15
+19:15:36 <jonasschnelli> ack!
+19:15:36 <gmaxwell> I think every criticism wumpus has on that one is spot on.
+19:15:56 * luke-jr suggests rpcauth-based default wallet, and we can figure out endpoints for 0.16
+19:16:18 <wumpus> gmaxwell: indeed - most RPC client libraries don't even support named arguments yet
+19:16:22 <luke-jr> that gives more time to think out API change
+19:16:25 <wumpus> gmaxwell: while changing the endpoint is easy, just change the URI
+19:16:48 <wumpus> luke-jr: please don't bring back a third option
+19:16:52 * BlueMatt always kinda assumed named args would allow us to add things like multiwallet/different number precision/etc in the future, as a simple add-on to every RPC without any massive code change everywhere
+19:16:53 <wumpus> luke-jr: that's not going to make it easier
+19:16:54 <BlueMatt> but, ok
+19:16:59 <kanzure> luke-jr: are wallets assigned per rpcauth user already?
+19:17:07 <jonasschnelli> no
+19:17:10 <wumpus> no
+19:17:12 <kanzure> uh..
+19:17:26 <BlueMatt> guess I had a different impression than everyone else, then
+19:17:26 <luke-jr> kanzure: there is no way to use multiwallet right now
+19:17:47 <wumpus> BlueMatt: it's possible, and not hard to implement, but just not the right choice for this IMO
+19:17:56 <jonasschnelli> What about using v1/wallet/y<filename> and mark it unstable (experimental?) for 0.15?
+19:17:59 <ryanofsky> BlueMatt, that was my impression too, it's the basis for 10661 & 10653
+19:18:00 <jonasschnelli> -y
+19:18:05 <sipa> i officially no longer have an opibion on approach
+19:18:07 <wumpus> jonasschnelli: sounds good to me
+19:18:10 <BlueMatt> ok, I mean I dont have a very strong impression, i just always thought that seemed natural
+19:18:18 <luke-jr> wumpus: we should have a per-user default wallet *regardless* of the other options; merging it first is a clean way to defer choosing between the others
+19:18:20 <BlueMatt> but, really, can we flip a coin?
+19:18:32 <sipa> 
+19:18:38 <wumpus> let's just go with endpoints for now
+19:18:55 <jonasschnelli> Somone disagree?
+19:18:57 <midnightmagic> how the heck did you send a blank line
+19:18:59 <jonasschnelli> Anyone
+19:19:01 <gmaxwell> I think we could say that the endpoint version totally unstable and will change to answer the concern that we're setting an api there premately.
+19:19:04 <wumpus> if no one cares deeply, let's just stick with the decision of a few weeks ago
+19:19:25 <instagibbs> gmaxwell, ack
+19:19:29 <jonasschnelli> gmaxwell: we could mark the whole multiwallet (incl. endpoint) as experimental in 0.15
+19:19:33 <jonasschnelli> And stable in 0.16
+19:19:34 <wumpus> midnightmagic: that wasn't a blank line, it as \x7f characters
+19:19:42 <wumpus> gmaxwell: yes, multiwallet is unstable in 0.15, +1
+19:19:51 <wumpus> gmaxwell: there's probably quite some things that need to change, still
+19:19:58 <morcos> no opinon on the issue, but ACK on making a decision.
+19:20:17 <jonasschnelli> ryanofsky: could you live with the endpoint solution?
+19:20:43 <gmaxwell> I think in general we should get into a practice of new API's being explicitly unstable in their first release. We've mulliganed quite a few times.
+19:20:53 <wumpus> gmaxwell: yes
+19:20:53 <ryanofsky> of course, yeah
+19:21:13 <jonasschnelli> okay. Let me finish the endpoint PR and hope it will make it into 0.15
+19:21:18 <wumpus> jonasschnelli: great!
+19:21:33 <jonasschnelli> /topic
+19:21:40 <wumpus> ryanofsky: thanks
+19:21:59 <luke-jr> jonasschnelli: can you do it on top of 7b73f24311639fdc79c22608c21e4bfcbc6d4243 ?
+19:22:06 <jonasschnelli> pr #?
+19:22:08 <wumpus> any other topics?
+19:22:53 <wumpus> remember morcos was saying something about fee PRs, but not sure it was aimed as a topic
+19:22:56 <sipa> wifi just fied in the BS office
+19:22:58 <luke-jr> jonasschnelli: it's part of #10615
+19:22:59 <gmaxwell> I just want to say that master continues to be mostly awesome and performing great. I'm really excited about this next release. (esp if we get our act togeather on multiwallet) :)
+19:23:00 <gribble> https://github.com/bitcoin/bitcoin/issues/10615 | RPC: Allow rpcauth configs to specify a 4th parameter naming a specific wallet (multiwallet RPC support) by luke-jr · Pull Request #10615 · bitcoin/bitcoin · GitHub
+19:23:11 <luke-jr> https://github.com/bitcoin/bitcoin/pull/10615/commits/7b73f24311639fdc79c22608c21e4bfcbc6d4243
+19:23:13 <wumpus> gmaxwell: yeah!
+19:23:15 <jonasschnelli> luke-jr: 7b73f24311639fdc79c22608c21e4bfcbc6d4243 pollutes server.h with CWallet... :/
+19:23:18 <jonasschnelli> (later)
+19:23:29 <BlueMatt> there are a bunch of fee PRs which I think are very useful, and we should try desperately to make progress on them for 15
+19:23:34 <gmaxwell> So yes, there are a number of fee/change handling PRs which are urgent for 0.15.
+19:23:38 <morcos> yeah i don't really have a topic, but i need some review
+19:23:42 <morcos> some are bug fixes
+19:23:47 <gmaxwell> But I don't know what to say beyond that since they're already on the high prio list.
+19:23:48 <wumpus> #topic fee PRs
+19:23:53 <morcos> some are RPC api finalization which would be good to get right
+19:24:03 <jonasschnelli> another topic proposal could be: txoutsbyaddress (it's marked with the 0.15 milestone)
+19:24:38 <morcos> I'm not sure if I broke it up in the easiest way possible for review, but am hesitant to try to reorganize this late in the game...
+19:24:42 <wumpus> jonasschnelli: bleh, server.h should definitely not get a CWallet reference, it's meant to be not specific to bitcoin, let alone wallet
+19:25:02 <jonasschnelli> wumpus: yes. I think the same
+19:25:16 <luke-jr> wumpus: jonasschnelli: I don't see a better alternative.
+19:25:43 <morcos> sounds like jonasschnelli also has his hands full with multiwallet and i think it would have been nice to get access to longer fee estimates in the GUI
+19:25:44 <luke-jr> (keep in mind not all calls will come from the RPC server)
+19:25:48 <morcos> but seems like that is not going to happen
+19:25:52 <jonasschnelli> luke-jr: https://github.com/bitcoin/bitcoin/pull/10650/files#diff-df7d84ff2f53fcb2a0dc15a3a51e55ceR36
+19:26:00 <wumpus> luke-jr: there are certainly alternatives, more general ways to attach custom data to a structure, but let's leave this for another time
+19:26:06 <gmaxwell> morcos: oh the gui doesn't have access to the new estimates?  thats unfortunate.
+19:26:14 <gmaxwell> I guess I need to do some gui testing, haven't used it in a while.
+19:26:16 <morcos> gmaxwell: no
+19:26:16 <bitcoin-git> [13bitcoin] 15ryanofsky closed pull request #10661: Add optional wallet=filename arguments to wallet RPCs (06master...06pr/multiopt) 02https://github.com/bitcoin/bitcoin/pull/10661
+19:26:23 <jonasschnelli> gmaxwell: just not the conf target > 26+
+19:26:27 <luke-jr> jonasschnelli: that doesn't work for GUI or tests
+19:26:35 <morcos> no way to ask for non-conservative.  but at least after one of my PR's it'll default to that if tx is replaceable
+19:26:39 <luke-jr> anyhow, later..
+19:26:57 <jonasschnelli> non-conservative would be simple (a checkbox?)
+19:27:15 <jonasschnelli> a slider with fix positions make little sense... sliders are ment to be linear
+19:27:22 <jonasschnelli> A dropdown could make more sense
+19:27:26 * luke-jr likes dropdown
+19:27:30 <morcos> jonasschnelli: yes sort of.  the way it is implemented elsewhere is it defaults to the opposite of opt in rbf, but you coudl force it either way
+19:27:43 <luke-jr> "ASAP", "today", "this week", "eventually"
+19:28:05 <jonasschnelli> luke-jr: names tend to bikeshed... but at least "conf-target in block  |  time"
+19:28:13 * luke-jr shrugs
+19:28:31 <jonasschnelli> Or maybe "time | blocks | feerate"
+19:28:52 <jonasschnelli> Ideally we would run coinselection when opening the dropdown to tell the (possible) absolute fee
+19:29:03 <morcos> jonasschnelli: please no
+19:29:08 <morcos> feerate selection first
+19:29:12 <morcos> then coin selection
+19:29:14 <jonasschnelli> heh.. I though somebody will complain. :)
+19:29:18 <achow101> coin selection needs fee rate..
+19:29:20 <gmaxwell> we can't realistically do that. We need the feerate to perform selection.
+19:29:32 <morcos> in the future coin selection may be different depending on feerate anyway
+19:29:38 <gmaxwell> (and will need it more in the future)
+19:29:39 <jonasschnelli> gmaxwell: do it for all options ... *duck*
+19:29:48 <luke-jr> >_<
+19:29:59 <luke-jr> coin selection can be slow, unless that's been optimised
+19:30:00 <jonasschnelli> Thoughs about the dropbox?
+19:30:10 <sipa> "The next Bitcoin-Qt version requires a 4k screen for coin selection"
+19:30:14 <morcos> in any case, i think _something_ simple would be ideal so users have access to longer than 25 confirms
+19:30:15 <BlueMatt> lol
+19:30:17 <gmaxwell> jonasschnelli: well we'd like to be able to do good selections which won't be instant. thats something that could be expiremented with later.
+19:30:18 <jonasschnelli> I'm happy to do it if it's general accaptable (the dropbown)
+19:30:21 <BlueMatt> sipa: ooo, I have those, sounds gogod!
+19:30:23 <BlueMatt> good
+19:31:08 <gmaxwell> well we do want multiple near term options because of market effects.  e.g. 2,3,4,5,6,72,today,two days, three days, five days, 1 week... or something.
+19:31:17 <jtimon> what about a box with number of blocks instead of a dropbox ?
+19:31:26 <morcos> jonasschnelli: sure. something, anything.  but recommend you build off my other PR #10706
+19:31:27 <gribble> https://github.com/bitcoin/bitcoin/issues/10706 | Improve wallet fee logic and fix GUI bugs by morcos · Pull Request #10706 · bitcoin/bitcoin · GitHub
+19:31:29 <jonasschnelli> I'll try the dropdown and see how it feels.. should not be that hard
+19:31:31 <jtimon> er dropdown
+19:31:34 <jonasschnelli> morcos: will do
+19:31:35 <sipa> do we have to do GUI design in this meeting?
+19:31:43 <luke-jr> XD
+19:31:50 <Murch> gmawell, it could estimate with a blocktarget of ~6 and do that before the window opens? ;)
+19:31:52 <morcos> no i was just hoping for someone else to volunteer since seems jonas has a lot to do
+19:32:11 <Murch> or whatever the default is nowaays
+19:32:14 <morcos> and 0.15 is fast approaching
+19:32:16 <gmaxwell> sipa: that wasn't GUI design, quite the opposite, there are economic reasons that gui clumping people wouldn't be great.
+19:32:19 <luke-jr> I could give it a shot, I guess.
+19:32:44 <jonasschnelli> luke-jr: I just started... :)
+19:32:50 <luke-jr> heh
+19:32:57 <morcos> either or, i'll let you guys work it out, but i'm bad at gUI, but i did make several changes already in the prior PR.   thanks!!
+19:33:50 <wumpus> #topic txoutsbyaddress (it's marked with the 0.15 milestone)
+19:33:55 <wumpus> I think we should remove that milestone
+19:34:06 <gmaxwell> Sadly. Has anyone been working on it?
+19:34:12 <wumpus> #9806  has been quite inactive
+19:34:14 <gribble> https://github.com/bitcoin/bitcoin/issues/9806 | txoutsbyaddress index (take 3) by droark · Pull Request #9806 · bitcoin/bitcoin · GitHub
+19:34:15 <jonasschnelli> I'm more interested about should we or or not add an index for that
+19:34:24 <wumpus> not publicly at least
+19:34:37 <jonasschnelli> The best index implementations is currently the one from Bitpay,.. not?
+19:34:43 <gmaxwell> jonasschnelli: I think we should; unlike many other things it's actually sustainable.
+19:34:59 <jonasschnelli> I tend to also think we should
+19:35:06 <jonasschnelli> (after installed a BWS index)
+19:35:08 <gmaxwell> the bitpay index stuff is utterly unmaintable and borderline abandonware; fwiw.
+19:35:21 <jtimon> why not by scriptpubkey ? that seems more generic
+19:35:25 <sipa> there is some indexd project
+19:35:30 <jonasschnelli> The most stables index I could find so far is that one: https://github.com/bitcoin/bitcoin/pull/10370
+19:35:36 <gmaxwell> jtimon: yes, I think that was suggested on the PR.
+19:35:42 <instagibbs> dcousens has an external index project which I think sipa is referring to
+19:35:50 <jonasschnelli> (it's the one BWS [Bitpay wallet service] is unsing in the fileld since a couple of years)
+19:36:27 <gmaxwell> jonasschnelli: the UTXO indexes are special because they actually have viable scalablity...
+19:36:43 <sipa> https://github.com/bitcoinjs/indexd
+19:36:48 <gmaxwell> I think anyone depending on complete blockchain indexes will eventually be forced onto centeralized servers, unfortunately.
+19:37:02 <gmaxwell> so I have much less interest in internal support (hooks for external things sound fine though)
+19:37:44 <jonasschnelli> Agree. Maybe internal txoutsbyaddress and for the rest, use something like indexd that sipa mentioned
+19:38:08 <instagibbs> https://github.com/bitcoinjs/indexd
+19:38:09 <wumpus> UTXO indexes would be nice, I'd love to have more query functionality for the UTXO set, we have to track that anyway with a full node
+19:38:14 <jcorgan> i've taken to using zmq to notify of new txes/blocks and the REST API to retrieve parsed info about them, for indexing externally
+19:38:25 <morcos> I've got to run, but someone please tag #10557 #10589 #10707 #10712 for 0.15
+19:38:26 <gribble> https://github.com/bitcoin/bitcoin/issues/10557 | Make check to distinguish between orphan txs and old txs more efficient. by morcos · Pull Request #10557 · bitcoin/bitcoin · GitHub
+19:38:27 <jonasschnelli> I guess one reason why some of the centralized services (like the BWS) still is based on 0.12.1 is because the indexes where never added to Core master branch
+19:38:28 <gribble> https://github.com/bitcoin/bitcoin/issues/10589 | More economical fee estimates for RBF and RPC options to control by morcos · Pull Request #10589 · bitcoin/bitcoin · GitHub
+19:38:29 <gribble> https://github.com/bitcoin/bitcoin/issues/10707 | Better API for estimatesmartfee RPC by morcos · Pull Request #10707 · bitcoin/bitcoin · GitHub
+19:38:30 <gribble> https://github.com/bitcoin/bitcoin/issues/10712 | Add change output if necessary to reduce excess fee by morcos · Pull Request #10712 · bitcoin/bitcoin · GitHub
+19:39:06 <wumpus> huh what is gribble doing
+19:39:12 <gmaxwell> wumpus: right. also if ever we support having pruned wallets (wallets that don't know their full history, but do have their full coins), the txout index is something we need for it... but not other indexes.
+19:39:12 <wumpus> oh sure morcos
+19:39:12 <morcos> (sorry)
+19:39:21 <wumpus> gmaxwell: yes!
+19:39:30 <jonasschnelli> tagged
+19:39:56 <jonasschnelli> gmaxwell: yes. For HD restores in pruned env. the utxo index is handy
+19:39:57 <wumpus> gmaxwell: would be very niec to instantly query the balance, if history isn't important
+19:40:33 <gmaxwell> rescan has become so slow for me at least that I'm kinda desperate for something like that.
+19:40:41 <gmaxwell> I've lost days of time waiting on rescans.
+19:41:42 <wumpus> next topic?
+19:42:09 <sipa> nope.
+19:42:25 <gmaxwell> wumpus: can you remind me of the 0.15 schedule?
+19:42:30 <luke-jr> eh, UTXO isn't a substitute for rescanning.. you'd miss historical txs
+19:42:48 <BlueMatt> #9961
+19:42:48 <gribble> https://github.com/bitcoin/bitcoin/issues/9961 | Release schedule for 0.15.0 · Issue #9961 · bitcoin/bitcoin · GitHub
+19:42:58 <gmaxwell> luke-jr: thus pruned wallet, ... it's fine to not have historical txs if you know you don't.
+19:43:13 <gmaxwell> BlueMatt: thanks!
+19:43:15 <wumpus> luke-jr: what if you don't care about history, and just want balance + possibly spending?
+19:43:21 <BlueMatt> T-10 days to branch
+19:43:22 <luke-jr> gmaxwell: but you'd end up with *some* historical tx in this case, with no deterministic reason why some are missing
+19:43:27 <gmaxwell> luke-jr: you can also say that txes found on the blockchain aren't a replacement for having their metadata... :)
+19:43:35 <luke-jr> I suppose we could import them as all change-only or something? :/
+19:43:38 <jonasschnelli> luke-jr: you can scan in the background for the history in a very slow manner once you have done it via the UTXO set index
+19:43:40 <wumpus> BlueMatt: no, not to branch, to feature freeze
+19:43:50 <sipa> wumpus: it'd be incompatible with hardware wallets, before segwit
+19:43:51 <luke-jr> jonasschnelli: hmm, good idea
+19:43:58 <sipa> as you need the full crediting txn
+19:44:00 <gmaxwell> luke-jr: no you wouldn't: my suggestion is that a pruned wallet basically have a line shown in the UI where nothing is there before it except a move like ledger entry that shows the earlier balance.
+19:44:13 <BlueMatt> oh, sorry, yes, freeze
+19:44:16 <wumpus> BlueMatt: branch is 2017-08-06, so a month away
+19:44:20 <gmaxwell> luke-jr: I made an issue describing some ideas for that a while back.
+19:44:21 <luke-jr> gmaxwell: I see, makes sense
+19:45:05 <achow101> wumpus: can #10571 and #10579 be tagged for 0.15?
+19:45:07 <gribble> https://github.com/bitcoin/bitcoin/issues/10571 | [RPC]Move transaction combining from signrawtransaction to new RPC by achow101 · Pull Request #10571 · bitcoin/bitcoin · GitHub
+19:45:08 <gribble> https://github.com/bitcoin/bitcoin/issues/10579 | [RPC] Split signrawtransaction into wallet and non-wallet RPC command by achow101 · Pull Request #10579 · bitcoin/bitcoin · GitHub
+19:45:21 <gmaxwell> There are other reasons why building such things are attractive... (e.g. UTXO based sync can't provide the data to give history...)
+19:45:32 <wumpus> achow101: sure
+19:45:44 <achow101> thanks
+19:45:48 <gmaxwell> ack
+19:48:55 <sipa> early lunch?
+19:49:52 <wumpus> ye fine with me
+19:49:54 <wumpus> #endmeeting

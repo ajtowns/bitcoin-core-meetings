@@ -1,0 +1,351 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:44</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jul  6 19:00:44 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:44</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:51</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-5"></a><span class="tm">19:00:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> proposed topic: multiwallet endpoint vs json item
+<a name="l-6"></a><span class="tm">19:00:56</span><span class="nk"> &lt;sipa&gt;</span> LO
+<a name="l-7"></a><span class="tm">19:00:56</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-8"></a><span class="tm">19:01:01</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:01:04</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-10"></a><span class="tm">19:01:10</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-11"></a><span class="tm">19:01:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yeah, apparently we have to discuss that again, with all the competing PRs
+<a name="l-12"></a><span class="tm">19:01:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh. Yes
+<a name="l-13"></a><span class="tm">19:01:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> though in principle we settled on endpoint a few weeks ago
+<a name="l-14"></a><span class="tm">19:01:31</span><span class="nk"> &lt;morcos&gt;</span> begging for review... lots of fee/wallet/estimate stuff that needs to make 0.15
+<a name="l-15"></a><span class="tm">19:01:41</span><span class="nk"> &lt;morcos&gt;</span> i already have 3 on high priority... sheepish grin
+<a name="l-16"></a><span class="tm">19:01:53</span><span class="nk"> &lt;wumpus&gt;</span> yes, high priority for review will as usual be first topic
+<a name="l-17"></a><span class="tm">19:01:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> We should do the things.
+<a name="l-18"></a><span class="tm">19:01:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> We set endpoints, but some where also in favor of the JSON item solution
+<a name="l-19"></a><span class="tm">19:02:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high priority for review</span>
+<a name="l-20"></a><span class="tm">19:02:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">PSA:</span> if you're running master, be very careful not to swap -txindex on your db: the check to prevent you from doing so is broken and you could corrupt your chainstate
+<a name="l-21"></a><span class="tm">19:02:17</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-22"></a><span class="tm">19:02:29</span><span class="nk"> &lt;gmaxwell&gt;</span> by swap txindex he means turn it on/off on an already running node.
+<a name="l-23"></a><span class="tm">19:02:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll remove my #10240 from the list for now
+<a name="l-24"></a><span class="tm">19:02:46</span><span class="nk"> &lt;instagibbs&gt;</span> good to know...
+<a name="l-25"></a><span class="tm">19:02:47</span><span class="nk"> &lt;wumpus&gt;</span> without a reindex-chainstate I guess
+<a name="l-26"></a><span class="tm">19:02:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> you mean already created db?
+<a name="l-27"></a><span class="tm">19:02:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+<a name="l-28"></a><span class="tm">19:03:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> ok
+<a name="l-29"></a><span class="tm">19:03:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's to big and will re-focus during early 0.16
+<a name="l-30"></a><span class="tm">19:03:27</span><span class="nk"> &lt;jtimon&gt;</span> maybe put #8498 in project 8 ?
+<a name="l-31"></a><span class="tm">19:03:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-32"></a><span class="tm">19:03:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> the arguments for endpoint seem strong IMO
+<a name="l-33"></a><span class="tm">19:03:38</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, doesn;t help that they're an unconfirmed chain of PRs :)
+<a name="l-34"></a><span class="tm">19:04:06</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> i know! :)  high priority review ones arent though
+<a name="l-35"></a><span class="tm">19:04:07</span><span class="nk"> &lt;sipa&gt;</span> we need a chain length limit on PRs
+<a name="l-36"></a><span class="tm">19:04:08</span><span class="nk"> &lt;luke-jr&gt;</span> guess we're not on that topic yet
+<a name="l-37"></a><span class="tm">19:04:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> is that high priority to get into 0.15?
+<a name="l-38"></a><span class="tm">19:04:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> next topic
+<a name="l-39"></a><span class="tm">19:04:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I think 10179 is ready(ish) for a merge, which makes my high-prio of 10652 cleaner
+<a name="l-40"></a><span class="tm">19:04:49</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I haven't benchmarked, but it's an optimization and now also a "near bugfix"
+<a name="l-41"></a><span class="tm">19:04:56</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> i was just rereviewing that, but don't wait on me, i'm out of sync these days and doing all posthumous review
+<a name="l-42"></a><span class="tm">19:05:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> agree
+<a name="l-43"></a><span class="tm">19:06:16</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#10179</span><span class="cmdline"></span>
+<a name="l-44"></a><span class="tm">19:06:19</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10179 | Give CValidationInterface Support for calling notifications on the CScheduler Thread by TheBlueMatt · Pull Request #10179 · bitcoin/bitcoin · GitHub
+<a name="l-45"></a><span class="tm">19:07:13</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, second PSA: never shy away from postumous review! the feeling that its not contributing to moving things forward is wrong, if you think something got merged without enough acks, just review it!
+<a name="l-46"></a><span class="tm">19:07:27</span><span class="nk"> &lt;morcos&gt;</span> or if you want to be sure to understand the new code!
+<a name="l-47"></a><span class="tm">19:07:32</span><span class="nk"> &lt;BlueMatt&gt;</span> well, that too
+<a name="l-48"></a><span class="tm">19:07:44</span><span class="nk"> &lt;Murch&gt;</span> Or if you want to understand the code in the first place! :)
+<a name="l-49"></a><span class="tm">19:08:21</span><span class="nk"> &lt;wumpus&gt;</span> :)
+<a name="l-50"></a><span class="tm">19:08:51</span><span class="nk"> &lt;wumpus&gt;</span> ok, so anything that needs to be added to project 8?
+<a name="l-51"></a><span class="tm">19:09:15</span><span class="nk"> &lt;morcos&gt;</span> i have other things needed for 0.15, but they are dependent on the ones i already have in 8
+<a name="l-52"></a><span class="tm">19:09:28</span><span class="nk"> &lt;morcos&gt;</span> also i already have 3
+<a name="l-53"></a><span class="tm">19:09:28</span><span class="nk"> &lt;wumpus&gt;</span> ok, just tag them for 0.15 then, don't need to be in that project
+<a name="l-54"></a><span class="tm">19:09:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">RPC interface for multiwallet (again)</span>
+<a name="l-55"></a><span class="tm">19:09:36</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> doesn't that qualify for priority?
+<a name="l-56"></a><span class="tm">19:09:55</span><span class="nk"> &lt;instagibbs&gt;</span> can someone give an overview of what people are thinking on interface for multiwallet... i missed this
+<a name="l-57"></a><span class="tm">19:09:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> if the gain is unclear, I don't think so
+<a name="l-58"></a><span class="tm">19:09:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> Again we should decide wether we use Endpoints of JSON objects for multiwallet switch... helps to continue on PRs
+<a name="l-59"></a><span class="tm">19:10:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">instagibbs:</span> please read the current PRs:
+<a name="l-60"></a><span class="tm">19:10:08</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> can we have #10571 #10579 in 0.15?
+<a name="l-61"></a><span class="tm">19:10:09</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10571 | [RPC]Move transaction combining from signrawtransaction to new RPC by achow101 · Pull Request #10571 · bitcoin/bitcoin · GitHub
+<a name="l-62"></a><span class="tm">19:10:10</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10579 | [RPC] Split signrawtransaction into wallet and non-wallet RPC command by achow101 · Pull Request #10579 · bitcoin/bitcoin · GitHub
+<a name="l-63"></a><span class="tm">19:10:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> The JSON object is simpler... less impect
+<a name="l-64"></a><span class="tm">19:10:10</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> I think it's clearly a gain
+<a name="l-65"></a><span class="tm">19:10:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> the endpoint approach may allow more in future...
+<a name="l-66"></a><span class="tm">19:11:02</span><span class="nk"> &lt;jtimon&gt;</span> I don't understand the criterion then
+<a name="l-67"></a><span class="tm">19:11:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#10650 </span><span class="cmdline">#10653</span>
+<a name="l-68"></a><span class="tm">19:11:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> In the JSON object approach (where you choose the wallet bases on a JSON array item), I don't like that the actual switch in in the JSON layer.
+<a name="l-69"></a><span class="tm">19:11:17</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+<a name="l-70"></a><span class="tm">19:11:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10653 | Simple, backwards compatible RPC multiwallet support by ryanofsky · Pull Request #10653 · bitcoin/bitcoin · GitHub
+<a name="l-71"></a><span class="tm">19:11:26</span><span class="nk"> &lt;luke-jr&gt;</span> I like the JSON interface, but I worry that when we split out the wallet it will break
+<a name="l-72"></a><span class="tm">19:11:29</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, add those to multiwallet project?
+<a name="l-73"></a><span class="tm">19:11:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#10650</span><span class="cmdline"></span>
+<a name="l-74"></a><span class="tm">19:11:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> It also only works with the new named based argumenst
+<a name="l-75"></a><span class="tm">19:11:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+<a name="l-76"></a><span class="tm">19:11:40</span><span class="nk"> &lt;wumpus&gt;</span> eh what's the third one?
+<a name="l-77"></a><span class="tm">19:12:00</span><span class="nk"> &lt;luke-jr&gt;</span> endpoints seemed okay, until the API bump got tacked on..
+<a name="l-78"></a><span class="tm">19:12:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess the third one (based on Auth) has already been "rejected"? right?
+<a name="l-79"></a><span class="tm">19:12:08</span><span class="nk"> &lt;wumpus&gt;</span> I don't like the JSON based interface, having to add an optional wallet argument on every wallet call is easy to forget
+<a name="l-80"></a><span class="tm">19:12:14</span><span class="nk"> &lt;ryanofsky&gt;</span> <span class="cmd">#10661 </span><span class="cmdline">works with positional arguments, not just named arguments</span>
+<a name="l-81"></a><span class="tm">19:12:15</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10661 | Add optional wallet=filename arguments to wallet RPCs by ryanofsky · Pull Request #10661 · bitcoin/bitcoin · GitHub
+<a name="l-82"></a><span class="tm">19:12:21</span><span class="nk"> &lt;wumpus&gt;</span> and if you forget it it defaults to the 'default wallet'
+<a name="l-83"></a><span class="tm">19:12:26</span><span class="nk"> &lt;wumpus&gt;</span> that's just too easy to mess up
+<a name="l-84"></a><span class="tm">19:12:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">ryanofsky:</span> thanks for clearing this up... wasn't aware, sry
+<a name="l-85"></a><span class="tm">19:12:40</span><span class="nk"> &lt;wumpus&gt;</span> the endpoint makes sure you can be connected to only one wallet with one RPC connection
+<a name="l-86"></a><span class="tm">19:12:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> right!
+<a name="l-87"></a><span class="tm">19:12:54</span><span class="nk"> &lt;ryanofsky&gt;</span> i think we should just get rid of the concept of default wallet
+<a name="l-88"></a><span class="tm">19:13:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> on the long run, yes, but that's no option for 0.15
+<a name="l-89"></a><span class="tm">19:13:05</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">ryanofsky:</span> definitely not in 0.15
+<a name="l-90"></a><span class="tm">19:13:13</span><span class="nk"> &lt;kanzure&gt;</span> what about, if more than one wallet, then default wallet must be explicitly specified
+<a name="l-91"></a><span class="tm">19:13:17</span><span class="nk"> &lt;ryanofsky&gt;</span> if there's more than one wallet, it should just be an error not to specify a wallet
+<a name="l-92"></a><span class="tm">19:13:20</span><span class="nk"> &lt;wumpus&gt;</span> let's focus on what we want to do now
+<a name="l-93"></a><span class="tm">19:13:30</span><span class="nk"> &lt;luke-jr&gt;</span> then you break all existing sw
+<a name="l-94"></a><span class="tm">19:13:31</span><span class="nk"> &lt;wumpus&gt;</span> I think for 0.15 we should simply do the endpoint-based interface
+<a name="l-95"></a><span class="tm">19:13:34</span><span class="nk"> &lt;ryanofsky&gt;</span> we can do that right now
+<a name="l-96"></a><span class="tm">19:13:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> what do you think about the concern that the endpoint stuff establishes a new API that we'll be stuck supporting but haven't given much thought to?
+<a name="l-97"></a><span class="tm">19:13:37</span><span class="nk"> &lt;ryanofsky&gt;</span> no need to wait
+<a name="l-98"></a><span class="tm">19:13:52</span><span class="nk"> &lt;sipa&gt;</span> i think as an end goal, endpoint-based selection is awesome, because it prepares for process separation
+<a name="l-99"></a><span class="tm">19:13:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> the same is true for any RPC change
+<a name="l-100"></a><span class="tm">19:13:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> we can mark it unstable?
+<a name="l-101"></a><span class="tm">19:14:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> v1 == unstable?
+<a name="l-102"></a><span class="tm">19:14:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> use / (v0) if you want stability
+<a name="l-103"></a><span class="tm">19:14:15</span><span class="nk"> &lt;sipa&gt;</span> but if endpoints can't for example remove the non-wallet RPCs, that's sort of not really achieving that goal anyway
+<a name="l-104"></a><span class="tm">19:14:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> adding an argument to every wallet RPC call is also such a massive change
+<a name="l-105"></a><span class="tm">19:14:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> with named args it's trivial, no?
+<a name="l-106"></a><span class="tm">19:14:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> I can work on splitting the RPC calls in wallet / nonwallet
+<a name="l-107"></a><span class="tm">19:14:47</span><span class="nk"> &lt;gmaxwell&gt;</span> (I don't have strong opinions, just raising it)
+<a name="l-108"></a><span class="tm">19:14:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> if we agree on endpoints
+<a name="l-109"></a><span class="tm">19:14:51</span><span class="nk"> &lt;ryanofsky&gt;</span> wumpus, are you saying 10661 is a massive change?
+<a name="l-110"></a><span class="tm">19:14:51</span><span class="nk"> &lt;sipa&gt;</span> and it shouldn't be adding it to every RPC; just catch it in the rpc handler
+<a name="l-111"></a><span class="tm">19:14:55</span><span class="nk"> &lt;wumpus&gt;</span> but the point is that it'd be something that has to be supported virtually forever
+<a name="l-112"></a><span class="tm">19:14:58</span><span class="nk"> &lt;luke-jr&gt;</span> (only supporting the default wallet, per rpcauth user, seems the best for backward/forward compatibility still)
+<a name="l-113"></a><span class="tm">19:14:59</span><span class="nk"> &lt;wumpus&gt;</span> and imo it's poorly thought out
+<a name="l-114"></a><span class="tm">19:15:16</span><span class="nk"> &lt;wumpus&gt;</span> but I don't care deeply
+<a name="l-115"></a><span class="tm">19:15:21</span><span class="nk"> &lt;wumpus&gt;</span> at this point we should simply make a choice
+<a name="l-116"></a><span class="tm">19:15:25</span><span class="nk"> &lt;wumpus&gt;</span> if we don't make a choice today and stick with it
+<a name="l-117"></a><span class="tm">19:15:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't really think named arguments is a great thing. It would make support easier in some software in the short term.
+<a name="l-118"></a><span class="tm">19:15:30</span><span class="nk"> &lt;wumpus&gt;</span> we can forget multiwallet for 0.15
+<a name="l-119"></a><span class="tm">19:15:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack!
+<a name="l-120"></a><span class="tm">19:15:36</span><span class="nk"> &lt;gmaxwell&gt;</span> I think every criticism wumpus has on that one is spot on.
+<a name="l-121"></a><span class="tm">19:15:56 </span><span class="nka">* luke-jr</span> <span class="ac">suggests rpcauth-based default wallet, and we can figure out endpoints for 0.16</span>
+<a name="l-122"></a><span class="tm">19:16:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> indeed - most RPC client libraries don't even support named arguments yet
+<a name="l-123"></a><span class="tm">19:16:22</span><span class="nk"> &lt;luke-jr&gt;</span> that gives more time to think out API change
+<a name="l-124"></a><span class="tm">19:16:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> while changing the endpoint is easy, just change the URI
+<a name="l-125"></a><span class="tm">19:16:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> please don't bring back a third option
+<a name="l-126"></a><span class="tm">19:16:52 </span><span class="nka">* BlueMatt</span> <span class="ac">always kinda assumed named args would allow us to add things like multiwallet/different number precision/etc in the future, as a simple add-on to every RPC without any massive code change everywhere</span>
+<a name="l-127"></a><span class="tm">19:16:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> that's not going to make it easier
+<a name="l-128"></a><span class="tm">19:16:54</span><span class="nk"> &lt;BlueMatt&gt;</span> but, ok
+<a name="l-129"></a><span class="tm">19:16:59</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> are wallets assigned per rpcauth user already?
+<a name="l-130"></a><span class="tm">19:17:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> no
+<a name="l-131"></a><span class="tm">19:17:10</span><span class="nk"> &lt;wumpus&gt;</span> no
+<a name="l-132"></a><span class="tm">19:17:12</span><span class="nk"> &lt;kanzure&gt;</span> uh..
+<a name="l-133"></a><span class="tm">19:17:26</span><span class="nk"> &lt;BlueMatt&gt;</span> guess I had a different impression than everyone else, then
+<a name="l-134"></a><span class="tm">19:17:26</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">kanzure:</span> there is no way to use multiwallet right now
+<a name="l-135"></a><span class="tm">19:17:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> it's possible, and not hard to implement, but just not the right choice for this IMO
+<a name="l-136"></a><span class="tm">19:17:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about using v1/wallet/y&lt;filename&gt; and mark it unstable (experimental?) for 0.15?
+<a name="l-137"></a><span class="tm">19:17:59</span><span class="nk"> &lt;ryanofsky&gt;</span> BlueMatt, that was my impression too, it's the basis for 10661 &amp; 10653
+<a name="l-138"></a><span class="tm">19:18:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> -y
+<a name="l-139"></a><span class="tm">19:18:05</span><span class="nk"> &lt;sipa&gt;</span> i officially no longer have an opibion on approach
+<a name="l-140"></a><span class="tm">19:18:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> sounds good to me
+<a name="l-141"></a><span class="tm">19:18:10</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, I mean I dont have a very strong impression, i just always thought that seemed natural
+<a name="l-142"></a><span class="tm">19:18:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> we should have a per-user default wallet *regardless* of the other options; merging it first is a clean way to defer choosing between the others
+<a name="l-143"></a><span class="tm">19:18:20</span><span class="nk"> &lt;BlueMatt&gt;</span> but, really, can we flip a coin?
+<a name="l-144"></a><span class="tm">19:18:32</span><span class="nk"> &lt;sipa&gt;</span> 
+<a name="l-145"></a><span class="tm">19:18:38</span><span class="nk"> &lt;wumpus&gt;</span> let's just go with endpoints for now
+<a name="l-146"></a><span class="tm">19:18:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Somone disagree?
+<a name="l-147"></a><span class="tm">19:18:57</span><span class="nk"> &lt;midnightmagic&gt;</span> how the heck did you send a blank line
+<a name="l-148"></a><span class="tm">19:18:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> Anyone
+<a name="l-149"></a><span class="tm">19:19:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we could say that the endpoint version totally unstable and will change to answer the concern that we're setting an api there premately.
+<a name="l-150"></a><span class="tm">19:19:04</span><span class="nk"> &lt;wumpus&gt;</span> if no one cares deeply, let's just stick with the decision of a few weeks ago
+<a name="l-151"></a><span class="tm">19:19:25</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, ack
+<a name="l-152"></a><span class="tm">19:19:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> we could mark the whole multiwallet (incl. endpoint) as experimental in 0.15
+<a name="l-153"></a><span class="tm">19:19:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> And stable in 0.16
+<a name="l-154"></a><span class="tm">19:19:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">midnightmagic:</span> that wasn't a blank line, it as \x7f characters
+<a name="l-155"></a><span class="tm">19:19:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, multiwallet is unstable in 0.15, +1
+<a name="l-156"></a><span class="tm">19:19:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> there's probably quite some things that need to change, still
+<a name="l-157"></a><span class="tm">19:19:58</span><span class="nk"> &lt;morcos&gt;</span> no opinon on the issue, but ACK on making a decision.
+<a name="l-158"></a><span class="tm">19:20:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">ryanofsky:</span> could you live with the endpoint solution?
+<a name="l-159"></a><span class="tm">19:20:43</span><span class="nk"> &lt;gmaxwell&gt;</span> I think in general we should get into a practice of new API's being explicitly unstable in their first release. We've mulliganed quite a few times.
+<a name="l-160"></a><span class="tm">19:20:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes
+<a name="l-161"></a><span class="tm">19:20:53</span><span class="nk"> &lt;ryanofsky&gt;</span> of course, yeah
+<a name="l-162"></a><span class="tm">19:21:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> okay. Let me finish the endpoint PR and hope it will make it into 0.15
+<a name="l-163"></a><span class="tm">19:21:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> great!
+<a name="l-164"></a><span class="tm">19:21:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> /topic
+<a name="l-165"></a><span class="tm">19:21:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ryanofsky:</span> thanks
+<a name="l-166"></a><span class="tm">19:21:59</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> can you do it on top of 7b73f24311639fdc79c22608c21e4bfcbc6d4243 ?
+<a name="l-167"></a><span class="tm">19:22:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> pr #?
+<a name="l-168"></a><span class="tm">19:22:08</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-169"></a><span class="tm">19:22:53</span><span class="nk"> &lt;wumpus&gt;</span> remember morcos was saying something about fee PRs, but not sure it was aimed as a topic
+<a name="l-170"></a><span class="tm">19:22:56</span><span class="nk"> &lt;sipa&gt;</span> wifi just fied in the BS office
+<a name="l-171"></a><span class="tm">19:22:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> it's part of #10615
+<a name="l-172"></a><span class="tm">19:22:59</span><span class="nk"> &lt;gmaxwell&gt;</span> I just want to say that master continues to be mostly awesome and performing great. I'm really excited about this next release. (esp if we get our act togeather on multiwallet) :)
+<a name="l-173"></a><span class="tm">19:23:00</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10615 | RPC: Allow rpcauth configs to specify a 4th parameter naming a specific wallet (multiwallet RPC support) by luke-jr · Pull Request #10615 · bitcoin/bitcoin · GitHub
+<a name="l-174"></a><span class="tm">19:23:11</span><span class="nk"> &lt;luke-jr&gt;</span> https://github.com/bitcoin/bitcoin/pull/10615/commits/7b73f24311639fdc79c22608c21e4bfcbc6d4243
+<a name="l-175"></a><span class="tm">19:23:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yeah!
+<a name="l-176"></a><span class="tm">19:23:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> 7b73f24311639fdc79c22608c21e4bfcbc6d4243 pollutes server.h with CWallet... :/
+<a name="l-177"></a><span class="tm">19:23:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> (later)
+<a name="l-178"></a><span class="tm">19:23:29</span><span class="nk"> &lt;BlueMatt&gt;</span> there are a bunch of fee PRs which I think are very useful, and we should try desperately to make progress on them for 15
+<a name="l-179"></a><span class="tm">19:23:34</span><span class="nk"> &lt;gmaxwell&gt;</span> So yes, there are a number of fee/change handling PRs which are urgent for 0.15.
+<a name="l-180"></a><span class="tm">19:23:38</span><span class="nk"> &lt;morcos&gt;</span> yeah i don't really have a topic, but i need some review
+<a name="l-181"></a><span class="tm">19:23:42</span><span class="nk"> &lt;morcos&gt;</span> some are bug fixes
+<a name="l-182"></a><span class="tm">19:23:47</span><span class="nk"> &lt;gmaxwell&gt;</span> But I don't know what to say beyond that since they're already on the high prio list.
+<a name="l-183"></a><span class="tm">19:23:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">fee PRs</span>
+<a name="l-184"></a><span class="tm">19:23:53</span><span class="nk"> &lt;morcos&gt;</span> some are RPC api finalization which would be good to get right
+<a name="l-185"></a><span class="tm">19:24:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> another topic proposal could be: txoutsbyaddress (it's marked with the 0.15 milestone)
+<a name="l-186"></a><span class="tm">19:24:38</span><span class="nk"> &lt;morcos&gt;</span> I'm not sure if I broke it up in the easiest way possible for review, but am hesitant to try to reorganize this late in the game...
+<a name="l-187"></a><span class="tm">19:24:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> bleh, server.h should definitely not get a CWallet reference, it's meant to be not specific to bitcoin, let alone wallet
+<a name="l-188"></a><span class="tm">19:25:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> yes. I think the same
+<a name="l-189"></a><span class="tm">19:25:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> jonasschnelli: I don't see a better alternative.
+<a name="l-190"></a><span class="tm">19:25:43</span><span class="nk"> &lt;morcos&gt;</span> sounds like jonasschnelli also has his hands full with multiwallet and i think it would have been nice to get access to longer fee estimates in the GUI
+<a name="l-191"></a><span class="tm">19:25:44</span><span class="nk"> &lt;luke-jr&gt;</span> (keep in mind not all calls will come from the RPC server)
+<a name="l-192"></a><span class="tm">19:25:48</span><span class="nk"> &lt;morcos&gt;</span> but seems like that is not going to happen
+<a name="l-193"></a><span class="tm">19:25:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> https://github.com/bitcoin/bitcoin/pull/10650/files#diff-df7d84ff2f53fcb2a0dc15a3a51e55ceR36
+<a name="l-194"></a><span class="tm">19:26:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> there are certainly alternatives, more general ways to attach custom data to a structure, but let's leave this for another time
+<a name="l-195"></a><span class="tm">19:26:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> oh the gui doesn't have access to the new estimates?  thats unfortunate.
+<a name="l-196"></a><span class="tm">19:26:14</span><span class="nk"> &lt;gmaxwell&gt;</span> I guess I need to do some gui testing, haven't used it in a while.
+<a name="l-197"></a><span class="tm">19:26:16</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> no
+<a name="l-198"></a><span class="tm">19:26:16</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15ryanofsky closed pull request #10661: Add optional wallet=filename arguments to wallet RPCs (06master...06pr/multiopt) 02https://github.com/bitcoin/bitcoin/pull/10661
+<a name="l-199"></a><span class="tm">19:26:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> just not the conf target &gt; 26+
+<a name="l-200"></a><span class="tm">19:26:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> that doesn't work for GUI or tests
+<a name="l-201"></a><span class="tm">19:26:35</span><span class="nk"> &lt;morcos&gt;</span> no way to ask for non-conservative.  but at least after one of my PR's it'll default to that if tx is replaceable
+<a name="l-202"></a><span class="tm">19:26:39</span><span class="nk"> &lt;luke-jr&gt;</span> anyhow, later..
+<a name="l-203"></a><span class="tm">19:26:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> non-conservative would be simple (a checkbox?)
+<a name="l-204"></a><span class="tm">19:27:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> a slider with fix positions make little sense... sliders are ment to be linear
+<a name="l-205"></a><span class="tm">19:27:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> A dropdown could make more sense
+<a name="l-206"></a><span class="tm">19:27:26 </span><span class="nka">* luke-jr</span> <span class="ac">likes dropdown</span>
+<a name="l-207"></a><span class="tm">19:27:30</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> yes sort of.  the way it is implemented elsewhere is it defaults to the opposite of opt in rbf, but you coudl force it either way
+<a name="l-208"></a><span class="tm">19:27:43</span><span class="nk"> &lt;luke-jr&gt;</span> "ASAP", "today", "this week", "eventually"
+<a name="l-209"></a><span class="tm">19:28:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> names tend to bikeshed... but at least "conf-target in block  |  time"
+<a name="l-210"></a><span class="tm">19:28:13 </span><span class="nka">* luke-jr</span> <span class="ac">shrugs</span>
+<a name="l-211"></a><span class="tm">19:28:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Or maybe "time | blocks | feerate"
+<a name="l-212"></a><span class="tm">19:28:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ideally we would run coinselection when opening the dropdown to tell the (possible) absolute fee
+<a name="l-213"></a><span class="tm">19:29:03</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> please no
+<a name="l-214"></a><span class="tm">19:29:08</span><span class="nk"> &lt;morcos&gt;</span> feerate selection first
+<a name="l-215"></a><span class="tm">19:29:12</span><span class="nk"> &lt;morcos&gt;</span> then coin selection
+<a name="l-216"></a><span class="tm">19:29:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh.. I though somebody will complain. :)
+<a name="l-217"></a><span class="tm">19:29:18</span><span class="nk"> &lt;achow101&gt;</span> coin selection needs fee rate..
+<a name="l-218"></a><span class="tm">19:29:20</span><span class="nk"> &lt;gmaxwell&gt;</span> we can't realistically do that. We need the feerate to perform selection.
+<a name="l-219"></a><span class="tm">19:29:32</span><span class="nk"> &lt;morcos&gt;</span> in the future coin selection may be different depending on feerate anyway
+<a name="l-220"></a><span class="tm">19:29:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (and will need it more in the future)
+<a name="l-221"></a><span class="tm">19:29:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> do it for all options ... *duck*
+<a name="l-222"></a><span class="tm">19:29:48</span><span class="nk"> &lt;luke-jr&gt;</span> &gt;_&lt;
+<a name="l-223"></a><span class="tm">19:29:59</span><span class="nk"> &lt;luke-jr&gt;</span> coin selection can be slow, unless that's been optimised
+<a name="l-224"></a><span class="tm">19:30:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Thoughs about the dropbox?
+<a name="l-225"></a><span class="tm">19:30:10</span><span class="nk"> &lt;sipa&gt;</span> "The next Bitcoin-Qt version requires a 4k screen for coin selection"
+<a name="l-226"></a><span class="tm">19:30:14</span><span class="nk"> &lt;morcos&gt;</span> in any case, i think _something_ simple would be ideal so users have access to longer than 25 confirms
+<a name="l-227"></a><span class="tm">19:30:15</span><span class="nk"> &lt;BlueMatt&gt;</span> lol
+<a name="l-228"></a><span class="tm">19:30:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> well we'd like to be able to do good selections which won't be instant. thats something that could be expiremented with later.
+<a name="l-229"></a><span class="tm">19:30:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm happy to do it if it's general accaptable (the dropbown)
+<a name="l-230"></a><span class="tm">19:30:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ooo, I have those, sounds gogod!
+<a name="l-231"></a><span class="tm">19:30:23</span><span class="nk"> &lt;BlueMatt&gt;</span> good
+<a name="l-232"></a><span class="tm">19:31:08</span><span class="nk"> &lt;gmaxwell&gt;</span> well we do want multiple near term options because of market effects.  e.g. 2,3,4,5,6,72,today,two days, three days, five days, 1 week... or something.
+<a name="l-233"></a><span class="tm">19:31:17</span><span class="nk"> &lt;jtimon&gt;</span> what about a box with number of blocks instead of a dropbox ?
+<a name="l-234"></a><span class="tm">19:31:26</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> sure. something, anything.  but recommend you build off my other PR #10706
+<a name="l-235"></a><span class="tm">19:31:27</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10706 | Improve wallet fee logic and fix GUI bugs by morcos · Pull Request #10706 · bitcoin/bitcoin · GitHub
+<a name="l-236"></a><span class="tm">19:31:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll try the dropdown and see how it feels.. should not be that hard
+<a name="l-237"></a><span class="tm">19:31:31</span><span class="nk"> &lt;jtimon&gt;</span> er dropdown
+<a name="l-238"></a><span class="tm">19:31:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> will do
+<a name="l-239"></a><span class="tm">19:31:35</span><span class="nk"> &lt;sipa&gt;</span> do we have to do GUI design in this meeting?
+<a name="l-240"></a><span class="tm">19:31:43</span><span class="nk"> &lt;luke-jr&gt;</span> XD
+<a name="l-241"></a><span class="tm">19:31:50</span><span class="nk"> &lt;Murch&gt;</span> gmawell, it could estimate with a blocktarget of ~6 and do that before the window opens? ;)
+<a name="l-242"></a><span class="tm">19:31:52</span><span class="nk"> &lt;morcos&gt;</span> no i was just hoping for someone else to volunteer since seems jonas has a lot to do
+<a name="l-243"></a><span class="tm">19:32:11</span><span class="nk"> &lt;Murch&gt;</span> or whatever the default is nowaays
+<a name="l-244"></a><span class="tm">19:32:14</span><span class="nk"> &lt;morcos&gt;</span> and 0.15 is fast approaching
+<a name="l-245"></a><span class="tm">19:32:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> that wasn't GUI design, quite the opposite, there are economic reasons that gui clumping people wouldn't be great.
+<a name="l-246"></a><span class="tm">19:32:19</span><span class="nk"> &lt;luke-jr&gt;</span> I could give it a shot, I guess.
+<a name="l-247"></a><span class="tm">19:32:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> I just started... :)
+<a name="l-248"></a><span class="tm">19:32:50</span><span class="nk"> &lt;luke-jr&gt;</span> heh
+<a name="l-249"></a><span class="tm">19:32:57</span><span class="nk"> &lt;morcos&gt;</span> either or, i'll let you guys work it out, but i'm bad at gUI, but i did make several changes already in the prior PR.   thanks!!
+<a name="l-250"></a><span class="tm">19:33:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">txoutsbyaddress (it's marked with the 0.15 milestone)</span>
+<a name="l-251"></a><span class="tm">19:33:55</span><span class="nk"> &lt;wumpus&gt;</span> I think we should remove that milestone
+<a name="l-252"></a><span class="tm">19:34:06</span><span class="nk"> &lt;gmaxwell&gt;</span> Sadly. Has anyone been working on it?
+<a name="l-253"></a><span class="tm">19:34:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#9806  </span><span class="cmdline">has been quite inactive</span>
+<a name="l-254"></a><span class="tm">19:34:14</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9806 | txoutsbyaddress index (take 3) by droark · Pull Request #9806 · bitcoin/bitcoin · GitHub
+<a name="l-255"></a><span class="tm">19:34:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm more interested about should we or or not add an index for that
+<a name="l-256"></a><span class="tm">19:34:24</span><span class="nk"> &lt;wumpus&gt;</span> not publicly at least
+<a name="l-257"></a><span class="tm">19:34:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> The best index implementations is currently the one from Bitpay,.. not?
+<a name="l-258"></a><span class="tm">19:34:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I think we should; unlike many other things it's actually sustainable.
+<a name="l-259"></a><span class="tm">19:34:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> I tend to also think we should
+<a name="l-260"></a><span class="tm">19:35:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> (after installed a BWS index)
+<a name="l-261"></a><span class="tm">19:35:08</span><span class="nk"> &lt;gmaxwell&gt;</span> the bitpay index stuff is utterly unmaintable and borderline abandonware; fwiw.
+<a name="l-262"></a><span class="tm">19:35:21</span><span class="nk"> &lt;jtimon&gt;</span> why not by scriptpubkey ? that seems more generic
+<a name="l-263"></a><span class="tm">19:35:25</span><span class="nk"> &lt;sipa&gt;</span> there is some indexd project
+<a name="l-264"></a><span class="tm">19:35:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> The most stables index I could find so far is that one: https://github.com/bitcoin/bitcoin/pull/10370
+<a name="l-265"></a><span class="tm">19:35:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> yes, I think that was suggested on the PR.
+<a name="l-266"></a><span class="tm">19:35:42</span><span class="nk"> &lt;instagibbs&gt;</span> dcousens has an external index project which I think sipa is referring to
+<a name="l-267"></a><span class="tm">19:35:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> (it's the one BWS [Bitpay wallet service] is unsing in the fileld since a couple of years)
+<a name="l-268"></a><span class="tm">19:36:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> the UTXO indexes are special because they actually have viable scalablity...
+<a name="l-269"></a><span class="tm">19:36:43</span><span class="nk"> &lt;sipa&gt;</span> https://github.com/bitcoinjs/indexd
+<a name="l-270"></a><span class="tm">19:36:48</span><span class="nk"> &lt;gmaxwell&gt;</span> I think anyone depending on complete blockchain indexes will eventually be forced onto centeralized servers, unfortunately.
+<a name="l-271"></a><span class="tm">19:37:02</span><span class="nk"> &lt;gmaxwell&gt;</span> so I have much less interest in internal support (hooks for external things sound fine though)
+<a name="l-272"></a><span class="tm">19:37:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree. Maybe internal txoutsbyaddress and for the rest, use something like indexd that sipa mentioned
+<a name="l-273"></a><span class="tm">19:38:08</span><span class="nk"> &lt;instagibbs&gt;</span> https://github.com/bitcoinjs/indexd
+<a name="l-274"></a><span class="tm">19:38:09</span><span class="nk"> &lt;wumpus&gt;</span> UTXO indexes would be nice, I'd love to have more query functionality for the UTXO set, we have to track that anyway with a full node
+<a name="l-275"></a><span class="tm">19:38:14</span><span class="nk"> &lt;jcorgan&gt;</span> i've taken to using zmq to notify of new txes/blocks and the REST API to retrieve parsed info about them, for indexing externally
+<a name="l-276"></a><span class="tm">19:38:25</span><span class="nk"> &lt;morcos&gt;</span> I've got to run, but someone please tag #10557 #10589 #10707 #10712 for 0.15
+<a name="l-277"></a><span class="tm">19:38:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10557 | Make check to distinguish between orphan txs and old txs more efficient. by morcos · Pull Request #10557 · bitcoin/bitcoin · GitHub
+<a name="l-278"></a><span class="tm">19:38:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess one reason why some of the centralized services (like the BWS) still is based on 0.12.1 is because the indexes where never added to Core master branch
+<a name="l-279"></a><span class="tm">19:38:28</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10589 | More economical fee estimates for RBF and RPC options to control by morcos · Pull Request #10589 · bitcoin/bitcoin · GitHub
+<a name="l-280"></a><span class="tm">19:38:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10707 | Better API for estimatesmartfee RPC by morcos · Pull Request #10707 · bitcoin/bitcoin · GitHub
+<a name="l-281"></a><span class="tm">19:38:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10712 | Add change output if necessary to reduce excess fee by morcos · Pull Request #10712 · bitcoin/bitcoin · GitHub
+<a name="l-282"></a><span class="tm">19:39:06</span><span class="nk"> &lt;wumpus&gt;</span> huh what is gribble doing
+<a name="l-283"></a><span class="tm">19:39:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> right. also if ever we support having pruned wallets (wallets that don't know their full history, but do have their full coins), the txout index is something we need for it... but not other indexes.
+<a name="l-284"></a><span class="tm">19:39:12</span><span class="nk"> &lt;wumpus&gt;</span> oh sure morcos
+<a name="l-285"></a><span class="tm">19:39:12</span><span class="nk"> &lt;morcos&gt;</span> (sorry)
+<a name="l-286"></a><span class="tm">19:39:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes!
+<a name="l-287"></a><span class="tm">19:39:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> tagged
+<a name="l-288"></a><span class="tm">19:39:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> yes. For HD restores in pruned env. the utxo index is handy
+<a name="l-289"></a><span class="tm">19:39:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> would be very niec to instantly query the balance, if history isn't important
+<a name="l-290"></a><span class="tm">19:40:33</span><span class="nk"> &lt;gmaxwell&gt;</span> rescan has become so slow for me at least that I'm kinda desperate for something like that.
+<a name="l-291"></a><span class="tm">19:40:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I've lost days of time waiting on rescans.
+<a name="l-292"></a><span class="tm">19:41:42</span><span class="nk"> &lt;wumpus&gt;</span> next topic?
+<a name="l-293"></a><span class="tm">19:42:09</span><span class="nk"> &lt;sipa&gt;</span> nope.
+<a name="l-294"></a><span class="tm">19:42:25</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> can you remind me of the 0.15 schedule?
+<a name="l-295"></a><span class="tm">19:42:30</span><span class="nk"> &lt;luke-jr&gt;</span> eh, UTXO isn't a substitute for rescanning.. you'd miss historical txs
+<a name="l-296"></a><span class="tm">19:42:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#9961</span><span class="cmdline"></span>
+<a name="l-297"></a><span class="tm">19:42:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9961 | Release schedule for 0.15.0 · Issue #9961 · bitcoin/bitcoin · GitHub
+<a name="l-298"></a><span class="tm">19:42:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> thus pruned wallet, ... it's fine to not have historical txs if you know you don't.
+<a name="l-299"></a><span class="tm">19:43:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> thanks!
+<a name="l-300"></a><span class="tm">19:43:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> what if you don't care about history, and just want balance + possibly spending?
+<a name="l-301"></a><span class="tm">19:43:21</span><span class="nk"> &lt;BlueMatt&gt;</span> T-10 days to branch
+<a name="l-302"></a><span class="tm">19:43:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> but you'd end up with *some* historical tx in this case, with no deterministic reason why some are missing
+<a name="l-303"></a><span class="tm">19:43:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> you can also say that txes found on the blockchain aren't a replacement for having their metadata... :)
+<a name="l-304"></a><span class="tm">19:43:35</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose we could import them as all change-only or something? :/
+<a name="l-305"></a><span class="tm">19:43:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> you can scan in the background for the history in a very slow manner once you have done it via the UTXO set index
+<a name="l-306"></a><span class="tm">19:43:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> no, not to branch, to feature freeze
+<a name="l-307"></a><span class="tm">19:43:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> it'd be incompatible with hardware wallets, before segwit
+<a name="l-308"></a><span class="tm">19:43:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> hmm, good idea
+<a name="l-309"></a><span class="tm">19:43:58</span><span class="nk"> &lt;sipa&gt;</span> as you need the full crediting txn
+<a name="l-310"></a><span class="tm">19:44:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> no you wouldn't: my suggestion is that a pruned wallet basically have a line shown in the UI where nothing is there before it except a move like ledger entry that shows the earlier balance.
+<a name="l-311"></a><span class="tm">19:44:13</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, sorry, yes, freeze
+<a name="l-312"></a><span class="tm">19:44:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> branch is 2017-08-06, so a month away
+<a name="l-313"></a><span class="tm">19:44:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I made an issue describing some ideas for that a while back.
+<a name="l-314"></a><span class="tm">19:44:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I see, makes sense
+<a name="l-315"></a><span class="tm">19:45:05</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> can #10571 and #10579 be tagged for 0.15?
+<a name="l-316"></a><span class="tm">19:45:07</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10571 | [RPC]Move transaction combining from signrawtransaction to new RPC by achow101 · Pull Request #10571 · bitcoin/bitcoin · GitHub
+<a name="l-317"></a><span class="tm">19:45:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10579 | [RPC] Split signrawtransaction into wallet and non-wallet RPC command by achow101 · Pull Request #10579 · bitcoin/bitcoin · GitHub
+<a name="l-318"></a><span class="tm">19:45:21</span><span class="nk"> &lt;gmaxwell&gt;</span> There are other reasons why building such things are attractive... (e.g. UTXO based sync can't provide the data to give history...)
+<a name="l-319"></a><span class="tm">19:45:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> sure
+<a name="l-320"></a><span class="tm">19:45:44</span><span class="nk"> &lt;achow101&gt;</span> thanks
+<a name="l-321"></a><span class="tm">19:45:48</span><span class="nk"> &lt;gmaxwell&gt;</span> ack
+<a name="l-322"></a><span class="tm">19:48:55</span><span class="nk"> &lt;sipa&gt;</span> early lunch?
+<a name="l-323"></a><span class="tm">19:49:52</span><span class="nk"> &lt;wumpus&gt;</span> ye fine with me
+<a name="l-324"></a><span class="tm">19:49:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
