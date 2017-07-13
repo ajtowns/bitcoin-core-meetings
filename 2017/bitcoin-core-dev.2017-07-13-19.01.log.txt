@@ -1,0 +1,290 @@
+19:01:40 <wumpus> #startmeeting
+19:01:40 <lightningbot> Meeting started Thu Jul 13 19:01:40 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:40 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:40 <jonasschnelli> Hi
+19:01:41 <morcos> i'm here for 30 mins
+19:01:44 <petertodd> hi
+19:01:51 <luke-jr> I'm here until I pass out <.<
+19:01:59 <jtimon> hi
+19:02:03 <wumpus> proposed topics?
+19:02:03 <paveljanik> hi
+19:02:19 <achow101> possible topic: 0.15 feature freeze
+19:02:31 <achow101> it's soon, july 16th
+19:02:39 <cfields> hi
+19:02:43 <jtimon> review begging as first topic ?
+19:02:48 <wumpus> PSA: https://github.com/bitcoin/bitcoin/issues/9961, feature freeze is sunday (which is an awful day, it'll probably be monday in practice)
+19:03:19 <wumpus> #topic high priority for review
+19:03:25 <wumpus> #link https://github.com/bitcoin/bitcoin/projects/8
+19:03:32 <achow101> everything marked as 0.15?
+19:03:36 <achow101> :p
+19:03:50 <luke-jr> we can delay the feature freeze to July 16th, 2018 to avoid a Sunday
+19:04:00 <kanzure> hi.
+19:04:11 <morcos> #10711 can be removed from high-priority as its not for 0.15
+19:04:13 <gribble> https://github.com/bitcoin/bitcoin/issues/10711 | [tests] Introduce TestNode by jnewbery · Pull Request #10711 · bitcoin/bitcoin · GitHub
+19:04:31 <wumpus> agree with that jnewbery?
+19:04:38 <morcos> Please add #10706 to high priority i guess, since the PR's it was depending on were merged
+19:04:40 <gribble> https://github.com/bitcoin/bitcoin/issues/10706 | Improve wallet fee logic and fix GUI bugs by morcos · Pull Request #10706 · bitcoin/bitcoin · GitHub
+19:04:45 <morcos> i think i asked him, but he stepped away
+19:04:56 <jonasschnelli> I'm removing the 0.15 milestone from #10240 (will def. not make it)
+19:04:59 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:05:04 <sipa> jonasschnelli: no
+19:05:07 <jtimon> since it seems #8498 cannot be priority for some reason that scapes me, what about #10757 from me ?
+19:05:09 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:05:11 <gribble> https://github.com/bitcoin/bitcoin/issues/10757 | RPC: Introduce getblockstats to plot things by jtimon · Pull Request #10757 · bitcoin/bitcoin · GitHub
+19:05:15 <jonasschnelli> sipa: you want that in?
+19:05:21 <sipa> jonasschnelli: if we remove that from 0.15, we must revert the hd split
+19:05:28 <wumpus> I tend to agree with achow101 - it's better to use the 0.15 tag now for high priority for review
+19:05:36 <instagibbs> sipa, ?
+19:05:41 <jonasschnelli> proposed topic then: Hd split / hd restore
+19:05:46 <cfields> #9566 can be removed from 0.15
+19:05:48 <gribble> https://github.com/bitcoin/bitcoin/issues/9566 | threading: use std::chrono for timestamps by theuni · Pull Request #9566 · bitcoin/bitcoin · GitHub
+19:05:51 <morcos> wumpus: i think its still helpful to distinguish between hope for 0.15 and really need
+19:06:00 <wumpus> https://github.com/bitcoin/bitcoin/milestone/25
+19:06:20 <gmaxwell> I think if we do not fix the restore we need to disable HD by default. The current situation can pretty easily lead to funds loss.
+19:06:31 <morcos> but yes i also agree we need to clean up the 0.15 milestone list
+19:06:41 <wumpus> cfields: bumped to 0.16
+19:06:50 <cfields> thanks
+19:06:58 <luke-jr> gmaxwell: that would be very confusing to users, since older versions have HD
+19:07:00 <jnewbery> wumpus: yess please remove 10711
+19:07:11 <jonasschnelli> I can work on the HD restrore. But It's pretty complex with pruning / encrypted wallets... the PR is already large and will get bigger...
+19:07:21 <jonasschnelli> If there is enough review power, we can try for 0.15
+19:07:28 <gmaxwell> E.g. just pick up a walled you'd previously saved, rescan won't move the keypool forward, and you'll end up missing transactions (then discarding wallets with money), and handing out addresses to people you already gave to other people and misattributing payments.
+19:07:28 <jonasschnelli> I can have it overhauled by tuesday
+19:07:39 <wumpus> jnewbery: done
+19:07:51 <jonasschnelli> gmaxwell: Yeah.. is also true for all other wallets with gap limits of 5 (most do)
+19:07:59 <jonasschnelli> We should def. do better
+19:08:00 <luke-jr> can just the wallet-format-touching parts of HD restore be prioritised? eg, move out the actual restoring logic?
+19:08:22 <sipa> jonasschnelli: this is not true for anything that automatically tops up the keypool
+19:08:28 <jonasschnelli> What about just provide HD restore for non-pruning (to reduce the size)?
+19:08:43 <jtimon> mhm, only #10652 in project 8...
+19:08:45 <gribble> https://github.com/bitcoin/bitcoin/issues/10652 | Small step towards demangling cs_main from CNodeState by TheBlueMatt · Pull Request #10652 · bitcoin/bitcoin · GitHub
+19:09:06 <jonasschnelli> sipa: most HD wallets in the wilde stop topping the window futher up if a gap of >5< keys where found
+19:09:15 <sipa> jonasschnelli: yes
+19:09:19 <gmaxwell> jonasschnelli: to that extent that thats true at least in other cases those wallets behaviors are well documented and the interfaces is built around them, they're also used almost exclusively for personal use, rather than industrial use... (and it's not completely true because if there isn't a long gap they do handling it right and we do not)
+19:09:20 <sipa> jonasschnelli: but we don't top up at all
+19:09:39 <jonasschnelli> sipa: Yes. Not saying that is better. :)
+19:09:47 <sipa> jonasschnelli: and hd split makes it worse, because it risks reusing a key that was previously used as change as a payment address
+19:09:50 <jonasschnelli> I just wanted to re-state the HD restore in general is a broken thing
+19:09:53 <sipa> making you miss it as incoming payment
+19:09:59 <jonasschnelli> So what should we do?
+19:10:02 <sipa> fix it
+19:10:09 <sipa> #10240 is a bug fix
+19:10:11 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:10:14 <jonasschnelli> Agree
+19:10:19 <jonasschnelli> Okay. Then we have more time.. :)
+19:10:54 <gmaxwell> Right now this is responsible for several serious bugs in our behavior, which regressed vs the past, and will predictable result in funds loss through several different vectors.  I don't see an easy workaround to prevent exposure-- I thought perhaps refusing to load a wallet if the tip doesn't match the chain tip, but thats too cumbersome and disruptive.
+19:10:57 <jonasschnelli> Since we have great reviewers, .. I'm convinced we get it in
+19:11:09 <morcos> 10240 (when ready) is an example of something that should also be on high-priority...  it's going to take some review time and its important to get in  (in addition to 0.15 milestone)
+19:11:42 <jonasschnelli> Okay. I though it not going to make it for 0.15 thats why I moved focus away.. but I see the issue now better
+19:11:50 <jonasschnelli> *thought
+19:11:55 <jnewbery> jonas: anything I can do to help for 10240? Would you like me to rebase it?
+19:12:02 <wumpus> ok, will add 10240
+19:12:12 <jonasschnelli> jnewbery: Please take over if you can
+19:12:15 <sipa> jonasschnelli: rescanning beyond your pruning depth should already be an issue? what do we do in that case?
+19:12:21 <morcos> achow101: what about the signrawtransaction splitting stuff, is that still aimed for 0.15?
+19:12:22 <jnewbery> sure. I'll take it
+19:12:29 <jonasschnelli> sipa: the PR halts validation
+19:12:35 <gmaxwell> jnewbery: You are now my personal hero for the day.
+19:12:45 <sipa> jonasschnelli: no, i mean right now
+19:12:53 <sipa> what do we do if we try to rescan beyond the prune depth
+19:12:55 <achow101> morcos: I'd like it to be. and the validateaddress stuff as that is related to #7965
+19:12:56 <gribble> https://github.com/bitcoin/bitcoin/issues/7965 | Remaining instances of ENABLE_WALLET in `libbitcoin_server.a` · Issue #7965 · bitcoin/bitcoin · GitHub
+19:13:06 <jonasschnelli> sipa: I don't know: :/
+19:13:17 <jonasschnelli> I guess you get an expection
+19:13:45 <sipa> so, i think pruning is not relevant for 10240
+19:13:56 <gmaxwell> the rescan calls just say no if you try that.
+19:14:01 <sipa> it's a problem right now if you rescan beyong the pruning depth, and it remains so
+19:14:27 <jonasschnelli> A large part of 10240 is about haling the full node in pruning... dropping that would reduce the review workload
+19:15:21 <sipa> jonasschnelli: i think it should stop regardless of pruning
+19:15:21 <jonasschnelli> So. Drop the pruning option from 10240?
+19:15:31 <sipa> it's crazy that your wallet would go out of sync with your node
+19:15:39 <sipa> that's a totally unsupported state right now
+19:15:45 <jonasschnelli> From the PR on encrypted wallets:
+19:15:46 <jonasschnelli> Same as above, but, If we hit the gap limit with an encrypted wallet, we can't topup the keypool. In that case, we just pause the sync (not the node, only the wallet).
+19:15:54 <sipa> maybe that can be enabled later, once the wallet is more independent from the node
+19:16:19 <sipa> but i think 10240 should just stop sync entirely if your wallet is encrypted and the keypool runs out
+19:16:21 <rhavar> Anyone familiar enough with constraint solving to help me out with this model? https://gist.github.com/RHavar/0710144c713033d42f8f443a99fefbb7
+19:16:25 <jonasschnelli> sipa: well, if you use a backup wallet you have the same state
+19:16:28 <sipa> rhavar: not now, meeting
+19:16:36 <instagibbs> rhavar, ask again in 45 min :P
+19:16:40 <sipa> jonasschnelli: at startup; not anymore after rescan
+19:16:51 <sipa> during normal operation the wallet is always in sync with the node
+19:16:53 <jonasschnelli> Yes. Thats true
+19:16:59 * luke-jr wonders if a halted node will rewind based on headers
+19:17:11 <jonasschnelli> All that because of hardened derivation!
+19:17:27 <sipa> it's also easy to avoid; using 10000 keys in the keypool
+19:17:36 <gmaxwell> (indeed, which I also keep recommending)
+19:17:58 <jonasschnelli> You don't avoid it, you just make the timespan for the possible impact smaller
+19:18:07 <sipa> okay
+19:18:12 <jonasschnelli> And 10000 is just inefficient
+19:18:41 <sipa> well, i think all of that isn't the priority now
+19:18:58 <jonasschnelli> What about only allowing non-hardened derivation for encrypted wallets and disable all pkey export calls?
+19:18:59 <sipa> for 0.15, we need to have automatic marking of seen keys
+19:19:10 <sipa> jonasschnelli: yes, i like that, but not 0.15
+19:19:34 <jonasschnelli> Okay. jnewbery will focus on 10240 (he will rebase and overhaul I guess)
+19:19:48 <gmaxwell> jonasschnelli: we have a program that requires >1GB ram, runs best with >8GB ram, that does hours of processing just to start up-- I don't think worrying about 320k of key material is a major concern.
+19:19:57 <sipa> awesome; let's discuss further on the 10240 PR
+19:20:06 <gmaxwell> (also 1000 works too, it 10k is really too much.)
+19:20:13 <jonasschnelli> gmaxwell: should not be a concern. But it's still an inefficient fix for the problem we have
+19:20:26 <jonasschnelli> sipa: ack. Thanks jnewbery
+19:20:53 <gmaxwell> Inefficient compared to what?  Inefficient to taking away private key export? In efficient compared to even one moment of one users time?
+19:21:04 <jnewbery> no problem. Topic suggestion: #10650
+19:21:07 <gribble> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+19:21:25 <jonasschnelli> gmaxwell: Inefficient compared to support pub key derivation for encrypted keys or to topup the keypool on the fly
+19:21:53 <gmaxwell> jonasschnelli: are you actively trying to sabotage the project?
+19:22:07 <sipa> gmaxwell: please
+19:22:13 <jonasschnelli> ?
+19:22:22 <sipa> jonasschnelli: there are good reasons to support hardened and unhardered derivation both; adding a feature is not a substitute for fixing a problem we have
+19:22:24 <jonasschnelli> gmaxwell: was that a joke or a serious question?
+19:22:46 <sipa> jonasschnelli: using non-hardened derivation implies you'll need to have a big keypool; it comes with that design choice
+19:23:20 <gmaxwell> Sorry to be rude, but I am just gobsmacked about aruging that setting the keypool to be big "on the order of tens or hundreds of kilobytes" is opposed compared to this long saw about public derrivation; which we aren't doing for the wallet at least now.
+19:23:46 <gmaxwell> So it seems to me like that you're intentionally in broken directions because you disagree with another decision.
+19:24:29 <gmaxwell> er intentionally pushing in
+19:24:47 <jonasschnelli> I though avoiding keypool with non-hardened derivation may be seen as a benefit for some of the users.. but it seems that i'm wrong. But at least it's not intentional sabotage
+19:24:50 <morcos> let's move on from this at least duing the meeting, i think we all agree that the keypool can be bigger than 200 regardless of otehr chnages we make
+19:25:11 <gmaxwell> Do we? it keeps getting argued against.
+19:25:22 <morcos> thats why i ended it by saying we all agree. :)
+19:25:25 <sipa> well, having non-hardened derivation with disabled key export is a perfectly fine _feature_ - but it's not usable for everyone (some people need key export), and for those users, we'll need to be able to deal with hardened derivation
+19:25:35 <sipa> so let's do that
+19:25:36 <sipa> next topic
+19:25:39 <instagibbs> ack
+19:25:40 <jtimon> NicolasDorier: how does #9728 interact with rescan ?
+19:25:40 <jonasschnelli> Yes. Agree
+19:25:42 <gribble> https://github.com/bitcoin/bitcoin/issues/9728 | Can create Watch Only HD wallet with -hdwatchonly by NicolasDorier · Pull Request #9728 · bitcoin/bitcoin · GitHub
+19:25:57 <instagibbs> jtimon, it doesn't do anything special for now
+19:26:12 <instagibbs> same as hardened
+19:26:39 <wumpus> other topics?
+19:26:52 <morcos> jnewbery suggested 10650
+19:27:24 <jnewbery> I think we're almost there with 10650. Only major sticking point is not having a default wallet when there are multiple wallets loaded
+19:27:25 <jtimon> instagibbs: I see, so it kind of depends on #10240 ?
+19:27:28 <gribble> https://github.com/bitcoin/bitcoin/issues/10240 | Add HD wallet auto-restore functionality by jonasschnelli · Pull Request #10240 · bitcoin/bitcoin · GitHub
+19:27:46 <instagibbs> jtimon, we can chat offline about that after meeting
+19:27:53 <wumpus> #topic Multiwallet: add RPC endpoint support
+19:27:59 <jtimon> sure
+19:28:12 <jonasschnelli> I just pushed the overhaule of 10650 that fixes the points reported by ryanofsky jnewbery and morcos
+19:28:16 <jonasschnelli> *overhaul
+19:28:20 <sipa> jonasschnelli: cool
+19:28:28 <luke-jr> #10650
+19:28:31 <gribble> https://github.com/bitcoin/bitcoin/issues/10650 | Multiwallet: add RPC endpoint support by jonasschnelli · Pull Request #10650 · bitcoin/bitcoin · GitHub
+19:28:45 <jnewbery> great! Will review
+19:28:49 <jnewbery> thanks jonas
+19:29:06 <wumpus> nice
+19:29:08 <morcos> yes, excellent.  woo!
+19:29:21 <luke-jr> I very much dislike passing wallet by name. That just makes the GUI side ugly
+19:29:42 <jonasschnelli> luke-jr: you mean the selecting walltes by name?
+19:29:43 <sipa> luke-jr: as opposed to what? (sorry, i'm not up to date)
+19:29:54 <luke-jr> sipa: as opposed to passing a CWallet* on the JSONRPCRequest
+19:30:09 <sipa> that seems like something that's easy to change later
+19:30:09 <luke-jr> jonasschnelli: the GUI would have to go CWallet* -> string -> CWallet*
+19:30:13 <luke-jr> and hope it matches the right one up
+19:30:22 <luke-jr> sipa: I suppose, yes
+19:30:35 <wumpus> yes, indeed, can we avoid long discussions about small details that don't matter for correctness?
+19:30:42 <wumpus> we really want this in before the feature freeze
+19:30:47 <wumpus> so let's be pracical about it
+19:30:48 <gmaxwell> <3
+19:30:57 <jonasschnelli> Yes. WalletID or similar can be done later.
+19:31:32 <wumpus> yep
+19:32:12 <jonasschnelli> One thing that is a bit cumbersome is that you have to remove the -wallet argument from bitcoin-cli when calling a non wallet command
+19:32:35 <jonasschnelli> The endpoint node/wallet split is not very practical from the -cli use perspective
+19:32:41 <wumpus> well it makes some sense
+19:32:45 <luke-jr> hmm, bitcoin-cli reads bitcoin.conf, doesn't it? how does that interact? :/
+19:32:59 <gmaxwell> then make the cli command handle that internally?
+19:33:17 <gmaxwell> also, we can take some clunkyness with this expiremental feature in 0.15.
+19:33:21 <jonasschnelli> gmaxwell: Yes. I though of that.
+19:33:23 <gmaxwell> e.g. fix cli later.
+19:33:32 <jonasschnelli> Yes. Sure.
+19:33:46 <jonasschnelli> If you want to use multiwallet now, you need to add/remove -wallet when fiddling with -cli
+19:33:50 <wumpus> IMO a clean separation between wallet and non wallet commands is good
+19:33:51 <luke-jr> fixing cli could mean changing the -wallet= to something else
+19:33:54 <wumpus> even if it seems cumbersome in the beginning
+19:34:04 <luke-jr> jonasschnelli: how do yuo remove it, if it's in bitcoin.conf?
+19:34:08 <instagibbs> luke-jr, yeah, something that means "use wallet" not "load wallet"
+19:34:13 <jonasschnelli> Yes. Its good.
+19:34:14 <jonasschnelli> luke-jr: ? I can't follow
+19:34:16 <jtimon> bitcoin-cli calls with -wallet that don't need it could just ignore the extra argument and spit a warning somehwere or something?
+19:34:23 <wumpus> I mean it'd be easy to put every non-wallet command on wallet endpoints as well, but that's something that is awfullly hard to change later
+19:34:30 <luke-jr> jonasschnelli: typical multiwallet use case has wallet=abc.db \n wallet=def.db in bitcoin.conf
+19:34:36 <sipa> jonasschnelli: there are a bunch of things that the wallet - even after separation - will need access to (like fee estimates, mempool, ...)... i think it's fine if those remain inside the v1/wallet API (and also accessible as node commands)
+19:34:37 <jonasschnelli> wait.. that's actually a good point!
+19:34:42 <luke-jr> jonasschnelli: bitcoin-cli will get these options too.
+19:34:55 <jonasschnelli> Yes.. haven't tested that. :/
+19:35:13 <luke-jr> instagibbs's -usewallet or similar seems like a good solution
+19:35:16 <instagibbs> it likely takes the first wallet arg and uses that
+19:35:28 <jonasschnelli> Yes. I think -usewallet is better
+19:35:40 <sipa> so i think i may agree with having pretty much everything available through the wallet endpoint
+19:35:43 <instagibbs> luke-jr, something like that, if it's not complicating something else
+19:35:48 <sipa> (but not getinfo) *ducks*
+19:36:22 <gmaxwell> It's an expiremental feature, API isn't table. The endpoint can be leaky for now.
+19:36:26 <luke-jr> it's also easier to collapse args later than to split them, if we end up regretting it
+19:36:31 <jonasschnelli> I guess we can leave it for now we just need to mark the /v1 *EXPERIMENTAL* in the release notes
+19:36:36 <instagibbs> yes please
+19:36:42 <sipa> ack
+19:36:45 <gmaxwell> s/table/stable/
+19:37:03 <gmaxwell> And I think the alternative is to not have it at all, which isn't preferable.
+19:37:05 <wumpus> should do that anyway
+19:37:14 <wumpus> absolutely
+19:37:41 <wumpus> as long as it doesn't cause regressions for single-wallet mode
+19:38:13 <wumpus> that would be unacceptable - but everything new is experimental
+19:38:55 <sipa> agree
+19:39:26 <jonasschnelli> I guess user feedback will also help us how to extend this further
+19:39:48 <wumpus> indeed
+19:40:25 <jonasschnelli> But once 10650 is in, we have finally usable multiwallet in Core! That's a big step.
+19:40:30 <sipa> jonasschnelli: it is!
+19:40:44 <jonasschnelli> And it wasn't the first try.
+19:41:19 <wumpus> hehe multiwallet slipped so many releases it's a shame
+19:41:23 <jtimon> yeah, is a nice feature to anounce in 0.15, even if as experimental
+19:42:17 <sipa> just to repeat some other happy results briefly: my reindex-chainstate to 450k with infinity dbcache runs about 40% faster on master than on 0.14.2
+19:42:40 <petertodd> sipa: what do you mean by "infinity dbcache"?
+19:42:41 <jtimon> wow
+19:42:42 <wumpus> which reminds me, someone should really write a release notes section about all the wonderful perf improvements in 0.15
+19:42:59 <sipa> petertodd: dbcache sufficient for the entire utxo sets
+19:43:02 <gmaxwell> wumpus: I've already been talking to drak about some blog posts and whatnot on it.
+19:43:06 <wumpus> everything from crc instruction support in leveldb to the new and better database formats, to faster validation, etc
+19:43:21 <petertodd> sipa: ah, cool!
+19:43:27 <sipa> wumpus: don't forget tx validation caching; that's massive for performance at the tip
+19:43:31 <instagibbs> ^
+19:43:44 <wumpus> sipa: +1
+19:43:46 <sipa> (just somewhat harder to benchmark and give cool numbers for)
+19:44:30 <sipa> petertodd: around 6-8GB in 0.15, in practice (and more in 0.14.2, due to the blowup at flushing time)
+19:44:47 <petertodd> sipa: that's still pretty small fortunately :)
+19:45:07 <gmaxwell> Was 2GB not that long ago.
+19:45:37 <petertodd> gmaxwell: be interesting to know why UTXO growth has stopped temporarily...
+19:46:27 <sipa> if you know, post it here: https://bitcoin.stackexchange.com/questions/56513/why-has-utxo-set-stopped-growing-since-2017-06-03
+19:46:29 <instagibbs> (total size has been shrinking for a month now)
+19:47:13 <petertodd> could easily be someone ran out of money for an attack, and is spending the coins again
+19:47:57 <wumpus> #link https://bitcoin.stackexchange.com/questions/56513/why-has-utxo-set-stopped-growing-since-2017-06-03
+19:49:06 <wumpus> any other topics?
+19:49:08 <jtimon> many more possible explanations...
+19:49:25 <luke-jr> maybe a reminder that Tokyo Core is in a few weeks
+19:50:21 <instagibbs> 2 weeks specifically
+19:50:54 <luke-jr> https://coredev.tech/tokyo.html lots of unconfirmed invites still
+19:51:26 <instagibbs> kind of a hike for those not already in area for other reasons
+19:51:29 <jtimon> oh, missed that one, I guess I can confirm now I'm not attending
+19:51:30 <wumpus> I'm not coming to tokyo core, but will be in the SF one in september
+19:51:41 <sipa> wumpus: great!
+19:51:52 <jonasschnelli> SF is pretty full booked..
+19:52:13 <jonasschnelli> Not saying we running out of space, but >20 confirmed
+19:52:33 <wumpus> sipa: you're coming too? great
+19:52:54 <sipa> wumpus: yes, of course
+19:53:08 <sipa> (i live nearby)
+19:53:10 <achow101> do we have a location for the sf meetup?
+19:54:06 <luke-jr> achow101: https://coredev.tech/nextmeeting.html
+19:54:08 <wumpus> yes, but it's still possible it will change
+19:55:09 <wumpus> depending on just how large the room needs to be I guess :-)
+19:55:28 <instagibbs> will we finally activate segwit there? *ducks*
+19:55:40 <rhavar> petertodd: the day it stopped growing is the day alphabay shut down
+19:55:52 <luke-jr> instagibbs: it'll already be active by then
+19:56:01 <achow101> luke-jr: hopefully
+19:56:03 <petertodd> rhavar: interesting!
+19:56:13 <instagibbs> rhavar, ? what date did it go down
+19:56:22 <rhavar> the 3rd i think
+19:56:46 <instagibbs> been holding/dropping since 3rd of June though
+19:56:58 <instagibbs> might be contributing factor still..
+19:57:10 <instagibbs> sorry, is meeting done
+19:57:11 <rhavar> oh, sorry -- I'm a month off
+19:57:12 <instagibbs> 3 minutes
+19:57:24 <rhavar> alphabay shut down the 3rd of july
+19:57:33 <rhavar> and that question was 3rd of june
+19:57:51 <instagibbs> my SWAG: I think internalizing customer transaction costs did the equiv of fees for exchange trading in China
+19:58:07 <wumpus> seems time to end the meeting, speculation about the reason for the stop of utxo growth is interesting but not a bitcoin core meeting topic
+19:58:08 <wumpus> #endmeeting
