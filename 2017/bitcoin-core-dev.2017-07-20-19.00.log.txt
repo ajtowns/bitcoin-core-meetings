@@ -1,0 +1,157 @@
+19:00:49 <wumpus> #startmeeting
+19:00:49 <lightningbot> Meeting started Thu Jul 20 19:00:49 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:49 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:53 <cfields> hi
+19:01:19 <achow101> hi
+19:01:27 <wumpus> #topic high priority for review
+19:02:10 <sipa> #10882 needs 0.15 tag?
+19:02:11 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:02:15 <wumpus> https://github.com/bitcoin/bitcoin/projects/8 has pretty much been cleaned out (only #10652 left), anything new?
+19:02:17 <sipa> otherwise, the things with current 0.15 tag?
+19:02:17 <gribble> https://github.com/bitcoin/bitcoin/issues/10652 | Small step towards demangling cs_main from CNodeState by TheBlueMatt · Pull Request #10652 · bitcoin/bitcoin · GitHub
+19:02:29 <gmaxwell> ACK for 10882 0.15 tag
+19:02:36 <wumpus> https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.15.0
+19:02:46 <BlueMatt> 10652 can lose its 15 tag
+19:03:10 <BlueMatt> #10758 really wants review sooner rather than later
+19:03:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+19:03:34 <cfields> i'd say #10821 needs high prio review if it's going in for 0.15, though it's got a bunch of ACKs already
+19:03:36 <gribble> https://github.com/bitcoin/bitcoin/issues/10821 | Add SSE4 optimized SHA256 by sipa · Pull Request #10821 · bitcoin/bitcoin · GitHub
+19:03:49 <instagibbs> cfields, it got merged..
+19:03:50 <jonasschnelli> cfields: it's merged
+19:03:52 <wumpus> 10821 is merged
+19:04:05 <cfields> hah
+19:04:08 <wumpus> there's virtually no regression risk as it's disabled by default
+19:04:12 <kanzure> hi.
+19:04:20 * cfields refreshes
+19:05:46 <wumpus> ok, added #10758 to project 8, and #10882 to 0.15
+19:05:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+19:05:49 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:06:45 <wumpus> #10652 was already untagged for 0.15 2 days ago
+19:06:46 <gribble> https://github.com/bitcoin/bitcoin/issues/10652 | Small step towards demangling cs_main from CNodeState by TheBlueMatt · Pull Request #10652 · bitcoin/bitcoin · GitHub
+19:06:56 <BlueMatt> good :)
+19:07:40 <wumpus> other topics?
+19:08:08 <BlueMatt> Make 0.15 Great Again!
+19:08:20 <achow101> forks! forks! forks!
+19:08:21 <instagibbs> 10882 halting condition
+19:08:34 <gmaxwell> 10882 halting problem.
+19:08:38 <instagibbs> so, there's gotta be something better than "load your wallet in an older bitcoin instance"
+19:08:39 <sipa> i'd like to bring up #10526
+19:08:40 <gribble> https://github.com/bitcoin/bitcoin/issues/10526 | Force on-the-fly compaction during pertxout upgrade by sipa · Pull Request #10526 · bitcoin/bitcoin · GitHub
+19:08:44 <btcdrak> hi
+19:08:45 <instagibbs> oh sorry il lwait for topic
+19:09:03 <wumpus> about 2.5 weeks to go before projected 0.15 split-off
+19:09:20 <wumpus> #topic Force on-the-fly compaction during pertxout upgrade
+19:09:24 <gmaxwell> master is too reliable.
+19:09:39 <sipa> so, the 0.15 per-txout database needs conversion on first startup
+19:09:53 <sipa> this has the risk of leveldb leaving the old tables around
+19:10:23 <sipa> leaving you with a 4.something GB chainstate rather than 2.something
+19:10:26 <wumpus> did anyone see any difference with that merged?
+19:10:36 <sipa> i did - i don't know if anyone else tried
+19:10:48 <sipa> but it's pretty worrying if it doesn't work deterministically
+19:11:04 <wumpus> did it make a difference for you? any idea what happened in my case?
+19:11:30 <sipa> wumpus: no...
+19:11:52 <sipa> it did make a difference for me, yes, as far as i remember
+19:12:00 <sipa> i'll investigate again and rebase
+19:12:12 <sipa> probably not much else to say
+19:12:32 <wumpus> can anyone else try, please? I think it makes a lot of sense to have it in 0.15, *if* it works :)
+19:12:37 <sipa> agree.
+19:12:39 <sipa> will rebase
+19:12:48 <wumpus> will tag it
+19:13:19 <wumpus> #action test #10526
+19:13:20 <gribble> https://github.com/bitcoin/bitcoin/issues/10526 | Force on-the-fly compaction during pertxout upgrade by sipa · Pull Request #10526 · bitcoin/bitcoin · GitHub
+19:13:30 <gmaxwell> wumpus: I thought there might have been something weird about your test; hardlinked database directories or something
+19:13:45 <wumpus> gmaxwell: not hard-linked directories, just individual files
+19:15:21 <wumpus> e.g. I use https://gist.github.com/laanwj/3c4614a23e072cbb3d39090da1834a68 to make copies - but not sure how it could cause the problem
+19:15:32 <sipa> i don't see that either
+19:15:54 <wumpus> but sure I could copy the ldb files instead and retry
+19:16:05 <gmaxwell> Unrelated, does anyone have a point of contact with '1Hash' (or whomever was the author of block 476670)
+19:16:13 <gmaxwell> ?
+19:16:41 <wumpus> no, no idea
+19:17:00 <btcdrak> gmaxwell:  I do
+19:18:17 <gmaxwell> btcdrak: thanks.
+19:18:29 <wumpus> #topic 10882 halting condition
+19:19:30 <jnewbery> instagibbs ?
+19:19:35 <instagibbs> I think users need some sane way of recovering from their wallet hitting topup
+19:20:08 <instagibbs> and their node shutting down, since the user cannot recover using the current software
+19:20:51 <instagibbs> sorry, don't have great solutions, just bringing it up because I'd like it merged
+19:21:25 <instagibbs> (for encrypted wallets, obviously)
+19:21:50 <gmaxwell> My suggestion is the although stoping the sync was hard, preventing it from starting may be easy.
+19:22:15 <gmaxwell> so if you start with a locked tip-behind wallet, that doesn't have enough keys, it could just not start the sync until unlocked.
+19:22:22 <gmaxwell> but I haven't investigated.
+19:22:38 <wumpus> sounds good to me
+19:22:49 <gmaxwell> instagibbs: Sipa's point was that an unrecoverable always shuts down state is STILL better than what we do now.
+19:23:01 <gmaxwell> because you at least won't end up with a silently screwed up wallet.
+19:23:21 <jnewbery> There are a couple of solutions that I hope we could get into v0.15.1 : dynamic loading of wallets with the option to unlock on load (#10740) and a standalone wallet tool with option to topup (#8745)
+19:23:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10740 | [WIP] [wallet] dynamic loading/unloading of wallets by jnewbery · Pull Request #10740 · bitcoin/bitcoin · GitHub
+19:23:23 <gribble> https://github.com/bitcoin/bitcoin/issues/8745 | [PoC] Add wallet inspection and modification tool "bitcoin-wallet-tool" by jonasschnelli · Pull Request #8745 · bitcoin/bitcoin · GitHub
+19:23:41 <instagibbs> gmaxwell, mmm sure, conveying actionable info is still a requirement, though this may be off topic for meeting
+19:23:55 <wumpus> dynamic loading is a feature, that won't make it into 0.15.1
+19:25:37 <wumpus> (but will to 0.16, ofc)
+19:25:52 <instagibbs> jnewbery, oh optional unlock on load, nice, will look
+19:26:32 <jnewbery> it's not in 10740 yet, but hopefully not too difficult to add
+19:26:36 <instagibbs> ok, well if it's not super pressing to anyone else, whatever. I don't run crypted anyways :)
+19:27:10 <wumpus> suddeny crashing on startup w/ the wallet effectively being unusable is unacceptable at least
+19:27:41 <gmaxwell> I think it's preferable to current behavior where the wallet is effectively silently corrupted.
+19:28:03 <BlueMatt> well its fixable with rescan
+19:28:09 <sipa> BlueMatt: no
+19:28:15 <sipa> it'll fail to load
+19:28:24 <instagibbs> sipa, ?
+19:28:29 <BlueMatt> i was responding to greg's "silently corrupted" comment
+19:28:36 <sipa> oh, ok
+19:28:40 <wumpus> forcing a rescan would be somewhat better
+19:28:40 <wumpus> but just crashing will lead people to do things like salvagewallet and worse
+19:28:58 <instagibbs> nvm
+19:29:00 <gmaxwell> BlueMatt: fixable somehow doesn't mean not silently corrupted though. since it's silent you won't know to rescan.
+19:29:04 <gmaxwell> wumpus good point.
+19:29:11 <gmaxwell> in any case, lets see what we can do with the PR.
+19:29:12 <BlueMatt> fair
+19:29:31 <gmaxwell> (there were people running salvage wallet in response to the 50/100 warning... :( :( )
+19:29:42 <BlueMatt> holy what the fuck
+19:29:58 <gmaxwell> Humans.
+19:30:08 <wumpus> yes, at least if it crashes it should tell something actionable to do, not just leave the user to dry
+19:30:27 <jnewbery> Yes, the current error message is "Error: Keypool is too small. Shutting down"
+19:30:33 <jnewbery> which isn't helpful enough
+19:30:35 <instagibbs> startingly vague
+19:30:38 <wumpus> not helpful at all
+19:30:45 <instagibbs> salvagewallet may seem reasonable in response
+19:30:55 <wumpus> they'll try providing a larger -keypool
+19:30:57 <wumpus> which doesn't help
+19:30:59 <instagibbs> "my keys disappeared!"
+19:31:00 <gmaxwell> Any time we create a warning or an error condition that a user can't suppress a few people will do increasingly insane things to try to get it to go away.
+19:31:05 <jnewbery> suggested action for user could be: set "-keypoolmin to 0 and then rescan"?
+19:31:06 <wumpus> yes, 'core nuked my wallet!'
+19:31:25 <sipa> jnewbery: and unlock beforehand
+19:31:28 <gmaxwell> jnewbery: no, that'll just corrupt their wallet. (they'll end up scanning past the end)
+19:31:36 <gmaxwell> they need to unlock before.
+19:31:50 <wumpus> ideally this would just be automated
+19:31:56 <wumpus> if there is a course of recovery
+19:32:01 <jnewbery> ok: "set -keypoolmin to 0, unlock wallet, rescan"
+19:32:01 <jtimon> my keypool is too small? isn't this just a warning because I resuse addresses and they want me to create more new ones?
+19:32:03 <gmaxwell> I guess you can keypoolmin, restart, unlock, and restart with rescan.
+19:32:11 <jtimon> sorry, bad joke
+19:32:48 <gmaxwell> or we find out if we can just suppress the scanstart until unlock, then it just needs to nag you to unlock.
+19:33:01 <wumpus> would be nice
+19:33:20 <instagibbs> if error messages are more helpful, and there is a manual method of recovery, I'm fine with it for now
+19:33:28 <wumpus> sure
+19:33:53 <wumpus> if this is a rare condition, and explaining what to do is easier than automating it, that would be acceptable for 0.15
+19:34:01 <jnewbery> ok, I'll improve the error message. PR could still do with lots of review
+19:34:17 <instagibbs> Great!
+19:34:28 <sipa> note that all of this can only ever occur when restoring a wallet backup in the first place
+19:34:44 <wumpus> #action review #10882
+19:34:46 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:35:24 <wumpus> the more important not to scare people with unrecoverable errors
+19:36:15 <gmaxwell> if people can't tell what to do in order to get rid of the error, they'll do something dangerous eventually, after trying a few safe but unsuccessful things.
+19:36:33 <gmaxwell> I wonder how many people have died due to blinking 12 on VCRs.
+19:36:50 <wumpus> they'll escalate to worse and worse things
+19:36:54 <wumpus> heh
+19:38:14 <sipa> well improving the error message at least would be a start
+19:38:54 <wumpus> yes, that would be good
+19:39:05 <sipa> but i agree more is needed
+19:39:26 <jnewbery> It's a shame all the wallet initialization stuff is so coupled to node initialization. Hopefully we can make some good progress with that in 0.16. That'd make issues like this a lot easier to deal with.
+19:39:34 <sipa> jnewbery: yeah
+19:39:57 <wumpus> it is a shame indeed
+19:40:22 <wumpus> although it's better than it used to be
+19:40:56 <wumpus> but both multiwallet and this are good reasons to make further progress with it in 0.16
+19:41:34 <wumpus> any other topics?
+19:43:40 <wumpus> ... I guess not, we can end the meeting early
+19:44:01 <wumpus> #endmeeting
