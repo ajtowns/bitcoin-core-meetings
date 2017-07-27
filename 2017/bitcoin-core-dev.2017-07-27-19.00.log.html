@@ -1,0 +1,367 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:27</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Jul 27 19:00:27 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:27</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier</span>
+<a name="l-6"></a><span class="tm">19:00:43</span><span class="nk"> &lt;gmaxwell&gt;</span> achow101:
+<a name="l-7"></a><span class="tm">19:00:49</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-8"></a><span class="tm">19:00:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> +promag
+<a name="l-9"></a><span class="tm">19:00:51</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-10"></a><span class="tm">19:00:59</span><span class="nk"> &lt;morcos&gt;</span> here for 30
+<a name="l-11"></a><span class="tm">19:01:01</span><span class="nk"> &lt;Murch&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:01:04</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, thats today?
+<a name="l-13"></a><span class="tm">19:01:06</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-14"></a><span class="tm">19:01:08</span><span class="nk"> &lt;wumpus&gt;</span> I think it's most useful to discuss the still-open issues for 0.15 today
+<a name="l-15"></a><span class="tm">19:01:13</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/milestones/0.15.0
+<a name="l-16"></a><span class="tm">19:01:44</span><span class="nk"> &lt;jtimon&gt;</span> yep, sounds like a good first topic (that will probably take most of the meeting)
+<a name="l-17"></a><span class="tm">19:02:04</span><span class="nk"> &lt;wumpus&gt;</span> FWIW rc1 is planned for 2017-08-06
+<a name="l-18"></a><span class="tm">19:02:14</span><span class="nk"> &lt;wumpus&gt;</span> ok, I'll just follow the list
+<a name="l-19"></a><span class="tm">19:02:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">test_bitcoin fails valgrind Tests (#9278)</span>
+<a name="l-20"></a><span class="tm">19:02:46</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9278 | test_bitcoin fails valgrind · Issue #9278 · bitcoin/bitcoin · GitHub
+<a name="l-21"></a><span class="tm">19:02:51</span><span class="nk"> &lt;wumpus&gt;</span> this is the oldest issue in the list
+<a name="l-22"></a><span class="tm">19:03:06</span><span class="nk"> &lt;achow101&gt;</span> I checked last week that this was still a problem
+<a name="l-23"></a><span class="tm">19:03:23</span><span class="nk"> &lt;wumpus&gt;</span> ok, so this still needs to be fixed?
+<a name="l-24"></a><span class="tm">19:03:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> are you working on that? if you don't have time, someone else can pick it up
+<a name="l-25"></a><span class="tm">19:03:44</span><span class="nk"> &lt;BlueMatt&gt;</span> its assigned cfields....
+<a name="l-26"></a><span class="tm">19:03:54</span><span class="nk"> &lt;achow101&gt;</span> it should probably be fixed, but I don't know if it is a blocker or how urgent a fix would be required
+<a name="l-27"></a><span class="tm">19:04:18</span><span class="nk"> &lt;morcos&gt;</span> He's only had 8 months cut him a break
+<a name="l-28"></a><span class="tm">19:04:18</span><span class="nk"> &lt;gmaxwell&gt;</span> Looks like it should be a trivial fix (famous last words)
+<a name="l-29"></a><span class="tm">19:04:20</span><span class="nk"> &lt;achow101&gt;</span> it was already pushed from 0.14 to 0.15, so I'm guessing it isn't all that urgent
+<a name="l-30"></a><span class="tm">19:04:24</span><span class="nk"> &lt;wumpus&gt;</span> I don't think uninitalized state in a test is important enough to block 0.15, though it could result in intermittent faliures which are always annoying
+<a name="l-31"></a><span class="tm">19:04:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Moving to 0.16 would be possible.
+<a name="l-32"></a><span class="tm">19:04:44</span><span class="nk"> &lt;wumpus&gt;</span> though it might hide real issues
+<a name="l-33"></a><span class="tm">19:04:56</span><span class="nk"> &lt;wumpus&gt;</span> (if the tests are not valgrind clean)
+<a name="l-34"></a><span class="tm">19:05:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm guessing cfields and sipa are not in the meeting today due to timezones.
+<a name="l-35"></a><span class="tm">19:05:19</span><span class="nk"> &lt;gmaxwell&gt;</span> I'll follow up and make sure it gets fixed (either extract something cfields hasn't submitted yet or fix it myself)
+<a name="l-36"></a><span class="tm">19:05:42</span><span class="nk"> &lt;wumpus&gt;</span> ok, thanks
+<a name="l-37"></a><span class="tm">19:05:47</span><span class="nk"> &lt;gmaxwell&gt;</span> (or realize it isn't actually trivial and ask for a punt to the next version)
+<a name="l-38"></a><span class="tm">19:05:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">sendtoaddress subtractfeefromamount=true does not respect paytxfee values (#10034)</span>
+<a name="l-39"></a><span class="tm">19:05:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10034 | sendtoaddress subtractfeefromamount=true does not respect paytxfee values · Issue #10034 · bitcoin/bitcoin · GitHub
+<a name="l-40"></a><span class="tm">19:06:13</span><span class="nk"> &lt;morcos&gt;</span> Are we going to do the wiki thing again for release notes?  If so can we put a link to it on the top of #9889.  I kept having trouble finding that link last release
+<a name="l-41"></a><span class="tm">19:06:15</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9889 | TODO for release notes 0.15.0 · Issue #9889 · bitcoin/bitcoin · GitHub
+<a name="l-42"></a><span class="tm">19:06:21</span><span class="nk"> &lt;wumpus&gt;</span> I'm not sure about this one, don't think it has been looked at much
+<a name="l-43"></a><span class="tm">19:06:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes, good idea
+<a name="l-44"></a><span class="tm">19:06:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Lets decide if we're doing the wiki or not, last time the wiki merge killed release notes written directly. :)
+<a name="l-45"></a><span class="tm">19:06:59</span><span class="nk"> &lt;wumpus&gt;</span> but it helped a lot with actually getting release notes written
+<a name="l-46"></a><span class="tm">19:07:00</span><span class="nk"> &lt;gmaxwell&gt;</span> I've held off on writing release notes due to lack of clarity on this point.
+<a name="l-47"></a><span class="tm">19:07:14</span><span class="nk"> &lt;wumpus&gt;</span> and getting the style consistent etc
+<a name="l-48"></a><span class="tm">19:07:14</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm fine with doing it, I just need to know where to put them.
+<a name="l-49"></a><span class="tm">19:07:26</span><span class="nk"> &lt;wumpus&gt;</span> well right now you simply have to create a PR
+<a name="l-50"></a><span class="tm">19:07:30</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't want to write any outside of the wiki if we're using the wiki.
+<a name="l-51"></a><span class="tm">19:07:34</span><span class="nk"> &lt;wumpus&gt;</span> as soon as the wiki is open, do it there
+<a name="l-52"></a><span class="tm">19:07:36</span><span class="nk"> &lt;morcos&gt;</span> I recommend we do the wiki, but we need a good code of conduct, where people should not make potentially controversial changes without flagging them somehow
+<a name="l-53"></a><span class="tm">19:07:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I did that last time and they got stomped by the wiki merge. :)
+<a name="l-54"></a><span class="tm">19:08:02</span><span class="nk"> &lt;morcos&gt;</span> Let's do the wiki.
+<a name="l-55"></a><span class="tm">19:08:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> +1
+<a name="l-56"></a><span class="tm">19:08:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I know, we should avoid that, but that's no reason to completely abandon a good idea
+<a name="l-57"></a><span class="tm">19:08:25</span><span class="nk"> &lt;gmaxwell&gt;</span> So on this feefrom amount, that sounds like the known overpayment bug with no change that we fixed though I don't recall if we fixed it in the feefrom amount case.
+<a name="l-58"></a><span class="tm">19:08:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> I'm all for the wiki.
+<a name="l-59"></a><span class="tm">19:08:45</span><span class="nk"> &lt;achow101&gt;</span> we should do the wiki and probably open it now
+<a name="l-60"></a><span class="tm">19:08:54</span><span class="nk"> &lt;gmaxwell&gt;</span> Just someone point me to it and I'll write a bunch of release notes.
+<a name="l-61"></a><span class="tm">19:09:00</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I think we should put the commit id that the wiki 'forked' from on that page, so that it can be compared if there haven't been changes since when mering it back
+<a name="l-62"></a><span class="tm">19:09:12</span><span class="nk"> &lt;achow101&gt;</span> +1
+<a name="l-63"></a><span class="tm">19:09:13</span><span class="nk"> &lt;gmaxwell&gt;</span> that would help too.
+<a name="l-64"></a><span class="tm">19:09:23</span><span class="nk"> &lt;wumpus&gt;</span> (this was missing last time, so I had no reference point)
+<a name="l-65"></a><span class="tm">19:09:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">re:</span> 10034, I'm not sure why that's labelled 0.15
+<a name="l-66"></a><span class="tm">19:09:57</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> ack on commit id on the wiki
+<a name="l-67"></a><span class="tm">19:10:04</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">wumpus:</span> if you mean github wiki, those are actually git repositories, so they do literally have forks/branches (even if github tosses them).
+<a name="l-68"></a><span class="tm">19:10:05</span><span class="nk"> &lt;achow101&gt;</span> is #10034 actually a problem or is it just an instance of an already known issue?
+<a name="l-69"></a><span class="tm">19:10:06</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10034 | sendtoaddress subtractfeefromamount=true does not respect paytxfee values · Issue #10034 · bitcoin/bitcoin · GitHub
+<a name="l-70"></a><span class="tm">19:10:25</span><span class="nk"> &lt;morcos&gt;</span> I'll take a look at 10034, but there have been multiple changes to this code for 0.15, so not clear that even if there was a bug it would still be there
+<a name="l-71"></a><span class="tm">19:10:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> true, you can fork and edit locally, but I mean the bitcoin core master revision
+<a name="l-72"></a><span class="tm">19:10:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> thanks
+<a name="l-73"></a><span class="tm">19:11:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Also, if 10034 is still a bug, it does not deserve the "medium" tag IMO
+<a name="l-74"></a><span class="tm">19:11:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I think 10034 is the known thing that we fixed at least in the non-fee-from-value case.
+<a name="l-75"></a><span class="tm">19:11:46</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> Do you believe it deserves high.. overpaying fees should be high. IMO.
+<a name="l-76"></a><span class="tm">19:12:15</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> it seems to have some determinism in the description that bears a closer look.. but i'm not expecting to find anything
+<a name="l-77"></a><span class="tm">19:12:17</span><span class="nk"> &lt;wumpus&gt;</span> the dirty secret is that we don't really use the priority tags for issues/prs for anything :)
+<a name="l-78"></a><span class="tm">19:12:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-79"></a><span class="tm">19:12:35</span><span class="nk"> &lt;gmaxwell&gt;</span> yea...
+<a name="l-80"></a><span class="tm">19:12:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> thanks for looking at it.
+<a name="l-81"></a><span class="tm">19:13:40</span><span class="nk"> &lt;jtimon&gt;</span> priority medium seems specially useless, if it's not tagged low or high, then it's medium, no?
+<a name="l-82"></a><span class="tm">19:13:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Force on-the-fly compaction during pertxout upgrade  UTXO Db and Indexes (#10526)</span>
+<a name="l-83"></a><span class="tm">19:13:45</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10526 | Force on-the-fly compaction during pertxout upgrade by sipa · Pull Request #10526 · bitcoin/bitcoin · GitHub
+<a name="l-84"></a><span class="tm">19:13:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> untagged is a possible state (not evaluated yet).
+<a name="l-85"></a><span class="tm">19:14:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I think in practice only priority high could be useful, if someone paid attention to it
+<a name="l-86"></a><span class="tm">19:14:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> as morocos noted on the PR, it's not shrinking on its own.
+<a name="l-87"></a><span class="tm">19:14:28</span><span class="nk"> &lt;gmaxwell&gt;</span> $ du -sh .
+<a name="l-88"></a><span class="tm">19:14:28</span><span class="nk"> &lt;gmaxwell&gt;</span> 5.8G    .
+<a name="l-89"></a><span class="tm">19:14:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> then again, I think a year ago I checked "high priority" issues and some were &gt;5 years old
+<a name="l-90"></a><span class="tm">19:14:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> right, but then you have to tag them all with something about priority once you evaluate them
+<a name="l-91"></a><span class="tm">19:14:48</span><span class="nk"> &lt;BlueMatt&gt;</span> see my most recent comment on it: that pr makes upgrade time a bunch faster for me, but also doesnt actually save disk space directly (but its done later upon next-db-reopen cause i guess leveldb realizes it has a bunch of tables it doesnt need)
+<a name="l-92"></a><span class="tm">19:15:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I believe it may clean it up over time, but not quickly
+<a name="l-93"></a><span class="tm">19:15:09</span><span class="nk"> &lt;gmaxwell&gt;</span> So I think we really need to do that... but IIRC we had a report from wumpus saying that it didn't work for him.
+<a name="l-94"></a><span class="tm">19:15:23</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, yes, we should take 10526 for 15 imo, morcos had one code issue on it, but it doesnt appear to change behavior for me
+<a name="l-95"></a><span class="tm">19:15:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I've had two weeks and many startup and shutdowns on this node... so ... really not quickly.
+<a name="l-96"></a><span class="tm">19:15:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it doesn't work reliably for me, no
+<a name="l-97"></a><span class="tm">19:16:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> could it be what bluematt says.. it works but doesn't take effect until after another restart?
+<a name="l-98"></a><span class="tm">19:16:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> see my later comment, i meant that it'll do it when tables fill, ie when you connect more blocks and so
+<a name="l-99"></a><span class="tm">19:16:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> sometimes after running upgrade on that test set it it is 2.1G sometimes 4.3G, apparently random, after another restart it's always down
+<a name="l-100"></a><span class="tm">19:16:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, that could well be
+<a name="l-101"></a><span class="tm">19:16:54</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, well thats still better than behavior in master.. which I've tried on several hosts and it results in a persistant 5.8 gb state.
+<a name="l-102"></a><span class="tm">19:17:00</span><span class="nk"> &lt;morcos&gt;</span> well if it consistently shrinks at the very latest after another restart, that's a clear improvement
+<a name="l-103"></a><span class="tm">19:17:03</span><span class="nk"> &lt;wumpus&gt;</span> well the, we should merge it, better is better
+<a name="l-104"></a><span class="tm">19:17:18</span><span class="nk"> &lt;BlueMatt&gt;</span> if we want we can probably simulate restart by closing and re-opening db :p
+<a name="l-105"></a><span class="tm">19:17:22</span><span class="nk"> &lt;morcos&gt;</span> needs a bug fix though, commented on pr
+<a name="l-106"></a><span class="tm">19:18:01</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-107"></a><span class="tm">19:18:07</span><span class="nk"> &lt;achow101&gt;</span> I hope it does actually work. my node running master has a chainstate of 8.2 GB right now (it was upgraded from a previous 0.14 master)
+<a name="l-108"></a><span class="tm">19:18:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> yes though that doesn't get rid of the peak usage, we'll need to release note that upgrading will require an extra 3GB free disk space.
+<a name="l-109"></a><span class="tm">19:18:13</span><span class="nk"> &lt;achow101&gt;</span> I can test it too
+<a name="l-110"></a><span class="tm">19:18:27</span><span class="nk"> &lt;gmaxwell&gt;</span> uh.. 5GB disk space.
+<a name="l-111"></a><span class="tm">19:18:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> yes, please test
+<a name="l-112"></a><span class="tm">19:18:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> well it doesn't fix already bloated ones.
+<a name="l-113"></a><span class="tm">19:18:41</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, please note that on the release notes todo
+<a name="l-114"></a><span class="tm">19:18:56</span><span class="nk"> &lt;morcos&gt;</span> how'd you get 8.2, that's yuuuge
+<a name="l-115"></a><span class="tm">19:19:02</span><span class="nk"> &lt;achow101&gt;</span> i don't know
+<a name="l-116"></a><span class="tm">19:19:08</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> don't make fun of how I pronounce huge. :(
+<a name="l-117"></a><span class="tm">19:19:47</span><span class="nk"> &lt;BlueMatt&gt;</span> heh
+<a name="l-118"></a><span class="tm">19:20:04</span><span class="nk"> &lt;gmaxwell&gt;</span> Maybe we should sneak in a hidden rpc to compact the whole database. (I think there is just a leveldb call to do that)
+<a name="l-119"></a><span class="tm">19:20:13</span><span class="nk"> &lt;wumpus&gt;</span> 8.2 is definitely abnormal, if it's from a very old version maybe something left behind
+<a name="l-120"></a><span class="tm">19:20:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> seems reasonable to me
+<a name="l-121"></a><span class="tm">19:20:40</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> its the same datadir from a 0.10 master that has been periodically upgraded over the years
+<a name="l-122"></a><span class="tm">19:20:53</span><span class="nk"> &lt;achow101&gt;</span> to different random master builds
+<a name="l-123"></a><span class="tm">19:21:06</span><span class="nk"> &lt;wumpus&gt;</span> (leveldb changed some things also, over time, e.g. the extension for database files at some point even)
+<a name="l-124"></a><span class="tm">19:21:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> it would be interesting to see if leveldb compaction shrinks it, or if it actually has zombie records in it due to some kind of corruption.
+<a name="l-125"></a><span class="tm">19:21:22</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> can you send me a pastebinned 'ls'?
+<a name="l-126"></a><span class="tm">19:21:39</span><span class="nk"> &lt;wumpus&gt;</span> zombie records, or zombie files even
+<a name="l-127"></a><span class="tm">19:22:02</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> you should also try gettxoutsetinfo to compare its hash with another non-bloaty host.
+<a name="l-128"></a><span class="tm">19:22:21</span><span class="nk"> &lt;wumpus&gt;</span> adding a hidden RPC to compact databases is fine with me
+<a name="l-129"></a><span class="tm">19:22:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I think we know what to do to go forward on this one then.
+<a name="l-130"></a><span class="tm">19:22:30</span><span class="nk"> &lt;wumpus&gt;</span> ye
+<a name="l-131"></a><span class="tm">19:22:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Fix some chainstate-init-order bugs (#10758)</span>
+<a name="l-132"></a><span class="tm">19:22:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+<a name="l-133"></a><span class="tm">19:22:49</span><span class="nk"> &lt;BlueMatt&gt;</span> lots of bugs, lots of complicated
+<a name="l-134"></a><span class="tm">19:23:07</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#10919 </span><span class="cmdline">fixes even more bugs!</span>
+<a name="l-135"></a><span class="tm">19:23:08</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+<a name="l-136"></a><span class="tm">19:23:10</span><span class="nk"> &lt;wumpus&gt;</span> i think that one's ready for merge, I found some silly error message discrepancies but seems was re-pushed after
+<a name="l-137"></a><span class="tm">19:23:14</span><span class="nk"> &lt;BlueMatt&gt;</span> and has lots of more complicated
+<a name="l-138"></a><span class="tm">19:23:15</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> https://pastebin.com/hAeYMjRW
+<a name="l-139"></a><span class="tm">19:23:19</span><span class="nk"> &lt;gmaxwell&gt;</span> This is what fixes the genesis block grey goo?
+<a name="l-140"></a><span class="tm">19:23:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> among other issues, yes
+<a name="l-141"></a><span class="tm">19:23:45</span><span class="nk"> &lt;wumpus&gt;</span> yep
+<a name="l-142"></a><span class="tm">19:25:08</span><span class="nk"> &lt;gmaxwell&gt;</span> LGTM. I'll test it if it doesn't get merged first.
+<a name="l-143"></a><span class="tm">19:25:14</span><span class="nk"> &lt;wumpus&gt;</span> we'll get to 10919 later
+<a name="l-144"></a><span class="tm">19:25:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">update assumevalid and minimum chain work (#10778)</span>
+<a name="l-145"></a><span class="tm">19:25:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10778 | update assumevalid and minimum chain work · Issue #10778 · bitcoin/bitcoin · GitHub
+<a name="l-146"></a><span class="tm">19:25:44</span><span class="nk"> &lt;BlueMatt&gt;</span> i guess only question is do we need be concerned about doing it pre-/post- fork(s), I think not
+<a name="l-147"></a><span class="tm">19:25:48</span><span class="nk"> &lt;wumpus&gt;</span> assigning that one to gmaxwell
+<a name="l-148"></a><span class="tm">19:25:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> when do you want me to PR that.. I can do it at any time.
+<a name="l-149"></a><span class="tm">19:25:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> asap imo
+<a name="l-150"></a><span class="tm">19:26:02</span><span class="nk"> &lt;BlueMatt&gt;</span> why not next week?
+<a name="l-151"></a><span class="tm">19:26:04</span><span class="nk"> &lt;achow101&gt;</span> best before august 1st?
+<a name="l-152"></a><span class="tm">19:26:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> yes that is a good point
+<a name="l-153"></a><span class="tm">19:26:06</span><span class="nk"> &lt;BlueMatt&gt;</span> later the better
+<a name="l-154"></a><span class="tm">19:26:16</span><span class="nk"> &lt;gmaxwell&gt;</span> Generally the later the better.
+<a name="l-155"></a><span class="tm">19:26:23</span><span class="nk"> &lt;gmaxwell&gt;</span> But I don't want to miss it.
+<a name="l-156"></a><span class="tm">19:26:34</span><span class="nk"> &lt;BlueMatt&gt;</span> worst case it misses rc1 but makes it in for rc2
+<a name="l-157"></a><span class="tm">19:26:36</span><span class="nk"> &lt;wumpus&gt;</span> yes though I doubt a week makes that much difference, ignoring possible fork scenario
+<a name="l-158"></a><span class="tm">19:26:36</span><span class="nk"> &lt;gmaxwell&gt;</span> It needs review before merge (since you'll need to check it matches your chain)
+<a name="l-159"></a><span class="tm">19:26:55</span><span class="nk"> &lt;wumpus&gt;</span> yes, so please make a PR asap
+<a name="l-160"></a><span class="tm">19:26:57</span><span class="nk"> &lt;BlueMatt&gt;</span> true, i dont care, gmaxwell up to you
+<a name="l-161"></a><span class="tm">19:27:10</span><span class="nk"> &lt;wumpus&gt;</span> it can always be updated
+<a name="l-162"></a><span class="tm">19:27:20</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay, I'll PR soon.
+<a name="l-163"></a><span class="tm">19:27:21</span><span class="nk"> &lt;wumpus&gt;</span> (maybe it has to be, if reveiewers have problems with it)
+<a name="l-164"></a><span class="tm">19:27:27</span><span class="nk"> &lt;wumpus&gt;</span> ok, thanks
+<a name="l-165"></a><span class="tm">19:27:55</span><span class="nk"> &lt;gmaxwell&gt;</span> A week makes a measureable amount of synctime difference, unfortunately. :(  but not enough to worry about debating it much.
+<a name="l-166"></a><span class="tm">19:27:59</span><span class="nk"> &lt;gmaxwell&gt;</span> :)
+<a name="l-167"></a><span class="tm">19:28:05</span><span class="nk"> &lt;jtimon&gt;</span> yep, later better, but merged better too
+<a name="l-168"></a><span class="tm">19:28:43</span><span class="nk"> &lt;wumpus&gt;</span> yeah, I don't care about the exact day, let's just make sure that there is PR open that can be merged before we do the 0.15 branch
+<a name="l-169"></a><span class="tm">19:28:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Fix addwitnessaddress by replacing ismine with producesignature (#10788)</span>
+<a name="l-170"></a><span class="tm">19:28:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10788 | [RPC] Fix addwitnessaddress by replacing ismine with producesignature by achow101 · Pull Request #10788 · bitcoin/bitcoin · GitHub
+<a name="l-171"></a><span class="tm">19:29:22</span><span class="nk"> &lt;wumpus&gt;</span> this seems to require some work still, according to sdaftuar
+<a name="l-172"></a><span class="tm">19:29:31</span><span class="nk"> &lt;morcos&gt;</span> I just started looking at that one, but I like sipa's suggestion for addressing sdaftuars concern
+<a name="l-173"></a><span class="tm">19:29:42</span><span class="nk"> &lt;gmaxwell&gt;</span> Urgency of fixing it increased by probablity of segwit activation.
+<a name="l-174"></a><span class="tm">19:29:44</span><span class="nk"> &lt;achow101&gt;</span> I'm not exactly sure what sdaftuar is concerned about
+<a name="l-175"></a><span class="tm">19:29:48</span><span class="nk"> &lt;morcos&gt;</span> I haven't thought about the performance of any of these things
+<a name="l-176"></a><span class="tm">19:30:08</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">achow101:</span> just wants it to be clear what code is responsible for accomplishing what requirements
+<a name="l-177"></a><span class="tm">19:30:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> sounds like a general concern about the safty of further code changes.
+<a name="l-178"></a><span class="tm">19:30:19</span><span class="nk"> &lt;achow101&gt;</span> ah, I see. So sipa's suggestion should be fine
+<a name="l-179"></a><span class="tm">19:30:23</span><span class="nk"> &lt;morcos&gt;</span> functionally it'll be no different after change, but it'll be a lot harder to accidentally break
+<a name="l-180"></a><span class="tm">19:30:28</span><span class="nk"> &lt;achow101&gt;</span> right
+<a name="l-181"></a><span class="tm">19:30:50</span><span class="nk"> &lt;wumpus&gt;</span> being hard to accidentally break is good
+<a name="l-182"></a><span class="tm">19:30:55</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> in addition to sipa's suggestion a strategic comment or two would help.
+<a name="l-183"></a><span class="tm">19:31:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Purpose of source code is communication between programmers, after all.
+<a name="l-184"></a><span class="tm">19:31:23</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-185"></a><span class="tm">19:32:01</span><span class="nk"> &lt;wumpus&gt;</span> going to skip #10851, as cfields is not here and it's a build system issue
+<a name="l-186"></a><span class="tm">19:32:03</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10851 | depends: bump fontconfig to 2.12.4 by theuni · Pull Request #10851 · bitcoin/bitcoin · GitHub
+<a name="l-187"></a><span class="tm">19:32:25</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> isn't the purpose of source code that people can read it and learn how to program?
+<a name="l-188"></a><span class="tm">19:32:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Keypool topup (#10882)</span>
+<a name="l-189"></a><span class="tm">19:32:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+<a name="l-190"></a><span class="tm">19:32:39</span><span class="nk"> &lt;gmaxwell&gt;</span> 10882 I need to sync up with the current state, it looked like it was going in a good direction. I see the latest comments have some improvements still needed.
+<a name="l-191"></a><span class="tm">19:33:01</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> no, of course not, the purpose is that they can copy it and change the attribution and claim it's theirs :-)
+<a name="l-192"></a><span class="tm">19:33:03</span><span class="nk"> &lt;gmaxwell&gt;</span> but it seems like people know what to do...
+<a name="l-193"></a><span class="tm">19:33:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> lol
+<a name="l-194"></a><span class="tm">19:33:10</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> lol
+<a name="l-195"></a><span class="tm">19:33:13</span><span class="nk"> &lt;achow101&gt;</span> lol
+<a name="l-196"></a><span class="tm">19:33:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> i think 10882 is pretty much done
+<a name="l-197"></a><span class="tm">19:34:04</span><span class="nk"> &lt;BlueMatt&gt;</span> its very close, yes
+<a name="l-198"></a><span class="tm">19:34:19</span><span class="nk"> &lt;gmaxwell&gt;</span> \O/
+<a name="l-199"></a><span class="tm">19:34:25</span><span class="nk"> &lt;gmaxwell&gt;</span> I'll review today.
+<a name="l-200"></a><span class="tm">19:34:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> Great
+<a name="l-201"></a><span class="tm">19:34:57</span><span class="nk"> &lt;gmaxwell&gt;</span> (as an aside, I'm really happy that people found solutions to issues I raised that I had no idea how to fix)
+<a name="l-202"></a><span class="tm">19:35:14</span><span class="nk"> &lt;wumpus&gt;</span> ah the instructions for manual wallet top-up were added, great
+<a name="l-203"></a><span class="tm">19:35:19</span><span class="nk"> &lt;wumpus&gt;</span> yeah
+<a name="l-204"></a><span class="tm">19:35:23</span><span class="nk"> &lt;gmaxwell&gt;</span> (in particular the two thresholds, so you can bypass critical shutdown)
+<a name="l-205"></a><span class="tm">19:36:29</span><span class="nk"> &lt;wumpus&gt;</span> lol github things the diff of wallet.cpp is so huge it hides it by default
+<a name="l-206"></a><span class="tm">19:37:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I hate that feature.
+<a name="l-207"></a><span class="tm">19:37:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Make searching really painful
+<a name="l-208"></a><span class="tm">19:37:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> *Makes
+<a name="l-209"></a><span class="tm">19:37:26</span><span class="nk"> &lt;gmaxwell&gt;</span> Caused me to screw up reviews before.
+<a name="l-210"></a><span class="tm">19:37:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (because I searched for X and then complained a PR couldn't work because it didn't touch X)
+<a name="l-211"></a><span class="tm">19:37:38</span><span class="nk"> &lt;BlueMatt&gt;</span> lol just dont review on github directly :)
+<a name="l-212"></a><span class="tm">19:37:40</span><span class="nk"> &lt;BlueMatt&gt;</span> next pr?
+<a name="l-213"></a><span class="tm">19:37:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well they got complaints from people like me that browsers crashed/run out of memory if the page becomes very large, but I agree this is suboptimal too
+<a name="l-214"></a><span class="tm">19:37:57</span><span class="nk"> &lt;gmaxwell&gt;</span> obviously we need to split that file. :P
+<a name="l-215"></a><span class="tm">19:38:10</span><span class="nk"> &lt;gmaxwell&gt;</span> lets move on
+<a name="l-216"></a><span class="tm">19:38:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Reject invalid wallets (#10885)</span>
+<a name="l-217"></a><span class="tm">19:38:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10885 | Reject invalid wallets by promag · Pull Request #10885 · bitcoin/bitcoin · GitHub
+<a name="l-218"></a><span class="tm">19:38:33</span><span class="nk"> &lt;BlueMatt&gt;</span> i think its good
+<a name="l-219"></a><span class="tm">19:38:51</span><span class="nk"> &lt;BlueMatt&gt;</span> i saw john's comments but havent had a chance to read the responses or do another review myself
+<a name="l-220"></a><span class="tm">19:38:57</span><span class="nk"> &lt;BlueMatt&gt;</span> but is also very close
+<a name="l-221"></a><span class="tm">19:39:06</span><span class="nk"> &lt;wumpus&gt;</span> yes, I think it's pretty close
+<a name="l-222"></a><span class="tm">19:39:41</span><span class="nk"> &lt;wumpus&gt;</span> I think what's left is mostly comments onthe tests
+<a name="l-223"></a><span class="tm">19:39:50</span><span class="nk"> &lt;BlueMatt&gt;</span> thats it, no?
+<a name="l-224"></a><span class="tm">19:40:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Fix more init bugs (#10919)</span>
+<a name="l-225"></a><span class="tm">19:40:14</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+<a name="l-226"></a><span class="tm">19:40:24</span><span class="nk"> &lt;wumpus&gt;</span> no @BlueMatt ^^ moar init bugs
+<a name="l-227"></a><span class="tm">19:40:33</span><span class="nk"> &lt;BlueMatt&gt;</span> thats just #10758 part deux
+<a name="l-228"></a><span class="tm">19:40:35</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+<a name="l-229"></a><span class="tm">19:40:59</span><span class="nk"> &lt;BlueMatt&gt;</span> to get the first one merged cause people didnt want me to have a huge ever-growing pile of fixes in one pr
+<a name="l-230"></a><span class="tm">19:41:10</span><span class="nk"> &lt;jtimon&gt;</span> probably obvious but why not symlinks?
+<a name="l-231"></a><span class="tm">19:42:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> berkeleydb doesn't gracefully support them, especially if you link outside the context directory
+<a name="l-232"></a><span class="tm">19:42:27</span><span class="nk"> &lt;jtimon&gt;</span> thanks
+<a name="l-233"></a><span class="tm">19:42:37</span><span class="nk"> &lt;wumpus&gt;</span> so it's very, very dangerous
+<a name="l-234"></a><span class="tm">19:42:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> ok
+<a name="l-235"></a><span class="tm">19:42:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit wallet release (gmaxwell)</span>
+<a name="l-236"></a><span class="tm">19:43:53</span><span class="nk"> &lt;gmaxwell&gt;</span> So, segwit is going to activate. It would be nice to get a version out
+<a name="l-237"></a><span class="tm">19:43:54</span><span class="nk"> &lt;gmaxwell&gt;</span> soon that exposes a segwit wallet to the user, and maybe supports sending
+<a name="l-238"></a><span class="tm">19:43:56</span><span class="nk"> &lt;gmaxwell&gt;</span> to BIP173 style addresses. Maybe we could consider short cycling 0.16
+<a name="l-239"></a><span class="tm">19:43:59</span><span class="nk"> &lt;gmaxwell&gt;</span> with primarily just this functionality, or something like that?
+<a name="l-240"></a><span class="tm">19:44:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Since we technically have support but don't wire it up by default, (except
+<a name="l-241"></a><span class="tm">19:44:04</span><span class="nk"> &lt;gmaxwell&gt;</span> via the RPCs) I believe it's a short effort; mostly a testing concern.
+<a name="l-242"></a><span class="tm">19:44:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Another alternative would be to branch, off a 0.15+segwit and cut
+<a name="l-243"></a><span class="tm">19:44:09</span><span class="nk"> &lt;gmaxwell&gt;</span> expiremental releases for people.
+<a name="l-244"></a><span class="tm">19:44:12</span><span class="nk"> &lt;gmaxwell&gt;</span> There are some political implications, since getting adoption of SW
+<a name="l-245"></a><span class="tm">19:44:14</span><span class="nk"> &lt;gmaxwell&gt;</span> will tone down some mania in the industry.
+<a name="l-246"></a><span class="tm">19:44:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> Agree
+<a name="l-247"></a><span class="tm">19:44:37</span><span class="nk"> &lt;BlueMatt&gt;</span> seems reasonable
+<a name="l-248"></a><span class="tm">19:44:47</span><span class="nk"> &lt;BlueMatt&gt;</span> i vote for at 15.segwit
+<a name="l-249"></a><span class="tm">19:44:53</span><span class="nk"> &lt;achow101&gt;</span> perhaps start off by giving out the p2sh nested addresses first and then move on to bech32?
+<a name="l-250"></a><span class="tm">19:44:55</span><span class="nk"> &lt;wumpus&gt;</span> no problem with doing 0.16 faster (create a specific segwit-themed feature release, if it is realistic to do it in less than 6 months but still takes significant time (say, 3 months)
+<a name="l-251"></a><span class="tm">19:45:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Well I threw out two ideas: 0.16 fast and 0.15+segwit as a seperate downloadable thing...
+<a name="l-252"></a><span class="tm">19:45:19</span><span class="nk"> &lt;achow101&gt;</span> why not just a 0.15.x release?
+<a name="l-253"></a><span class="tm">19:45:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> So 0.15.1 + 0.15.1+SW?
+<a name="l-254"></a><span class="tm">19:45:26</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> the point on 173 is support for sending to. We likely wouldn't actually issue those addresses for &gt;1 year.
+<a name="l-255"></a><span class="tm">19:45:28</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> it's a feature
+<a name="l-256"></a><span class="tm">19:45:31 </span><span class="nka">* BlueMatt</span> <span class="ac">would be somewhat dissapointed to see a full release number for such a small set of changes</span>
+<a name="l-257"></a><span class="tm">19:45:38</span><span class="nk"> &lt;BlueMatt&gt;</span> 15.segwit seems reasonable, while working on 16 still
+<a name="l-258"></a><span class="tm">19:45:49</span><span class="nk"> &lt;gmaxwell&gt;</span> If we did 0.15+sw as a full release we should call that 0.16. But thats just a naming thing.
+<a name="l-259"></a><span class="tm">19:45:55</span><span class="nk"> &lt;wumpus&gt;</span> so is it really a small set of changes? or are you underestimating it?
+<a name="l-260"></a><span class="tm">19:45:56</span><span class="nk"> &lt;BlueMatt&gt;</span> well, ok
+<a name="l-261"></a><span class="tm">19:45:59</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">achow101:</span> yeah, wondering the same
+<a name="l-262"></a><span class="tm">19:46:08</span><span class="nk"> &lt;gmaxwell&gt;</span> but we could also release it as 0.15+expiremental segwit, an explicit alternative.
+<a name="l-263"></a><span class="tm">19:46:09</span><span class="nk"> &lt;BlueMatt&gt;</span> point being lets not freeze master again soon just for this
+<a name="l-264"></a><span class="tm">19:46:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> all you're saying is support sending to segwit addresses, right?
+<a name="l-265"></a><span class="tm">19:46:34</span><span class="nk"> &lt;BlueMatt&gt;</span> not gui showing them as a receive address?
+<a name="l-266"></a><span class="tm">19:46:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> if we do BIP173 support it would just be sending to.
+<a name="l-267"></a><span class="tm">19:46:56</span><span class="nk"> &lt;wumpus&gt;</span> yeah full GUI support is significant work
+<a name="l-268"></a><span class="tm">19:47:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> hmm?
+<a name="l-269"></a><span class="tm">19:47:20</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean we're just talking about a send-only address format, no?
+<a name="l-270"></a><span class="tm">19:47:26</span><span class="nk"> &lt;gmaxwell&gt;</span> There are two questions:  segwit wallet, and sending to BIP173. I consider the second less important, it's also more work (because it isn't already dormant in the codebase).
+<a name="l-271"></a><span class="tm">19:47:39</span><span class="nk"> &lt;wumpus&gt;</span> it's very easy to underestimate the changes needed, the tests, reviews, iterations
+<a name="l-272"></a><span class="tm">19:47:49</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> what do you mean by segwit wallet?
+<a name="l-273"></a><span class="tm">19:47:52</span><span class="nk"> &lt;jtimon&gt;</span> well, with the short release (let's say, 3 months) we don't necessarily need to "freeze master", those would be just high priority features for the release but we can still keep doing other things, no?
+<a name="l-274"></a><span class="tm">19:48:03</span><span class="nk"> &lt;gmaxwell&gt;</span> Segwit wallet basically means making getnewaddress return p2sh embedded segwit addresses.
+<a name="l-275"></a><span class="tm">19:48:14</span><span class="nk"> &lt;gmaxwell&gt;</span> (and the GUI of course)
+<a name="l-276"></a><span class="tm">19:48:15</span><span class="nk"> &lt;BlueMatt&gt;</span> mmm, yea, thats...trickier
+<a name="l-277"></a><span class="tm">19:48:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> well technically it's just a few lines changed, if we ignore the testing burden. :)
+<a name="l-278"></a><span class="tm">19:48:37</span><span class="nk"> &lt;BlueMatt&gt;</span> heh, yea, well testing
+<a name="l-279"></a><span class="tm">19:48:45</span><span class="nk"> &lt;wumpus&gt;</span> building it on top of 0.15 and calling it 0.16 that's possible too, though a big change from how releases have always been done
+<a name="l-280"></a><span class="tm">19:48:52</span><span class="nk"> &lt;gmaxwell&gt;</span> because the wallet does support segwit today... just doesn't use it without dorking with the rpc.
+<a name="l-281"></a><span class="tm">19:48:55</span><span class="nk"> &lt;wumpus&gt;</span> would be the first major release not branched from master
+<a name="l-282"></a><span class="tm">19:49:02</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean its not a 2 week project, but i also dont think its worth freezing master to do it (and given it'd be nice to get it out, it'd be nice to have *only* it as changes)
+<a name="l-283"></a><span class="tm">19:49:23</span><span class="nk"> &lt;wumpus&gt;</span> and it still needs to land in master anyhow, no way around that
+<a name="l-284"></a><span class="tm">19:49:23 </span><span class="nka">* BlueMatt</span> <span class="ac">is fine with calling it 0.15.1, fwiw</span>
+<a name="l-285"></a><span class="tm">19:49:31</span><span class="nk"> &lt;gmaxwell&gt;</span> And in _theory_ the segwit support in the wallet is "tested".
+<a name="l-286"></a><span class="tm">19:49:38</span><span class="nk"> &lt;jtimon&gt;</span> yeah, nack on working on 0.15 and calling it 0.16, why not simply 0.15.1 ?
+<a name="l-287"></a><span class="tm">19:49:49</span><span class="nk"> &lt;gmaxwell&gt;</span> So there is a scope question and a naming question. Lets not conflate them.
+<a name="l-288"></a><span class="tm">19:50:03</span><span class="nk"> &lt;BlueMatt&gt;</span> fair, scope wise lets not creep
+<a name="l-289"></a><span class="tm">19:50:08</span><span class="nk"> &lt;BlueMatt&gt;</span> which means keep it on the 15 branch
+<a name="l-290"></a><span class="tm">19:50:19</span><span class="nk"> &lt;BlueMatt&gt;</span> naming, i dont feel strongly about, either way wfm
+<a name="l-291"></a><span class="tm">19:50:36</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-292"></a><span class="tm">19:50:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> would the 0.15.SW always generate p2sh embedded sw addresses or optional?
+<a name="l-293"></a><span class="tm">19:51:00</span><span class="nk"> &lt;BlueMatt&gt;</span> by default, i assume
+<a name="l-294"></a><span class="tm">19:51:04</span><span class="nk"> &lt;gmaxwell&gt;</span> So there are two things I think are potential for scope, SW wallet (getnewaddress returns p2sh embedded SW), and BIP173 sending.  We don't have to do them at the same time but it would be nice to be able to say that any SW enabled wallet can send to 173 style addresses.
+<a name="l-295"></a><span class="tm">19:51:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I assume we'd make it gated by a config option like usehd.
+<a name="l-296"></a><span class="tm">19:51:40</span><span class="nk"> &lt;gmaxwell&gt;</span> Unless we ran into hairballs that we couldn't resolve.
+<a name="l-297"></a><span class="tm">19:51:42</span><span class="nk"> &lt;jtimon&gt;</span> if the scope is smal it seems reasonable to do it on 0.15.1/0.15.segwit
+<a name="l-298"></a><span class="tm">19:51:46</span><span class="nk"> &lt;wumpus&gt;</span> it certainly needs to be optional, default behavior can't change in a minor version
+<a name="l-299"></a><span class="tm">19:51:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> BIP173 sending only is kinda hard(er) to test without the rec. part
+<a name="l-300"></a><span class="tm">19:52:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. That makes sense
+<a name="l-301"></a><span class="tm">19:52:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> we can recieve BIP173 payments with some hidden options. (I believe the code is still there-- we have tests for that already)
+<a name="l-302"></a><span class="tm">19:52:33</span><span class="nk"> &lt;wumpus&gt;</span> sending obvs is optional in itself, you don't *need* tos send to BIP173 addresses, and if you do you know what you're doing. I mean about receiving.
+<a name="l-303"></a><span class="tm">19:53:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> BIP173 is native segwit, we have tests for native segwit... what BIP173 adds is just an address encoding for it, so that it can be made user accessible.
+<a name="l-304"></a><span class="tm">19:53:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed
+<a name="l-305"></a><span class="tm">19:53:40</span><span class="nk"> &lt;gmaxwell&gt;</span> But actually generating 173 addresses won't be useful for a long time... since you don't want to do that until basically everyone can send to it, took 2-3 years for p2sh.
+<a name="l-306"></a><span class="tm">19:53:50</span><span class="nk"> &lt;wumpus&gt;</span> creating bip173 receiving addresses should be optional, to not confuse too much, especially as long as vrutally no other wallets have support for it
+<a name="l-307"></a><span class="tm">19:54:39</span><span class="nk"> &lt;gmaxwell&gt;</span> I could see 173 adoption going faster, but it'll still take a while, and I don't see any reason to push it. But we should get started soon.
+<a name="l-308"></a><span class="tm">19:54:53</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-309"></a><span class="tm">19:54:59</span><span class="nk"> &lt;gmaxwell&gt;</span> (also pushing for rapid 173 adoption has a downside of making people think it's needed for segwit, it's not)
+<a name="l-310"></a><span class="tm">19:56:06</span><span class="nk"> &lt;wumpus&gt;</span> so anyhow, we'll branch off a special branch from 0.15 after the 0.15.0 release, for this work to be done?
+<a name="l-311"></a><span class="tm">19:56:31</span><span class="nk"> &lt;gmaxwell&gt;</span> I would be okay with that. We don't need to decide quite yet, but I wanted to get people thinking about it.
+<a name="l-312"></a><span class="tm">19:56:41</span><span class="nk"> &lt;jtimon&gt;</span> so what about 0.15.1 -&gt; segwit wallet, 0.15.2 - &gt; send to bip173, optionally receive ?
+<a name="l-313"></a><span class="tm">19:56:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> that seems reasonable to me, ultimately i dont care too much and its up to you
+<a name="l-314"></a><span class="tm">19:56:44</span><span class="nk"> &lt;wumpus&gt;</span> or, I guess development could still be done on master w/ backports as normal
+<a name="l-315"></a><span class="tm">19:56:53</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, yea, I'd vote backports
+<a name="l-316"></a><span class="tm">19:56:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> that would be better IMO
+<a name="l-317"></a><span class="tm">19:57:04</span><span class="nk"> &lt;BlueMatt&gt;</span> whether its on the 15 branch or on a 15.segwit branch I dont care
+<a name="l-318"></a><span class="tm">19:57:05</span><span class="nk"> &lt;achow101&gt;</span> ack backports
+<a name="l-319"></a><span class="tm">19:57:06</span><span class="nk"> &lt;wumpus&gt;</span> (in the other case you'd have to forward-port)
+<a name="l-320"></a><span class="tm">19:57:09</span><span class="nk"> &lt;achow101&gt;</span> so we can have it in 0.16 too
+<a name="l-321"></a><span class="tm">19:57:50</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-322"></a><span class="tm">19:58:08</span><span class="nk"> &lt;gmaxwell&gt;</span> I really think the segwit-wallet part will be pretty minimal effort, except perhaps for more testing... just because it's virtually already done.
+<a name="l-323"></a><span class="tm">19:58:43</span><span class="nk"> &lt;jtimon&gt;</span> 2 mins
+<a name="l-324"></a><span class="tm">19:58:51</span><span class="nk"> &lt;wumpus&gt;</span> I was thinking people wanted to work on the 0.15 branch for a moment, which would make sense if we expect master/0.16 to drift apart very quickly, but I don't think that's very true for the wallet (though there's more multi-wallet changes waiting for merge after the branch)
+<a name="l-325"></a><span class="tm">19:59:01</span><span class="nk"> &lt;gmaxwell&gt;</span> But who knows whatever dusty corners we'll expose.
+<a name="l-326"></a><span class="tm">19:59:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well it might favor delaying some 0.16 development to happen after this.
+<a name="l-327"></a><span class="tm">19:59:34</span><span class="nk"> &lt;wumpus&gt;</span> but forward and backporting isn't much different effort and it has to end up in master too
+<a name="l-328"></a><span class="tm">19:59:39</span><span class="nk"> &lt;gmaxwell&gt;</span> but I don't think there are many PRs already open that would get in the way.
+<a name="l-329"></a><span class="tm">19:59:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> What about delaying 0.15 for P2SH(P2WPKH) support?
+<a name="l-330"></a><span class="tm">19:59:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> in that case we're doing the 0.16 freeze that BlueMatt didn't want :)
+<a name="l-331"></a><span class="tm">19:59:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> I'd rather not.
+<a name="l-332"></a><span class="tm">20:00:13</span><span class="nk"> &lt;wumpus&gt;</span> I'd also prefer not
+<a name="l-333"></a><span class="tm">20:00:15</span><span class="nk"> &lt;wumpus&gt;</span> 0.15 is almost ready
+<a name="l-334"></a><span class="tm">20:00:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> if we wanted to do that, I'd rather we just do 0.15 and then release 0.16 a couple weeks later with it.
+<a name="l-335"></a><span class="tm">20:00:24</span><span class="nk"> &lt;wumpus&gt;</span> 0.15.1 is better
+<a name="l-336"></a><span class="tm">20:00:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay
+<a name="l-337"></a><span class="tm">20:00:56</span><span class="nk"> &lt;wumpus&gt;</span> would be very bad to delay 0.15.0 on a *feature* now, so long after the feature freeze
+<a name="l-338"></a><span class="tm">20:01:02</span><span class="nk"> &lt;wumpus&gt;</span> espeically one that doens't even have a PR open
+<a name="l-339"></a><span class="tm">20:01:13</span><span class="nk"> &lt;BlueMatt&gt;</span> *DONG*
+<a name="l-340"></a><span class="tm">20:01:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

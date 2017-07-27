@@ -1,0 +1,340 @@
+19:00:27 <wumpus> #startmeeting
+19:00:27 <lightningbot> Meeting started Thu Jul 27 19:00:27 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:27 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:35 <jonasschnelli> hi
+19:00:38 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:00:43 <gmaxwell> achow101:
+19:00:49 <kanzure> hi.
+19:00:50 <jonasschnelli> +promag
+19:00:51 <achow101> hi
+19:00:59 <morcos> here for 30
+19:01:01 <Murch> hi
+19:01:04 <BlueMatt> oh, thats today?
+19:01:06 <jtimon> hi
+19:01:08 <wumpus> I think it's most useful to discuss the still-open issues for 0.15 today
+19:01:13 <wumpus> https://github.com/bitcoin/bitcoin/milestones/0.15.0
+19:01:44 <jtimon> yep, sounds like a good first topic (that will probably take most of the meeting)
+19:02:04 <wumpus> FWIW rc1 is planned for 2017-08-06
+19:02:14 <wumpus> ok, I'll just follow the list
+19:02:45 <wumpus> #topic test_bitcoin fails valgrind Tests (#9278)
+19:02:46 <gribble> https://github.com/bitcoin/bitcoin/issues/9278 | test_bitcoin fails valgrind · Issue #9278 · bitcoin/bitcoin · GitHub
+19:02:51 <wumpus> this is the oldest issue in the list
+19:03:06 <achow101> I checked last week that this was still a problem
+19:03:23 <wumpus> ok, so this still needs to be fixed?
+19:03:43 <gmaxwell> cfields: are you working on that? if you don't have time, someone else can pick it up
+19:03:44 <BlueMatt> its assigned cfields....
+19:03:54 <achow101> it should probably be fixed, but I don't know if it is a blocker or how urgent a fix would be required
+19:04:18 <morcos> He's only had 8 months cut him a break
+19:04:18 <gmaxwell> Looks like it should be a trivial fix (famous last words)
+19:04:20 <achow101> it was already pushed from 0.14 to 0.15, so I'm guessing it isn't all that urgent
+19:04:24 <wumpus> I don't think uninitalized state in a test is important enough to block 0.15, though it could result in intermittent faliures which are always annoying
+19:04:34 <jonasschnelli> Yes. Moving to 0.16 would be possible.
+19:04:44 <wumpus> though it might hide real issues
+19:04:56 <wumpus> (if the tests are not valgrind clean)
+19:05:01 <gmaxwell> I'm guessing cfields and sipa are not in the meeting today due to timezones.
+19:05:19 <gmaxwell> I'll follow up and make sure it gets fixed (either extract something cfields hasn't submitted yet or fix it myself)
+19:05:42 <wumpus> ok, thanks
+19:05:47 <gmaxwell> (or realize it isn't actually trivial and ask for a punt to the next version)
+19:05:54 <wumpus> #topic sendtoaddress subtractfeefromamount=true does not respect paytxfee values (#10034)
+19:05:56 <gribble> https://github.com/bitcoin/bitcoin/issues/10034 | sendtoaddress subtractfeefromamount=true does not respect paytxfee values · Issue #10034 · bitcoin/bitcoin · GitHub
+19:06:13 <morcos> Are we going to do the wiki thing again for release notes?  If so can we put a link to it on the top of #9889.  I kept having trouble finding that link last release
+19:06:15 <gribble> https://github.com/bitcoin/bitcoin/issues/9889 | TODO for release notes 0.15.0 · Issue #9889 · bitcoin/bitcoin · GitHub
+19:06:21 <wumpus> I'm not sure about this one, don't think it has been looked at much
+19:06:41 <wumpus> morcos: yes, good idea
+19:06:43 <gmaxwell> Lets decide if we're doing the wiki or not, last time the wiki merge killed release notes written directly. :)
+19:06:59 <wumpus> but it helped a lot with actually getting release notes written
+19:07:00 <gmaxwell> I've held off on writing release notes due to lack of clarity on this point.
+19:07:14 <wumpus> and getting the style consistent etc
+19:07:14 <gmaxwell> I'm fine with doing it, I just need to know where to put them.
+19:07:26 <wumpus> well right now you simply have to create a PR
+19:07:30 <gmaxwell> I don't want to write any outside of the wiki if we're using the wiki.
+19:07:34 <wumpus> as soon as the wiki is open, do it there
+19:07:36 <morcos> I recommend we do the wiki, but we need a good code of conduct, where people should not make potentially controversial changes without flagging them somehow
+19:07:46 <gmaxwell> wumpus: I did that last time and they got stomped by the wiki merge. :)
+19:08:02 <morcos> Let's do the wiki.
+19:08:07 <jonasschnelli> +1
+19:08:09 <wumpus> gmaxwell: I know, we should avoid that, but that's no reason to completely abandon a good idea
+19:08:25 <gmaxwell> So on this feefrom amount, that sounds like the known overpayment bug with no change that we fixed though I don't recall if we fixed it in the feefrom amount case.
+19:08:32 <gmaxwell> wumpus: I'm all for the wiki.
+19:08:45 <achow101> we should do the wiki and probably open it now
+19:08:54 <gmaxwell> Just someone point me to it and I'll write a bunch of release notes.
+19:09:00 <wumpus> gmaxwell: I think we should put the commit id that the wiki 'forked' from on that page, so that it can be compared if there haven't been changes since when mering it back
+19:09:12 <achow101> +1
+19:09:13 <gmaxwell> that would help too.
+19:09:23 <wumpus> (this was missing last time, so I had no reference point)
+19:09:50 <wumpus> re: 10034, I'm not sure why that's labelled 0.15
+19:09:57 <jtimon> wumpus: ack on commit id on the wiki
+19:10:04 <kanzure> wumpus: if you mean github wiki, those are actually git repositories, so they do literally have forks/branches (even if github tosses them).
+19:10:05 <achow101> is #10034 actually a problem or is it just an instance of an already known issue?
+19:10:06 <gribble> https://github.com/bitcoin/bitcoin/issues/10034 | sendtoaddress subtractfeefromamount=true does not respect paytxfee values · Issue #10034 · bitcoin/bitcoin · GitHub
+19:10:25 <morcos> I'll take a look at 10034, but there have been multiple changes to this code for 0.15, so not clear that even if there was a bug it would still be there
+19:10:28 <wumpus> kanzure: true, you can fork and edit locally, but I mean the bitcoin core master revision
+19:10:41 <wumpus> morcos: thanks
+19:11:11 <jonasschnelli> Also, if 10034 is still a bug, it does not deserve the "medium" tag IMO
+19:11:22 <gmaxwell> achow101: I think 10034 is the known thing that we fixed at least in the non-fee-from-value case.
+19:11:46 <gmaxwell> jonasschnelli: Do you believe it deserves high.. overpaying fees should be high. IMO.
+19:12:15 <morcos> gmaxwell: it seems to have some determinism in the description that bears a closer look.. but i'm not expecting to find anything
+19:12:17 <wumpus> the dirty secret is that we don't really use the priority tags for issues/prs for anything :)
+19:12:34 <jonasschnelli> heh
+19:12:35 <gmaxwell> yea...
+19:12:49 <gmaxwell> morcos: thanks for looking at it.
+19:13:40 <jtimon> priority medium seems specially useless, if it's not tagged low or high, then it's medium, no?
+19:13:44 <wumpus> #topic Force on-the-fly compaction during pertxout upgrade  UTXO Db and Indexes (#10526)
+19:13:45 <gribble> https://github.com/bitcoin/bitcoin/issues/10526 | Force on-the-fly compaction during pertxout upgrade by sipa · Pull Request #10526 · bitcoin/bitcoin · GitHub
+19:13:58 <gmaxwell> jtimon: untagged is a possible state (not evaluated yet).
+19:14:04 <wumpus> jtimon: I think in practice only priority high could be useful, if someone paid attention to it
+19:14:10 <gmaxwell> wumpus: as morocos noted on the PR, it's not shrinking on its own.
+19:14:28 <gmaxwell> $ du -sh .
+19:14:28 <gmaxwell> 5.8G    .
+19:14:38 <wumpus> jtimon: then again, I think a year ago I checked "high priority" issues and some were >5 years old
+19:14:41 <jtimon> gmaxwell: right, but then you have to tag them all with something about priority once you evaluate them
+19:14:48 <BlueMatt> see my most recent comment on it: that pr makes upgrade time a bunch faster for me, but also doesnt actually save disk space directly (but its done later upon next-db-reopen cause i guess leveldb realizes it has a bunch of tables it doesnt need)
+19:15:02 <BlueMatt> gmaxwell: I believe it may clean it up over time, but not quickly
+19:15:09 <gmaxwell> So I think we really need to do that... but IIRC we had a report from wumpus saying that it didn't work for him.
+19:15:23 <BlueMatt> anyway, yes, we should take 10526 for 15 imo, morcos had one code issue on it, but it doesnt appear to change behavior for me
+19:15:23 <gmaxwell> BlueMatt: I've had two weeks and many startup and shutdowns on this node... so ... really not quickly.
+19:15:37 <wumpus> gmaxwell: it doesn't work reliably for me, no
+19:16:12 <gmaxwell> wumpus: could it be what bluematt says.. it works but doesn't take effect until after another restart?
+19:16:17 <BlueMatt> gmaxwell: see my later comment, i meant that it'll do it when tables fill, ie when you connect more blocks and so
+19:16:27 <wumpus> gmaxwell: sometimes after running upgrade on that test set it it is 2.1G sometimes 4.3G, apparently random, after another restart it's always down
+19:16:31 <wumpus> gmaxwell: yes, that could well be
+19:16:54 <gmaxwell> okay, well thats still better than behavior in master.. which I've tried on several hosts and it results in a persistant 5.8 gb state.
+19:17:00 <morcos> well if it consistently shrinks at the very latest after another restart, that's a clear improvement
+19:17:03 <wumpus> well the, we should merge it, better is better
+19:17:18 <BlueMatt> if we want we can probably simulate restart by closing and re-opening db :p
+19:17:22 <morcos> needs a bug fix though, commented on pr
+19:18:01 <wumpus> yes
+19:18:07 <achow101> I hope it does actually work. my node running master has a chainstate of 8.2 GB right now (it was upgraded from a previous 0.14 master)
+19:18:08 <gmaxwell> BlueMatt: yes though that doesn't get rid of the peak usage, we'll need to release note that upgrading will require an extra 3GB free disk space.
+19:18:13 <achow101> I can test it too
+19:18:27 <gmaxwell> uh.. 5GB disk space.
+19:18:28 <wumpus> achow101: yes, please test
+19:18:38 <gmaxwell> achow101: well it doesn't fix already bloated ones.
+19:18:41 <BlueMatt> gmaxwell: yes, please note that on the release notes todo
+19:18:56 <morcos> how'd you get 8.2, that's yuuuge
+19:19:02 <achow101> i don't know
+19:19:08 <gmaxwell> morcos: don't make fun of how I pronounce huge. :(
+19:19:47 <BlueMatt> heh
+19:20:04 <gmaxwell> Maybe we should sneak in a hidden rpc to compact the whole database. (I think there is just a leveldb call to do that)
+19:20:13 <wumpus> 8.2 is definitely abnormal, if it's from a very old version maybe something left behind
+19:20:36 <BlueMatt> gmaxwell: seems reasonable to me
+19:20:40 <achow101> wumpus: its the same datadir from a 0.10 master that has been periodically upgraded over the years
+19:20:53 <achow101> to different random master builds
+19:21:06 <wumpus> (leveldb changed some things also, over time, e.g. the extension for database files at some point even)
+19:21:11 <gmaxwell> achow101: it would be interesting to see if leveldb compaction shrinks it, or if it actually has zombie records in it due to some kind of corruption.
+19:21:22 <wumpus> achow101: can you send me a pastebinned 'ls'?
+19:21:39 <wumpus> zombie records, or zombie files even
+19:22:02 <gmaxwell> achow101: you should also try gettxoutsetinfo to compare its hash with another non-bloaty host.
+19:22:21 <wumpus> adding a hidden RPC to compact databases is fine with me
+19:22:26 <gmaxwell> I think we know what to do to go forward on this one then.
+19:22:30 <wumpus> ye
+19:22:34 <wumpus> #topic Fix some chainstate-init-order bugs (#10758)
+19:22:36 <gribble> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+19:22:49 <BlueMatt> lots of bugs, lots of complicated
+19:23:07 <BlueMatt> #10919 fixes even more bugs!
+19:23:08 <gribble> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+19:23:10 <wumpus> i think that one's ready for merge, I found some silly error message discrepancies but seems was re-pushed after
+19:23:14 <BlueMatt> and has lots of more complicated
+19:23:15 <achow101> wumpus: https://pastebin.com/hAeYMjRW
+19:23:19 <gmaxwell> This is what fixes the genesis block grey goo?
+19:23:27 <BlueMatt> gmaxwell: among other issues, yes
+19:23:45 <wumpus> yep
+19:25:08 <gmaxwell> LGTM. I'll test it if it doesn't get merged first.
+19:25:14 <wumpus> we'll get to 10919 later
+19:25:17 <wumpus> #topic update assumevalid and minimum chain work (#10778)
+19:25:18 <gribble> https://github.com/bitcoin/bitcoin/issues/10778 | update assumevalid and minimum chain work · Issue #10778 · bitcoin/bitcoin · GitHub
+19:25:44 <BlueMatt> i guess only question is do we need be concerned about doing it pre-/post- fork(s), I think not
+19:25:48 <wumpus> assigning that one to gmaxwell
+19:25:49 <gmaxwell> wumpus: when do you want me to PR that.. I can do it at any time.
+19:25:55 <wumpus> gmaxwell: asap imo
+19:26:02 <BlueMatt> why not next week?
+19:26:04 <achow101> best before august 1st?
+19:26:05 <wumpus> BlueMatt: yes that is a good point
+19:26:06 <BlueMatt> later the better
+19:26:16 <gmaxwell> Generally the later the better.
+19:26:23 <gmaxwell> But I don't want to miss it.
+19:26:34 <BlueMatt> worst case it misses rc1 but makes it in for rc2
+19:26:36 <wumpus> yes though I doubt a week makes that much difference, ignoring possible fork scenario
+19:26:36 <gmaxwell> It needs review before merge (since you'll need to check it matches your chain)
+19:26:55 <wumpus> yes, so please make a PR asap
+19:26:57 <BlueMatt> true, i dont care, gmaxwell up to you
+19:27:10 <wumpus> it can always be updated
+19:27:20 <gmaxwell> Okay, I'll PR soon.
+19:27:21 <wumpus> (maybe it has to be, if reveiewers have problems with it)
+19:27:27 <wumpus> ok, thanks
+19:27:55 <gmaxwell> A week makes a measureable amount of synctime difference, unfortunately. :(  but not enough to worry about debating it much.
+19:27:59 <gmaxwell> :)
+19:28:05 <jtimon> yep, later better, but merged better too
+19:28:43 <wumpus> yeah, I don't care about the exact day, let's just make sure that there is PR open that can be merged before we do the 0.15 branch
+19:28:49 <wumpus> #topic Fix addwitnessaddress by replacing ismine with producesignature (#10788)
+19:28:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10788 | [RPC] Fix addwitnessaddress by replacing ismine with producesignature by achow101 · Pull Request #10788 · bitcoin/bitcoin · GitHub
+19:29:22 <wumpus> this seems to require some work still, according to sdaftuar
+19:29:31 <morcos> I just started looking at that one, but I like sipa's suggestion for addressing sdaftuars concern
+19:29:42 <gmaxwell> Urgency of fixing it increased by probablity of segwit activation.
+19:29:44 <achow101> I'm not exactly sure what sdaftuar is concerned about
+19:29:48 <morcos> I haven't thought about the performance of any of these things
+19:30:08 <morcos> achow101: just wants it to be clear what code is responsible for accomplishing what requirements
+19:30:17 <gmaxwell> achow101: sounds like a general concern about the safty of further code changes.
+19:30:19 <achow101> ah, I see. So sipa's suggestion should be fine
+19:30:23 <morcos> functionally it'll be no different after change, but it'll be a lot harder to accidentally break
+19:30:28 <achow101> right
+19:30:50 <wumpus> being hard to accidentally break is good
+19:30:55 <gmaxwell> achow101: in addition to sipa's suggestion a strategic comment or two would help.
+19:31:07 <gmaxwell> Purpose of source code is communication between programmers, after all.
+19:31:23 <achow101> ok
+19:32:01 <wumpus> going to skip #10851, as cfields is not here and it's a build system issue
+19:32:03 <gribble> https://github.com/bitcoin/bitcoin/issues/10851 | depends: bump fontconfig to 2.12.4 by theuni · Pull Request #10851 · bitcoin/bitcoin · GitHub
+19:32:25 <jtimon> gmaxwell: isn't the purpose of source code that people can read it and learn how to program?
+19:32:30 <wumpus> #topic Keypool topup (#10882)
+19:32:33 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:32:39 <gmaxwell> 10882 I need to sync up with the current state, it looked like it was going in a good direction. I see the latest comments have some improvements still needed.
+19:33:01 <wumpus> jtimon: no, of course not, the purpose is that they can copy it and change the attribution and claim it's theirs :-)
+19:33:03 <gmaxwell> but it seems like people know what to do...
+19:33:09 <gmaxwell> wumpus: lol
+19:33:10 <jtimon> wumpus: lol
+19:33:13 <achow101> lol
+19:33:52 <morcos> gmaxwell: i think 10882 is pretty much done
+19:34:04 <BlueMatt> its very close, yes
+19:34:19 <gmaxwell> \O/
+19:34:25 <gmaxwell> I'll review today.
+19:34:38 <jonasschnelli> Great
+19:34:57 <gmaxwell> (as an aside, I'm really happy that people found solutions to issues I raised that I had no idea how to fix)
+19:35:14 <wumpus> ah the instructions for manual wallet top-up were added, great
+19:35:19 <wumpus> yeah
+19:35:23 <gmaxwell> (in particular the two thresholds, so you can bypass critical shutdown)
+19:36:29 <wumpus> lol github things the diff of wallet.cpp is so huge it hides it by default
+19:37:08 <gmaxwell> I hate that feature.
+19:37:21 <jonasschnelli> Yes. Make searching really painful
+19:37:24 <jonasschnelli> *Makes
+19:37:26 <gmaxwell> Caused me to screw up reviews before.
+19:37:38 <gmaxwell> (because I searched for X and then complained a PR couldn't work because it didn't touch X)
+19:37:38 <BlueMatt> lol just dont review on github directly :)
+19:37:40 <BlueMatt> next pr?
+19:37:41 <wumpus> gmaxwell: well they got complaints from people like me that browsers crashed/run out of memory if the page becomes very large, but I agree this is suboptimal too
+19:37:57 <gmaxwell> obviously we need to split that file. :P
+19:38:10 <gmaxwell> lets move on
+19:38:20 <wumpus> #topic Reject invalid wallets (#10885)
+19:38:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10885 | Reject invalid wallets by promag · Pull Request #10885 · bitcoin/bitcoin · GitHub
+19:38:33 <BlueMatt> i think its good
+19:38:51 <BlueMatt> i saw john's comments but havent had a chance to read the responses or do another review myself
+19:38:57 <BlueMatt> but is also very close
+19:39:06 <wumpus> yes, I think it's pretty close
+19:39:41 <wumpus> I think what's left is mostly comments onthe tests
+19:39:50 <BlueMatt> thats it, no?
+19:40:13 <wumpus> #topic Fix more init bugs (#10919)
+19:40:14 <gribble> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+19:40:24 <wumpus> no @BlueMatt ^^ moar init bugs
+19:40:33 <BlueMatt> thats just #10758 part deux
+19:40:35 <gribble> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+19:40:59 <BlueMatt> to get the first one merged cause people didnt want me to have a huge ever-growing pile of fixes in one pr
+19:41:10 <jtimon> probably obvious but why not symlinks?
+19:42:12 <wumpus> jtimon: berkeleydb doesn't gracefully support them, especially if you link outside the context directory
+19:42:27 <jtimon> thanks
+19:42:37 <wumpus> so it's very, very dangerous
+19:42:44 <wumpus> BlueMatt: ok
+19:42:56 <wumpus> #topic segwit wallet release (gmaxwell)
+19:43:53 <gmaxwell> So, segwit is going to activate. It would be nice to get a version out
+19:43:54 <gmaxwell> soon that exposes a segwit wallet to the user, and maybe supports sending
+19:43:56 <gmaxwell> to BIP173 style addresses. Maybe we could consider short cycling 0.16
+19:43:59 <gmaxwell> with primarily just this functionality, or something like that?
+19:44:01 <gmaxwell> Since we technically have support but don't wire it up by default, (except
+19:44:04 <gmaxwell> via the RPCs) I believe it's a short effort; mostly a testing concern.
+19:44:07 <gmaxwell> Another alternative would be to branch, off a 0.15+segwit and cut
+19:44:09 <gmaxwell> expiremental releases for people.
+19:44:12 <gmaxwell> There are some political implications, since getting adoption of SW
+19:44:14 <gmaxwell> will tone down some mania in the industry.
+19:44:31 <jonasschnelli> Agree
+19:44:37 <BlueMatt> seems reasonable
+19:44:47 <BlueMatt> i vote for at 15.segwit
+19:44:53 <achow101> perhaps start off by giving out the p2sh nested addresses first and then move on to bech32?
+19:44:55 <wumpus> no problem with doing 0.16 faster (create a specific segwit-themed feature release, if it is realistic to do it in less than 6 months but still takes significant time (say, 3 months)
+19:45:02 <gmaxwell> Well I threw out two ideas: 0.16 fast and 0.15+segwit as a seperate downloadable thing...
+19:45:19 <achow101> why not just a 0.15.x release?
+19:45:26 <jonasschnelli> So 0.15.1 + 0.15.1+SW?
+19:45:26 <gmaxwell> achow101: the point on 173 is support for sending to. We likely wouldn't actually issue those addresses for >1 year.
+19:45:28 <wumpus> achow101: it's a feature
+19:45:31 * BlueMatt would be somewhat dissapointed to see a full release number for such a small set of changes
+19:45:38 <BlueMatt> 15.segwit seems reasonable, while working on 16 still
+19:45:49 <gmaxwell> If we did 0.15+sw as a full release we should call that 0.16. But thats just a naming thing.
+19:45:55 <wumpus> so is it really a small set of changes? or are you underestimating it?
+19:45:56 <BlueMatt> well, ok
+19:45:59 <jtimon> achow101: yeah, wondering the same
+19:46:08 <gmaxwell> but we could also release it as 0.15+expiremental segwit, an explicit alternative.
+19:46:09 <BlueMatt> point being lets not freeze master again soon just for this
+19:46:24 <BlueMatt> gmaxwell: all you're saying is support sending to segwit addresses, right?
+19:46:34 <BlueMatt> not gui showing them as a receive address?
+19:46:54 <gmaxwell> BlueMatt: if we do BIP173 support it would just be sending to.
+19:46:56 <wumpus> yeah full GUI support is significant work
+19:47:10 <BlueMatt> wumpus: hmm?
+19:47:20 <BlueMatt> i mean we're just talking about a send-only address format, no?
+19:47:26 <gmaxwell> There are two questions:  segwit wallet, and sending to BIP173. I consider the second less important, it's also more work (because it isn't already dormant in the codebase).
+19:47:39 <wumpus> it's very easy to underestimate the changes needed, the tests, reviews, iterations
+19:47:49 <achow101> gmaxwell: what do you mean by segwit wallet?
+19:47:52 <jtimon> well, with the short release (let's say, 3 months) we don't necessarily need to "freeze master", those would be just high priority features for the release but we can still keep doing other things, no?
+19:48:03 <gmaxwell> Segwit wallet basically means making getnewaddress return p2sh embedded segwit addresses.
+19:48:14 <gmaxwell> (and the GUI of course)
+19:48:15 <BlueMatt> mmm, yea, thats...trickier
+19:48:28 <gmaxwell> BlueMatt: well technically it's just a few lines changed, if we ignore the testing burden. :)
+19:48:37 <BlueMatt> heh, yea, well testing
+19:48:45 <wumpus> building it on top of 0.15 and calling it 0.16 that's possible too, though a big change from how releases have always been done
+19:48:52 <gmaxwell> because the wallet does support segwit today... just doesn't use it without dorking with the rpc.
+19:48:55 <wumpus> would be the first major release not branched from master
+19:49:02 <BlueMatt> i mean its not a 2 week project, but i also dont think its worth freezing master to do it (and given it'd be nice to get it out, it'd be nice to have *only* it as changes)
+19:49:23 <wumpus> and it still needs to land in master anyhow, no way around that
+19:49:23 * BlueMatt is fine with calling it 0.15.1, fwiw
+19:49:31 <gmaxwell> And in _theory_ the segwit support in the wallet is "tested".
+19:49:38 <jtimon> yeah, nack on working on 0.15 and calling it 0.16, why not simply 0.15.1 ?
+19:49:49 <gmaxwell> So there is a scope question and a naming question. Lets not conflate them.
+19:50:03 <BlueMatt> fair, scope wise lets not creep
+19:50:08 <BlueMatt> which means keep it on the 15 branch
+19:50:19 <BlueMatt> naming, i dont feel strongly about, either way wfm
+19:50:36 <wumpus> ok
+19:50:46 <jonasschnelli> would the 0.15.SW always generate p2sh embedded sw addresses or optional?
+19:51:00 <BlueMatt> by default, i assume
+19:51:04 <gmaxwell> So there are two things I think are potential for scope, SW wallet (getnewaddress returns p2sh embedded SW), and BIP173 sending.  We don't have to do them at the same time but it would be nice to be able to say that any SW enabled wallet can send to 173 style addresses.
+19:51:24 <gmaxwell> jonasschnelli: I assume we'd make it gated by a config option like usehd.
+19:51:40 <gmaxwell> Unless we ran into hairballs that we couldn't resolve.
+19:51:42 <jtimon> if the scope is smal it seems reasonable to do it on 0.15.1/0.15.segwit
+19:51:46 <wumpus> it certainly needs to be optional, default behavior can't change in a minor version
+19:51:48 <jonasschnelli> BIP173 sending only is kinda hard(er) to test without the rec. part
+19:52:14 <jonasschnelli> wumpus: Yes. That makes sense
+19:52:33 <gmaxwell> jonasschnelli: we can recieve BIP173 payments with some hidden options. (I believe the code is still there-- we have tests for that already)
+19:52:33 <wumpus> sending obvs is optional in itself, you don't *need* tos send to BIP173 addresses, and if you do you know what you're doing. I mean about receiving.
+19:53:09 <gmaxwell> jonasschnelli: BIP173 is native segwit, we have tests for native segwit... what BIP173 adds is just an address encoding for it, so that it can be made user accessible.
+19:53:26 <jonasschnelli> Indeed
+19:53:40 <gmaxwell> But actually generating 173 addresses won't be useful for a long time... since you don't want to do that until basically everyone can send to it, took 2-3 years for p2sh.
+19:53:50 <wumpus> creating bip173 receiving addresses should be optional, to not confuse too much, especially as long as vrutally no other wallets have support for it
+19:54:39 <gmaxwell> I could see 173 adoption going faster, but it'll still take a while, and I don't see any reason to push it. But we should get started soon.
+19:54:53 <wumpus> yes
+19:54:59 <gmaxwell> (also pushing for rapid 173 adoption has a downside of making people think it's needed for segwit, it's not)
+19:56:06 <wumpus> so anyhow, we'll branch off a special branch from 0.15 after the 0.15.0 release, for this work to be done?
+19:56:31 <gmaxwell> I would be okay with that. We don't need to decide quite yet, but I wanted to get people thinking about it.
+19:56:41 <jtimon> so what about 0.15.1 -> segwit wallet, 0.15.2 - > send to bip173, optionally receive ?
+19:56:44 <BlueMatt> wumpus: that seems reasonable to me, ultimately i dont care too much and its up to you
+19:56:44 <wumpus> or, I guess development could still be done on master w/ backports as normal
+19:56:53 <BlueMatt> oh, yea, I'd vote backports
+19:56:58 <gmaxwell> wumpus: that would be better IMO
+19:57:04 <BlueMatt> whether its on the 15 branch or on a 15.segwit branch I dont care
+19:57:05 <achow101> ack backports
+19:57:06 <wumpus> (in the other case you'd have to forward-port)
+19:57:09 <achow101> so we can have it in 0.16 too
+19:57:50 <wumpus> yes
+19:58:08 <gmaxwell> I really think the segwit-wallet part will be pretty minimal effort, except perhaps for more testing... just because it's virtually already done.
+19:58:43 <jtimon> 2 mins
+19:58:51 <wumpus> I was thinking people wanted to work on the 0.15 branch for a moment, which would make sense if we expect master/0.16 to drift apart very quickly, but I don't think that's very true for the wallet (though there's more multi-wallet changes waiting for merge after the branch)
+19:59:01 <gmaxwell> But who knows whatever dusty corners we'll expose.
+19:59:18 <gmaxwell> wumpus: well it might favor delaying some 0.16 development to happen after this.
+19:59:34 <wumpus> but forward and backporting isn't much different effort and it has to end up in master too
+19:59:39 <gmaxwell> but I don't think there are many PRs already open that would get in the way.
+19:59:49 <jonasschnelli> What about delaying 0.15 for P2SH(P2WPKH) support?
+19:59:54 <wumpus> gmaxwell: in that case we're doing the 0.16 freeze that BlueMatt didn't want :)
+19:59:58 <gmaxwell> jonasschnelli: I'd rather not.
+20:00:13 <wumpus> I'd also prefer not
+20:00:15 <wumpus> 0.15 is almost ready
+20:00:17 <gmaxwell> jonasschnelli: if we wanted to do that, I'd rather we just do 0.15 and then release 0.16 a couple weeks later with it.
+20:00:24 <wumpus> 0.15.1 is better
+20:00:38 <jonasschnelli> Okay
+20:00:56 <wumpus> would be very bad to delay 0.15.0 on a *feature* now, so long after the feature freeze
+20:01:02 <wumpus> espeically one that doens't even have a PR open
+20:01:13 <BlueMatt> *DONG*
+20:01:16 <wumpus> #endmeeting
