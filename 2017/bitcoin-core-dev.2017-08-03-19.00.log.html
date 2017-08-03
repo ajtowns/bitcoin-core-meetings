@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:54</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug  3 19:00:54 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:54</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:06</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:01:20</span><span class="nk"> &lt;sipa&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-8"></a><span class="tm">19:01:36</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-9"></a><span class="tm">19:01:48</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-10"></a><span class="tm">19:01:49</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-11"></a><span class="tm">19:01:50</span><span class="nk"> &lt;wumpus&gt;</span> 0.15.0rc1 is planned for the 6th (next sunday), so let's go over the open issues again
+<a name="l-12"></a><span class="tm">19:02:50</span><span class="nk"> &lt;wumpus&gt;</span> there's not much anymore
+<a name="l-13"></a><span class="tm">19:02:57</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/milestones/0.15.0
+<a name="l-14"></a><span class="tm">19:03:16</span><span class="nk"> &lt;paveljanik&gt;</span> Hi
+<a name="l-15"></a><span class="tm">19:03:17</span><span class="nk"> &lt;wumpus&gt;</span> (and the scripted-diffs are option, and should be done at the last minute to not conflict with anything else)
+<a name="l-16"></a><span class="tm">19:03:46</span><span class="nk"> &lt;wumpus&gt;</span> Keypool topup #10882  is the most complicated PR open still, but should be almost ready
+<a name="l-17"></a><span class="tm">19:03:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+<a name="l-18"></a><span class="tm">19:04:01</span><span class="nk"> &lt;BlueMatt&gt;</span> https://github.com/bitcoin/bitcoin/issues/10977
+<a name="l-19"></a><span class="tm">19:04:02</span><span class="nk"> &lt;BlueMatt&gt;</span> could go
+<a name="l-20"></a><span class="tm">19:04:09</span><span class="nk"> &lt;BlueMatt&gt;</span> (makes test_bitcoin valgrind-better)
+<a name="l-21"></a><span class="tm">19:04:11</span><span class="nk"> &lt;BlueMatt&gt;</span> and is trivial
+<a name="l-22"></a><span class="tm">19:04:32</span><span class="nk"> &lt;jnewbery&gt;</span> yeah, I've been working on 10882 today. Should be able to push my commits in the next hour or two
+<a name="l-23"></a><span class="tm">19:04:34</span><span class="nk"> &lt;wumpus&gt;</span> I'm not really fishing for new things to add to 0.15
+<a name="l-24"></a><span class="tm">19:04:55</span><span class="nk"> &lt;gmaxwell&gt;</span> jnewbery made a suggestion to fix my outstanding concern in review.
+<a name="l-25"></a><span class="tm">19:05:00</span><span class="nk"> &lt;wumpus&gt;</span> but if there are things that could be merged without affecting anything else that's ok
+<a name="l-26"></a><span class="tm">19:05:07</span><span class="nk"> &lt;jtimon&gt;</span> after #10758, #10919 seems simple to review, it's only +14-13
+<a name="l-27"></a><span class="tm">19:05:09</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+<a name="l-28"></a><span class="tm">19:05:10</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+<a name="l-29"></a><span class="tm">19:05:35</span><span class="nk"> &lt;sipa&gt;</span> it's also already marked 0.15
+<a name="l-30"></a><span class="tm">19:05:35</span><span class="nk"> &lt;cfields&gt;</span> i think there's a one-liner that could be used to fix the issue in 10977, if it's deemed too much of a change
+<a name="l-31"></a><span class="tm">19:05:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I'd like to see 10977 fixed! but darn I wish that patch was smaller and easier to review.
+<a name="l-32"></a><span class="tm">19:05:49</span><span class="nk"> &lt;wumpus&gt;</span> yes, just needs some ACKs
+<a name="l-33"></a><span class="tm">19:05:55</span><span class="nk"> &lt;BlueMatt&gt;</span> could be smaller, but is easy to review imo
+<a name="l-34"></a><span class="tm">19:05:57</span><span class="nk"> &lt;sdaftuar&gt;</span> there's one commit in #10919 that i'm hoping others can review/ack
+<a name="l-35"></a><span class="tm">19:05:59</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+<a name="l-36"></a><span class="tm">19:07:14</span><span class="nk"> &lt;wumpus&gt;</span> which one?
+<a name="l-37"></a><span class="tm">19:07:21</span><span class="nk"> &lt;BlueMatt&gt;</span> the first, i believe
+<a name="l-38"></a><span class="tm">19:07:39</span><span class="nk"> &lt;sdaftuar&gt;</span> yep
+<a name="l-39"></a><span class="tm">19:08:13</span><span class="nk"> &lt;wumpus&gt;</span> the threadgroup one? seems obviously sane to me, though it does mean things need to be interrupted too
+<a name="l-40"></a><span class="tm">19:08:45</span><span class="nk"> &lt;BlueMatt&gt;</span> well i think the point is that there is a comment there that notes we dont do it "because dragons"
+<a name="l-41"></a><span class="tm">19:09:00</span><span class="nk"> &lt;BlueMatt&gt;</span> i believe strongly that it is safe, and qt does it, but "dragons"
+<a name="l-42"></a><span class="tm">19:09:04</span><span class="nk"> &lt;wumpus&gt;</span> it is very bad practice not to wait for threads before exiting
+<a name="l-43"></a><span class="tm">19:09:37</span><span class="nk"> &lt;wumpus&gt;</span> yes, qt does it already, it's somewhat less scared of dragons it seems :)
+<a name="l-44"></a><span class="tm">19:09:51</span><span class="nk"> &lt;BlueMatt&gt;</span> isnt qt's logo a dragon or something?
+<a name="l-45"></a><span class="tm">19:10:08</span><span class="nk"> &lt;cfields&gt;</span> heh, think you're thinking of kde
+<a name="l-46"></a><span class="tm">19:10:14</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, yea
+<a name="l-47"></a><span class="tm">19:10:22</span><span class="nk"> &lt;wumpus&gt;</span> (e.g. due to qt's handling of shutdown we also needed #10832)
+<a name="l-48"></a><span class="tm">19:10:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10832 | init: Factor out AppInitLockDataDirectory and fix startup core dump issue by laanwj · Pull Request #10832 · bitcoin/bitcoin · GitHub
+<a name="l-49"></a><span class="tm">19:10:35</span><span class="nk"> &lt;wumpus&gt;</span> anyhow that commit looks good to me, I don't think there's any dragons left
+<a name="l-50"></a><span class="tm">19:11:24</span><span class="nk"> &lt;sdaftuar&gt;</span> sounds-good-to-me-ack
+<a name="l-51"></a><span class="tm">19:12:01</span><span class="nk"> &lt;wumpus&gt;</span> ok, wow, that seems to be all that is left between here and 0.15.0rc1
+<a name="l-52"></a><span class="tm">19:12:13</span><span class="nk"> &lt;BlueMatt&gt;</span> !
+<a name="l-53"></a><span class="tm">19:12:19</span><span class="nk"> &lt;cfields&gt;</span> :)
+<a name="l-54"></a><span class="tm">19:13:10</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> i had an assert crash this morning, i imagine it'll be a simple bug.. hopefully i'll have a PR this afternoon, just haven't had time to look at it yet
+<a name="l-55"></a><span class="tm">19:13:11</span><span class="nk"> &lt;wumpus&gt;</span> (there's another PR #10971 by cfields for fixing depends builds, but I don't think that needs disussion, it's a one-liner in the build system)
+<a name="l-56"></a><span class="tm">19:13:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10971 | build: fix missing warnings and sse42 in depends builds by theuni · Pull Request #10971 · bitcoin/bitcoin · GitHub
+<a name="l-57"></a><span class="tm">19:13:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> ouch, can you open an issue to track it?
+<a name="l-58"></a><span class="tm">19:13:48</span><span class="nk"> &lt;cfields&gt;</span> yea, nothing major
+<a name="l-59"></a><span class="tm">19:14:06</span><span class="nk"> &lt;morcos&gt;</span> yes will open one or the other shortly
+<a name="l-60"></a><span class="tm">19:14:29</span><span class="nk"> &lt;wumpus&gt;</span> ok, thanks
+<a name="l-61"></a><span class="tm">19:15:06</span><span class="nk"> &lt;wumpus&gt;</span> do we need any updates to bips.md for 0.15?
+<a name="l-62"></a><span class="tm">19:15:18</span><span class="nk"> &lt;sipa&gt;</span> hmm, good question
+<a name="l-63"></a><span class="tm">19:15:19</span><span class="nk"> &lt;wumpus&gt;</span> (that's the item in the release process that still has a ? here)
+<a name="l-64"></a><span class="tm">19:15:46</span><span class="nk"> &lt;BlueMatt&gt;</span> is there a bip that recommends hd split?
+<a name="l-65"></a><span class="tm">19:15:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> bip32? :p
+<a name="l-66"></a><span class="tm">19:16:15</span><span class="nk"> &lt;wumpus&gt;</span> there's also "Update `src/chainparams.cpp` chainTxData with statistics about the transaction count and rate." left
+<a name="l-67"></a><span class="tm">19:16:29</span><span class="nk"> &lt;sipa&gt;</span> want me to do that?
+<a name="l-68"></a><span class="tm">19:16:31</span><span class="nk"> &lt;wumpus&gt;</span> and the BLOCK_CHAIN_SIZE, but that's straightforward
+<a name="l-69"></a><span class="tm">19:16:49</span><span class="nk"> &lt;wumpus&gt;</span> yes, if you know what's exactly to be done there that'd help :)
+<a name="l-70"></a><span class="tm">19:17:01</span><span class="nk"> &lt;sipa&gt;</span> sure
+<a name="l-71"></a><span class="tm">19:18:38</span><span class="nk"> &lt;wumpus&gt;</span> thanks
+<a name="l-72"></a><span class="tm">19:18:55</span><span class="nk"> &lt;sipa&gt;</span> short topic: bip173 unit tests issue
+<a name="l-73"></a><span class="tm">19:19:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bip173 unit tests issue</span>
+<a name="l-74"></a><span class="tm">19:19:13</span><span class="nk"> &lt;jnewbery&gt;</span> There are a few more things for release notes
+<a name="l-75"></a><span class="tm">19:19:43</span><span class="nk"> &lt;sipa&gt;</span> so, bip173 specifies how to translate address strings to witness version/program, and defers to bip141 for encoding that to scriptPubKeys
+<a name="l-76"></a><span class="tm">19:19:59</span><span class="nk"> &lt;sipa&gt;</span> however, the unit tests actually test the whole step from address to scriptPubKey
+<a name="l-77"></a><span class="tm">19:20:07</span><span class="nk"> &lt;sipa&gt;</span> turns out, incorrectly
+<a name="l-78"></a><span class="tm">19:20:26</span><span class="nk"> &lt;sipa&gt;</span> the tests and reference implementation (of the tests) was wrong, and every reimplementation copied it
+<a name="l-79"></a><span class="tm">19:21:05</span><span class="nk"> &lt;gmaxwell&gt;</span> The the error was that it confused hex and dec values.
+<a name="l-80"></a><span class="tm">19:21:07</span><span class="nk"> &lt;sipa&gt;</span> i've made a PR to update the BIP, and all reference implementations i could find, but this is kind of scary
+<a name="l-81"></a><span class="tm">19:21:17</span><span class="nk"> &lt;cfields&gt;</span> corner-cases wrong? or in all cases?
+<a name="l-82"></a><span class="tm">19:21:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> agreed, but release notes need to be finished before -final, not -rc1, so it's not a blocker
+<a name="l-83"></a><span class="tm">19:21:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> it assumed OP_n was encoded as 0x80 + n, rather than 80 + n
+<a name="l-84"></a><span class="tm">19:21:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> so they generate garbage scripts?
+<a name="l-85"></a><span class="tm">19:22:01</span><span class="nk"> &lt;jnewbery&gt;</span> got it. Thanks wumpus
+<a name="l-86"></a><span class="tm">19:22:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> the tests, yes
+<a name="l-87"></a><span class="tm">19:22:26</span><span class="nk"> &lt;sipa&gt;</span> the code itself doesn't contain a conversion to scriptPubKey at all, only a conversion to witness version/program
+<a name="l-88"></a><span class="tm">19:22:27</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> It was wrong for witness program versions other than 0
+<a name="l-89"></a><span class="tm">19:22:34</span><span class="nk"> &lt;cfields&gt;</span> yikes
+<a name="l-90"></a><span class="tm">19:22:39</span><span class="nk"> &lt;wumpus&gt;</span> oops
+<a name="l-91"></a><span class="tm">19:22:44</span><span class="nk"> &lt;gmaxwell&gt;</span> so this could happily have been deployed and started causing problems when v1 was used.
+<a name="l-92"></a><span class="tm">19:22:47</span><span class="nk"> &lt;sipa&gt;</span> but the tests contain a version/program -&gt; scriptPubKey converter in order to be able the test
+<a name="l-93"></a><span class="tm">19:23:05</span><span class="nk"> &lt;BlueMatt&gt;</span> well if it generated garbage scripts, not much that can be done but fix it
+<a name="l-94"></a><span class="tm">19:23:13</span><span class="nk"> &lt;BlueMatt&gt;</span> are you asking if we should like change the prefix now?
+<a name="l-95"></a><span class="tm">19:23:23</span><span class="nk"> &lt;sipa&gt;</span> no
+<a name="l-96"></a><span class="tm">19:23:28</span><span class="nk"> &lt;sipa&gt;</span> just raising awareness
+<a name="l-97"></a><span class="tm">19:23:32</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, cool
+<a name="l-98"></a><span class="tm">19:23:38</span><span class="nk"> &lt;sdaftuar&gt;</span> perhaps an email to the -dev list would also be good?
+<a name="l-99"></a><span class="tm">19:23:38</span><span class="nk"> &lt;gmaxwell&gt;</span> Also, it highlighes an implementation footgun, I suggested some warning text in the BIP itself.   One protection here is that the particular error in sipas' code would result in non-standard outputs.
+<a name="l-100"></a><span class="tm">19:23:42</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> yes
+<a name="l-101"></a><span class="tm">19:24:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I did make a suggestion that we consider changing it to break the checksum, but there doesn't appear to be reason to.
+<a name="l-102"></a><span class="tm">19:24:18</span><span class="nk"> &lt;BlueMatt&gt;</span> ok
+<a name="l-103"></a><span class="tm">19:24:24</span><span class="nk"> &lt;morcos&gt;</span> just to be clear what we are talking about, we're not talking about anything merged into Core, but code referenced from the BIP
+<a name="l-104"></a><span class="tm">19:24:25</span><span class="nk"> &lt;BlueMatt&gt;</span> awareness raised!
+<a name="l-105"></a><span class="tm">19:24:27</span><span class="nk"> &lt;gmaxwell&gt;</span> Especially since if someone had slavishly reimplemented the error in the reference, they'd produce non-standard outputs.
+<a name="l-106"></a><span class="tm">19:24:31</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> indeed.
+<a name="l-107"></a><span class="tm">19:24:52</span><span class="nk"> &lt;morcos&gt;</span> still, a bit scary
+<a name="l-108"></a><span class="tm">19:25:06</span><span class="nk"> &lt;sipa&gt;</span> (though i'd like to PR it to core soon - apparently last week it was suggested to do that in 0.15.1?)
+<a name="l-109"></a><span class="tm">19:25:21</span><span class="nk"> &lt;gmaxwell&gt;</span> Don't start a debate about the name of the version. :P
+<a name="l-110"></a><span class="tm">19:25:25</span><span class="nk"> &lt;sipa&gt;</span> haha
+<a name="l-111"></a><span class="tm">19:25:42</span><span class="nk"> &lt;sipa&gt;</span> (though i'd like to PR it to core soon - apparently last week it was suggested to do that in some soon next version)
+<a name="l-112"></a><span class="tm">19:25:51</span><span class="nk"> &lt;gmaxwell&gt;</span> It also suggests that BIP173 support's test plan should include testing it with other witness version numbers. :)
+<a name="l-113"></a><span class="tm">19:25:51</span><span class="nk"> &lt;sdaftuar&gt;</span> prs welcome :)
+<a name="l-114"></a><span class="tm">19:26:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> well fix the testing shortfalls I found in the C++ version please. :)
+<a name="l-115"></a><span class="tm">19:26:17</span><span class="nk"> &lt;wumpus&gt;</span> PRs to improve the tests are always welcome anyhow
+<a name="l-116"></a><span class="tm">19:26:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> of course
+<a name="l-117"></a><span class="tm">19:26:23</span><span class="nk"> &lt;sipa&gt;</span> anyway, end topic
+<a name="l-118"></a><span class="tm">19:26:28</span><span class="nk"> &lt;wumpus&gt;</span> ok, other topics?
+<a name="l-119"></a><span class="tm">19:28:04</span><span class="nk"> &lt;gmaxwell&gt;</span> uh
+<a name="l-120"></a><span class="tm">19:28:05</span><span class="nk"> &lt;gmaxwell&gt;</span> yes.
+<a name="l-121"></a><span class="tm">19:28:14</span><span class="nk"> &lt;gmaxwell&gt;</span> So service bits and altcoins.
+<a name="l-122"></a><span class="tm">19:28:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">service bits and altcoins</span>
+<a name="l-123"></a><span class="tm">19:28:29</span><span class="nk"> &lt;BlueMatt&gt;</span> wait are altcoins using serice bits now?
+<a name="l-124"></a><span class="tm">19:28:41</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, right 2x did
+<a name="l-125"></a><span class="tm">19:28:43</span><span class="nk"> &lt;gmaxwell&gt;</span> Bcash is using our port, p2pmagic, etc. They distinguish themselve with a blinking service bit.
+<a name="l-126"></a><span class="tm">19:28:44</span><span class="nk"> &lt;BlueMatt&gt;</span> what is wrong with people
+<a name="l-127"></a><span class="tm">19:28:54</span><span class="nk"> &lt;gmaxwell&gt;</span> (also 2x will do this too it seems)
+<a name="l-128"></a><span class="tm">19:29:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> can someone open a pr to change this? or do they refuse to work properly?
+<a name="l-129"></a><span class="tm">19:29:04</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> i was under the impression that they were planning to change the magic soon
+<a name="l-130"></a><span class="tm">19:29:09</span><span class="nk"> &lt;gmaxwell&gt;</span> We mostly ban them when they send us transactions or headers.
+<a name="l-131"></a><span class="tm">19:29:19</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> not when I looked three days ago, maybe now.
+<a name="l-132"></a><span class="tm">19:29:36</span><span class="nk"> &lt;karelb&gt;</span> OK, maybe I will ask here. What format are the bitcoin .dat files in data/blocks/*.dat? is that leveldb? what is it exactly?
+<a name="l-133"></a><span class="tm">19:29:47</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">karelb:</span> meeting, not now
+<a name="l-134"></a><span class="tm">19:29:47</span><span class="nk"> &lt;gmaxwell&gt;</span> If so then the issue becomes moot, otherwise I was going to suggest we ban these bits on connect. The downside is we lose the bits basically forever.
+<a name="l-135"></a><span class="tm">19:29:48</span><span class="nk"> &lt;sipa&gt;</span> they are p2p network format
+<a name="l-136"></a><span class="tm">19:29:51</span><span class="nk"> &lt;karelb&gt;</span> ok sorry
+<a name="l-137"></a><span class="tm">19:29:52</span><span class="nk"> &lt;sipa&gt;</span> oops, yes, layer
+<a name="l-138"></a><span class="tm">19:30:02</span><span class="nk"> &lt;karelb&gt;</span> sorry going out
+<a name="l-139"></a><span class="tm">19:30:14 </span><span class="nka">* karelb</span> <span class="ac">apologizes</span>
+<a name="l-140"></a><span class="tm">19:30:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, first should be someone bludgening them to work properly
+<a name="l-141"></a><span class="tm">19:30:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> before we start burning service bits
+<a name="l-142"></a><span class="tm">19:30:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> people have been since before they started. Obviously I'll go monitor but I'm not super confident.
+<a name="l-143"></a><span class="tm">19:30:52</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> why not just ban for eg the next 3 months or something?
+<a name="l-144"></a><span class="tm">19:30:55</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">BlueMatt:</span> gmaxwell IIRC they will be changing their magic and port
+<a name="l-145"></a><span class="tm">19:30:56</span><span class="nk"> &lt;sdaftuar&gt;</span> if we need to do anything at all
+<a name="l-146"></a><span class="tm">19:31:03</span><span class="nk"> &lt;achow101&gt;</span> dunno about 2x
+<a name="l-147"></a><span class="tm">19:31:04</span><span class="nk"> &lt;gmaxwell&gt;</span> One reason burning service bits may not be so bad is because we are due to replace the addr message for i2p and NG-HS support.
+<a name="l-148"></a><span class="tm">19:31:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> what about 2x?
+<a name="l-149"></a><span class="tm">19:31:22</span><span class="nk"> &lt;gmaxwell&gt;</span> So we could at that point just define a new service flagging mechenism.
+<a name="l-150"></a><span class="tm">19:31:26</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yea, does anyone have a spec for that?
+<a name="l-151"></a><span class="tm">19:31:33</span><span class="nk"> &lt;gmaxwell&gt;</span> Not yet.
+<a name="l-152"></a><span class="tm">19:31:36</span><span class="nk"> &lt;BlueMatt&gt;</span> k
+<a name="l-153"></a><span class="tm">19:31:51</span><span class="nk"> &lt;gmaxwell&gt;</span> Well if they're finally going to change it, it becomes moot.. but the same issue arises with 2x.
+<a name="l-154"></a><span class="tm">19:32:16</span><span class="nk"> &lt;wumpus&gt;</span> how would a service bit help here?
+<a name="l-155"></a><span class="tm">19:32:19</span><span class="nk"> &lt;BlueMatt&gt;</span> well someone needs to bludgen the 2x folks to change it, otherwise we start banning for a few months
+<a name="l-156"></a><span class="tm">19:32:20</span><span class="nk"> &lt;wumpus&gt;</span> just ban everyone without NODE_SEGWIT? :p
+<a name="l-157"></a><span class="tm">19:32:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> we still want to support non-upgraded nodes.
+<a name="l-158"></a><span class="tm">19:32:48</span><span class="nk"> &lt;wumpus&gt;</span> but they won't have any new version bit either
+<a name="l-159"></a><span class="tm">19:32:58</span><span class="nk"> &lt;wumpus&gt;</span> that was my point, not to suggest that seriously :)
+<a name="l-160"></a><span class="tm">19:33:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> oh no, you misunderstand: ABC and 2x both set randomly generated service bits.
+<a name="l-161"></a><span class="tm">19:33:23</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> eh?
+<a name="l-162"></a><span class="tm">19:33:26</span><span class="nk"> &lt;BlueMatt&gt;</span> I think sdaftuar's suggestion is reasonable, assuming they refuse to do something sane
+<a name="l-163"></a><span class="tm">19:33:27</span><span class="nk"> &lt;gmaxwell&gt;</span> (which they've helpfully ignored the gigantic comment in the code that tells you to at least inform the list.)
+<a name="l-164"></a><span class="tm">19:33:44</span><span class="nk"> &lt;cfields&gt;</span> oh
+<a name="l-165"></a><span class="tm">19:33:45</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I hadn't considered a time limited ban. Good point.
+<a name="l-166"></a><span class="tm">19:33:46</span><span class="nk"> &lt;wumpus&gt;</span> oh you mean banning everything that sets their version bit?
+<a name="l-167"></a><span class="tm">19:33:53</span><span class="nk"> &lt;wumpus&gt;</span> yes, that'd be doable
+<a name="l-168"></a><span class="tm">19:33:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yes, with a time limit
+<a name="l-169"></a><span class="tm">19:33:59</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well disconnecting, not banning.
+<a name="l-170"></a><span class="tm">19:34:06</span><span class="nk"> &lt;BlueMatt&gt;</span> nah, ban for 3 months
+<a name="l-171"></a><span class="tm">19:34:08</span><span class="nk"> &lt;gmaxwell&gt;</span> Okay thanks, Time limit makes sense. duh.
+<a name="l-172"></a><span class="tm">19:34:16</span><span class="nk"> &lt;wumpus&gt;</span> temporarily, yes
+<a name="l-173"></a><span class="tm">19:34:24</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> opened issue #10981, easy fix, but i'll let someone else do the PR as i'm not in the office for next week.  please tag with 0.15.
+<a name="l-174"></a><span class="tm">19:34:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10981 | resendwallettransactions asserts if walletbroadcast=0 · Issue #10981 · bitcoin/bitcoin · GitHub
+<a name="l-175"></a><span class="tm">19:34:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> banning creates problems when you run multiple things on one machine.
+<a name="l-176"></a><span class="tm">19:34:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> meh
+<a name="l-177"></a><span class="tm">19:34:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> thanks, will tag later (not logged in now)
+<a name="l-178"></a><span class="tm">19:35:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> they refused to do something that wasnt astoundingly broken, if it means their users get fucked, its not really my problem
+<a name="l-179"></a><span class="tm">19:35:13</span><span class="nk"> &lt;wumpus&gt;</span> (or if someone else can do it)
+<a name="l-180"></a><span class="tm">19:35:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> so chaincode ip will be banned.  nice.
+<a name="l-181"></a><span class="tm">19:35:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> -connect=altcoin.dns.seed
+<a name="l-182"></a><span class="tm">19:35:38</span><span class="nk"> &lt;BlueMatt&gt;</span> :)
+<a name="l-183"></a><span class="tm">19:36:07</span><span class="nk"> &lt;wumpus&gt;</span> agree that banning goes too far, just not allow connections
+<a name="l-184"></a><span class="tm">19:36:13</span><span class="nk"> &lt;sipa&gt;</span> maye just disconnect?
+<a name="l-185"></a><span class="tm">19:36:15</span><span class="nk"> &lt;wumpus&gt;</span> there's no point in banning everything after that
+<a name="l-186"></a><span class="tm">19:36:16</span><span class="nk"> &lt;gmaxwell&gt;</span> what? no. matt, doing that will ban Bitcoin Core users when someone on the same IP ran crapware.
+<a name="l-187"></a><span class="tm">19:36:19</span><span class="nk"> &lt;jtimon&gt;</span> perhaps better for after the meeting, but I'm still not sure why #8498 wasn't suitable for 0.15 ...
+<a name="l-188"></a><span class="tm">19:36:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-189"></a><span class="tm">19:36:55</span><span class="nk"> &lt;gmaxwell&gt;</span> To be clear this is important because these useless altcoin nodes waste connection slots, and are potentially at risk of gobbling up our initial headers fetch.
+<a name="l-190"></a><span class="tm">19:36:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> ugh
+<a name="l-191"></a><span class="tm">19:37:04</span><span class="nk"> &lt;BlueMatt&gt;</span> fine, disconnect
+<a name="l-192"></a><span class="tm">19:37:15</span><span class="nk"> &lt;BlueMatt&gt;</span> at some point someone is gonna create some altcoin crapware that reconnects agressively, though
+<a name="l-193"></a><span class="tm">19:37:16</span><span class="nk"> &lt;wumpus&gt;</span> disconnect up until a certain date
+<a name="l-194"></a><span class="tm">19:37:20</span><span class="nk"> &lt;BlueMatt&gt;</span> some spv forks probably will
+<a name="l-195"></a><span class="tm">19:37:23</span><span class="nk"> &lt;wumpus&gt;</span> what would be that point?
+<a name="l-196"></a><span class="tm">19:37:33</span><span class="nk"> &lt;BlueMatt&gt;</span> because crapware
+<a name="l-197"></a><span class="tm">19:37:34</span><span class="nk"> &lt;wumpus&gt;</span> it would disconnect immediately after the version message
+<a name="l-198"></a><span class="tm">19:37:37</span><span class="nk"> &lt;gmaxwell&gt;</span> Also, looks like ABC has some kind of deadlocking bug, because I see a few of them just going unresponsive to anything but pings, which delays them getting banned for being on the wrong network.
+<a name="l-199"></a><span class="tm">19:37:38</span><span class="nk"> &lt;morcos&gt;</span> +1 disconnect up to certain date, but i think it should be 12 mos and not 3
+<a name="l-200"></a><span class="tm">19:37:41</span><span class="nk"> &lt;BlueMatt&gt;</span> do not make assumptions about crapware working in a sane way
+<a name="l-201"></a><span class="tm">19:37:42</span><span class="nk"> &lt;wumpus&gt;</span> banning would ban 1 message sooner
+<a name="l-202"></a><span class="tm">19:37:47</span><span class="nk"> &lt;morcos&gt;</span> no reason we'll need that next service bit right away
+<a name="l-203"></a><span class="tm">19:37:59</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> sure, that sounds fine
+<a name="l-204"></a><span class="tm">19:38:04</span><span class="nk"> &lt;wumpus&gt;</span> s/ban/disconnect
+<a name="l-205"></a><span class="tm">19:38:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> seems reasonable
+<a name="l-206"></a><span class="tm">19:38:19</span><span class="nk"> &lt;gmaxwell&gt;</span> ack on disconnect based on service bits for 12months or similar.
+<a name="l-207"></a><span class="tm">19:38:38</span><span class="nk"> &lt;wumpus&gt;</span> unless we start adding banned nodes to the local firewall, there's no serious difference between disconnecting on connect or after the version message
+<a name="l-208"></a><span class="tm">19:38:51</span><span class="nk"> &lt;gmaxwell&gt;</span> though in general, one of these clowns is going to squat service buts we're in the process of trying to use. :( I have no suggestion on dealing with that.
+<a name="l-209"></a><span class="tm">19:39:12</span><span class="nk"> &lt;morcos&gt;</span> but i think it'd be worth a quick email/github message to jgarzik to check that they aren't imminently changing their plan
+<a name="l-210"></a><span class="tm">19:39:14</span><span class="nk"> &lt;BlueMatt&gt;</span> lets deal with that when we get there
+<a name="l-211"></a><span class="tm">19:39:16</span><span class="nk"> &lt;gmaxwell&gt;</span> s/buts/bits/
+<a name="l-212"></a><span class="tm">19:39:23</span><span class="nk"> &lt;wumpus&gt;</span> well if they change the magic and port we can stop worrying about the service bits they claim
+<a name="l-213"></a><span class="tm">19:39:31</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yes, as I stated previously we should tell these guys to change network magic *first*
+<a name="l-214"></a><span class="tm">19:39:33</span><span class="nk"> &lt;wumpus&gt;</span> also we could at that point check for NODE_SEGWIT + our service bit
+<a name="l-215"></a><span class="tm">19:39:34</span><span class="nk"> &lt;morcos&gt;</span> yes but what if they change to a different service bit
+<a name="l-216"></a><span class="tm">19:39:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> there is some PR where people have been arguing for ages, about this, so I'm doubtful but sure.
+<a name="l-217"></a><span class="tm">19:39:54</span><span class="nk"> &lt;morcos&gt;</span> might as well ask first and tell him what we're planning on doing
+<a name="l-218"></a><span class="tm">19:39:57</span><span class="nk"> &lt;wumpus&gt;</span> change to a different version bit? what would that accomplish?
+<a name="l-219"></a><span class="tm">19:40:07</span><span class="nk"> &lt;morcos&gt;</span> whooo knows?!!
+<a name="l-220"></a><span class="tm">19:40:11</span><span class="nk"> &lt;gmaxwell&gt;</span> At the end we're doing them a favor, there are a lot more bitcoin nodes than random altcoin nodes, so these incorrect connections tend to cause them a lot more problems than us.
+<a name="l-221"></a><span class="tm">19:40:22</span><span class="nk"> &lt;BlueMatt&gt;</span> yup
+<a name="l-222"></a><span class="tm">19:40:27</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, probalem solved
+<a name="l-223"></a><span class="tm">19:40:34</span><span class="nk"> &lt;BlueMatt&gt;</span> who wants to go tell them that we're gonna disconnect them?
+<a name="l-224"></a><span class="tm">19:40:39</span><span class="nk"> &lt;wumpus&gt;</span> if avoiding detection is the point, they could better stop setting their version bti at that point is better than randomly cycling it according to moon phases
+<a name="l-225"></a><span class="tm">19:41:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> perhaps we should just open the disconnect PR and ping them to comment on it?
+<a name="l-226"></a><span class="tm">19:41:06</span><span class="nk"> &lt;wumpus&gt;</span> bleh
+<a name="l-227"></a><span class="tm">19:41:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> wfm, but seems like someone should open an issue
+<a name="l-228"></a><span class="tm">19:41:18</span><span class="nk"> &lt;BlueMatt&gt;</span> I vote morcos does it
+<a name="l-229"></a><span class="tm">19:41:39</span><span class="nk"> &lt;gmaxwell&gt;</span> throw him to the wolves... enh? what did he do so wrong?
+<a name="l-230"></a><span class="tm">19:41:42</span><span class="nk"> &lt;BlueMatt&gt;</span> actually, it was sdaftuar's idea, he can do it
+<a name="l-231"></a><span class="tm">19:41:49</span><span class="nk"> &lt;gmaxwell&gt;</span> throw him to the wolves... enh? what did he do so wrong?
+<a name="l-232"></a><span class="tm">19:42:04</span><span class="nk"> &lt;wumpus&gt;</span> seems we'd rather not invite certain discussions to our github but eh
+<a name="l-233"></a><span class="tm">19:42:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> fine, I'll deal with it
+<a name="l-234"></a><span class="tm">19:42:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> good, I know what you did so wrong. :P
+<a name="l-235"></a><span class="tm">19:43:04</span><span class="nk"> &lt;jtimon&gt;</span> but if the bits are selected randomly, how does burning them help?
+<a name="l-236"></a><span class="tm">19:43:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> s/randomly/arbitrarily/
+<a name="l-237"></a><span class="tm">19:43:38</span><span class="nk"> &lt;wumpus&gt;</span> they aren't selected randomly, they're not doing service bit hopping or something like that
+<a name="l-238"></a><span class="tm">19:43:42</span><span class="nk"> &lt;sipa&gt;</span> they're not different every time
+<a name="l-239"></a><span class="tm">19:43:50</span><span class="nk"> &lt;sipa&gt;</span> they just arbitrarily picked one
+<a name="l-240"></a><span class="tm">19:43:50</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> I see, thanks
+<a name="l-241"></a><span class="tm">19:43:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> I don't follow your question. The altcoin efforts have selected randomly but hardcoded the result or their fair dice roll. :)
+<a name="l-242"></a><span class="tm">19:44:13</span><span class="nk"> &lt;morcos&gt;</span> +1 sdaftuar doing it...  i'm trying to pack
+<a name="l-243"></a><span class="tm">19:44:13</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">gmaxwell:</span> yeah, got it
+<a name="l-244"></a><span class="tm">19:44:16</span><span class="nk"> &lt;gmaxwell&gt;</span> and just failed to follow the giant comment in the code to make a public announcement about it even.
+<a name="l-245"></a><span class="tm">19:44:22</span><span class="nk"> &lt;wumpus&gt;</span> e.g. they have monkeys throw darts to select one when they need it, not every connection
+<a name="l-246"></a><span class="tm">19:44:51</span><span class="nk"> &lt;morcos&gt;</span> oh nm, or bluematt
+<a name="l-247"></a><span class="tm">19:45:22</span><span class="nk"> &lt;BlueMatt&gt;</span> I think morcos is clearly just trying to throw anyone else under the bus, sounds like he should do it, then :p
+<a name="l-248"></a><span class="tm">19:45:25</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, next topic?
+<a name="l-249"></a><span class="tm">19:45:49</span><span class="nk"> &lt;gmaxwell&gt;</span> ;;action bluematt goes under the bus
+<a name="l-250"></a><span class="tm">19:45:50 </span><span class="nka">* gribble</span> <span class="ac">bluematt goes under the bus</span>
+<a name="l-251"></a><span class="tm">19:46:02</span><span class="nk"> &lt;gmaxwell&gt;</span> see, the robot overlords agree
+<a name="l-252"></a><span class="tm">19:46:04</span><span class="nk"> &lt;BlueMatt&gt;</span> ;;action goes under the bus
+<a name="l-253"></a><span class="tm">19:46:04 </span><span class="nka">* gribble</span> <span class="ac">goes under the bus</span>
+<a name="l-254"></a><span class="tm">19:46:17</span><span class="nk"> &lt;achow101&gt;</span> we can't/shouldn't ban 2x peers until they fork
+<a name="l-255"></a><span class="tm">19:46:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> yes we should
+<a name="l-256"></a><span class="tm">19:46:40</span><span class="nk"> &lt;wumpus&gt;</span> I think this was mainly about BCC which already forked
+<a name="l-257"></a><span class="tm">19:46:51</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">BlueMatt:</span> why? we won't be giving them invalid stuff until they fork, and vice versa
+<a name="l-258"></a><span class="tm">19:47:13</span><span class="nk"> &lt;gmaxwell&gt;</span> hash that out outside of the meeting plz.
+<a name="l-259"></a><span class="tm">19:47:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> on the other hand, adding logic to the code to check whether they've forked would complicate things more than just disconnecting on a service bit
+<a name="l-260"></a><span class="tm">19:47:29</span><span class="nk"> &lt;wumpus&gt;</span> yeah
+<a name="l-261"></a><span class="tm">19:47:40</span><span class="nk"> &lt;BlueMatt&gt;</span> next topic?
+<a name="l-262"></a><span class="tm">19:47:46</span><span class="nk"> &lt;gmaxwell&gt;</span> But in general if someone is going to make broken software, we can only go so far to accomidate it.
+<a name="l-263"></a><span class="tm">19:47:49</span><span class="nk"> &lt;wumpus&gt;</span> we've run out of topics
+<a name="l-264"></a><span class="tm">19:48:00</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> we know when they activate. at block X start banning them
+<a name="l-265"></a><span class="tm">19:48:18</span><span class="nk"> &lt;gmaxwell&gt;</span> I doubt we do.
+<a name="l-266"></a><span class="tm">19:48:31</span><span class="nk"> &lt;jtimon&gt;</span> perhaps better for after the meeting, but I'm still not sure why #8498 wasn't suitable for 0.15 ...
+<a name="l-267"></a><span class="tm">19:48:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> I'm not jumping through hoops to make sure altcoins stay in consensus until *right before* they fork...
+<a name="l-268"></a><span class="tm">19:48:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-269"></a><span class="tm">19:48:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

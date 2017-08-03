@@ -1,0 +1,269 @@
+19:00:54 <wumpus> #startmeeting
+19:00:54 <lightningbot> Meeting started Thu Aug  3 19:00:54 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:54 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:06 <achow101> hi
+19:01:18 <jonasschnelli> hi
+19:01:20 <sipa> hi
+19:01:24 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:36 <kanzure> hi.
+19:01:48 <jtimon> hi
+19:01:49 <cfields> hi
+19:01:50 <wumpus> 0.15.0rc1 is planned for the 6th (next sunday), so let's go over the open issues again
+19:02:50 <wumpus> there's not much anymore
+19:02:57 <wumpus> https://github.com/bitcoin/bitcoin/milestones/0.15.0
+19:03:16 <paveljanik> Hi
+19:03:17 <wumpus> (and the scripted-diffs are option, and should be done at the last minute to not conflict with anything else)
+19:03:46 <wumpus> Keypool topup #10882  is the most complicated PR open still, but should be almost ready
+19:03:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Keypool topup by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:04:01 <BlueMatt> https://github.com/bitcoin/bitcoin/issues/10977
+19:04:02 <BlueMatt> could go
+19:04:09 <BlueMatt> (makes test_bitcoin valgrind-better)
+19:04:11 <BlueMatt> and is trivial
+19:04:32 <jnewbery> yeah, I've been working on 10882 today. Should be able to push my commits in the next hour or two
+19:04:34 <wumpus> I'm not really fishing for new things to add to 0.15
+19:04:55 <gmaxwell> jnewbery made a suggestion to fix my outstanding concern in review.
+19:05:00 <wumpus> but if there are things that could be merged without affecting anything else that's ok
+19:05:07 <jtimon> after #10758, #10919 seems simple to review, it's only +14-13
+19:05:09 <gribble> https://github.com/bitcoin/bitcoin/issues/10758 | Fix some chainstate-init-order bugs. by TheBlueMatt · Pull Request #10758 · bitcoin/bitcoin · GitHub
+19:05:10 <gribble> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+19:05:35 <sipa> it's also already marked 0.15
+19:05:35 <cfields> i think there's a one-liner that could be used to fix the issue in 10977, if it's deemed too much of a change
+19:05:41 <gmaxwell> BlueMatt: I'd like to see 10977 fixed! but darn I wish that patch was smaller and easier to review.
+19:05:49 <wumpus> yes, just needs some ACKs
+19:05:55 <BlueMatt> could be smaller, but is easy to review imo
+19:05:57 <sdaftuar> there's one commit in #10919 that i'm hoping others can review/ack
+19:05:59 <gribble> https://github.com/bitcoin/bitcoin/issues/10919 | Fix more init bugs. by TheBlueMatt · Pull Request #10919 · bitcoin/bitcoin · GitHub
+19:07:14 <wumpus> which one?
+19:07:21 <BlueMatt> the first, i believe
+19:07:39 <sdaftuar> yep
+19:08:13 <wumpus> the threadgroup one? seems obviously sane to me, though it does mean things need to be interrupted too
+19:08:45 <BlueMatt> well i think the point is that there is a comment there that notes we dont do it "because dragons"
+19:09:00 <BlueMatt> i believe strongly that it is safe, and qt does it, but "dragons"
+19:09:04 <wumpus> it is very bad practice not to wait for threads before exiting
+19:09:37 <wumpus> yes, qt does it already, it's somewhat less scared of dragons it seems :)
+19:09:51 <BlueMatt> isnt qt's logo a dragon or something?
+19:10:08 <cfields> heh, think you're thinking of kde
+19:10:14 <BlueMatt> oh, yea
+19:10:22 <wumpus> (e.g. due to qt's handling of shutdown we also needed #10832)
+19:10:24 <gribble> https://github.com/bitcoin/bitcoin/issues/10832 | init: Factor out AppInitLockDataDirectory and fix startup core dump issue by laanwj · Pull Request #10832 · bitcoin/bitcoin · GitHub
+19:10:35 <wumpus> anyhow that commit looks good to me, I don't think there's any dragons left
+19:11:24 <sdaftuar> sounds-good-to-me-ack
+19:12:01 <wumpus> ok, wow, that seems to be all that is left between here and 0.15.0rc1
+19:12:13 <BlueMatt> !
+19:12:19 <cfields> :)
+19:13:10 <morcos> wumpus: i had an assert crash this morning, i imagine it'll be a simple bug.. hopefully i'll have a PR this afternoon, just haven't had time to look at it yet
+19:13:11 <wumpus> (there's another PR #10971 by cfields for fixing depends builds, but I don't think that needs disussion, it's a one-liner in the build system)
+19:13:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10971 | build: fix missing warnings and sse42 in depends builds by theuni · Pull Request #10971 · bitcoin/bitcoin · GitHub
+19:13:45 <wumpus> morcos: ouch, can you open an issue to track it?
+19:13:48 <cfields> yea, nothing major
+19:14:06 <morcos> yes will open one or the other shortly
+19:14:29 <wumpus> ok, thanks
+19:15:06 <wumpus> do we need any updates to bips.md for 0.15?
+19:15:18 <sipa> hmm, good question
+19:15:19 <wumpus> (that's the item in the release process that still has a ? here)
+19:15:46 <BlueMatt> is there a bip that recommends hd split?
+19:15:53 <sipa> BlueMatt: bip32? :p
+19:16:15 <wumpus> there's also "Update `src/chainparams.cpp` chainTxData with statistics about the transaction count and rate." left
+19:16:29 <sipa> want me to do that?
+19:16:31 <wumpus> and the BLOCK_CHAIN_SIZE, but that's straightforward
+19:16:49 <wumpus> yes, if you know what's exactly to be done there that'd help :)
+19:17:01 <sipa> sure
+19:18:38 <wumpus> thanks
+19:18:55 <sipa> short topic: bip173 unit tests issue
+19:19:09 <wumpus> #topic bip173 unit tests issue
+19:19:13 <jnewbery> There are a few more things for release notes
+19:19:43 <sipa> so, bip173 specifies how to translate address strings to witness version/program, and defers to bip141 for encoding that to scriptPubKeys
+19:19:59 <sipa> however, the unit tests actually test the whole step from address to scriptPubKey
+19:20:07 <sipa> turns out, incorrectly
+19:20:26 <sipa> the tests and reference implementation (of the tests) was wrong, and every reimplementation copied it
+19:21:05 <gmaxwell> The the error was that it confused hex and dec values.
+19:21:07 <sipa> i've made a PR to update the BIP, and all reference implementations i could find, but this is kind of scary
+19:21:17 <cfields> corner-cases wrong? or in all cases?
+19:21:24 <wumpus> jnewbery: agreed, but release notes need to be finished before -final, not -rc1, so it's not a blocker
+19:21:36 <sipa> cfields: it assumed OP_n was encoded as 0x80 + n, rather than 80 + n
+19:21:57 <BlueMatt> sipa: so they generate garbage scripts?
+19:22:01 <jnewbery> got it. Thanks wumpus
+19:22:06 <sipa> BlueMatt: the tests, yes
+19:22:26 <sipa> the code itself doesn't contain a conversion to scriptPubKey at all, only a conversion to witness version/program
+19:22:27 <gmaxwell> cfields: It was wrong for witness program versions other than 0
+19:22:34 <cfields> yikes
+19:22:39 <wumpus> oops
+19:22:44 <gmaxwell> so this could happily have been deployed and started causing problems when v1 was used.
+19:22:47 <sipa> but the tests contain a version/program -> scriptPubKey converter in order to be able the test
+19:23:05 <BlueMatt> well if it generated garbage scripts, not much that can be done but fix it
+19:23:13 <BlueMatt> are you asking if we should like change the prefix now?
+19:23:23 <sipa> no
+19:23:28 <sipa> just raising awareness
+19:23:32 <BlueMatt> ok, cool
+19:23:38 <sdaftuar> perhaps an email to the -dev list would also be good?
+19:23:38 <gmaxwell> Also, it highlighes an implementation footgun, I suggested some warning text in the BIP itself.   One protection here is that the particular error in sipas' code would result in non-standard outputs.
+19:23:42 <sipa> sdaftuar: yes
+19:24:06 <gmaxwell> BlueMatt: I did make a suggestion that we consider changing it to break the checksum, but there doesn't appear to be reason to.
+19:24:18 <BlueMatt> ok
+19:24:24 <morcos> just to be clear what we are talking about, we're not talking about anything merged into Core, but code referenced from the BIP
+19:24:25 <BlueMatt> awareness raised!
+19:24:27 <gmaxwell> Especially since if someone had slavishly reimplemented the error in the reference, they'd produce non-standard outputs.
+19:24:31 <sipa> morcos: indeed.
+19:24:52 <morcos> still, a bit scary
+19:25:06 <sipa> (though i'd like to PR it to core soon - apparently last week it was suggested to do that in 0.15.1?)
+19:25:21 <gmaxwell> Don't start a debate about the name of the version. :P
+19:25:25 <sipa> haha
+19:25:42 <sipa> (though i'd like to PR it to core soon - apparently last week it was suggested to do that in some soon next version)
+19:25:51 <gmaxwell> It also suggests that BIP173 support's test plan should include testing it with other witness version numbers. :)
+19:25:51 <sdaftuar> prs welcome :)
+19:26:11 <gmaxwell> sipa: well fix the testing shortfalls I found in the C++ version please. :)
+19:26:17 <wumpus> PRs to improve the tests are always welcome anyhow
+19:26:17 <sipa> gmaxwell: of course
+19:26:23 <sipa> anyway, end topic
+19:26:28 <wumpus> ok, other topics?
+19:28:04 <gmaxwell> uh
+19:28:05 <gmaxwell> yes.
+19:28:14 <gmaxwell> So service bits and altcoins.
+19:28:21 <wumpus> #topic service bits and altcoins
+19:28:29 <BlueMatt> wait are altcoins using serice bits now?
+19:28:41 <BlueMatt> oh, right 2x did
+19:28:43 <gmaxwell> Bcash is using our port, p2pmagic, etc. They distinguish themselve with a blinking service bit.
+19:28:44 <BlueMatt> what is wrong with people
+19:28:54 <gmaxwell> (also 2x will do this too it seems)
+19:29:03 <BlueMatt> gmaxwell: can someone open a pr to change this? or do they refuse to work properly?
+19:29:04 <cfields> gmaxwell: i was under the impression that they were planning to change the magic soon
+19:29:09 <gmaxwell> We mostly ban them when they send us transactions or headers.
+19:29:19 <gmaxwell> cfields: not when I looked three days ago, maybe now.
+19:29:36 <karelb> OK, maybe I will ask here. What format are the bitcoin .dat files in data/blocks/*.dat? is that leveldb? what is it exactly?
+19:29:47 <jonasschnelli> karelb: meeting, not now
+19:29:47 <gmaxwell> If so then the issue becomes moot, otherwise I was going to suggest we ban these bits on connect. The downside is we lose the bits basically forever.
+19:29:48 <sipa> they are p2p network format
+19:29:51 <karelb> ok sorry
+19:29:52 <sipa> oops, yes, layer
+19:30:02 <karelb> sorry going out
+19:30:14 * karelb apologizes
+19:30:17 <BlueMatt> gmaxwell: yes, first should be someone bludgening them to work properly
+19:30:23 <BlueMatt> gmaxwell: before we start burning service bits
+19:30:44 <gmaxwell> BlueMatt: people have been since before they started. Obviously I'll go monitor but I'm not super confident.
+19:30:52 <sdaftuar> gmaxwell: why not just ban for eg the next 3 months or something?
+19:30:55 <achow101> BlueMatt: gmaxwell IIRC they will be changing their magic and port
+19:30:56 <sdaftuar> if we need to do anything at all
+19:31:03 <achow101> dunno about 2x
+19:31:04 <gmaxwell> One reason burning service bits may not be so bad is because we are due to replace the addr message for i2p and NG-HS support.
+19:31:04 <BlueMatt> achow101: what about 2x?
+19:31:22 <gmaxwell> So we could at that point just define a new service flagging mechenism.
+19:31:26 <BlueMatt> gmaxwell: yea, does anyone have a spec for that?
+19:31:33 <gmaxwell> Not yet.
+19:31:36 <BlueMatt> k
+19:31:51 <gmaxwell> Well if they're finally going to change it, it becomes moot.. but the same issue arises with 2x.
+19:32:16 <wumpus> how would a service bit help here?
+19:32:19 <BlueMatt> well someone needs to bludgen the 2x folks to change it, otherwise we start banning for a few months
+19:32:20 <wumpus> just ban everyone without NODE_SEGWIT? :p
+19:32:37 <gmaxwell> wumpus: we still want to support non-upgraded nodes.
+19:32:48 <wumpus> but they won't have any new version bit either
+19:32:58 <wumpus> that was my point, not to suggest that seriously :)
+19:33:11 <gmaxwell> wumpus: oh no, you misunderstand: ABC and 2x both set randomly generated service bits.
+19:33:23 <cfields> gmaxwell: eh?
+19:33:26 <BlueMatt> I think sdaftuar's suggestion is reasonable, assuming they refuse to do something sane
+19:33:27 <gmaxwell> (which they've helpfully ignored the gigantic comment in the code that tells you to at least inform the list.)
+19:33:44 <cfields> oh
+19:33:45 <gmaxwell> sdaftuar: I hadn't considered a time limited ban. Good point.
+19:33:46 <wumpus> oh you mean banning everything that sets their version bit?
+19:33:53 <wumpus> yes, that'd be doable
+19:33:56 <BlueMatt> wumpus: yes, with a time limit
+19:33:59 <gmaxwell> wumpus: well disconnecting, not banning.
+19:34:06 <BlueMatt> nah, ban for 3 months
+19:34:08 <gmaxwell> Okay thanks, Time limit makes sense. duh.
+19:34:16 <wumpus> temporarily, yes
+19:34:24 <morcos> wumpus: opened issue #10981, easy fix, but i'll let someone else do the PR as i'm not in the office for next week.  please tag with 0.15.
+19:34:25 <gribble> https://github.com/bitcoin/bitcoin/issues/10981 | resendwallettransactions asserts if walletbroadcast=0 · Issue #10981 · bitcoin/bitcoin · GitHub
+19:34:32 <gmaxwell> BlueMatt: banning creates problems when you run multiple things on one machine.
+19:34:40 <BlueMatt> gmaxwell: meh
+19:34:40 <wumpus> morcos: thanks, will tag later (not logged in now)
+19:35:03 <BlueMatt> gmaxwell: they refused to do something that wasnt astoundingly broken, if it means their users get fucked, its not really my problem
+19:35:13 <wumpus> (or if someone else can do it)
+19:35:21 <morcos> BlueMatt: so chaincode ip will be banned.  nice.
+19:35:37 <BlueMatt> morcos: -connect=altcoin.dns.seed
+19:35:38 <BlueMatt> :)
+19:36:07 <wumpus> agree that banning goes too far, just not allow connections
+19:36:13 <sipa> maye just disconnect?
+19:36:15 <wumpus> there's no point in banning everything after that
+19:36:16 <gmaxwell> what? no. matt, doing that will ban Bitcoin Core users when someone on the same IP ran crapware.
+19:36:19 <jtimon> perhaps better for after the meeting, but I'm still not sure why #8498 wasn't suitable for 0.15 ...
+19:36:21 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:36:55 <gmaxwell> To be clear this is important because these useless altcoin nodes waste connection slots, and are potentially at risk of gobbling up our initial headers fetch.
+19:36:57 <BlueMatt> gmaxwell: ugh
+19:37:04 <BlueMatt> fine, disconnect
+19:37:15 <BlueMatt> at some point someone is gonna create some altcoin crapware that reconnects agressively, though
+19:37:16 <wumpus> disconnect up until a certain date
+19:37:20 <BlueMatt> some spv forks probably will
+19:37:23 <wumpus> what would be that point?
+19:37:33 <BlueMatt> because crapware
+19:37:34 <wumpus> it would disconnect immediately after the version message
+19:37:37 <gmaxwell> Also, looks like ABC has some kind of deadlocking bug, because I see a few of them just going unresponsive to anything but pings, which delays them getting banned for being on the wrong network.
+19:37:38 <morcos> +1 disconnect up to certain date, but i think it should be 12 mos and not 3
+19:37:41 <BlueMatt> do not make assumptions about crapware working in a sane way
+19:37:42 <wumpus> banning would ban 1 message sooner
+19:37:47 <morcos> no reason we'll need that next service bit right away
+19:37:59 <sdaftuar> morcos: sure, that sounds fine
+19:38:04 <wumpus> s/ban/disconnect
+19:38:05 <BlueMatt> morcos: seems reasonable
+19:38:19 <gmaxwell> ack on disconnect based on service bits for 12months or similar.
+19:38:38 <wumpus> unless we start adding banned nodes to the local firewall, there's no serious difference between disconnecting on connect or after the version message
+19:38:51 <gmaxwell> though in general, one of these clowns is going to squat service buts we're in the process of trying to use. :( I have no suggestion on dealing with that.
+19:39:12 <morcos> but i think it'd be worth a quick email/github message to jgarzik to check that they aren't imminently changing their plan
+19:39:14 <BlueMatt> lets deal with that when we get there
+19:39:16 <gmaxwell> s/buts/bits/
+19:39:23 <wumpus> well if they change the magic and port we can stop worrying about the service bits they claim
+19:39:31 <BlueMatt> morcos: yes, as I stated previously we should tell these guys to change network magic *first*
+19:39:33 <wumpus> also we could at that point check for NODE_SEGWIT + our service bit
+19:39:34 <morcos> yes but what if they change to a different service bit
+19:39:41 <gmaxwell> morcos: there is some PR where people have been arguing for ages, about this, so I'm doubtful but sure.
+19:39:54 <morcos> might as well ask first and tell him what we're planning on doing
+19:39:57 <wumpus> change to a different version bit? what would that accomplish?
+19:40:07 <morcos> whooo knows?!!
+19:40:11 <gmaxwell> At the end we're doing them a favor, there are a lot more bitcoin nodes than random altcoin nodes, so these incorrect connections tend to cause them a lot more problems than us.
+19:40:22 <BlueMatt> yup
+19:40:27 <BlueMatt> ok, probalem solved
+19:40:34 <BlueMatt> who wants to go tell them that we're gonna disconnect them?
+19:40:39 <wumpus> if avoiding detection is the point, they could better stop setting their version bti at that point is better than randomly cycling it according to moon phases
+19:41:00 <gmaxwell> BlueMatt: perhaps we should just open the disconnect PR and ping them to comment on it?
+19:41:06 <wumpus> bleh
+19:41:15 <BlueMatt> gmaxwell: wfm, but seems like someone should open an issue
+19:41:18 <BlueMatt> I vote morcos does it
+19:41:39 <gmaxwell> throw him to the wolves... enh? what did he do so wrong?
+19:41:42 <BlueMatt> actually, it was sdaftuar's idea, he can do it
+19:41:49 <gmaxwell> throw him to the wolves... enh? what did he do so wrong?
+19:42:04 <wumpus> seems we'd rather not invite certain discussions to our github but eh
+19:42:25 <BlueMatt> gmaxwell: fine, I'll deal with it
+19:42:35 <gmaxwell> BlueMatt: good, I know what you did so wrong. :P
+19:43:04 <jtimon> but if the bits are selected randomly, how does burning them help?
+19:43:34 <sipa> jtimon: s/randomly/arbitrarily/
+19:43:38 <wumpus> they aren't selected randomly, they're not doing service bit hopping or something like that
+19:43:42 <sipa> they're not different every time
+19:43:50 <sipa> they just arbitrarily picked one
+19:43:50 <jtimon> sipa: I see, thanks
+19:43:54 <gmaxwell> jtimon: I don't follow your question. The altcoin efforts have selected randomly but hardcoded the result or their fair dice roll. :)
+19:44:13 <morcos> +1 sdaftuar doing it...  i'm trying to pack
+19:44:13 <jtimon> gmaxwell: yeah, got it
+19:44:16 <gmaxwell> and just failed to follow the giant comment in the code to make a public announcement about it even.
+19:44:22 <wumpus> e.g. they have monkeys throw darts to select one when they need it, not every connection
+19:44:51 <morcos> oh nm, or bluematt
+19:45:22 <BlueMatt> I think morcos is clearly just trying to throw anyone else under the bus, sounds like he should do it, then :p
+19:45:25 <BlueMatt> anyway, next topic?
+19:45:49 <gmaxwell> ;;action bluematt goes under the bus
+19:45:50 * gribble bluematt goes under the bus
+19:46:02 <gmaxwell> see, the robot overlords agree
+19:46:04 <BlueMatt> ;;action goes under the bus
+19:46:04 * gribble goes under the bus
+19:46:17 <achow101> we can't/shouldn't ban 2x peers until they fork
+19:46:23 <BlueMatt> achow101: yes we should
+19:46:40 <wumpus> I think this was mainly about BCC which already forked
+19:46:51 <achow101> BlueMatt: why? we won't be giving them invalid stuff until they fork, and vice versa
+19:47:13 <gmaxwell> hash that out outside of the meeting plz.
+19:47:24 <wumpus> achow101: on the other hand, adding logic to the code to check whether they've forked would complicate things more than just disconnecting on a service bit
+19:47:29 <wumpus> yeah
+19:47:40 <BlueMatt> next topic?
+19:47:46 <gmaxwell> But in general if someone is going to make broken software, we can only go so far to accomidate it.
+19:47:49 <wumpus> we've run out of topics
+19:48:00 <achow101> wumpus: we know when they activate. at block X start banning them
+19:48:18 <gmaxwell> I doubt we do.
+19:48:31 <jtimon> perhaps better for after the meeting, but I'm still not sure why #8498 wasn't suitable for 0.15 ...
+19:48:33 <BlueMatt> achow101: I'm not jumping through hoops to make sure altcoins stay in consensus until *right before* they fork...
+19:48:33 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:48:33 <wumpus> #endmeeting
