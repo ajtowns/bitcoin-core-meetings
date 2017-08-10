@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:16</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 10 19:00:16 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:16</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:22</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:00:24</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> ello
+<a name="l-7"></a><span class="tm">19:00:26</span><span class="nk"> &lt;sdaftuar&gt;</span> hey
+<a name="l-8"></a><span class="tm">19:00:45</span><span class="nk"> &lt;instagibbs&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:00:59</span><span class="nk"> &lt;wumpus&gt;</span> any topics?
+<a name="l-10"></a><span class="tm">19:01:18</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="cmd">#10882 </span><span class="cmdline">please</span>
+<a name="l-11"></a><span class="tm">19:01:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10882 | Stop advancing best block and shutdown node if keypool drops below critical threshold by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+<a name="l-12"></a><span class="tm">19:01:42</span><span class="nk"> &lt;wumpus&gt;</span> good idea
+<a name="l-13"></a><span class="tm">19:01:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Stop advancing best block and shutdown node if keypool drops below critical threshold</span>
+<a name="l-14"></a><span class="tm">19:02:08</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-15"></a><span class="tm">19:02:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jnewbery:</span> is that the alternative for keypool topup for 0.15?
+<a name="l-16"></a><span class="tm">19:02:23</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-17"></a><span class="tm">19:02:27</span><span class="nk"> &lt;wumpus&gt;</span> that replaced #11022 for 015.0?
+<a name="l-18"></a><span class="tm">19:02:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11022 | Basic keypool topup by jnewbery · Pull Request #11022 · bitcoin/bitcoin · GitHub
+<a name="l-19"></a><span class="tm">19:02:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> What was/is wrong with 11022?
+<a name="l-20"></a><span class="tm">19:03:11</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">jonasschnelli:</span> 11022 is part of 10882 split into a separate pr
+<a name="l-21"></a><span class="tm">19:03:16</span><span class="nk"> &lt;luke-jr&gt;</span> if the node shuts down, how can users recover? O.o
+<a name="l-22"></a><span class="tm">19:03:18</span><span class="nk"> &lt;wumpus&gt;</span> it was getting too large IIRC
+<a name="l-23"></a><span class="tm">19:03:29</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="cmd">#10882 </span><span class="cmdline">is the same as it has been for the last few days (mark-used if later key from keypool used, try to topup, stop node if can't, etc)</span>
+<a name="l-24"></a><span class="tm">19:03:32</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10882 | Stop advancing best block and shutdown node if keypool drops below critical threshold by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+<a name="l-25"></a><span class="tm">19:03:41</span><span class="nk"> &lt;jonasschnelli&gt;</span> Ah. Same problem I had with my original PR. :/
+<a name="l-26"></a><span class="tm">19:03:48</span><span class="nk"> &lt;jnewbery&gt;</span> I split #11022 off as the (hopefully) uncontroversial changes
+<a name="l-27"></a><span class="tm">19:03:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11022 | Basic keypool topup by jnewbery · Pull Request #11022 · bitcoin/bitcoin · GitHub
+<a name="l-28"></a><span class="tm">19:04:12</span><span class="nk"> &lt;jnewbery&gt;</span> it just marks keys as used and tops up the keypool. No stop node/don't advance best block
+<a name="l-29"></a><span class="tm">19:04:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I was making the recommendation that we split out the part that marks used and refills the pool and get that merged. It is a strict improvement with no downsides or extra considerations.
+<a name="l-30"></a><span class="tm">19:04:29</span><span class="nk"> &lt;gmaxwell&gt;</span> that one!
+<a name="l-31"></a><span class="tm">19:04:42</span><span class="nk"> &lt;kanzure&gt;</span> (nick ping)
+<a name="l-32"></a><span class="tm">19:04:55</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> can you do your hilite reminder? almost missed this
+<a name="l-33"></a><span class="tm">19:04:58</span><span class="nk"> &lt;cfields&gt;</span> yes, that :)
+<a name="l-34"></a><span class="tm">19:05:35</span><span class="nk"> &lt;wumpus&gt;</span> sounds like a good idea to factor out the critical, lower-risk changes so that it can still make 0.15.0rc1
+<a name="l-35"></a><span class="tm">19:05:53</span><span class="nk"> &lt;wumpus&gt;</span> though this does mean it needs a new review round
+<a name="l-36"></a><span class="tm">19:06:00</span><span class="nk"> &lt;gmaxwell&gt;</span> I believe all the shutdown ones have unanswered questions.
+<a name="l-37"></a><span class="tm">19:06:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-38"></a><span class="tm">19:06:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> mine seems to be broken. Thanks wumpus.
+<a name="l-39"></a><span class="tm">19:06:25</span><span class="nk"> &lt;cfields&gt;</span> thanks
+<a name="l-40"></a><span class="tm">19:06:31</span><span class="nk"> &lt;sipa&gt;</span> present
+<a name="l-41"></a><span class="tm">19:06:36</span><span class="nk"> &lt;CodeShark&gt;</span> hello all
+<a name="l-42"></a><span class="tm">19:06:42</span><span class="nk"> &lt;paveljanik&gt;</span> here
+<a name="l-43"></a><span class="tm">19:06:55</span><span class="nk"> &lt;luke-jr&gt;</span> the startmeeting command should do it &lt;.&lt;
+<a name="l-44"></a><span class="tm">19:06:58</span><span class="nk"> &lt;Murch&gt;</span> hullo
+<a name="l-45"></a><span class="tm">19:07:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> the initial commits are the same
+<a name="l-46"></a><span class="tm">19:07:06</span><span class="nk"> &lt;jnewbery&gt;</span> I thought we were very close with 10882, with ACKs from several people. Greg - could you ask your unanswered questions in the PR? Your comments have mostly been in IRC and it's difficult to keep track of what your current concerns are
+<a name="l-47"></a><span class="tm">19:07:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-48"></a><span class="tm">19:09:09</span><span class="nk"> &lt;wumpus&gt;</span> 10882 was kind of a miscommunication, I almost merged than when it turned out that there were still critical concerns with it
+<a name="l-49"></a><span class="tm">19:09:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> it's not with your implementation specifically, but the correct behavior.  Shutting down on never-behind wallets who just drained their keypools (or never had a big keypool) is undesirable, but it doesn't appear to be possible to detect if a wallet had potentially been behind or not. (e.g. the only during rescan hurestic will fail in some places where the node and the wallet were both
+<a name="l-50"></a><span class="tm">19:09:46</span><span class="nk"> &lt;gmaxwell&gt;</span> behind; as a simple example: backup your whole .bitcoin directory and later restor the backup)
+<a name="l-51"></a><span class="tm">19:10:18</span><span class="nk"> &lt;MarcoFalke&gt;</span> so 11022 is for 0.15 and 10882 should be removed from the milestone?
+<a name="l-52"></a><span class="tm">19:10:20</span><span class="nk"> &lt;gmaxwell&gt;</span> restore*
+<a name="l-53"></a><span class="tm">19:11:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> huh
+<a name="l-54"></a><span class="tm">19:11:19</span><span class="nk"> &lt;luke-jr&gt;</span> IMO the correct behaviour would be an interface for pruning locks in general (usable by external wallets too), and track the best chain independently from where the UTXO set is. but this is way too complicated IMO. :/
+<a name="l-55"></a><span class="tm">19:11:21</span><span class="nk"> &lt;wumpus&gt;</span> wasn't it the other way around?
+<a name="l-56"></a><span class="tm">19:11:39</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span> that was my suggestion: merge the part we know is done. I don't think we can make a 10882 right now that won't result in strange behavior in some corner cases.
+<a name="l-57"></a><span class="tm">19:11:40</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> yes, that's the eventual goal - agree, but we don't have to go there in one step
+<a name="l-58"></a><span class="tm">19:11:51</span><span class="nk"> &lt;jnewbery&gt;</span> wumpus : MarcoFalke has it right. 11022 is the simple subset
+<a name="l-59"></a><span class="tm">19:11:53</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> 11022 is newer than 10882
+<a name="l-60"></a><span class="tm">19:11:53</span><span class="nk"> &lt;wumpus&gt;</span> 11022 was removed from 0.15, and 10882 replaced it
+<a name="l-61"></a><span class="tm">19:12:00</span><span class="nk"> &lt;gmaxwell&gt;</span> (at least not in short order)
+<a name="l-62"></a><span class="tm">19:12:03</span><span class="nk"> &lt;wumpus&gt;</span> why and who did that then?
+<a name="l-63"></a><span class="tm">19:12:07 </span><span class="nka">* wumpus</span> <span class="ac">is really confused</span>
+<a name="l-64"></a><span class="tm">19:12:17</span><span class="nk"> &lt;gmaxwell&gt;</span> 11022 is a massive improvement and safty increase.
+<a name="l-65"></a><span class="tm">19:12:26</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> 10882 was created, 11022 was split out from 10882
+<a name="l-66"></a><span class="tm">19:12:27</span><span class="nk"> &lt;sipa&gt;</span> 11022 is 10882 without the shutdown logic
+<a name="l-67"></a><span class="tm">19:12:30</span><span class="nk"> &lt;wumpus&gt;</span> what can we realistically finish in say, a week?
+<a name="l-68"></a><span class="tm">19:12:47</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> there was a thid PR you're thinking of 11022 is new, as of a few hours ago.
+<a name="l-69"></a><span class="tm">19:12:58</span><span class="nk"> &lt;luke-jr&gt;</span> what if we just stop pruning, and let the normal low-disk-space shutdown do the job? ;)
+<a name="l-70"></a><span class="tm">19:13:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> die
+<a name="l-71"></a><span class="tm">19:13:11</span><span class="nk"> &lt;luke-jr&gt;</span> :|
+<a name="l-72"></a><span class="tm">19:13:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> pruning is also not the only issue.
+<a name="l-73"></a><span class="tm">19:13:14</span><span class="nk"> &lt;wumpus&gt;</span> we can't continue adding things for 0.15 as that fix grows in scope more and more
+<a name="l-74"></a><span class="tm">19:13:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> 11022 is a reduction in scope
+<a name="l-75"></a><span class="tm">19:13:35</span><span class="nk"> &lt;sipa&gt;</span> i think 11022 can be ready to merge today or so
+<a name="l-76"></a><span class="tm">19:13:38</span><span class="nk"> &lt;wumpus&gt;</span> as this all deals with something that is not a regression in 0.15, I'm starting to be really doubtful about this
+<a name="l-77"></a><span class="tm">19:13:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> that new PR radically reduced the scope, to the core part that has been in every PR so far.
+<a name="l-78"></a><span class="tm">19:13:45</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> what am I missing?
+<a name="l-79"></a><span class="tm">19:14:00</span><span class="nk"> &lt;sipa&gt;</span> *today
+<a name="l-80"></a><span class="tm">19:14:12</span><span class="nk"> &lt;jnewbery&gt;</span> 11022 is ready now. It needs rereview by people, but it should be uncontroversial as it's a subset of what's already been ACKed
+<a name="l-81"></a><span class="tm">19:14:57</span><span class="nk"> &lt;wumpus&gt;</span> ah yes I was confused with the other 'keypool topup' PR
+<a name="l-82"></a><span class="tm">19:15:43</span><span class="nk"> &lt;MarcoFalke&gt;</span> ok, changed the milestones.
+<a name="l-83"></a><span class="tm">19:15:54</span><span class="nk"> &lt;wumpus&gt;</span> thanks
+<a name="l-84"></a><span class="tm">19:16:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> you could start by already reading the comments that are there.  Each version has failed in different corner cases.  I'll go update the PR with a longer list but after spending an hour talking to Pieter about it I'm just dispondent that it's all a mess that we won't fix quickly (again, not due to the code; but due to what behavior would actually be acceptable.)
+<a name="l-85"></a><span class="tm">19:16:09</span><span class="nk"> &lt;jnewbery&gt;</span> full history: Jonas's PR was 10240. I rebased and cleaned that up as 10830. I then reduced the scope and incorporated a bunch of feedback in 10882. I've now reduced the scope again in 11022
+<a name="l-86"></a><span class="tm">19:16:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> that's a painful history, thanks for sticking with it
+<a name="l-87"></a><span class="tm">19:17:12</span><span class="nk"> &lt;jnewbery&gt;</span> painful is a pretty accurate description!
+<a name="l-88"></a><span class="tm">19:17:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;-)
+<a name="l-89"></a><span class="tm">19:17:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> but in general, versions that shutdown based on low keypool have a problem with existing wallets failing to work when users upgrade, and efforts to avoid that can create cases where we'll fail to force a shutdown when we should. (for example if the user backed up and restored a whole .bitcoin directory).
+<a name="l-90"></a><span class="tm">19:17:56</span><span class="nk"> &lt;jnewbery&gt;</span> but let's try to get 11022 reviewed, and if gmaxwell could leave a nice long comment on 10882 about edge cases perhaps we can try again after 0.15
+<a name="l-91"></a><span class="tm">19:18:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> and I think now that a whole subfamily of suggestions I was making are just impossible to actually make work right, for which I am very sorry.
+<a name="l-92"></a><span class="tm">19:18:35</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> will do
+<a name="l-93"></a><span class="tm">19:18:46</span><span class="nk"> &lt;jnewbery&gt;</span> gmaxwell thanks
+<a name="l-94"></a><span class="tm">19:19:32</span><span class="nk"> &lt;jnewbery&gt;</span> sipa ryanofsky morcos bluematt instagibbs reviewed 10882. Should be a straightforward task for them to rereview 11022
+<a name="l-95"></a><span class="tm">19:19:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jnewbery:</span> on it
+<a name="l-96"></a><span class="tm">19:19:44</span><span class="nk"> &lt;instagibbs&gt;</span> gotcha
+<a name="l-97"></a><span class="tm">19:19:45</span><span class="nk"> &lt;sipa&gt;</span> (right now)
+<a name="l-98"></a><span class="tm">19:19:47</span><span class="nk"> &lt;wumpus&gt;</span> We can't rule all out edge cases. Tthe most important thing is that people upgrading won't automatically run into the issue because 0.15 sets a larger keypool default.
+<a name="l-99"></a><span class="tm">19:20:10</span><span class="nk"> &lt;jnewbery&gt;</span> upgrade isn't an issue in 11022
+<a name="l-100"></a><span class="tm">19:20:21</span><span class="nk"> &lt;wumpus&gt;</span> good!
+<a name="l-101"></a><span class="tm">19:20:25</span><span class="nk"> &lt;instagibbs&gt;</span> will review today
+<a name="l-102"></a><span class="tm">19:20:31</span><span class="nk"> &lt;jnewbery&gt;</span> (and actually isn't in 10882 as it's now implemented, but let's not get into that)
+<a name="l-103"></a><span class="tm">19:20:47</span><span class="nk"> &lt;wumpus&gt;</span> do we have a test for that? :)
+<a name="l-104"></a><span class="tm">19:21:11</span><span class="nk"> &lt;jnewbery&gt;</span> no, as far as I'm aware we have no upgrade tests. It'd be nice to have them
+<a name="l-105"></a><span class="tm">19:21:41</span><span class="nk"> &lt;sipa&gt;</span> (gmaxwell went offline)
+<a name="l-106"></a><span class="tm">19:21:57</span><span class="nk"> &lt;wumpus&gt;</span> no, we don't have any upgrade tests
+<a name="l-107"></a><span class="tm">19:22:11</span><span class="nk"> &lt;instagibbs&gt;</span> jnewbery, to refresh memory: "Notably, it does not stop the node or prevent the best block from advancing if the keypool drops below a threshold" this is only in case of crypted?
+<a name="l-108"></a><span class="tm">19:22:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">instagibbs:</span> my belief is that it'll just succesfully top up when unlocked
+<a name="l-109"></a><span class="tm">19:23:24</span><span class="nk"> &lt;jnewbery&gt;</span> instagibbs, in 10882 we would only ever prevent best block advancing/stop node when top up was unsuccessful (ie encrypted locked wallet)
+<a name="l-110"></a><span class="tm">19:23:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jnewbery:</span> great
+<a name="l-111"></a><span class="tm">19:23:39</span><span class="nk"> &lt;jnewbery&gt;</span> 11022 removes all prevent best block advancing/stop node behaviour
+<a name="l-112"></a><span class="tm">19:23:57</span><span class="nk"> &lt;instagibbs&gt;</span> got it
+<a name="l-113"></a><span class="tm">19:24:16</span><span class="nk"> &lt;wumpus&gt;</span> even better would it be if we had test cases for all of gmaxwell's edge cases
+<a name="l-114"></a><span class="tm">19:24:18</span><span class="nk"> &lt;sipa&gt;</span> &lt;gmaxwell&gt; we can now have rescan instructions in our relwase notes: unlock the wallet and run rescan rpc
+<a name="l-115"></a><span class="tm">19:24:19</span><span class="nk"> &lt;jnewbery&gt;</span> 11022 is really very simple. It has a bunch of refactor commits, but the functional change is fairly small
+<a name="l-116"></a><span class="tm">19:24:54 </span><span class="nka">* gmaxwell</span> <span class="ac">back</span>
+<a name="l-117"></a><span class="tm">19:25:20</span><span class="nk"> &lt;jnewbery&gt;</span> if we can get bitcoin-wallet-tool and offline topup into v0.16 we have a very nice way of sidestepping most of the problems I believe
+<a name="l-118"></a><span class="tm">19:25:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> sipa was just saying something like that to me.
+<a name="l-119"></a><span class="tm">19:25:54</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jnewbery:</span> alternatively, make the dynamic-load-wallet RPC fail in case of too low keypool, and make it take an optional passphrase
+<a name="l-120"></a><span class="tm">19:25:55</span><span class="nk"> &lt;luke-jr&gt;</span> at least GUI can block on a passphrase
+<a name="l-121"></a><span class="tm">19:26:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> that too
+<a name="l-122"></a><span class="tm">19:26:03</span><span class="nk"> &lt;jnewbery&gt;</span> yes!
+<a name="l-123"></a><span class="tm">19:26:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> oooh, that's an excellent approach for bitcoind
+<a name="l-124"></a><span class="tm">19:26:23</span><span class="nk"> &lt;gmaxwell&gt;</span> but all to much for 0.15 now.  But at least 11022 massively narrows the window and creates a workaround.
+<a name="l-125"></a><span class="tm">19:26:26</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-126"></a><span class="tm">19:27:19</span><span class="nk"> &lt;sipa&gt;</span> any other 0.15-related topics?
+<a name="l-127"></a><span class="tm">19:27:44</span><span class="nk"> &lt;wumpus&gt;</span> although harder to implement there's no reason bitcoind couldn't block on a passphrase, justblock everything until a walletpassphrase command
+<a name="l-128"></a><span class="tm">19:27:55</span><span class="nk"> &lt;jnewbery&gt;</span> yuck
+<a name="l-129"></a><span class="tm">19:28:04</span><span class="nk"> &lt;luke-jr&gt;</span> if I prioritise rebasing the optional default-wallet, would it be considered for inclusion?
+<a name="l-130"></a><span class="tm">19:28:05</span><span class="nk"> &lt;jnewbery&gt;</span> multiwallet?
+<a name="l-131"></a><span class="tm">19:28:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> can RPC run without the node running?
+<a name="l-132"></a><span class="tm">19:29:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> in the same way the GUI can I guess
+<a name="l-133"></a><span class="tm">19:30:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> I think that is less yuck than some other options.  Though really it's block until passphrase or the critical key level is changed.
+<a name="l-134"></a><span class="tm">19:30:34</span><span class="nk"> &lt;wumpus&gt;</span> holding up RPC commands for a long time is bound to run into timeouts though
+<a name="l-135"></a><span class="tm">19:30:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> we already throw exceptions during init
+<a name="l-136"></a><span class="tm">19:31:04</span><span class="nk"> &lt;luke-jr&gt;</span> so we'd just need to make an exception for walletpassphrase
+<a name="l-137"></a><span class="tm">19:31:13</span><span class="nk"> &lt;wumpus&gt;</span> yes it's kind of yuck, it's opposite from anything we want to do, with the wallet being able to block the node
+<a name="l-138"></a><span class="tm">19:31:18</span><span class="nk"> &lt;luke-jr&gt;</span> the catch to this (and GUI prompting I guess) is that we need to load the wallet earlier
+<a name="l-139"></a><span class="tm">19:32:17</span><span class="nk"> &lt;gmaxwell&gt;</span> longer term we'll need ways to rescan wallets when there is pruning.  E.g. PIR wallet queries. But that is a research project with a 1yr horizon or so.
+<a name="l-140"></a><span class="tm">19:32:41</span><span class="nk"> &lt;gmaxwell&gt;</span> once we have something like this I think much of this mess goes away.
+<a name="l-141"></a><span class="tm">19:32:50</span><span class="nk"> &lt;jnewbery&gt;</span> Are there any other circumstances where bitcoind waits for stdin? I think it might inadvertently break peoples assumptions
+<a name="l-142"></a><span class="tm">19:32:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> pir?
+<a name="l-143"></a><span class="tm">19:33:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> https://en.wikipedia.org/wiki/Private_information_retrieval
+<a name="l-144"></a><span class="tm">19:33:08</span><span class="nk"> &lt;jnewbery&gt;</span> also it's messy if multiwallets are prompting for passphrases
+<a name="l-145"></a><span class="tm">19:33:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> thy
+<a name="l-146"></a><span class="tm">19:33:32</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> not stdin, but accepting rpc connections and throwing the not ready yet error for all but walletpassphrase.
+<a name="l-147"></a><span class="tm">19:33:45</span><span class="nk"> &lt;gmaxwell&gt;</span> (like we do when loading the block index)
+<a name="l-148"></a><span class="tm">19:34:16</span><span class="nk"> &lt;jnewbery&gt;</span> oh ok, yeah that's not so bad
+<a name="l-149"></a><span class="tm">19:34:27</span><span class="nk"> &lt;gmaxwell&gt;</span> now I understand the yuck better. :)
+<a name="l-150"></a><span class="tm">19:34:27</span><span class="nk"> &lt;jnewbery&gt;</span> but to be clear, not for 0.15 :)
+<a name="l-151"></a><span class="tm">19:34:31</span><span class="nk"> &lt;gmaxwell&gt;</span> yes.
+<a name="l-152"></a><span class="tm">19:34:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> you mean going back into warmup mode? hmm then all clients would have to handle that
+<a name="l-153"></a><span class="tm">19:35:03</span><span class="nk"> &lt;wumpus&gt;</span> oh certainly not stdin
+<a name="l-154"></a><span class="tm">19:35:03</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I mean never leaving warmup mode :p
+<a name="l-155"></a><span class="tm">19:35:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> that'd make sense
+<a name="l-156"></a><span class="tm">19:35:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> I somehow assumed it was something that could happen at runtime
+<a name="l-157"></a><span class="tm">19:35:54</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, yes not for 0.15
+<a name="l-158"></a><span class="tm">19:36:06</span><span class="nk"> &lt;luke-jr&gt;</span> it probably can
+<a name="l-159"></a><span class="tm">19:36:17</span><span class="nk"> &lt;luke-jr&gt;</span> keypool size is still configurable I assume
+<a name="l-160"></a><span class="tm">19:36:29</span><span class="nk"> &lt;wumpus&gt;</span> but for dynamic wallet loading optionally passing the passphrase on load makes sense
+<a name="l-161"></a><span class="tm">19:37:23</span><span class="nk"> &lt;wumpus&gt;</span> ok - any other topics?
+<a name="l-162"></a><span class="tm">19:37:25</span><span class="nk"> &lt;jnewbery&gt;</span> Being able to run commands on load was my main motivation for #10740 . Unlocking and topping-up keypool fits well with that
+<a name="l-163"></a><span class="tm">19:38:09</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd like to remind people that we all need to be testing on master hard right now. :)
+<a name="l-164"></a><span class="tm">19:38:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10740 | [WIP] [wallet] dynamic loading/unloading of wallets by jnewbery · Pull Request #10740 · bitcoin/bitcoin · GitHub
+<a name="l-165"></a><span class="tm">19:38:45</span><span class="nk"> &lt;wumpus&gt;</span> if only we had rc1 out everyone could be testing on rc1 :)
+<a name="l-166"></a><span class="tm">19:40:10</span><span class="nk"> &lt;sdaftuar&gt;</span> where are we on the segwit address format?
+<a name="l-167"></a><span class="tm">19:40:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit address format</span>
+<a name="l-168"></a><span class="tm">19:41:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">sdaftuar:</span> https://github.com/sipa/bech32/pull/21
+<a name="l-169"></a><span class="tm">19:41:19</span><span class="nk"> &lt;sipa&gt;</span> almost done with a C++ reference version (though gmaxwell keeps finding untested cases)
+<a name="l-170"></a><span class="tm">19:41:30</span><span class="nk"> &lt;sipa&gt;</span> when that's done, i'll submit a PR to core to integrate it
+<a name="l-171"></a><span class="tm">19:41:34</span><span class="nk"> &lt;sdaftuar&gt;</span> great!
+<a name="l-172"></a><span class="tm">19:41:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> nice
+<a name="l-173"></a><span class="tm">19:41:39</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> great. will review that.
+<a name="l-174"></a><span class="tm">19:42:02</span><span class="nk"> &lt;sipa&gt;</span> which will need some refactor to get rid of CBitcoinAddress (i'm sorry for ever introducing that... there is no point for that to be a separate class...)
+<a name="l-175"></a><span class="tm">19:42:25</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> Is this going to be in 0.15.0 or 0.15.1?
+<a name="l-176"></a><span class="tm">19:42:35</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> maybe best to just cram it into CBitcoinAddress first for easy 0.15 backport ?
+<a name="l-177"></a><span class="tm">19:42:40</span><span class="nk"> &lt;sdaftuar&gt;</span> not 0.15.0
+<a name="l-178"></a><span class="tm">19:42:43</span><span class="nk"> &lt;wumpus&gt;</span> certainly not 0.15.0
+<a name="l-179"></a><span class="tm">19:42:44</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> ok good
+<a name="l-180"></a><span class="tm">19:42:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Chris_Stewart_5:</span> not in 0.15.0 maybe in 0.15.SW
+<a name="l-181"></a><span class="tm">19:42:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> i'll see what i can do
+<a name="l-182"></a><span class="tm">19:43:44</span><span class="nk"> &lt;cfields&gt;</span> ok
+<a name="l-183"></a><span class="tm">19:44:22</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-184"></a><span class="tm">19:44:25</span><span class="nk"> &lt;CodeShark&gt;</span> I have a quick one
+<a name="l-185"></a><span class="tm">19:44:45</span><span class="nk"> &lt;luke-jr&gt;</span> the hardest topics to discuss are the ones that are not disclosed. :P
+<a name="l-186"></a><span class="tm">19:45:04</span><span class="nk"> &lt;CodeShark&gt;</span> I would need to rebase, but now that SegWit is activating I'd really like to merge https://github.com/bitcoin/bitcoin/pull/10350
+<a name="l-187"></a><span class="tm">19:46:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Added support for MSG_FILTERED_WITNESS_BLOCK messages</span>
+<a name="l-188"></a><span class="tm">19:47:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> Wound't that require a bip first?
+<a name="l-189"></a><span class="tm">19:47:17</span><span class="nk"> &lt;CodeShark&gt;</span> is it really worth the effort?
+<a name="l-190"></a><span class="tm">19:47:23</span><span class="nk"> &lt;CodeShark&gt;</span> it's getting deprecated eventually
+<a name="l-191"></a><span class="tm">19:47:26</span><span class="nk"> &lt;CodeShark&gt;</span> probably pretty soon
+<a name="l-192"></a><span class="tm">19:47:33</span><span class="nk"> &lt;gmaxwell&gt;</span> well obviously not merged now, but perhaps in the .SW release. It needs a bip. unconditionally but it would be a trivial spec.
+<a name="l-193"></a><span class="tm">19:47:41</span><span class="nk"> &lt;CodeShark&gt;</span> ok
+<a name="l-194"></a><span class="tm">19:47:45</span><span class="nk"> &lt;gmaxwell&gt;</span> I can help with the bip.
+<a name="l-195"></a><span class="tm">19:47:53</span><span class="nk"> &lt;sipa&gt;</span> it doesn't look like it's too much work to add a witness proof
+<a name="l-196"></a><span class="tm">19:47:54</span><span class="nk"> &lt;wumpus&gt;</span> yeah it's a network protocol change so it needs some kind of BIP
+<a name="l-197"></a><span class="tm">19:47:55</span><span class="nk"> &lt;gmaxwell&gt;</span> (show of good will, since I really dislike the feature. :) )
+<a name="l-198"></a><span class="tm">19:48:00</span><span class="nk"> &lt;CodeShark&gt;</span> thanks, gmaxwell
+<a name="l-199"></a><span class="tm">19:48:20</span><span class="nk"> &lt;wumpus&gt;</span> if only to be able to refer to it in bips.md and such
+<a name="l-200"></a><span class="tm">19:48:26</span><span class="nk"> &lt;gmaxwell&gt;</span> (not due to it itself, but due to increasing the scope of BIP37)
+<a name="l-201"></a><span class="tm">19:48:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">CodeShark:</span> why would it get deprecated (you mean dep. bip37 in favor of client side filtering)?
+<a name="l-202"></a><span class="tm">19:48:39</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">jonasschnelli:</span> yes
+<a name="l-203"></a><span class="tm">19:48:43</span><span class="nk"> &lt;luke-jr&gt;</span> if it's literally only for short-term use by mSIGNA, I'm not sure it strictly NEEDS a BIP.
+<a name="l-204"></a><span class="tm">19:48:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> it's trivial to specify however.
+<a name="l-205"></a><span class="tm">19:48:56</span><span class="nk"> &lt;luke-jr&gt;</span> sure
+<a name="l-206"></a><span class="tm">19:49:05</span><span class="nk"> &lt;CodeShark&gt;</span> yeah, probably should stick to process
+<a name="l-207"></a><span class="tm">19:49:08</span><span class="nk"> &lt;wumpus&gt;</span> why not? it's good to have some kind of documentation
+<a name="l-208"></a><span class="tm">19:49:18</span><span class="nk"> &lt;gmaxwell&gt;</span> and the spec can also do things like tell people it is intended to be short lived.
+<a name="l-209"></a><span class="tm">19:49:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> I guess there are still usecases for BIP37 once BIP150 is life (trusted peers)
+<a name="l-210"></a><span class="tm">19:49:21</span><span class="nk"> &lt;wumpus&gt;</span> others might want to use it too
+<a name="l-211"></a><span class="tm">19:49:46</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">CodeShark:</span> if you can rebase it quickly, maybe we can throw it in Knots until it's ready for Core
+<a name="l-212"></a><span class="tm">19:49:58</span><span class="nk"> &lt;CodeShark&gt;</span> sure :)
+<a name="l-213"></a><span class="tm">19:49:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'm strongly advice for a BIP. Other may be interested and we don't want more specification within the code.
+<a name="l-214"></a><span class="tm">19:50:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> you can still do better things for that case, like send them the addresses explicitly.
+<a name="l-215"></a><span class="tm">19:50:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> Yes. But would require more work to do. :)
+<a name="l-216"></a><span class="tm">19:50:27</span><span class="nk"> &lt;sipa&gt;</span> i'd really like to see the addition of witness proofs, though - i understand that for your exact use case (which implies a trusted full node) that's unnecessary, but i don't think we should go that route in protocol extensions
+<a name="l-217"></a><span class="tm">19:50:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> heh yes, if the connection is encrypted and the peer is trusted, why not, why even bother with a bloom filter
+<a name="l-218"></a><span class="tm">19:50:56</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case basically any argument against doing a BIP is an argument for one too... it's trivial.  it's intended to be short lived (BIP would tell people that).
+<a name="l-219"></a><span class="tm">19:51:10</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> it would be a trivial change to make it do the witness proofs, no? just root on the other tree.
+<a name="l-220"></a><span class="tm">19:51:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> and give the coinbase, and normal merkle proof for the coinbase
+<a name="l-221"></a><span class="tm">19:51:36</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> I am still not convinced it's worth the effort to add the witness proof
+<a name="l-222"></a><span class="tm">19:51:42</span><span class="nk"> &lt;wumpus&gt;</span> then again BIP37 works now, that's a point, step-by-step evolution usually means that things keep moving instead of being blocked by big moves
+<a name="l-223"></a><span class="tm">19:51:52</span><span class="nk"> &lt;CodeShark&gt;</span> the coinbase issue means we need an entire new data structure
+<a name="l-224"></a><span class="tm">19:51:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> then i would be opposed to supporting it
+<a name="l-225"></a><span class="tm">19:52:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> use RPC instead
+<a name="l-226"></a><span class="tm">19:52:11</span><span class="nk"> &lt;CodeShark&gt;</span> huh?!
+<a name="l-227"></a><span class="tm">19:52:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">CodeShark:</span> it's just a existing thing for the coinbase, and then one more rooted in it.
+<a name="l-228"></a><span class="tm">19:52:54</span><span class="nk"> &lt;CodeShark&gt;</span> it already takes me hours to sync back just a few weeks
+<a name="l-229"></a><span class="tm">19:53:00</span><span class="nk"> &lt;CodeShark&gt;</span> RPC would mean it takes forever
+<a name="l-230"></a><span class="tm">19:53:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> you're asking to add a feature, available to every P2P client, which can only be safely used in a trusted setting
+<a name="l-231"></a><span class="tm">19:53:03</span><span class="nk"> &lt;luke-jr&gt;</span> why would you need a witness proof in this case anyway?
+<a name="l-232"></a><span class="tm">19:53:14</span><span class="nk"> &lt;CodeShark&gt;</span> <span class="hi">sipa:</span> ah, I see your point
+<a name="l-233"></a><span class="tm">19:53:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> because the full node can lie
+<a name="l-234"></a><span class="tm">19:53:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> about what? these peers don't have any need for the witness data at all
+<a name="l-235"></a><span class="tm">19:53:38</span><span class="nk"> &lt;CodeShark&gt;</span> agree that the trusted mode is distinct from p2p, but the HTTP server approach just won't do ;)
+<a name="l-236"></a><span class="tm">19:53:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> read the PR
+<a name="l-237"></a><span class="tm">19:53:55</span><span class="nk"> &lt;wumpus&gt;</span> sipa has a good point, if it's to be on the P2P network, it has to be possible to use it untrusted
+<a name="l-238"></a><span class="tm">19:53:57</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> CodeShark needs it to determine which subset of multisig signers spent the coins
+<a name="l-239"></a><span class="tm">19:54:11</span><span class="nk"> &lt;luke-jr&gt;</span> oh!
+<a name="l-240"></a><span class="tm">19:54:13</span><span class="nk"> &lt;wumpus&gt;</span> if not you'd have to wait for BIP150 (authentication)
+<a name="l-241"></a><span class="tm">19:54:26</span><span class="nk"> &lt;wumpus&gt;</span> and allow it to authenticated peers only
+<a name="l-242"></a><span class="tm">19:54:42</span><span class="nk"> &lt;sipa&gt;</span> yes, that would be private extensions easier
+<a name="l-243"></a><span class="tm">19:55:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">CodeShark:</span> but honestly, i don't think adding a proof for the witnesses is that hard; just send two structures (one with normal proof for coinbase, one with witness proof for the rest)
+<a name="l-244"></a><span class="tm">19:55:37</span><span class="nk"> &lt;CodeShark&gt;</span> it requires a lot of additional clientside modifications as well, I'd rather focus on clientside filtering
+<a name="l-245"></a><span class="tm">19:55:44</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, if we had BIP150 I wouldn't mind random extensions there even without bips. if you're only using it between trusted adjcencies the criteria is different.
+<a name="l-246"></a><span class="tm">19:57:13</span><span class="nk"> &lt;CodeShark&gt;</span> not saying it's hard - just time I think would be better invested elsewhere
+<a name="l-247"></a><span class="tm">19:57:26</span><span class="nk"> &lt;sipa&gt;</span> yes, like helping with client side filtering :)
+<a name="l-248"></a><span class="tm">19:57:31</span><span class="nk"> &lt;CodeShark&gt;</span> indeed
+<a name="l-249"></a><span class="tm">19:57:39</span><span class="nk"> &lt;sdaftuar&gt;</span> also though, if you intend to only use something on trusted nodes you could just carry a custom patch, no?  i mean, if there's not much other demand for this extension.
+<a name="l-250"></a><span class="tm">19:57:50</span><span class="nk"> &lt;achow101&gt;</span> does client side filtering have a bip?
+<a name="l-251"></a><span class="tm">19:57:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> Could you not impelement directly the client side filtering?
+<a name="l-252"></a><span class="tm">19:58:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> it's a nontrivial effort
+<a name="l-253"></a><span class="tm">19:58:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> roasbeef hasn't opened the PR (last state is the ML post)
+<a name="l-254"></a><span class="tm">19:58:14</span><span class="nk"> &lt;sipa&gt;</span> needs stored bloom filters for all blocks on disk etc
+<a name="l-255"></a><span class="tm">19:58:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> not afaik
+<a name="l-256"></a><span class="tm">19:59:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> Yes. But a long term strategy and there are a couple of people willing to contribute
+<a name="l-257"></a><span class="tm">19:59:05</span><span class="nk"> &lt;sipa&gt;</span> sure
+<a name="l-258"></a><span class="tm">19:59:05</span><span class="nk"> &lt;luke-jr&gt;</span> I assumed jonasschnelli meant implement BIP37 client-side
+<a name="l-259"></a><span class="tm">19:59:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> not bip37
+<a name="l-260"></a><span class="tm">19:59:20</span><span class="nk"> &lt;CodeShark&gt;</span> lol, BIP37 needs to eventually die
+<a name="l-261"></a><span class="tm">19:59:24</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't thin the spec has been updated to eliminate the divisions yet.
+<a name="l-262"></a><span class="tm">20:00:10</span><span class="nk"> &lt;wumpus&gt;</span> meeting time is over
+<a name="l-263"></a><span class="tm">20:00:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

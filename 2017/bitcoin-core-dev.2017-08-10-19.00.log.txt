@@ -1,0 +1,263 @@
+19:00:16 <wumpus> #startmeeting
+19:00:16 <lightningbot> Meeting started Thu Aug 10 19:00:16 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:16 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:20 <jonasschnelli> hi
+19:00:22 <achow101> hi
+19:00:24 <Chris_Stewart_5> ello
+19:00:26 <sdaftuar> hey
+19:00:45 <instagibbs> hi
+19:00:59 <wumpus> any topics?
+19:01:18 <jnewbery> #10882 please
+19:01:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Stop advancing best block and shutdown node if keypool drops below critical threshold by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:01:42 <wumpus> good idea
+19:01:43 <wumpus> #topic Stop advancing best block and shutdown node if keypool drops below critical threshold
+19:02:08 <cfields> hi
+19:02:20 <jonasschnelli> jnewbery: is that the alternative for keypool topup for 0.15?
+19:02:23 <kanzure> hi.
+19:02:27 <wumpus> that replaced #11022 for 015.0?
+19:02:29 <gribble> https://github.com/bitcoin/bitcoin/issues/11022 | Basic keypool topup by jnewbery · Pull Request #11022 · bitcoin/bitcoin · GitHub
+19:02:55 <jonasschnelli> What was/is wrong with 11022?
+19:03:11 <achow101> jonasschnelli: 11022 is part of 10882 split into a separate pr
+19:03:16 <luke-jr> if the node shuts down, how can users recover? O.o
+19:03:18 <wumpus> it was getting too large IIRC
+19:03:29 <jnewbery> #10882 is the same as it has been for the last few days (mark-used if later key from keypool used, try to topup, stop node if can't, etc)
+19:03:32 <gribble> https://github.com/bitcoin/bitcoin/issues/10882 | Stop advancing best block and shutdown node if keypool drops below critical threshold by jnewbery · Pull Request #10882 · bitcoin/bitcoin · GitHub
+19:03:41 <jonasschnelli> Ah. Same problem I had with my original PR. :/
+19:03:48 <jnewbery> I split #11022 off as the (hopefully) uncontroversial changes
+19:03:50 <gribble> https://github.com/bitcoin/bitcoin/issues/11022 | Basic keypool topup by jnewbery · Pull Request #11022 · bitcoin/bitcoin · GitHub
+19:04:12 <jnewbery> it just marks keys as used and tops up the keypool. No stop node/don't advance best block
+19:04:20 <gmaxwell> I was making the recommendation that we split out the part that marks used and refills the pool and get that merged. It is a strict improvement with no downsides or extra considerations.
+19:04:29 <gmaxwell> that one!
+19:04:42 <kanzure> (nick ping)
+19:04:55 <cfields> gmaxwell: can you do your hilite reminder? almost missed this
+19:04:58 <cfields> yes, that :)
+19:05:35 <wumpus> sounds like a good idea to factor out the critical, lower-risk changes so that it can still make 0.15.0rc1
+19:05:53 <wumpus> though this does mean it needs a new review round
+19:06:00 <gmaxwell> I believe all the shutdown ones have unanswered questions.
+19:06:07 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:06:21 <gmaxwell> cfields: mine seems to be broken. Thanks wumpus.
+19:06:25 <cfields> thanks
+19:06:31 <sipa> present
+19:06:36 <CodeShark> hello all
+19:06:42 <paveljanik> here
+19:06:55 <luke-jr> the startmeeting command should do it <.<
+19:06:58 <Murch> hullo
+19:07:04 <sipa> wumpus: the initial commits are the same
+19:07:06 <jnewbery> I thought we were very close with 10882, with ACKs from several people. Greg - could you ask your unanswered questions in the PR? Your comments have mostly been in IRC and it's difficult to keep track of what your current concerns are
+19:07:33 <wumpus> sipa: yes
+19:09:09 <wumpus> 10882 was kind of a miscommunication, I almost merged than when it turned out that there were still critical concerns with it
+19:09:40 <gmaxwell> jnewbery: it's not with your implementation specifically, but the correct behavior.  Shutting down on never-behind wallets who just drained their keypools (or never had a big keypool) is undesirable, but it doesn't appear to be possible to detect if a wallet had potentially been behind or not. (e.g. the only during rescan hurestic will fail in some places where the node and the wallet were both
+19:09:46 <gmaxwell> behind; as a simple example: backup your whole .bitcoin directory and later restor the backup)
+19:10:18 <MarcoFalke> so 11022 is for 0.15 and 10882 should be removed from the milestone?
+19:10:20 <gmaxwell> restore*
+19:11:03 <wumpus> MarcoFalke: huh
+19:11:19 <luke-jr> IMO the correct behaviour would be an interface for pruning locks in general (usable by external wallets too), and track the best chain independently from where the UTXO set is. but this is way too complicated IMO. :/
+19:11:21 <wumpus> wasn't it the other way around?
+19:11:39 <gmaxwell> MarcoFalke: that was my suggestion: merge the part we know is done. I don't think we can make a 10882 right now that won't result in strange behavior in some corner cases.
+19:11:40 <sipa> luke-jr: yes, that's the eventual goal - agree, but we don't have to go there in one step
+19:11:51 <jnewbery> wumpus : MarcoFalke has it right. 11022 is the simple subset
+19:11:53 <achow101> wumpus: 11022 is newer than 10882
+19:11:53 <wumpus> 11022 was removed from 0.15, and 10882 replaced it
+19:12:00 <gmaxwell> (at least not in short order)
+19:12:03 <wumpus> why and who did that then?
+19:12:07 * wumpus is really confused
+19:12:17 <gmaxwell> 11022 is a massive improvement and safty increase.
+19:12:26 <achow101> wumpus: 10882 was created, 11022 was split out from 10882
+19:12:27 <sipa> 11022 is 10882 without the shutdown logic
+19:12:30 <wumpus> what can we realistically finish in say, a week?
+19:12:47 <gmaxwell> wumpus: there was a thid PR you're thinking of 11022 is new, as of a few hours ago.
+19:12:58 <luke-jr> what if we just stop pruning, and let the normal low-disk-space shutdown do the job? ;)
+19:13:06 <sipa> luke-jr: die
+19:13:11 <luke-jr> :|
+19:13:13 <gmaxwell> luke-jr: pruning is also not the only issue.
+19:13:14 <wumpus> we can't continue adding things for 0.15 as that fix grows in scope more and more
+19:13:23 <sipa> wumpus: 11022 is a reduction in scope
+19:13:35 <sipa> i think 11022 can be ready to merge today or so
+19:13:38 <wumpus> as this all deals with something that is not a regression in 0.15, I'm starting to be really doubtful about this
+19:13:44 <gmaxwell> wumpus: that new PR radically reduced the scope, to the core part that has been in every PR so far.
+19:13:45 <luke-jr> gmaxwell: what am I missing?
+19:14:00 <sipa> *today
+19:14:12 <jnewbery> 11022 is ready now. It needs rereview by people, but it should be uncontroversial as it's a subset of what's already been ACKed
+19:14:57 <wumpus> ah yes I was confused with the other 'keypool topup' PR
+19:15:43 <MarcoFalke> ok, changed the milestones.
+19:15:54 <wumpus> thanks
+19:16:04 <gmaxwell> luke-jr: you could start by already reading the comments that are there.  Each version has failed in different corner cases.  I'll go update the PR with a longer list but after spending an hour talking to Pieter about it I'm just dispondent that it's all a mess that we won't fix quickly (again, not due to the code; but due to what behavior would actually be acceptable.)
+19:16:09 <jnewbery> full history: Jonas's PR was 10240. I rebased and cleaned that up as 10830. I then reduced the scope and incorporated a bunch of feedback in 10882. I've now reduced the scope again in 11022
+19:16:40 <wumpus> jnewbery: that's a painful history, thanks for sticking with it
+19:17:12 <jnewbery> painful is a pretty accurate description!
+19:17:34 <jonasschnelli> ;-)
+19:17:43 <gmaxwell> luke-jr: but in general, versions that shutdown based on low keypool have a problem with existing wallets failing to work when users upgrade, and efforts to avoid that can create cases where we'll fail to force a shutdown when we should. (for example if the user backed up and restored a whole .bitcoin directory).
+19:17:56 <jnewbery> but let's try to get 11022 reviewed, and if gmaxwell could leave a nice long comment on 10882 about edge cases perhaps we can try again after 0.15
+19:18:21 <gmaxwell> luke-jr: and I think now that a whole subfamily of suggestions I was making are just impossible to actually make work right, for which I am very sorry.
+19:18:35 <gmaxwell> jnewbery: will do
+19:18:46 <jnewbery> gmaxwell thanks
+19:19:32 <jnewbery> sipa ryanofsky morcos bluematt instagibbs reviewed 10882. Should be a straightforward task for them to rereview 11022
+19:19:39 <sipa> jnewbery: on it
+19:19:44 <instagibbs> gotcha
+19:19:45 <sipa> (right now)
+19:19:47 <wumpus> We can't rule all out edge cases. Tthe most important thing is that people upgrading won't automatically run into the issue because 0.15 sets a larger keypool default.
+19:20:10 <jnewbery> upgrade isn't an issue in 11022
+19:20:21 <wumpus> good!
+19:20:25 <instagibbs> will review today
+19:20:31 <jnewbery> (and actually isn't in 10882 as it's now implemented, but let's not get into that)
+19:20:47 <wumpus> do we have a test for that? :)
+19:21:11 <jnewbery> no, as far as I'm aware we have no upgrade tests. It'd be nice to have them
+19:21:41 <sipa> (gmaxwell went offline)
+19:21:57 <wumpus> no, we don't have any upgrade tests
+19:22:11 <instagibbs> jnewbery, to refresh memory: "Notably, it does not stop the node or prevent the best block from advancing if the keypool drops below a threshold" this is only in case of crypted?
+19:22:49 <sipa> instagibbs: my belief is that it'll just succesfully top up when unlocked
+19:23:24 <jnewbery> instagibbs, in 10882 we would only ever prevent best block advancing/stop node when top up was unsuccessful (ie encrypted locked wallet)
+19:23:39 <sipa> jnewbery: great
+19:23:39 <jnewbery> 11022 removes all prevent best block advancing/stop node behaviour
+19:23:57 <instagibbs> got it
+19:24:16 <wumpus> even better would it be if we had test cases for all of gmaxwell's edge cases
+19:24:18 <sipa> <gmaxwell> we can now have rescan instructions in our relwase notes: unlock the wallet and run rescan rpc
+19:24:19 <jnewbery> 11022 is really very simple. It has a bunch of refactor commits, but the functional change is fairly small
+19:24:54 * gmaxwell back
+19:25:20 <jnewbery> if we can get bitcoin-wallet-tool and offline topup into v0.16 we have a very nice way of sidestepping most of the problems I believe
+19:25:44 <gmaxwell> jnewbery: sipa was just saying something like that to me.
+19:25:54 <sipa> jnewbery: alternatively, make the dynamic-load-wallet RPC fail in case of too low keypool, and make it take an optional passphrase
+19:25:55 <luke-jr> at least GUI can block on a passphrase
+19:26:00 <sipa> luke-jr: that too
+19:26:03 <jnewbery> yes!
+19:26:08 <luke-jr> sipa: oooh, that's an excellent approach for bitcoind
+19:26:23 <gmaxwell> but all to much for 0.15 now.  But at least 11022 massively narrows the window and creates a workaround.
+19:26:26 <sipa> agree
+19:27:19 <sipa> any other 0.15-related topics?
+19:27:44 <wumpus> although harder to implement there's no reason bitcoind couldn't block on a passphrase, justblock everything until a walletpassphrase command
+19:27:55 <jnewbery> yuck
+19:28:04 <luke-jr> if I prioritise rebasing the optional default-wallet, would it be considered for inclusion?
+19:28:05 <jnewbery> multiwallet?
+19:28:50 <luke-jr> wumpus: can RPC run without the node running?
+19:29:53 <wumpus> luke-jr: in the same way the GUI can I guess
+19:30:09 <gmaxwell> jnewbery: I think that is less yuck than some other options.  Though really it's block until passphrase or the critical key level is changed.
+19:30:34 <wumpus> holding up RPC commands for a long time is bound to run into timeouts though
+19:30:53 <luke-jr> wumpus: we already throw exceptions during init
+19:31:04 <luke-jr> so we'd just need to make an exception for walletpassphrase
+19:31:13 <wumpus> yes it's kind of yuck, it's opposite from anything we want to do, with the wallet being able to block the node
+19:31:18 <luke-jr> the catch to this (and GUI prompting I guess) is that we need to load the wallet earlier
+19:32:17 <gmaxwell> longer term we'll need ways to rescan wallets when there is pruning.  E.g. PIR wallet queries. But that is a research project with a 1yr horizon or so.
+19:32:41 <gmaxwell> once we have something like this I think much of this mess goes away.
+19:32:50 <jnewbery> Are there any other circumstances where bitcoind waits for stdin? I think it might inadvertently break peoples assumptions
+19:32:52 <jonasschnelli> pir?
+19:33:07 <sipa> jonasschnelli: https://en.wikipedia.org/wiki/Private_information_retrieval
+19:33:08 <jnewbery> also it's messy if multiwallets are prompting for passphrases
+19:33:20 <jonasschnelli> thy
+19:33:32 <gmaxwell> jnewbery: not stdin, but accepting rpc connections and throwing the not ready yet error for all but walletpassphrase.
+19:33:45 <gmaxwell> (like we do when loading the block index)
+19:34:16 <jnewbery> oh ok, yeah that's not so bad
+19:34:27 <gmaxwell> now I understand the yuck better. :)
+19:34:27 <jnewbery> but to be clear, not for 0.15 :)
+19:34:31 <gmaxwell> yes.
+19:34:32 <wumpus> luke-jr: you mean going back into warmup mode? hmm then all clients would have to handle that
+19:35:03 <wumpus> oh certainly not stdin
+19:35:03 <luke-jr> wumpus: I mean never leaving warmup mode :p
+19:35:12 <wumpus> luke-jr: that'd make sense
+19:35:42 <wumpus> luke-jr: I somehow assumed it was something that could happen at runtime
+19:35:54 <wumpus> anyhow, yes not for 0.15
+19:36:06 <luke-jr> it probably can
+19:36:17 <luke-jr> keypool size is still configurable I assume
+19:36:29 <wumpus> but for dynamic wallet loading optionally passing the passphrase on load makes sense
+19:37:23 <wumpus> ok - any other topics?
+19:37:25 <jnewbery> Being able to run commands on load was my main motivation for #10740 . Unlocking and topping-up keypool fits well with that
+19:38:09 <gmaxwell> I'd like to remind people that we all need to be testing on master hard right now. :)
+19:38:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10740 | [WIP] [wallet] dynamic loading/unloading of wallets by jnewbery · Pull Request #10740 · bitcoin/bitcoin · GitHub
+19:38:45 <wumpus> if only we had rc1 out everyone could be testing on rc1 :)
+19:40:10 <sdaftuar> where are we on the segwit address format?
+19:40:21 <wumpus> #topic segwit address format
+19:41:02 <sipa> sdaftuar: https://github.com/sipa/bech32/pull/21
+19:41:19 <sipa> almost done with a C++ reference version (though gmaxwell keeps finding untested cases)
+19:41:30 <sipa> when that's done, i'll submit a PR to core to integrate it
+19:41:34 <sdaftuar> great!
+19:41:39 <jonasschnelli> nice
+19:41:39 <cfields> sipa: great. will review that.
+19:42:02 <sipa> which will need some refactor to get rid of CBitcoinAddress (i'm sorry for ever introducing that... there is no point for that to be a separate class...)
+19:42:25 <Chris_Stewart_5> Is this going to be in 0.15.0 or 0.15.1?
+19:42:35 <cfields> sipa: maybe best to just cram it into CBitcoinAddress first for easy 0.15 backport ?
+19:42:40 <sdaftuar> not 0.15.0
+19:42:43 <wumpus> certainly not 0.15.0
+19:42:44 <Chris_Stewart_5> ok good
+19:42:49 <jonasschnelli> Chris_Stewart_5: not in 0.15.0 maybe in 0.15.SW
+19:42:59 <sipa> cfields: i'll see what i can do
+19:43:44 <cfields> ok
+19:44:22 <wumpus> any other topics?
+19:44:25 <CodeShark> I have a quick one
+19:44:45 <luke-jr> the hardest topics to discuss are the ones that are not disclosed. :P
+19:45:04 <CodeShark> I would need to rebase, but now that SegWit is activating I'd really like to merge https://github.com/bitcoin/bitcoin/pull/10350
+19:46:03 <wumpus> #topic Added support for MSG_FILTERED_WITNESS_BLOCK messages
+19:47:00 <jonasschnelli> Wound't that require a bip first?
+19:47:17 <CodeShark> is it really worth the effort?
+19:47:23 <CodeShark> it's getting deprecated eventually
+19:47:26 <CodeShark> probably pretty soon
+19:47:33 <gmaxwell> well obviously not merged now, but perhaps in the .SW release. It needs a bip. unconditionally but it would be a trivial spec.
+19:47:41 <CodeShark> ok
+19:47:45 <gmaxwell> I can help with the bip.
+19:47:53 <sipa> it doesn't look like it's too much work to add a witness proof
+19:47:54 <wumpus> yeah it's a network protocol change so it needs some kind of BIP
+19:47:55 <gmaxwell> (show of good will, since I really dislike the feature. :) )
+19:48:00 <CodeShark> thanks, gmaxwell
+19:48:20 <wumpus> if only to be able to refer to it in bips.md and such
+19:48:26 <gmaxwell> (not due to it itself, but due to increasing the scope of BIP37)
+19:48:33 <jonasschnelli> CodeShark: why would it get deprecated (you mean dep. bip37 in favor of client side filtering)?
+19:48:39 <CodeShark> jonasschnelli: yes
+19:48:43 <luke-jr> if it's literally only for short-term use by mSIGNA, I'm not sure it strictly NEEDS a BIP.
+19:48:54 <gmaxwell> luke-jr: it's trivial to specify however.
+19:48:56 <luke-jr> sure
+19:49:05 <CodeShark> yeah, probably should stick to process
+19:49:08 <wumpus> why not? it's good to have some kind of documentation
+19:49:18 <gmaxwell> and the spec can also do things like tell people it is intended to be short lived.
+19:49:20 <jonasschnelli> I guess there are still usecases for BIP37 once BIP150 is life (trusted peers)
+19:49:21 <wumpus> others might want to use it too
+19:49:46 <luke-jr> CodeShark: if you can rebase it quickly, maybe we can throw it in Knots until it's ready for Core
+19:49:58 <CodeShark> sure :)
+19:49:59 <jonasschnelli> I'm strongly advice for a BIP. Other may be interested and we don't want more specification within the code.
+19:50:07 <gmaxwell> jonasschnelli: you can still do better things for that case, like send them the addresses explicitly.
+19:50:25 <jonasschnelli> gmaxwell: Yes. But would require more work to do. :)
+19:50:27 <sipa> i'd really like to see the addition of witness proofs, though - i understand that for your exact use case (which implies a trusted full node) that's unnecessary, but i don't think we should go that route in protocol extensions
+19:50:42 <wumpus> gmaxwell: heh yes, if the connection is encrypted and the peer is trusted, why not, why even bother with a bloom filter
+19:50:56 <gmaxwell> in any case basically any argument against doing a BIP is an argument for one too... it's trivial.  it's intended to be short lived (BIP would tell people that).
+19:51:10 <gmaxwell> sipa: it would be a trivial change to make it do the witness proofs, no? just root on the other tree.
+19:51:29 <sipa> gmaxwell: and give the coinbase, and normal merkle proof for the coinbase
+19:51:36 <CodeShark> sipa: I am still not convinced it's worth the effort to add the witness proof
+19:51:42 <wumpus> then again BIP37 works now, that's a point, step-by-step evolution usually means that things keep moving instead of being blocked by big moves
+19:51:52 <CodeShark> the coinbase issue means we need an entire new data structure
+19:51:53 <sipa> CodeShark: then i would be opposed to supporting it
+19:52:06 <sipa> CodeShark: use RPC instead
+19:52:11 <CodeShark> huh?!
+19:52:14 <gmaxwell> CodeShark: it's just a existing thing for the coinbase, and then one more rooted in it.
+19:52:54 <CodeShark> it already takes me hours to sync back just a few weeks
+19:53:00 <CodeShark> RPC would mean it takes forever
+19:53:03 <sipa> CodeShark: you're asking to add a feature, available to every P2P client, which can only be safely used in a trusted setting
+19:53:03 <luke-jr> why would you need a witness proof in this case anyway?
+19:53:14 <CodeShark> sipa: ah, I see your point
+19:53:15 <sipa> luke-jr: because the full node can lie
+19:53:37 <luke-jr> sipa: about what? these peers don't have any need for the witness data at all
+19:53:38 <CodeShark> agree that the trusted mode is distinct from p2p, but the HTTP server approach just won't do ;)
+19:53:45 <sipa> luke-jr: read the PR
+19:53:55 <wumpus> sipa has a good point, if it's to be on the P2P network, it has to be possible to use it untrusted
+19:53:57 <sipa> luke-jr: CodeShark needs it to determine which subset of multisig signers spent the coins
+19:54:11 <luke-jr> oh!
+19:54:13 <wumpus> if not you'd have to wait for BIP150 (authentication)
+19:54:26 <wumpus> and allow it to authenticated peers only
+19:54:42 <sipa> yes, that would be private extensions easier
+19:55:14 <sipa> CodeShark: but honestly, i don't think adding a proof for the witnesses is that hard; just send two structures (one with normal proof for coinbase, one with witness proof for the rest)
+19:55:37 <CodeShark> it requires a lot of additional clientside modifications as well, I'd rather focus on clientside filtering
+19:55:44 <gmaxwell> yea, if we had BIP150 I wouldn't mind random extensions there even without bips. if you're only using it between trusted adjcencies the criteria is different.
+19:57:13 <CodeShark> not saying it's hard - just time I think would be better invested elsewhere
+19:57:26 <sipa> yes, like helping with client side filtering :)
+19:57:31 <CodeShark> indeed
+19:57:39 <sdaftuar> also though, if you intend to only use something on trusted nodes you could just carry a custom patch, no?  i mean, if there's not much other demand for this extension.
+19:57:50 <achow101> does client side filtering have a bip?
+19:57:55 <jonasschnelli> Could you not impelement directly the client side filtering?
+19:58:07 <sipa> jonasschnelli: it's a nontrivial effort
+19:58:11 <jonasschnelli> achow101: roasbeef hasn't opened the PR (last state is the ML post)
+19:58:14 <sipa> needs stored bloom filters for all blocks on disk etc
+19:58:33 <wumpus> achow101: not afaik
+19:59:00 <jonasschnelli> sipa: Yes. But a long term strategy and there are a couple of people willing to contribute
+19:59:05 <sipa> sure
+19:59:05 <luke-jr> I assumed jonasschnelli meant implement BIP37 client-side
+19:59:20 <jonasschnelli> not bip37
+19:59:20 <CodeShark> lol, BIP37 needs to eventually die
+19:59:24 <gmaxwell> I don't thin the spec has been updated to eliminate the divisions yet.
+20:00:10 <wumpus> meeting time is over
+20:00:18 <wumpus> #endmeeting
