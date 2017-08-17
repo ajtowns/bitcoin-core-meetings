@@ -1,0 +1,329 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:14</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 17 19:00:14 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:14</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:20</span><span class="nk"> &lt;sipa&gt;</span> DUNG
+<a name="l-5"></a><span class="tm">19:00:31</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:00:41</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> present
+<a name="l-7"></a><span class="tm">19:00:43</span><span class="nk"> &lt;jtimon&gt;</span> dong
+<a name="l-8"></a><span class="tm">19:00:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:00:55</span><span class="nk"> &lt;instagibbs&gt;</span> prezent
+<a name="l-10"></a><span class="tm">19:00:57</span><span class="nk"> &lt;wumpus&gt;</span> topics?
+<a name="l-11"></a><span class="tm">19:01:01</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:01:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-13"></a><span class="tm">19:01:39</span><span class="nk"> &lt;BlueMatt&gt;</span> blockers for review
+<a name="l-14"></a><span class="tm">19:01:40</span><span class="nk"> &lt;wumpus&gt;</span> let's start with 0.15.0rc1 - have any serious issues been reported?
+<a name="l-15"></a><span class="tm">19:01:44</span><span class="nk"> &lt;BlueMatt&gt;</span> and that
+<a name="l-16"></a><span class="tm">19:01:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.15.0</span>
+<a name="l-17"></a><span class="tm">19:02:08</span><span class="nk"> &lt;BlueMatt&gt;</span> there's the openbsd stuff, but I'm not sure thats really 0.15 per se, more than just openbsd brokenness
+<a name="l-18"></a><span class="tm">19:02:15</span><span class="nk"> &lt;BlueMatt&gt;</span> there's also the version-reporting thing gmaxwell mentioned
+<a name="l-19"></a><span class="tm">19:02:17</span><span class="nk"> &lt;cfields&gt;</span> only thing i'm aware of is the version number issue, but that's nothing
+<a name="l-20"></a><span class="tm">19:02:28</span><span class="nk"> &lt;wumpus&gt;</span> that's just openbsd brittleness, I'm looking at it
+<a name="l-21"></a><span class="tm">19:02:32</span><span class="nk"> &lt;achow101&gt;</span> there's the duplicate hex in getrawtransaction
+<a name="l-22"></a><span class="tm">19:02:36</span><span class="nk"> &lt;BlueMatt&gt;</span> plus the new compiler warnings
+<a name="l-23"></a><span class="tm">19:02:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> do we have a patch for that?
+<a name="l-24"></a><span class="tm">19:02:50</span><span class="nk"> &lt;sipa&gt;</span> and the other things marked for 0.15... #11044 #11027
+<a name="l-25"></a><span class="tm">19:03:09</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> i haven't decided on where to fix it yet. Either way I'll PR something today/tomorrow
+<a name="l-26"></a><span class="tm">19:03:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I guess in a hurry we could just revert luke-jr's patch that introduces the problem, for 0.15
+<a name="l-27"></a><span class="tm">19:04:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> yes, that was my initial suggestion, but luke-jr isn't a fan
+<a name="l-28"></a><span class="tm">19:04:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> Can you elaborate on the version number issue (via luke-jr's PR)?
+<a name="l-29"></a><span class="tm">19:04:37</span><span class="nk"> &lt;wumpus&gt;</span> yes I saw the new compiler warnings, something about signed to unsigned comparison in the wallet version logic
+<a name="l-30"></a><span class="tm">19:04:41</span><span class="nk"> &lt;wumpus&gt;</span> is that something serious?
+<a name="l-31"></a><span class="tm">19:05:10</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> the version string doesn't show v0.15.0 as it should, but a git commit instead
+<a name="l-32"></a><span class="tm">19:05:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">src/wallet/wallet.cpp:3668:38:</span> warning: comparison of integers of different signs: 'std::set&lt;long, std::less&lt;long&gt;, std::allocator&lt;long&gt; &gt;::size_type' (aka 'unsigned long') and 'int' [-Wsign-compare]
+<a name="l-33"></a><span class="tm">19:05:16</span><span class="nk"> &lt;cfields&gt;</span> sec for offending PR
+<a name="l-34"></a><span class="tm">19:05:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">suggestion:</span> have travis (which has a deterministic compiler version) in one of the tests run with -Werror... but not for default builds
+<a name="l-35"></a><span class="tm">19:05:37</span><span class="nk"> &lt;wumpus&gt;</span> and another one on the same line
+<a name="l-36"></a><span class="tm">19:05:55</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> #10923
+<a name="l-37"></a><span class="tm">19:06:02</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-38"></a><span class="tm">19:06:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yeah, no that we no longer have any annoying warnings such as Wshadow we could do that
+<a name="l-39"></a><span class="tm">19:06:15</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> #7522
+<a name="l-40"></a><span class="tm">19:06:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> isn't that (-WSign-compare) fixed with #11044?
+<a name="l-41"></a><span class="tm">19:06:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> oops, never read the second part of the title
+<a name="l-42"></a><span class="tm">19:06:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> could be!
+<a name="l-43"></a><span class="tm">19:06:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> It is. Just checked
+<a name="l-44"></a><span class="tm">19:06:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> we already have --enable-werror which is an even more limited set of -W's that we error on, but we never enable it on anything
+<a name="l-45"></a><span class="tm">19:07:10</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> that pr enables it for thread-safety-analysis and then turns it on on travis-osx
+<a name="l-46"></a><span class="tm">19:07:14</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> +1. I think 10923 is a great idea
+<a name="l-47"></a><span class="tm">19:07:31</span><span class="nk"> &lt;BlueMatt&gt;</span> 10923 is blocked on switching mutexes and sync.h to std, but I think we can just do that (tm)
+<a name="l-48"></a><span class="tm">19:07:50</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> not yet :(
+<a name="l-49"></a><span class="tm">19:08:02</span><span class="nk"> &lt;wumpus&gt;</span> we can just take the travis-werror part
+<a name="l-50"></a><span class="tm">19:08:17</span><span class="nk"> &lt;wumpus&gt;</span> I don't see how that is strongly related to the thread analysis
+<a name="l-51"></a><span class="tm">19:08:22</span><span class="nk"> &lt;BlueMatt&gt;</span> true
+<a name="l-52"></a><span class="tm">19:08:43</span><span class="nk"> &lt;wumpus&gt;</span> switching over mutexes and sync definitely sounds like a post-0.15 thing
+<a name="l-53"></a><span class="tm">19:08:46</span><span class="nk"> &lt;cfields&gt;</span> yea, we should just go ahead with that and add the thread checking when it's ready
+<a name="l-54"></a><span class="tm">19:08:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> oh? none of that stuff is used directly in the remaining threadGroup threads
+<a name="l-55"></a><span class="tm">19:09:06</span><span class="nk"> &lt;BlueMatt&gt;</span> oh, y'all want to turn on -Werror on travis for 15? yea, ok, not that then
+<a name="l-56"></a><span class="tm">19:09:34</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, looks like #11044 fixes the warnings, and its already tagged 0.15.0
+<a name="l-57"></a><span class="tm">19:09:47</span><span class="nk"> &lt;cfields&gt;</span> oh, i thought we were talking about it for master
+<a name="l-58"></a><span class="tm">19:10:03</span><span class="nk"> &lt;wumpus&gt;</span> the topic is 0.15 so I was assuming we were talking about 0.15
+<a name="l-59"></a><span class="tm">19:10:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> I have a correct version string in 0.15.0rc1 (Qt, debug log). What do I miss?
+<a name="l-60"></a><span class="tm">19:10:14</span><span class="nk"> &lt;wumpus&gt;</span> anyhow, I don't mind, let's enable it for some branch...
+<a name="l-61"></a><span class="tm">19:10:32</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> i'll double-check. But I thought we had some outstanding condvars that we couldn't switch yet. Will look after meeting.
+<a name="l-62"></a><span class="tm">19:10:32</span><span class="nk"> &lt;wumpus&gt;</span> master is what the PRs will be tested against so that makes most sense I suppose
+<a name="l-63"></a><span class="tm">19:10:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> we do, but they're directly calling boost::condition_variable, not CConditionVariable, I believe
+<a name="l-64"></a><span class="tm">19:11:00</span><span class="nk"> &lt;gmaxwell&gt;</span> We can turn of travis Werroring if it turns out to be a pain (or even when not if...) but gain advantages from it until then.
+<a name="l-65"></a><span class="tm">19:11:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">ok:</span> does anything need tagging for 0.15.0?
+<a name="l-66"></a><span class="tm">19:11:23</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> the splash screen, at least, shows the git revision
+<a name="l-67"></a><span class="tm">19:11:43</span><span class="nk"> &lt;BlueMatt&gt;</span> as for 0.15, I think its jsut the 3 tags + whatever for the version string issue
+<a name="l-68"></a><span class="tm">19:11:48</span><span class="nk"> &lt;BlueMatt&gt;</span> or, nothing else was brought up
+<a name="l-69"></a><span class="tm">19:11:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+<a name="l-70"></a><span class="tm">19:11:55</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">cfields:</span> Ah. I see now.. releases don't have the commit&amp;dirty.. nm
+<a name="l-71"></a><span class="tm">19:12:20</span><span class="nk"> &lt;wumpus&gt;</span> okay
+<a name="l-72"></a><span class="tm">19:12:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high-priority for review</span>
+<a name="l-73"></a><span class="tm">19:12:52 </span><span class="nka">* BlueMatt</span> <span class="ac">puts #10286 on the list</span>
+<a name="l-74"></a><span class="tm">19:13:14</span><span class="nk"> &lt;wumpus&gt;</span> now that 0.15 is branched, we can start doing this again
+<a name="l-75"></a><span class="tm">19:13:35</span><span class="nk"> &lt;wumpus&gt;</span> added
+<a name="l-76"></a><span class="tm">19:13:42</span><span class="nk"> &lt;wumpus&gt;</span> it's lonely https://github.com/bitcoin/bitcoin/projects/8
+<a name="l-77"></a><span class="tm">19:13:48 </span><span class="nka">* jonasschnelli</span> <span class="ac">puts Implement BIP159 / #10387  on the list</span>
+<a name="l-78"></a><span class="tm">19:14:03</span><span class="nk"> &lt;sipa&gt;</span> i'd like to draw some attention to #10785 (serialization improvements)
+<a name="l-79"></a><span class="tm">19:14:07</span><span class="nk"> &lt;BlueMatt&gt;</span> thats ok, 10286 needs to simmer on master for a month or three, so it is actually a should-go-soon, thing
+<a name="l-80"></a><span class="tm">19:14:13</span><span class="nk"> &lt;BlueMatt&gt;</span> :p
+<a name="l-81"></a><span class="tm">19:14:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11027 | [RPC] Only return hex field once in getrawtransaction by achow101 · Pull Request #11027 · bitcoin/bitcoin · GitHub
+<a name="l-82"></a><span class="tm">19:14:28</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> It's on my list.. reviewed most of it and running on my node
+<a name="l-83"></a><span class="tm">19:14:43</span><span class="nk"> &lt;gmaxwell&gt;</span> lol poor gribble.
+<a name="l-84"></a><span class="tm">19:14:51</span><span class="nk"> &lt;gmaxwell&gt;</span> (he's way behind)
+<a name="l-85"></a><span class="tm">19:15:13</span><span class="nk"> &lt;cfields&gt;</span> I'd like to add #10756 please, as lots of things for 0.16 will build on top of that
+<a name="l-86"></a><span class="tm">19:15:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> (gribble probably needs to process all the spam first)
+<a name="l-87"></a><span class="tm">19:15:59</span><span class="nk"> &lt;wumpus&gt;</span> gribble damnit you made me add 11027, which makes no sense as it's already tagged 0.15
+<a name="l-88"></a><span class="tm">19:16:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> cfields. done
+<a name="l-89"></a><span class="tm">19:16:09</span><span class="nk"> &lt;cfields&gt;</span> (that's the signals -&gt; interface class switch for message processing)
+<a name="l-90"></a><span class="tm">19:16:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> ack
+<a name="l-91"></a><span class="tm">19:16:20</span><span class="nk"> &lt;BlueMatt&gt;</span> yes! 10756!
+<a name="l-92"></a><span class="tm">19:16:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> thanks
+<a name="l-93"></a><span class="tm">19:16:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10923 | Use -Wthread-safety-analysis if available (+ -Werror=[…] if --enable-werror) by practicalswift · Pull Request #10923 · bitcoin/bitcoin · GitHub
+<a name="l-94"></a><span class="tm">19:16:55 </span><span class="nka">* gmaxwell</span> <span class="ac">can't breathe</span>
+<a name="l-95"></a><span class="tm">19:17:05</span><span class="nk"> &lt;jtimon&gt;</span> I would suggest #8498 but not sure if it can be high priority
+<a name="l-96"></a><span class="tm">19:17:08</span><span class="nk"> &lt;BlueMatt&gt;</span> poor gribble
+<a name="l-97"></a><span class="tm">19:17:18</span><span class="nk"> &lt;wumpus&gt;</span> aww :)
+<a name="l-98"></a><span class="tm">19:17:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> :)
+<a name="l-99"></a><span class="tm">19:17:31</span><span class="nk"> &lt;cfields&gt;</span> haha
+<a name="l-100"></a><span class="tm">19:18:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7522 | Bugfix: Only use git for build info if the repository is actually the right one by luke-jr · Pull Request #7522 · bitcoin/bitcoin · GitHub
+<a name="l-101"></a><span class="tm">19:18:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> added
+<a name="l-102"></a><span class="tm">19:18:50</span><span class="nk"> &lt;jtimon&gt;</span> cool
+<a name="l-103"></a><span class="tm">19:18:51</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-104"></a><span class="tm">19:19:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> short topic: adding bench to gitian build package?
+<a name="l-105"></a><span class="tm">19:19:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> I can PR
+<a name="l-106"></a><span class="tm">19:19:59</span><span class="nk"> &lt;cfields&gt;</span> wasn't it just explicitly removed? :)
+<a name="l-107"></a><span class="tm">19:20:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. At least on Win
+<a name="l-108"></a><span class="tm">19:20:18 </span><span class="nka">* jonasschnelli</span> <span class="ac">searching PR</span>
+<a name="l-109"></a><span class="tm">19:20:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+<a name="l-110"></a><span class="tm">19:20:59</span><span class="nk"> &lt;achow101&gt;</span> +
+<a name="l-111"></a><span class="tm">19:21:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/7776
+<a name="l-112"></a><span class="tm">19:21:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">adding bench to gitian build package</span>
+<a name="l-113"></a><span class="tm">19:21:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> I stumbled over it when wanted to bench sse4
+<a name="l-114"></a><span class="tm">19:21:26</span><span class="nk"> &lt;wumpus&gt;</span> I removed it because it was useless at the time, bench had only the examle benchmark
+<a name="l-115"></a><span class="tm">19:21:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+<a name="l-116"></a><span class="tm">19:21:39</span><span class="nk"> &lt;wumpus&gt;</span> but now that bench is actually useful I agree with enabling it for the distributions, for all platforms
+<a name="l-117"></a><span class="tm">19:22:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think its useful now.
+<a name="l-118"></a><span class="tm">19:22:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll PR that then
+<a name="l-119"></a><span class="tm">19:22:40</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+<a name="l-120"></a><span class="tm">19:22:51</span><span class="nk"> &lt;jtimon&gt;</span> suggested topic, what do we want to do about configs for different chains? related to issue #9374 and prs #10267 #8994
+<a name="l-121"></a><span class="tm">19:23:26</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10387 | Implement BIP159, define and signal NODE_NETWORK_LIMITED (pruned peers) by jonasschnelli · Pull Request #10387 · bitcoin/bitcoin · GitHub
+<a name="l-122"></a><span class="tm">19:23:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> thanks
+<a name="l-123"></a><span class="tm">19:23:53</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10785 | Connection reset by peer.
+<a name="l-124"></a><span class="tm">19:24:01</span><span class="nk"> &lt;sipa&gt;</span> do we want to discuss bip159 more?
+<a name="l-125"></a><span class="tm">19:24:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> no rush, we don't really need it in 0.15 yet
+<a name="l-126"></a><span class="tm">19:24:21</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10756 | Connection reset by peer.
+<a name="l-127"></a><span class="tm">19:24:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. Certenly not for 0.15
+<a name="l-128"></a><span class="tm">19:24:47</span><span class="nk"> &lt;luke-jr&gt;</span> sorry, here
+<a name="l-129"></a><span class="tm">19:24:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bip159: (NODE_NETWORK_LIMITED service bits)</span>
+<a name="l-130"></a><span class="tm">19:24:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> last updates on BIP159: threat bits independently, fingerprinting protection
+<a name="l-131"></a><span class="tm">19:25:06</span><span class="nk"> &lt;luke-jr&gt;</span> ‎[19:03:38] ‎&lt;‎wumpus‎&gt;‎ cfields: I guess in a hurry we could just revert luke-jr's patch that introduces the problem, for 0.15 &lt;-- it fixes other (more real) problems
+<a name="l-132"></a><span class="tm">19:25:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> The address relay and whole peering maybe needs discussion
+<a name="l-133"></a><span class="tm">19:25:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> cfields mentioned once some potential issues
+<a name="l-134"></a><span class="tm">19:25:36</span><span class="nk"> &lt;sipa&gt;</span> so, i'd like to suggest that bip159 only defines 1 bit, corresponding to 144/288 blocks
+<a name="l-135"></a><span class="tm">19:25:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> ok, well, can you help cfields fixing the problem then?
+<a name="l-136"></a><span class="tm">19:25:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> yes, already suggested a few ideas
+<a name="l-137"></a><span class="tm">19:26:09</span><span class="nk"> &lt;sipa&gt;</span> that gets 90% of the benefit I believe (nodes who are already caught up, and want to stay caught up)
+<a name="l-138"></a><span class="tm">19:26:21</span><span class="nk"> &lt;sipa&gt;</span> without needing to know what other ranges are important
+<a name="l-139"></a><span class="tm">19:26:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jonasschnelli:</span> yea, i'll jot down my concerns.
+<a name="l-140"></a><span class="tm">19:26:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> we could start with that. What's you concerns about definig two bots?
+<a name="l-141"></a><span class="tm">19:26:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> bits?
+<a name="l-142"></a><span class="tm">19:27:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i'm beginning to think a second bit is just unnecessary for now
+<a name="l-143"></a><span class="tm">19:27:18</span><span class="nk"> &lt;sipa&gt;</span> and we may be able to make a more informed choice later
+<a name="l-144"></a><span class="tm">19:27:25</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, prefer the week or day?
+<a name="l-145"></a><span class="tm">19:27:28</span><span class="nk"> &lt;sipa&gt;</span> day
+<a name="l-146"></a><span class="tm">19:27:35</span><span class="nk"> &lt;gmaxwell&gt;</span> It's also the case that the second bit doesn't really jive with UTXO sync, so it may just end up totally surpflous within a couple months.
+<a name="l-147"></a><span class="tm">19:27:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think the week usecase can be interesting with SPV (client side)
+<a name="l-148"></a><span class="tm">19:27:50</span><span class="nk"> &lt;gmaxwell&gt;</span> the 288 matches the current minimum.
+<a name="l-149"></a><span class="tm">19:28:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> You could run a pruned peer while syncing your phone
+<a name="l-150"></a><span class="tm">19:28:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> (in an ideal BIP150 world)
+<a name="l-151"></a><span class="tm">19:28:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> (or via tor)
+<a name="l-152"></a><span class="tm">19:28:40</span><span class="nk"> &lt;gmaxwell&gt;</span> sure, so long as you don't ever forget to run your wallet once a week. :)
+<a name="l-153"></a><span class="tm">19:28:57</span><span class="nk"> &lt;gmaxwell&gt;</span> you can still do that without the flag however.
+<a name="l-154"></a><span class="tm">19:29:04</span><span class="nk"> &lt;sipa&gt;</span> the most important benefit is that pruned nodes can and should help with partition resistence of the network, but they currently don't
+<a name="l-155"></a><span class="tm">19:29:27</span><span class="nk"> &lt;gmaxwell&gt;</span> as any whitepeer would still be able to request anythign we have. (in your BIP150 world that phone would be authenticated, presumably)
+<a name="l-156"></a><span class="tm">19:29:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> I agree. I think defining only the 288 depth bit is okay. We can define another later.
+<a name="l-157"></a><span class="tm">19:29:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> well they do a littl.
+<a name="l-158"></a><span class="tm">19:29:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> yea, that was my thought. Now quick, slip it into 0.15rc2  _me ducks and runs_
+<a name="l-159"></a><span class="tm">19:29:59</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> good point about the whitepeer, right
+<a name="l-160"></a><span class="tm">19:30:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">gmaxwell:</span> No 0.15. Sadly
+<a name="l-161"></a><span class="tm">19:30:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i believe gmaxwell may not have been very serious ;)
+<a name="l-162"></a><span class="tm">19:30:49</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm kidding. :)
+<a name="l-163"></a><span class="tm">19:31:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> No joking about releases. :)
+<a name="l-164"></a><span class="tm">19:31:34</span><span class="nk"> &lt;gmaxwell&gt;</span> If we cannot laugh all there is left to do is cry.
+<a name="l-165"></a><span class="tm">19:31:35</span><span class="nk"> &lt;gmaxwell&gt;</span> :)
+<a name="l-166"></a><span class="tm">19:32:02</span><span class="nk"> &lt;wumpus&gt;</span> exactly
+<a name="l-167"></a><span class="tm">19:32:10 </span><span class="nka">* sipa</span> <span class="ac">mourns the untimely passing of rc1</span>
+<a name="l-168"></a><span class="tm">19:32:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed
+<a name="l-169"></a><span class="tm">19:32:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Any other thoughts on dropping the 1'152 dept NODE_NETWORK_LIMITED_HIGH flag?
+<a name="l-170"></a><span class="tm">19:33:02</span><span class="nk"> &lt;gmaxwell&gt;</span> that gets rid of anything to be debated.
+<a name="l-171"></a><span class="tm">19:33:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> A single flag was also my original idea.. but we had then discussions and the second one came up. So going back to a single bit is fine for me.
+<a name="l-172"></a><span class="tm">19:33:44</span><span class="nk"> &lt;wumpus&gt;</span> yes, let's drop it for now
+<a name="l-173"></a><span class="tm">19:34:08</span><span class="nk"> &lt;wumpus&gt;</span> it's better to continue with something; the bits debate goes on and on :)
+<a name="l-174"></a><span class="tm">19:34:18</span><span class="nk"> &lt;gmaxwell&gt;</span> smaller changes faster plz.
+<a name="l-175"></a><span class="tm">19:34:23</span><span class="nk"> &lt;cfields&gt;</span> 3 bits!
+<a name="l-176"></a><span class="tm">19:34:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> Heh. Right... okay, will update the bip and the PR.
+<a name="l-177"></a><span class="tm">19:34:31 </span><span class="nka">* jonasschnelli</span> <span class="ac">curses cfields</span>
+<a name="l-178"></a><span class="tm">19:34:37</span><span class="nk"> &lt;cfields&gt;</span> :)
+<a name="l-179"></a><span class="tm">19:34:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> moar!
+<a name="l-180"></a><span class="tm">19:34:54</span><span class="nk"> &lt;sipa&gt;</span> 3.14 bits!
+<a name="l-181"></a><span class="tm">19:35:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> hehe
+<a name="l-182"></a><span class="tm">19:35:01</span><span class="nk"> &lt;gmaxwell&gt;</span> next subject?
+<a name="l-183"></a><span class="tm">19:35:03</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> that's just irrational.
+<a name="l-184"></a><span class="tm">19:35:07</span><span class="nk"> &lt;jnewbery&gt;</span> sipa gmaxwell do you have data about what blocks are requested on the network? Have you shared it anywhere?
+<a name="l-185"></a><span class="tm">19:35:13</span><span class="nk"> &lt;gmaxwell&gt;</span> damn, I almost saved us from that pun.
+<a name="l-186"></a><span class="tm">19:35:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jnewbery:</span> we do, we have, I can dig it up again later today.
+<a name="l-187"></a><span class="tm">19:35:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">jnewbery:</span> sipa has that blocks-requested-chart
+<a name="l-188"></a><span class="tm">19:35:36</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">what do we want to do about configs for different chains (jtimon)</span>
+<a name="l-189"></a><span class="tm">19:35:40</span><span class="nk"> &lt;jnewbery&gt;</span> thanks
+<a name="l-190"></a><span class="tm">19:35:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jtimon:</span> 12:35:36 &lt;@wumpus&gt; #topic what do we want to do about configs for different chains (jtimon)
+<a name="l-191"></a><span class="tm">19:36:19</span><span class="nk"> &lt;achow101&gt;</span> pr/issue for reference?
+<a name="l-192"></a><span class="tm">19:36:29</span><span class="nk"> &lt;gmaxwell&gt;</span> there was an overlay config file PR I saw, I like that general idea.
+<a name="l-193"></a><span class="tm">19:36:34</span><span class="nk"> &lt;wumpus&gt;</span> related to issue #9374 and prs #10267 #8994
+<a name="l-194"></a><span class="tm">19:37:04</span><span class="nk"> &lt;jtimon&gt;</span> sorry, I just fell
+<a name="l-195"></a><span class="tm">19:37:08</span><span class="nk"> &lt;jtimon&gt;</span> so jnewbery had some suggestions for #8994 https://github.com/bitcoin/bitcoin/pull/8994#issuecomment-321355349
+<a name="l-196"></a><span class="tm">19:37:10</span><span class="nk"> &lt;jtimon&gt;</span> <span class="cmd">#10267 </span><span class="cmdline">is slightly related</span>
+<a name="l-197"></a><span class="tm">19:37:38</span><span class="nk"> &lt;jtimon&gt;</span> and there's the issue #9374
+<a name="l-198"></a><span class="tm">19:38:21</span><span class="nk"> &lt;BlueMatt&gt;</span> &lt;gribble&gt; https://github.com/bitcoin/bitcoin/issues/10267 | INew -includeconf argument for including external configuration files by kallewoof · Pull Request #10267 · bitcoin/bitcoin · GitHub
+<a name="l-199"></a><span class="tm">19:39:37</span><span class="nk"> &lt;wumpus&gt;</span> not much to discuss from my side really, I think the idea of additional per-chain config files is good
+<a name="l-200"></a><span class="tm">19:39:42</span><span class="nk"> &lt;sipa&gt;</span> we know but one gribble, and his name is BlueMatt
+<a name="l-201"></a><span class="tm">19:39:42</span><span class="nk"> &lt;wumpus&gt;</span> need to review the PRs
+<a name="l-202"></a><span class="tm">19:40:02</span><span class="nk"> &lt;wumpus&gt;</span> also we really need test for initialization order / argument precedence stuff
+<a name="l-203"></a><span class="tm">19:40:11</span><span class="nk"> &lt;wumpus&gt;</span> as it becomes more complex with this
+<a name="l-204"></a><span class="tm">19:40:16</span><span class="nk"> &lt;gmaxwell&gt;</span> The Gribble is dead, long live the Gribble.
+<a name="l-205"></a><span class="tm">19:40:23</span><span class="nk"> &lt;jtimon&gt;</span> network.conf idea seems good to me, perhaps I could the something similar for /chain.conf, but not sure about jnewbery's suggestion because that would allow them to be used with the mainnet
+<a name="l-206"></a><span class="tm">19:41:02</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, so comment on PRs?
+<a name="l-207"></a><span class="tm">19:41:12</span><span class="nk"> &lt;jtimon&gt;</span> well, I guess it can be discussed on the prs, yeah
+<a name="l-208"></a><span class="tm">19:41:43</span><span class="nk"> &lt;jtimon&gt;</span> just poiting out the 3 things seem related to me
+<a name="l-209"></a><span class="tm">19:41:53</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-210"></a><span class="tm">19:42:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> bitcoin_rw.conf solves per-chain at the same time, so IMO the approach to take there
+<a name="l-211"></a><span class="tm">19:42:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> that's a different issue
+<a name="l-212"></a><span class="tm">19:42:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> let's not blur everything together now jsut because jtimon started off with a whole list...
+<a name="l-213"></a><span class="tm">19:42:41</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-214"></a><span class="tm">19:43:02</span><span class="nk"> &lt;gmaxwell&gt;</span> yea.. I want to talk about the impersonation issues and comms stuff for a moment.
+<a name="l-215"></a><span class="tm">19:43:03</span><span class="nk"> &lt;jnewbery&gt;</span> I don't think that #10996 (per network configuration) and #10267 (additional config file) should be held up on #8994 (custom chains)
+<a name="l-216"></a><span class="tm">19:43:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> no, I don't think so either
+<a name="l-217"></a><span class="tm">19:43:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">impersonation issues and comms stuff</span>
+<a name="l-218"></a><span class="tm">19:43:42</span><span class="nk"> &lt;gmaxwell&gt;</span> Kind of OT for the normal material here; but everyone should be aware that the developer of S2X is going around
+<a name="l-219"></a><span class="tm">19:43:45</span><span class="nk"> &lt;gmaxwell&gt;</span> spreading misinformation about S2X describing it as a harmless "upgrade" to bitcoin, misstating that things like
+<a name="l-220"></a><span class="tm">19:43:48</span><span class="nk"> &lt;gmaxwell&gt;</span> classic and BU are compatible (though they don't even implement segwit), and not making any mention of the serious
+<a name="l-221"></a><span class="tm">19:43:51</span><span class="nk"> &lt;gmaxwell&gt;</span> issues like its lack of replay protection, no HF bit, lack of a spec, this is especially bad because there have
+<a name="l-222"></a><span class="tm">19:43:54</span><span class="nk"> &lt;gmaxwell&gt;</span> been a bunch of efforts to impersonate our project supporting this stuff:
+<a name="l-223"></a><span class="tm">19:43:57</span><span class="nk"> &lt;gmaxwell&gt;</span> https://twitter.com/bcoreproject/status/897966294083018760 (click internal link for the S2X stuff)
+<a name="l-224"></a><span class="tm">19:44:00</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not sure of what to do but it appears to be a widescale effort to misinform people. :(
+<a name="l-225"></a><span class="tm">19:44:07</span><span class="nk"> &lt;gmaxwell&gt;</span> In the past twitter hasn't done much with people impersonating me, and this is happening on more than twitter.
+<a name="l-226"></a><span class="tm">19:44:23</span><span class="nk"> &lt;sipa&gt;</span> :(
+<a name="l-227"></a><span class="tm">19:44:28</span><span class="nk"> &lt;wumpus&gt;</span> yea :/
+<a name="l-228"></a><span class="tm">19:44:30</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm not sure what can be done about it, sadly, either, aside from everyone spending some time vigorously condemning such blatant fraud and reaching out to corners of the community to point this out
+<a name="l-229"></a><span class="tm">19:44:47</span><span class="nk"> &lt;gmaxwell&gt;</span> E.g. seen it on reddit and hacker news; and our community links people to https://en.bitcoin.it/wiki/Segwit_support but then gets trolls responding that its "fake" and "censored by theymos"
+<a name="l-230"></a><span class="tm">19:44:58</span><span class="nk"> &lt;achow101&gt;</span> for twitter impersonation, you can report it to twitter and they might do something about it
+<a name="l-231"></a><span class="tm">19:45:07</span><span class="nk"> &lt;luke-jr&gt;</span> maybe a bitcoincore.org blog explicitly rejecting 2X and warning people of the misinformation campaigns?
+<a name="l-232"></a><span class="tm">19:45:15</span><span class="nk"> &lt;wumpus&gt;</span> right, I'm not sure what recourse there is, fake news everywhere on the internet
+<a name="l-233"></a><span class="tm">19:45:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I've heard that several project contributors have; so sure; but I wouldn't expect much.
+<a name="l-234"></a><span class="tm">19:45:35</span><span class="nk"> &lt;praxeology&gt;</span> <span class="hi">gmaxwell:</span> I saw in #bitcoin someone was saying that bitpay was linking to use btc1 https://blog.bitpay.com/bitcore-segwit-activation/  with "bitcore"
+<a name="l-235"></a><span class="tm">19:45:37</span><span class="nk"> &lt;wumpus&gt;</span> yes certainly report to sites where the impersonation is hosted
+<a name="l-236"></a><span class="tm">19:45:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> if carefully worded, seems fine
+<a name="l-237"></a><span class="tm">19:45:45</span><span class="nk"> &lt;wumpus&gt;</span> github is quite active with that at least
+<a name="l-238"></a><span class="tm">19:45:59</span><span class="nk"> &lt;wumpus&gt;</span> twitter usually ignores report unless a lot of people report
+<a name="l-239"></a><span class="tm">19:46:11</span><span class="nk"> &lt;gmaxwell&gt;</span> Right we may need to each be more outspoken personally, and perhaps organize some project things too.
+<a name="l-240"></a><span class="tm">19:46:16</span><span class="nk"> &lt;achow101&gt;</span> I like luke-jr's idea. having something explicitly rejecting s2x would be good
+<a name="l-241"></a><span class="tm">19:46:25</span><span class="nk"> &lt;Murch&gt;</span> I had already reported that account last week, I suggest that others which use twitter do so as well.
+<a name="l-242"></a><span class="tm">19:46:43</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">jnewbery:</span> agreed, nor the other way around imo
+<a name="l-243"></a><span class="tm">19:46:49 </span><span class="nka">* luke-jr</span> <span class="ac">notes he personally calls it simply "2X" because he doesn't want to give the impression Segwit is connected to it.</span>
+<a name="l-244"></a><span class="tm">19:47:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I've used S2X, but yea people are confused thinking 2X = 2MB  not 4MB (8peak) and other crazy stuff.
+<a name="l-245"></a><span class="tm">19:47:57</span><span class="nk"> &lt;gmaxwell&gt;</span> or thinking that segwit activation means s2x activation.
+<a name="l-246"></a><span class="tm">19:48:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes, I think an explicit post rejecting s2x would be a good idea
+<a name="l-247"></a><span class="tm">19:48:33</span><span class="nk"> &lt;praxeology&gt;</span> didn't help that the slashdot article was wrong, portraying it bcash vs segwit2x
+<a name="l-248"></a><span class="tm">19:48:52</span><span class="nk"> &lt;gmaxwell&gt;</span> I looked a week or two ago and there were under two dozen btc1 nodes after excluding VPSes and only something like 60 including. Non-entity on the network.
+<a name="l-249"></a><span class="tm">19:49:17</span><span class="nk"> &lt;gmaxwell&gt;</span> ironically, BCash seems the more honest and responsible of the two.
+<a name="l-250"></a><span class="tm">19:49:18</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">gmaxwell:</span> And no development activity since "rc2"
+<a name="l-251"></a><span class="tm">19:49:24</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> unfortunately their doing basically a misinformation campaign to get more people to run btc1
+<a name="l-252"></a><span class="tm">19:49:35</span><span class="nk"> &lt;achow101&gt;</span> e.g. bitpay telling people to use btc1 for segwit
+<a name="l-253"></a><span class="tm">19:49:43</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so objections to luke-jr's proposal to put something on bitcoincore.org that simply points out that s2x is unrelated to segwit, and a fork of bitcoin, not a "harmless upgrade"?
+<a name="l-254"></a><span class="tm">19:49:45</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, we're not going to solve it here, but I think we each can make little pushes to better inform people.
+<a name="l-255"></a><span class="tm">19:49:56</span><span class="nk"> &lt;BlueMatt&gt;</span> simple faq/error correction, not political "fuck this thing"
+<a name="l-256"></a><span class="tm">19:50:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> would depend on the text! someone could propose some, maybe harding.
+<a name="l-257"></a><span class="tm">19:50:22</span><span class="nk"> &lt;luke-jr&gt;</span> I'll throw up a draft GDoc people can hack at after the meeting?
+<a name="l-258"></a><span class="tm">19:50:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, of course
+<a name="l-259"></a><span class="tm">19:50:33</span><span class="nk"> &lt;gmaxwell&gt;</span> We can also talk to the bitcoin.org folks in general.
+<a name="l-260"></a><span class="tm">19:51:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> It might be a streach for your approach to get something the rest of the contributors would find super agreeable.
+<a name="l-261"></a><span class="tm">19:51:19</span><span class="nk"> &lt;praxeology&gt;</span> How close is bitcoin.org w/ the core dev team?  Who runs it?
+<a name="l-262"></a><span class="tm">19:51:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I think you do well staking out your own more extreme position and adding to the discussion that way, though-- so no offense intended.
+<a name="l-263"></a><span class="tm">19:51:45</span><span class="nk"> &lt;Chris_St1&gt;</span> maybe bitcoin.org people can throw up a warning about people promoting consensus imcompatible implementations
+<a name="l-264"></a><span class="tm">19:51:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">praxeology:</span> it's run by the bitcoin.org people. They're generally reasonable folks.
+<a name="l-265"></a><span class="tm">19:51:55</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">praxeology:</span> not at all, but we can at least contact them or open github issues since they do put the source on github
+<a name="l-266"></a><span class="tm">19:51:57</span><span class="nk"> &lt;cfields&gt;</span> i think it's important that we point out that this isn't some NIH issue or aversion to change, rather a reaction to a fork that has not only ignored what we've learned from the recent split, but even manages to regress from it
+<a name="l-267"></a><span class="tm">19:51:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> maybe someone else can write a draft then?
+<a name="l-268"></a><span class="tm">19:52:12</span><span class="nk"> &lt;luke-jr&gt;</span> what I wrote so far: https://docs.google.com/document/d/1D5wYL8mYTfswE94lzIe1RwdDP_rETpgXSWdkMUcpt1A/edit?usp=sharing
+<a name="l-269"></a><span class="tm">19:52:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> indeed
+<a name="l-270"></a><span class="tm">19:52:47</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">BlueMatt:</span> Factual statement that the two are unrelated and perhaps a mention of the lack in replay protection
+<a name="l-271"></a><span class="tm">19:53:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> yes, indeed, in the few places where he even responded to concerns it was to claim things were non-issues with bcash when they actually were, and when bcash's better decisions were highly protective.
+<a name="l-272"></a><span class="tm">19:53:30</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, that seems reasonable, just "hey, this is unrelated to Bitcoin Core or Bitcoin, really, they are playing a very, very risky game and most folks dont condone this"
+<a name="l-273"></a><span class="tm">19:54:04</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, beyond some factual statement... part of the consequence of having the project itself speak less is that each of us in the community sometimes needs to speak more. Otherwise the vacuum is easily filled with fakes and lies.
+<a name="l-274"></a><span class="tm">19:54:20</span><span class="nk"> &lt;gmaxwell&gt;</span> I dunno if everyone has seen morcos' blog posts but they've been fantastic.
+<a name="l-275"></a><span class="tm">19:54:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> can you link them please?
+<a name="l-276"></a><span class="tm">19:54:42</span><span class="nk"> &lt;wumpus&gt;</span> (for the sake of the meeting log)
+<a name="l-277"></a><span class="tm">19:54:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> even just many rather than most (while I don't doubt most is also true, a narrower thing can be said)
+<a name="l-278"></a><span class="tm">19:54:57</span><span class="nk"> &lt;BlueMatt&gt;</span> fair
+<a name="l-279"></a><span class="tm">19:55:27</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">BlueMatt:</span> Yeah, Replay Protection might be a bit over the head for the general audience. It should be mentioned though that it is unrelated to and _not supported by Bitcoin Core_.
+<a name="l-280"></a><span class="tm">19:55:33</span><span class="nk"> &lt;sipa&gt;</span> https://medium.com/@morcos/no2x-bad-governance-model-97b8e521e751 https://medium.com/@morcos/no2x-centralized-services-539e3b1b56c9 https://medium.com/@morcos/no2x-full-nodes-889c20100a8d
+<a name="l-281"></a><span class="tm">19:55:45</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, ^ those are great!
+<a name="l-282"></a><span class="tm">19:56:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://medium.com/@morcos/no2x-bad-governance-model-97b8e521e751</span>
+<a name="l-283"></a><span class="tm">19:56:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link  </span><span class="cmdline">https://medium.com/@morcos/no2x-centralized-services-539e3b1b56c9</span>
+<a name="l-284"></a><span class="tm">19:56:18</span><span class="nk"> &lt;luke-jr&gt;</span> some open source projects just do blog aggregation
+<a name="l-285"></a><span class="tm">19:56:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://medium.com/@morcos/no2x-full-nodes-889c20100a8d</span>
+<a name="l-286"></a><span class="tm">19:56:27</span><span class="nk"> &lt;gmaxwell&gt;</span> it's a fine line to walk, to express the gist without seeming like there isn't substance or alternatively dropping people into the weeds.
+<a name="l-287"></a><span class="tm">19:57:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I'm generally glad that we don't, in that joe-blow who just doesn't get open projects and is looking for an authority won't understand that a blog aggregation isn't an official position.
+<a name="l-288"></a><span class="tm">19:57:08</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">luke-jr:</span> That's why I'm putting it so carefully: "not supported" is easily true. Stating that there is no Core contributors that do support it, is probably hard to check and easily false.
+<a name="l-289"></a><span class="tm">19:57:19</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15jonasschnelli opened pull request #11081: Add length check for CExtKey deserialization (06master...062017/08/fix_cextkey) 02https://github.com/bitcoin/bitcoin/pull/11081
+<a name="l-290"></a><span class="tm">19:57:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes, something like https://planet.freedesktop.org/ would be nice, though on the other hand for bitcoin that would result in endless political discussions about who to include and who not
+<a name="l-291"></a><span class="tm">19:57:38</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, even if you don't have the energy or skills to write your own statements, if you agree with stuff like morcos' you can still link to it and let others know you support it.
+<a name="l-292"></a><span class="tm">19:57:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> aka bitcoin press center.
+<a name="l-293"></a><span class="tm">19:57:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I think we should include Mr Buckethead! I find his points on Brexit to be rather well-informed.
+<a name="l-294"></a><span class="tm">19:57:59</span><span class="nk"> &lt;luke-jr&gt;</span> :x
+<a name="l-295"></a><span class="tm">19:58:12</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> some people don't know to follow individual developers, though
+<a name="l-296"></a><span class="tm">19:58:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> *Lord* Buckethead please
+<a name="l-297"></a><span class="tm">19:58:30</span><span class="nk"> &lt;wumpus&gt;</span> lol BlueMatt
+<a name="l-298"></a><span class="tm">19:58:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> oops, sorry
+<a name="l-299"></a><span class="tm">19:59:02</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">luke-jr:</span> That's why a statement coming from Core would be useful. Especially since Core as an entity doesn't usually have a position.
+<a name="l-300"></a><span class="tm">19:59:18</span><span class="nk"> &lt;BlueMatt&gt;</span> if folks agree, @bitcoincoreorg could also r/t morcos' blog posts
+<a name="l-301"></a><span class="tm">19:59:32</span><span class="nk"> &lt;wumpus&gt;</span> @btcdrak
+<a name="l-302"></a><span class="tm">20:00:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

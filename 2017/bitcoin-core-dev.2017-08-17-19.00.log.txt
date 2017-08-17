@@ -1,0 +1,302 @@
+19:00:14 <wumpus> #startmeeting
+19:00:14 <lightningbot> Meeting started Thu Aug 17 19:00:14 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:14 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:20 <sipa> DUNG
+19:00:31 <achow101> hi
+19:00:41 <Chris_Stewart_5> present
+19:00:43 <jtimon> dong
+19:00:49 <jonasschnelli> hi
+19:00:55 <instagibbs> prezent
+19:00:57 <wumpus> topics?
+19:01:01 <cfields> hi
+19:01:14 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:39 <BlueMatt> blockers for review
+19:01:40 <wumpus> let's start with 0.15.0rc1 - have any serious issues been reported?
+19:01:44 <BlueMatt> and that
+19:01:54 <wumpus> #topic 0.15.0
+19:02:08 <BlueMatt> there's the openbsd stuff, but I'm not sure thats really 0.15 per se, more than just openbsd brokenness
+19:02:15 <BlueMatt> there's also the version-reporting thing gmaxwell mentioned
+19:02:17 <cfields> only thing i'm aware of is the version number issue, but that's nothing
+19:02:28 <wumpus> that's just openbsd brittleness, I'm looking at it
+19:02:32 <achow101> there's the duplicate hex in getrawtransaction
+19:02:36 <BlueMatt> plus the new compiler warnings
+19:02:36 <wumpus> cfields: do we have a patch for that?
+19:02:50 <sipa> and the other things marked for 0.15... #11044 #11027
+19:03:09 <cfields> wumpus: i haven't decided on where to fix it yet. Either way I'll PR something today/tomorrow
+19:03:38 <wumpus> cfields: I guess in a hurry we could just revert luke-jr's patch that introduces the problem, for 0.15
+19:04:17 <cfields> wumpus: yes, that was my initial suggestion, but luke-jr isn't a fan
+19:04:28 <jonasschnelli> Can you elaborate on the version number issue (via luke-jr's PR)?
+19:04:37 <wumpus> yes I saw the new compiler warnings, something about signed to unsigned comparison in the wallet version logic
+19:04:41 <wumpus> is that something serious?
+19:05:10 <cfields> jonasschnelli: the version string doesn't show v0.15.0 as it should, but a git commit instead
+19:05:12 <wumpus> src/wallet/wallet.cpp:3668:38: warning: comparison of integers of different signs: 'std::set<long, std::less<long>, std::allocator<long> >::size_type' (aka 'unsigned long') and 'int' [-Wsign-compare]
+19:05:16 <cfields> sec for offending PR
+19:05:30 <sipa> suggestion: have travis (which has a deterministic compiler version) in one of the tests run with -Werror... but not for default builds
+19:05:37 <wumpus> and another one on the same line
+19:05:55 <BlueMatt> sipa: #10923
+19:06:02 <kanzure> hi.
+19:06:09 <wumpus> sipa: yeah, no that we no longer have any annoying warnings such as Wshadow we could do that
+19:06:15 <cfields> jonasschnelli: #7522
+19:06:26 <jonasschnelli> wumpus: isn't that (-WSign-compare) fixed with #11044?
+19:06:38 <sipa> BlueMatt: oops, never read the second part of the title
+19:06:44 <wumpus> jonasschnelli: could be!
+19:06:49 <jonasschnelli> It is. Just checked
+19:06:57 <BlueMatt> sipa: we already have --enable-werror which is an even more limited set of -W's that we error on, but we never enable it on anything
+19:07:10 <BlueMatt> sipa: that pr enables it for thread-safety-analysis and then turns it on on travis-osx
+19:07:14 <cfields> sipa: +1. I think 10923 is a great idea
+19:07:31 <BlueMatt> 10923 is blocked on switching mutexes and sync.h to std, but I think we can just do that (tm)
+19:07:50 <cfields> BlueMatt: not yet :(
+19:08:02 <wumpus> we can just take the travis-werror part
+19:08:17 <wumpus> I don't see how that is strongly related to the thread analysis
+19:08:22 <BlueMatt> true
+19:08:43 <wumpus> switching over mutexes and sync definitely sounds like a post-0.15 thing
+19:08:46 <cfields> yea, we should just go ahead with that and add the thread checking when it's ready
+19:08:47 <BlueMatt> cfields: oh? none of that stuff is used directly in the remaining threadGroup threads
+19:09:06 <BlueMatt> oh, y'all want to turn on -Werror on travis for 15? yea, ok, not that then
+19:09:34 <BlueMatt> anyway, looks like #11044 fixes the warnings, and its already tagged 0.15.0
+19:09:47 <cfields> oh, i thought we were talking about it for master
+19:10:03 <wumpus> the topic is 0.15 so I was assuming we were talking about 0.15
+19:10:11 <jonasschnelli> cfields: I have a correct version string in 0.15.0rc1 (Qt, debug log). What do I miss?
+19:10:14 <wumpus> anyhow, I don't mind, let's enable it for some branch...
+19:10:32 <cfields> BlueMatt: i'll double-check. But I thought we had some outstanding condvars that we couldn't switch yet. Will look after meeting.
+19:10:32 <wumpus> master is what the PRs will be tested against so that makes most sense I suppose
+19:10:58 <BlueMatt> cfields: we do, but they're directly calling boost::condition_variable, not CConditionVariable, I believe
+19:11:00 <gmaxwell> We can turn of travis Werroring if it turns out to be a pain (or even when not if...) but gain advantages from it until then.
+19:11:07 <wumpus> ok: does anything need tagging for 0.15.0?
+19:11:23 <cfields> jonasschnelli: the splash screen, at least, shows the git revision
+19:11:43 <BlueMatt> as for 0.15, I think its jsut the 3 tags + whatever for the version string issue
+19:11:48 <BlueMatt> or, nothing else was brought up
+19:11:54 <gribble> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+19:11:55 <jonasschnelli> cfields: Ah. I see now.. releases don't have the commit&dirty.. nm
+19:12:20 <wumpus> okay
+19:12:30 <wumpus> #topic high-priority for review
+19:12:52 * BlueMatt puts #10286 on the list
+19:13:14 <wumpus> now that 0.15 is branched, we can start doing this again
+19:13:35 <wumpus> added
+19:13:42 <wumpus> it's lonely https://github.com/bitcoin/bitcoin/projects/8
+19:13:48 * jonasschnelli puts Implement BIP159 / #10387  on the list
+19:14:03 <sipa> i'd like to draw some attention to #10785 (serialization improvements)
+19:14:07 <BlueMatt> thats ok, 10286 needs to simmer on master for a month or three, so it is actually a should-go-soon, thing
+19:14:13 <BlueMatt> :p
+19:14:18 <gribble> https://github.com/bitcoin/bitcoin/issues/11027 | [RPC] Only return hex field once in getrawtransaction by achow101 · Pull Request #11027 · bitcoin/bitcoin · GitHub
+19:14:28 <jonasschnelli> sipa: It's on my list.. reviewed most of it and running on my node
+19:14:43 <gmaxwell> lol poor gribble.
+19:14:51 <gmaxwell> (he's way behind)
+19:15:13 <cfields> I'd like to add #10756 please, as lots of things for 0.16 will build on top of that
+19:15:20 <jonasschnelli> (gribble probably needs to process all the spam first)
+19:15:59 <wumpus> gribble damnit you made me add 11027, which makes no sense as it's already tagged 0.15
+19:16:05 <jonasschnelli> cfields. done
+19:16:09 <cfields> (that's the signals -> interface class switch for message processing)
+19:16:14 <sipa> cfields: ack
+19:16:20 <BlueMatt> yes! 10756!
+19:16:21 <cfields> jonasschnelli: thanks
+19:16:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10923 | Use -Wthread-safety-analysis if available (+ -Werror=[…] if --enable-werror) by practicalswift · Pull Request #10923 · bitcoin/bitcoin · GitHub
+19:16:55 * gmaxwell can't breathe
+19:17:05 <jtimon> I would suggest #8498 but not sure if it can be high priority
+19:17:08 <BlueMatt> poor gribble
+19:17:18 <wumpus> aww :)
+19:17:20 <jonasschnelli> :)
+19:17:31 <cfields> haha
+19:18:33 <gribble> https://github.com/bitcoin/bitcoin/issues/7522 | Bugfix: Only use git for build info if the repository is actually the right one by luke-jr · Pull Request #7522 · bitcoin/bitcoin · GitHub
+19:18:45 <wumpus> jtimon: added
+19:18:50 <jtimon> cool
+19:18:51 <wumpus> ok, any other topics?
+19:19:42 <jonasschnelli> short topic: adding bench to gitian build package?
+19:19:58 <jonasschnelli> I can PR
+19:19:59 <cfields> wasn't it just explicitly removed? :)
+19:20:06 <jonasschnelli> Yes. At least on Win
+19:20:18 * jonasschnelli searching PR
+19:20:25 <gribble> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+19:20:59 <achow101> +
+19:21:05 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/7776
+19:21:09 <wumpus> #topic adding bench to gitian build package
+19:21:24 <jonasschnelli> I stumbled over it when wanted to bench sse4
+19:21:26 <wumpus> I removed it because it was useless at the time, bench had only the examle benchmark
+19:21:36 <gribble> https://github.com/bitcoin/bitcoin/issues/11044 | [wallet] Keypool topup cleanups by jnewbery · Pull Request #11044 · bitcoin/bitcoin · GitHub
+19:21:39 <wumpus> but now that bench is actually useful I agree with enabling it for the distributions, for all platforms
+19:22:35 <jonasschnelli> I think its useful now.
+19:22:39 <jonasschnelli> I'll PR that then
+19:22:40 <gribble> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+19:22:51 <jtimon> suggested topic, what do we want to do about configs for different chains? related to issue #9374 and prs #10267 #8994
+19:23:26 <gribble> https://github.com/bitcoin/bitcoin/issues/10387 | Implement BIP159, define and signal NODE_NETWORK_LIMITED (pruned peers) by jonasschnelli · Pull Request #10387 · bitcoin/bitcoin · GitHub
+19:23:48 <wumpus> jonasschnelli: thanks
+19:23:53 <gribble> https://github.com/bitcoin/bitcoin/issues/10785 | Connection reset by peer.
+19:24:01 <sipa> do we want to discuss bip159 more?
+19:24:02 <wumpus> jonasschnelli: no rush, we don't really need it in 0.15 yet
+19:24:21 <gribble> https://github.com/bitcoin/bitcoin/issues/10756 | Connection reset by peer.
+19:24:24 <jonasschnelli> Yes. Certenly not for 0.15
+19:24:47 <luke-jr> sorry, here
+19:24:55 <wumpus> #topic bip159: (NODE_NETWORK_LIMITED service bits)
+19:24:57 <jonasschnelli> last updates on BIP159: threat bits independently, fingerprinting protection
+19:25:06 <luke-jr> ‎[19:03:38] ‎<‎wumpus‎>‎ cfields: I guess in a hurry we could just revert luke-jr's patch that introduces the problem, for 0.15 <-- it fixes other (more real) problems
+19:25:20 <jonasschnelli> The address relay and whole peering maybe needs discussion
+19:25:21 <jonasschnelli> cfields mentioned once some potential issues
+19:25:36 <sipa> so, i'd like to suggest that bip159 only defines 1 bit, corresponding to 144/288 blocks
+19:25:37 <wumpus> luke-jr: ok, well, can you help cfields fixing the problem then?
+19:25:48 <luke-jr> wumpus: yes, already suggested a few ideas
+19:26:09 <sipa> that gets 90% of the benefit I believe (nodes who are already caught up, and want to stay caught up)
+19:26:21 <sipa> without needing to know what other ranges are important
+19:26:24 <cfields> jonasschnelli: yea, i'll jot down my concerns.
+19:26:48 <jonasschnelli> sipa: we could start with that. What's you concerns about definig two bots?
+19:26:50 <jonasschnelli> bits?
+19:27:07 <sipa> jonasschnelli: i'm beginning to think a second bit is just unnecessary for now
+19:27:18 <sipa> and we may be able to make a more informed choice later
+19:27:25 <instagibbs> sipa, prefer the week or day?
+19:27:28 <sipa> day
+19:27:35 <gmaxwell> It's also the case that the second bit doesn't really jive with UTXO sync, so it may just end up totally surpflous within a couple months.
+19:27:46 <jonasschnelli> I think the week usecase can be interesting with SPV (client side)
+19:27:50 <gmaxwell> the 288 matches the current minimum.
+19:28:19 <jonasschnelli> You could run a pruned peer while syncing your phone
+19:28:31 <jonasschnelli> (in an ideal BIP150 world)
+19:28:35 <jonasschnelli> (or via tor)
+19:28:40 <gmaxwell> sure, so long as you don't ever forget to run your wallet once a week. :)
+19:28:57 <gmaxwell> you can still do that without the flag however.
+19:29:04 <sipa> the most important benefit is that pruned nodes can and should help with partition resistence of the network, but they currently don't
+19:29:27 <gmaxwell> as any whitepeer would still be able to request anythign we have. (in your BIP150 world that phone would be authenticated, presumably)
+19:29:34 <jonasschnelli> I agree. I think defining only the 288 depth bit is okay. We can define another later.
+19:29:40 <gmaxwell> sipa: well they do a littl.
+19:29:56 <gmaxwell> jonasschnelli: yea, that was my thought. Now quick, slip it into 0.15rc2  _me ducks and runs_
+19:29:59 <jonasschnelli> gmaxwell: good point about the whitepeer, right
+19:30:21 <jonasschnelli> gmaxwell: No 0.15. Sadly
+19:30:47 <sipa> jonasschnelli: i believe gmaxwell may not have been very serious ;)
+19:30:49 <gmaxwell> I'm kidding. :)
+19:31:20 <jonasschnelli> No joking about releases. :)
+19:31:34 <gmaxwell> If we cannot laugh all there is left to do is cry.
+19:31:35 <gmaxwell> :)
+19:32:02 <wumpus> exactly
+19:32:10 * sipa mourns the untimely passing of rc1
+19:32:11 <jonasschnelli> Indeed
+19:32:36 <jonasschnelli> Any other thoughts on dropping the 1'152 dept NODE_NETWORK_LIMITED_HIGH flag?
+19:33:02 <gmaxwell> that gets rid of anything to be debated.
+19:33:36 <jonasschnelli> A single flag was also my original idea.. but we had then discussions and the second one came up. So going back to a single bit is fine for me.
+19:33:44 <wumpus> yes, let's drop it for now
+19:34:08 <wumpus> it's better to continue with something; the bits debate goes on and on :)
+19:34:18 <gmaxwell> smaller changes faster plz.
+19:34:23 <cfields> 3 bits!
+19:34:26 <jonasschnelli> Heh. Right... okay, will update the bip and the PR.
+19:34:31 * jonasschnelli curses cfields
+19:34:37 <cfields> :)
+19:34:41 <wumpus> cfields: moar!
+19:34:54 <sipa> 3.14 bits!
+19:35:00 <jonasschnelli> hehe
+19:35:01 <gmaxwell> next subject?
+19:35:03 <cfields> sipa: that's just irrational.
+19:35:07 <jnewbery> sipa gmaxwell do you have data about what blocks are requested on the network? Have you shared it anywhere?
+19:35:13 <gmaxwell> damn, I almost saved us from that pun.
+19:35:29 <gmaxwell> jnewbery: we do, we have, I can dig it up again later today.
+19:35:31 <jonasschnelli> jnewbery: sipa has that blocks-requested-chart
+19:35:36 <wumpus> #topic what do we want to do about configs for different chains (jtimon)
+19:35:40 <jnewbery> thanks
+19:35:56 <gmaxwell> jtimon: 12:35:36 <@wumpus> #topic what do we want to do about configs for different chains (jtimon)
+19:36:19 <achow101> pr/issue for reference?
+19:36:29 <gmaxwell> there was an overlay config file PR I saw, I like that general idea.
+19:36:34 <wumpus> related to issue #9374 and prs #10267 #8994
+19:37:04 <jtimon> sorry, I just fell
+19:37:08 <jtimon> so jnewbery had some suggestions for #8994 https://github.com/bitcoin/bitcoin/pull/8994#issuecomment-321355349
+19:37:10 <jtimon> #10267 is slightly related
+19:37:38 <jtimon> and there's the issue #9374
+19:38:21 <BlueMatt> <gribble> https://github.com/bitcoin/bitcoin/issues/10267 | INew -includeconf argument for including external configuration files by kallewoof · Pull Request #10267 · bitcoin/bitcoin · GitHub
+19:39:37 <wumpus> not much to discuss from my side really, I think the idea of additional per-chain config files is good
+19:39:42 <sipa> we know but one gribble, and his name is BlueMatt
+19:39:42 <wumpus> need to review the PRs
+19:40:02 <wumpus> also we really need test for initialization order / argument precedence stuff
+19:40:11 <wumpus> as it becomes more complex with this
+19:40:16 <gmaxwell> The Gribble is dead, long live the Gribble.
+19:40:23 <jtimon> network.conf idea seems good to me, perhaps I could the something similar for /chain.conf, but not sure about jnewbery's suggestion because that would allow them to be used with the mainnet
+19:41:02 <gmaxwell> okay, so comment on PRs?
+19:41:12 <jtimon> well, I guess it can be discussed on the prs, yeah
+19:41:43 <jtimon> just poiting out the 3 things seem related to me
+19:41:53 <wumpus> yes
+19:42:08 <luke-jr> wumpus: bitcoin_rw.conf solves per-chain at the same time, so IMO the approach to take there
+19:42:18 <wumpus> luke-jr: that's a different issue
+19:42:37 <wumpus> luke-jr: let's not blur everything together now jsut because jtimon started off with a whole list...
+19:42:41 <wumpus> any other topics?
+19:43:02 <gmaxwell> yea.. I want to talk about the impersonation issues and comms stuff for a moment.
+19:43:03 <jnewbery> I don't think that #10996 (per network configuration) and #10267 (additional config file) should be held up on #8994 (custom chains)
+19:43:20 <wumpus> jnewbery: no, I don't think so either
+19:43:37 <wumpus> #topic impersonation issues and comms stuff
+19:43:42 <gmaxwell> Kind of OT for the normal material here; but everyone should be aware that the developer of S2X is going around
+19:43:45 <gmaxwell> spreading misinformation about S2X describing it as a harmless "upgrade" to bitcoin, misstating that things like
+19:43:48 <gmaxwell> classic and BU are compatible (though they don't even implement segwit), and not making any mention of the serious
+19:43:51 <gmaxwell> issues like its lack of replay protection, no HF bit, lack of a spec, this is especially bad because there have
+19:43:54 <gmaxwell> been a bunch of efforts to impersonate our project supporting this stuff:
+19:43:57 <gmaxwell> https://twitter.com/bcoreproject/status/897966294083018760 (click internal link for the S2X stuff)
+19:44:00 <gmaxwell> I'm not sure of what to do but it appears to be a widescale effort to misinform people. :(
+19:44:07 <gmaxwell> In the past twitter hasn't done much with people impersonating me, and this is happening on more than twitter.
+19:44:23 <sipa> :(
+19:44:28 <wumpus> yea :/
+19:44:30 <BlueMatt> I'm not sure what can be done about it, sadly, either, aside from everyone spending some time vigorously condemning such blatant fraud and reaching out to corners of the community to point this out
+19:44:47 <gmaxwell> E.g. seen it on reddit and hacker news; and our community links people to https://en.bitcoin.it/wiki/Segwit_support but then gets trolls responding that its "fake" and "censored by theymos"
+19:44:58 <achow101> for twitter impersonation, you can report it to twitter and they might do something about it
+19:45:07 <luke-jr> maybe a bitcoincore.org blog explicitly rejecting 2X and warning people of the misinformation campaigns?
+19:45:15 <wumpus> right, I'm not sure what recourse there is, fake news everywhere on the internet
+19:45:20 <gmaxwell> achow101: I've heard that several project contributors have; so sure; but I wouldn't expect much.
+19:45:35 <praxeology> gmaxwell: I saw in #bitcoin someone was saying that bitpay was linking to use btc1 https://blog.bitpay.com/bitcore-segwit-activation/  with "bitcore"
+19:45:37 <wumpus> yes certainly report to sites where the impersonation is hosted
+19:45:42 <BlueMatt> luke-jr: if carefully worded, seems fine
+19:45:45 <wumpus> github is quite active with that at least
+19:45:59 <wumpus> twitter usually ignores report unless a lot of people report
+19:46:11 <gmaxwell> Right we may need to each be more outspoken personally, and perhaps organize some project things too.
+19:46:16 <achow101> I like luke-jr's idea. having something explicitly rejecting s2x would be good
+19:46:25 <Murch> I had already reported that account last week, I suggest that others which use twitter do so as well.
+19:46:43 <jtimon> jnewbery: agreed, nor the other way around imo
+19:46:49 * luke-jr notes he personally calls it simply "2X" because he doesn't want to give the impression Segwit is connected to it.
+19:47:42 <gmaxwell> luke-jr: I've used S2X, but yea people are confused thinking 2X = 2MB  not 4MB (8peak) and other crazy stuff.
+19:47:57 <gmaxwell> or thinking that segwit activation means s2x activation.
+19:48:29 <wumpus> luke-jr: yes, I think an explicit post rejecting s2x would be a good idea
+19:48:33 <praxeology> didn't help that the slashdot article was wrong, portraying it bcash vs segwit2x
+19:48:52 <gmaxwell> I looked a week or two ago and there were under two dozen btc1 nodes after excluding VPSes and only something like 60 including. Non-entity on the network.
+19:49:17 <gmaxwell> ironically, BCash seems the more honest and responsible of the two.
+19:49:18 <Murch> gmaxwell: And no development activity since "rc2"
+19:49:24 <achow101> gmaxwell: unfortunately their doing basically a misinformation campaign to get more people to run btc1
+19:49:35 <achow101> e.g. bitpay telling people to use btc1 for segwit
+19:49:43 <BlueMatt> ok, so objections to luke-jr's proposal to put something on bitcoincore.org that simply points out that s2x is unrelated to segwit, and a fork of bitcoin, not a "harmless upgrade"?
+19:49:45 <gmaxwell> In any case, we're not going to solve it here, but I think we each can make little pushes to better inform people.
+19:49:56 <BlueMatt> simple faq/error correction, not political "fuck this thing"
+19:50:16 <gmaxwell> BlueMatt: would depend on the text! someone could propose some, maybe harding.
+19:50:22 <luke-jr> I'll throw up a draft GDoc people can hack at after the meeting?
+19:50:27 <BlueMatt> gmaxwell: yes, of course
+19:50:33 <gmaxwell> We can also talk to the bitcoin.org folks in general.
+19:51:01 <gmaxwell> luke-jr: It might be a streach for your approach to get something the rest of the contributors would find super agreeable.
+19:51:19 <praxeology> How close is bitcoin.org w/ the core dev team?  Who runs it?
+19:51:24 <gmaxwell> luke-jr: I think you do well staking out your own more extreme position and adding to the discussion that way, though-- so no offense intended.
+19:51:45 <Chris_St1> maybe bitcoin.org people can throw up a warning about people promoting consensus imcompatible implementations
+19:51:52 <gmaxwell> praxeology: it's run by the bitcoin.org people. They're generally reasonable folks.
+19:51:55 <BlueMatt> praxeology: not at all, but we can at least contact them or open github issues since they do put the source on github
+19:51:57 <cfields> i think it's important that we point out that this isn't some NIH issue or aversion to change, rather a reaction to a fork that has not only ignored what we've learned from the recent split, but even manages to regress from it
+19:51:58 <luke-jr> gmaxwell: maybe someone else can write a draft then?
+19:52:12 <luke-jr> what I wrote so far: https://docs.google.com/document/d/1D5wYL8mYTfswE94lzIe1RwdDP_rETpgXSWdkMUcpt1A/edit?usp=sharing
+19:52:15 <sipa> cfields: indeed
+19:52:47 <Murch> BlueMatt: Factual statement that the two are unrelated and perhaps a mention of the lack in replay protection
+19:53:04 <gmaxwell> cfields: yes, indeed, in the few places where he even responded to concerns it was to claim things were non-issues with bcash when they actually were, and when bcash's better decisions were highly protective.
+19:53:30 <BlueMatt> yea, that seems reasonable, just "hey, this is unrelated to Bitcoin Core or Bitcoin, really, they are playing a very, very risky game and most folks dont condone this"
+19:54:04 <gmaxwell> In any case, beyond some factual statement... part of the consequence of having the project itself speak less is that each of us in the community sometimes needs to speak more. Otherwise the vacuum is easily filled with fakes and lies.
+19:54:20 <gmaxwell> I dunno if everyone has seen morcos' blog posts but they've been fantastic.
+19:54:34 <wumpus> gmaxwell: can you link them please?
+19:54:42 <wumpus> (for the sake of the meeting log)
+19:54:48 <gmaxwell> BlueMatt: even just many rather than most (while I don't doubt most is also true, a narrower thing can be said)
+19:54:57 <BlueMatt> fair
+19:55:27 <Murch> BlueMatt: Yeah, Replay Protection might be a bit over the head for the general audience. It should be mentioned though that it is unrelated to and _not supported by Bitcoin Core_.
+19:55:33 <sipa> https://medium.com/@morcos/no2x-bad-governance-model-97b8e521e751 https://medium.com/@morcos/no2x-centralized-services-539e3b1b56c9 https://medium.com/@morcos/no2x-full-nodes-889c20100a8d
+19:55:45 <BlueMatt> yea, ^ those are great!
+19:56:10 <wumpus> #link https://medium.com/@morcos/no2x-bad-governance-model-97b8e521e751
+19:56:17 <wumpus> #link  https://medium.com/@morcos/no2x-centralized-services-539e3b1b56c9
+19:56:18 <luke-jr> some open source projects just do blog aggregation
+19:56:18 <wumpus> #link https://medium.com/@morcos/no2x-full-nodes-889c20100a8d
+19:56:27 <gmaxwell> it's a fine line to walk, to express the gist without seeming like there isn't substance or alternatively dropping people into the weeds.
+19:57:04 <gmaxwell> luke-jr: I'm generally glad that we don't, in that joe-blow who just doesn't get open projects and is looking for an authority won't understand that a blog aggregation isn't an official position.
+19:57:08 <Murch> luke-jr: That's why I'm putting it so carefully: "not supported" is easily true. Stating that there is no Core contributors that do support it, is probably hard to check and easily false.
+19:57:19 <bitcoin-git> [13bitcoin] 15jonasschnelli opened pull request #11081: Add length check for CExtKey deserialization (06master...062017/08/fix_cextkey) 02https://github.com/bitcoin/bitcoin/pull/11081
+19:57:25 <wumpus> luke-jr: yes, something like https://planet.freedesktop.org/ would be nice, though on the other hand for bitcoin that would result in endless political discussions about who to include and who not
+19:57:38 <gmaxwell> In any case, even if you don't have the energy or skills to write your own statements, if you agree with stuff like morcos' you can still link to it and let others know you support it.
+19:57:52 <gmaxwell> luke-jr: aka bitcoin press center.
+19:57:58 <BlueMatt> wumpus: I think we should include Mr Buckethead! I find his points on Brexit to be rather well-informed.
+19:57:59 <luke-jr> :x
+19:58:12 <luke-jr> gmaxwell: some people don't know to follow individual developers, though
+19:58:21 <sipa> BlueMatt: *Lord* Buckethead please
+19:58:30 <wumpus> lol BlueMatt
+19:58:38 <BlueMatt> sipa: oops, sorry
+19:59:02 <Murch> luke-jr: That's why a statement coming from Core would be useful. Especially since Core as an entity doesn't usually have a position.
+19:59:18 <BlueMatt> if folks agree, @bitcoincoreorg could also r/t morcos' blog posts
+19:59:32 <wumpus> @btcdrak
+20:00:03 <wumpus> #endmeeting
