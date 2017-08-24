@@ -1,0 +1,380 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:45</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 24 19:01:45 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:45</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> you have the best nameping.
+<a name="l-5"></a><span class="tm">19:02:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-6"></a><span class="tm">19:02:17</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-7"></a><span class="tm">19:02:18</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:02:32</span><span class="nk"> &lt;BlueMatt&gt;</span> happy segwit everyone
+<a name="l-9"></a><span class="tm">19:02:51</span><span class="nk"> &lt;sipa&gt;</span> short topic: thanks and congrats everyone with SegWit... it seems it activated on the network without a glitch
+<a name="l-10"></a><span class="tm">19:02:57</span><span class="nk"> &lt;wumpus&gt;</span> yes, congratulations everyone!
+<a name="l-11"></a><span class="tm">19:03:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> wohoo!
+<a name="l-12"></a><span class="tm">19:03:06</span><span class="nk"> &lt;achow101&gt;</span> yay!
+<a name="l-13"></a><span class="tm">19:03:10</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-14"></a><span class="tm">19:03:14</span><span class="nk"> &lt;wumpus&gt;</span> it took lots of time, and lots of sweat, but we did it
+<a name="l-15"></a><span class="tm">19:03:36</span><span class="nk"> &lt;kanzure&gt;</span> whole bitcoin community did it
+<a name="l-16"></a><span class="tm">19:03:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> well except the glitch of miners universally having maxblocksize=1000000 in their configs, resulting in overly small blocks even though there have been several oppturnityies to make bigger ones.
+<a name="l-17"></a><span class="tm">19:03:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> everything on its time
+<a name="l-18"></a><span class="tm">19:04:00</span><span class="nk"> &lt;luke-jr&gt;</span> s/glitch/good thing/
+<a name="l-19"></a><span class="tm">19:04:06</span><span class="nk"> &lt;sipa&gt;</span> misconceptions are hard to fix
+<a name="l-20"></a><span class="tm">19:04:07</span><span class="nk"> &lt;gmaxwell&gt;</span> You may well have jinxed us, since things blowing up might only happen with a &gt;1MB block. :)
+<a name="l-21"></a><span class="tm">19:04:10</span><span class="nk"> &lt;BlueMatt&gt;</span> yes, some miner appear to be confused by maxblocksize/maxblockweight options, we need #11100
+<a name="l-22"></a><span class="tm">19:04:11</span><span class="nk"> &lt;wumpus&gt;</span> we should probably publicize some segwit miner's faq thing
+<a name="l-23"></a><span class="tm">19:04:14</span><span class="nk"> &lt;wumpus&gt;</span> on bitcoincore.org
+<a name="l-24"></a><span class="tm">19:04:26</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> isn't there already one?
+<a name="l-25"></a><span class="tm">19:04:28</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> not if they don't encourage big blocks. :/
+<a name="l-26"></a><span class="tm">19:04:32</span><span class="nk"> &lt;luke-jr&gt;</span> err, not if they do*
+<a name="l-27"></a><span class="tm">19:04:33</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> it would have been better if the expectations around that would have been communicated, then i would agree with you about good thing. expectation mismatch is not ideal.
+<a name="l-28"></a><span class="tm">19:04:48</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> there is a segwit faq but it doesn't include this
+<a name="l-29"></a><span class="tm">19:04:51</span><span class="nk"> &lt;achow101&gt;</span> https://bitcoincore.org/en/2016/10/27/segwit-upgrade-guide/#miners
+<a name="l-30"></a><span class="tm">19:05:02</span><span class="nk"> &lt;achow101&gt;</span> not really an faq I guess
+<a name="l-31"></a><span class="tm">19:05:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> says nothing about needing to remove the maxblocksize setting and setting maxblockweight=4000000
+<a name="l-32"></a><span class="tm">19:05:48</span><span class="nk"> &lt;luke-jr&gt;</span> there is no such need, nor is it good for them to do so
+<a name="l-33"></a><span class="tm">19:06:19</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> it's about being honest about expectations. if miners expected the software to do something different, then we need to better document the configuration.
+<a name="l-34"></a><span class="tm">19:06:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">kanzure:</span> +1
+<a name="l-35"></a><span class="tm">19:06:55</span><span class="nk"> &lt;harding&gt;</span> Is there anything else that should go into a current segwit faq for miners?
+<a name="l-36"></a><span class="tm">19:06:55</span><span class="nk"> &lt;wumpus&gt;</span> there is apparently a lack of documentation for these optons and what they do, that's clear, no matter what your opinion on what their value should be is
+<a name="l-37"></a><span class="tm">19:07:12</span><span class="nk"> &lt;kanzure&gt;</span> sounds like there's some requests for a post-activation faq
+<a name="l-38"></a><span class="tm">19:07:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit faq for miners</span>
+<a name="l-39"></a><span class="tm">19:07:23</span><span class="nk"> &lt;luke-jr&gt;</span> hm, I thought we had documented it before, but I can't find it
+<a name="l-40"></a><span class="tm">19:07:57</span><span class="nk"> &lt;BlueMatt&gt;</span> blockmaxsize really just needs to be removed, it has caused significant confusion with several mining pool operators...if you want to limit the block's size-in-bytes you can do that yourself as a gbt client (isnt that what gbt is for?)
+<a name="l-41"></a><span class="tm">19:08:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> it's super confusing for people.  esp the fact that the maxblocksize setting (which doesn't make any sense anymore) says it defaults to 750k so then I tell people to remove it and set maxblockweight=4000000 and they don't believe it'll make a &gt;750k block.
+<a name="l-42"></a><span class="tm">19:08:06</span><span class="nk"> &lt;wumpus&gt;</span> not sure if there's any other ones, have there been any other frequent questions about segwit by miners?
+<a name="l-43"></a><span class="tm">19:08:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> size is often the bottleneck today, so it makes sense to limit by size
+<a name="l-44"></a><span class="tm">19:08:36</span><span class="nk"> &lt;gmaxwell&gt;</span> so then I say, "it will but fine, just set blockmaxsize=4000000" and then they think if they set if over 1M they'll make invalid blocks. :(
+<a name="l-45"></a><span class="tm">19:08:37</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> ok, then gbt clients can do so
+<a name="l-46"></a><span class="tm">19:08:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> size is a bottleneck in _what_?
+<a name="l-47"></a><span class="tm">19:09:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I've literally heard confusion to the tone of what gmaxwell described from every mining pool operator I spoke to
+<a name="l-48"></a><span class="tm">19:09:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> IBD mainly at this point I guess
+<a name="l-49"></a><span class="tm">19:09:22</span><span class="nk"> &lt;BlueMatt&gt;</span> that option needs to die
+<a name="l-50"></a><span class="tm">19:09:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> with BIP152, the size hardly matters, except if you're ridiculously bandwidth constraint to the point you'd be unable to keep a node synced in the first place
+<a name="l-51"></a><span class="tm">19:09:38</span><span class="nk"> &lt;sipa&gt;</span> *constrained
+<a name="l-52"></a><span class="tm">19:09:39</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> IBD is too late to save already
+<a name="l-53"></a><span class="tm">19:09:42</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> blocksonly?
+<a name="l-54"></a><span class="tm">19:09:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> not for anyone with an internet connection beyond a few megabits in speed.
+<a name="l-55"></a><span class="tm">19:10:24</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> IBD time is limited by chainstate database operations for parties that aren't totally network starved.
+<a name="l-56"></a><span class="tm">19:10:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> it's nothing like as bad as it could be
+<a name="l-57"></a><span class="tm">19:10:41</span><span class="nk"> &lt;cfields&gt;</span> i've seen a ton of questions about segwit and "the addresses that start with a 3"...
+<a name="l-58"></a><span class="tm">19:10:50</span><span class="nk"> &lt;kanzure&gt;</span> ya i have seen mostly non-miner questions
+<a name="l-59"></a><span class="tm">19:10:51</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, so aside from luke is there anyone who objects generally to removing -maxblocksize? (ala #11100)
+<a name="l-60"></a><span class="tm">19:10:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> IMO the solution to lack of documentation  should be documentation, changing around things more so there's differences between versions to explain too
+<a name="l-61"></a><span class="tm">19:11:05</span><span class="nk"> &lt;cfields&gt;</span> a quick update and faq about segwit addresses, how they look, and how they'll look soon would be helpful imo. even if it's just re-hashed info
+<a name="l-62"></a><span class="tm">19:11:10</span><span class="nk"> &lt;luke-jr&gt;</span> not long ago, the blockchain was 100 GB. now it's 150 GB. and every month 10 GB more with 2 MB blocks :/
+<a name="l-63"></a><span class="tm">19:11:14</span><span class="nk"> &lt;kanzure&gt;</span> we can also copy-paste old segwit faq details anyway
+<a name="l-64"></a><span class="tm">19:11:17</span><span class="nk"> &lt;kanzure&gt;</span> (or link to them)
+<a name="l-65"></a><span class="tm">19:11:20</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> prune
+<a name="l-66"></a><span class="tm">19:11:27</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> that doesn't eliminate IBD
+<a name="l-67"></a><span class="tm">19:11:29</span><span class="nk"> &lt;wumpus&gt;</span> 'take the option away and the problem goes away' is a bit too simplistic at this point
+<a name="l-68"></a><span class="tm">19:11:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> 11100 now removes it but keeps it somewhat compaible in spirit with what most miners appear to still have in their config files...
+<a name="l-69"></a><span class="tm">19:11:43</span><span class="nk"> &lt;BlueMatt&gt;</span> ehh, deprecates it
+<a name="l-70"></a><span class="tm">19:11:51</span><span class="nk"> &lt;BlueMatt&gt;</span> and clearly states blockmaxsize is deprecated
+<a name="l-71"></a><span class="tm">19:12:00</span><span class="nk"> &lt;BlueMatt&gt;</span> which roughly aligns with the expectation of everyone i spoke to
+<a name="l-72"></a><span class="tm">19:12:06</span><span class="nk"> &lt;luke-jr&gt;</span> 11100 is stupid.
+<a name="l-73"></a><span class="tm">19:12:13</span><span class="nk"> &lt;BlueMatt&gt;</span> there was confusion as to why blockmaxsize still existed in the context of segwit
+<a name="l-74"></a><span class="tm">19:12:16</span><span class="nk"> &lt;meshcollider&gt;</span> deprecating makes sense to me
+<a name="l-75"></a><span class="tm">19:12:30</span><span class="nk"> &lt;morcos&gt;</span> even i have trouble keeping up with what the interaction of these different options is
+<a name="l-76"></a><span class="tm">19:12:41</span><span class="nk"> &lt;kanzure&gt;</span> needs an interaction matrix visualization
+<a name="l-77"></a><span class="tm">19:12:52</span><span class="nk"> &lt;kanzure&gt;</span> where the cells indicate interaction :-)
+<a name="l-78"></a><span class="tm">19:12:53</span><span class="nk"> &lt;morcos&gt;</span> we need to move towards getting rid of blockmaxsize, its confusion for no benefit....
+<a name="l-79"></a><span class="tm">19:12:55</span><span class="nk"> &lt;achow101&gt;</span> is blockmaxsize taken into consideration with segwit or just ignored?
+<a name="l-80"></a><span class="tm">19:13:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> it is!
+<a name="l-81"></a><span class="tm">19:13:04</span><span class="nk"> &lt;wumpus&gt;</span> deprecation is likely a good idea on the longer run, but not a fix to the misunderstanding created
+<a name="l-82"></a><span class="tm">19:13:05</span><span class="nk"> &lt;instagibbs&gt;</span> taken into account
+<a name="l-83"></a><span class="tm">19:13:15</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> it does something stupid, it truncates block construction when you reach that size.
+<a name="l-84"></a><span class="tm">19:13:19</span><span class="nk"> &lt;achow101&gt;</span> bleh :/
+<a name="l-85"></a><span class="tm">19:13:33</span><span class="nk"> &lt;luke-jr&gt;</span> it does what it's supposed to do
+<a name="l-86"></a><span class="tm">19:13:48</span><span class="nk"> &lt;gmaxwell&gt;</span> it originally went away and luke threw a fit.  With segwit not active it made sense as a legacy support thing but it's active now.
+<a name="l-87"></a><span class="tm">19:13:57</span><span class="nk"> &lt;morcos&gt;</span> wait a second
+<a name="l-88"></a><span class="tm">19:13:59</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> I disagree here, I was explicitly asked why it was not deprecated, because the consensus limit is around weight, so thats what people expect to be setting
+<a name="l-89"></a><span class="tm">19:14:07</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> you're rewriting history now
+<a name="l-90"></a><span class="tm">19:14:12</span><span class="nk"> &lt;BlueMatt&gt;</span> deprecation is, itself, documentation
+<a name="l-91"></a><span class="tm">19:14:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> but we're already in the screwed state that those options exist
+<a name="l-92"></a><span class="tm">19:14:19</span><span class="nk"> &lt;morcos&gt;</span> i might be wrong (b/c the interaction is complicated) but isn't it just flat out wrong to say the default is 750K
+<a name="l-93"></a><span class="tm">19:14:32</span><span class="nk"> &lt;morcos&gt;</span> isn't the default infinity?
+<a name="l-94"></a><span class="tm">19:14:44</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">morcos:</span> no, i don't think so.
+<a name="l-95"></a><span class="tm">19:14:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i honestly don't know anymore
+<a name="l-96"></a><span class="tm">19:14:49</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> how so?
+<a name="l-97"></a><span class="tm">19:14:50</span><span class="nk"> &lt;morcos&gt;</span> if you don't set blockmaxsize it doesn't even calculate it
+<a name="l-98"></a><span class="tm">19:15:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> the default is 1/4 the configured weight which defaults to 3m.
+<a name="l-99"></a><span class="tm">19:15:06</span><span class="nk"> &lt;sdaftuar&gt;</span> if you set nothing, you get a 750k default, i believe.  and a 3M weight max.
+<a name="l-100"></a><span class="tm">19:15:07</span><span class="nk"> &lt;wumpus&gt;</span> I'm fine with marking it as deprecated anyhow
+<a name="l-101"></a><span class="tm">19:15:09</span><span class="nk"> &lt;morcos&gt;</span> ok well we'll get to the bottom of it in a second, but look how ridiculous it is that we don't know
+<a name="l-102"></a><span class="tm">19:15:18</span><span class="nk"> &lt;sdaftuar&gt;</span> if you set just blockmaxweight, then blockmaxsize is effectively infinity, i think.
+<a name="l-103"></a><span class="tm">19:15:26</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15romanornr opened pull request #11127: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11127
+<a name="l-104"></a><span class="tm">19:15:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> right.
+<a name="l-105"></a><span class="tm">19:15:35</span><span class="nk"> &lt;sipa&gt;</span> if you set only one of them, the other is taken as infinity
+<a name="l-106"></a><span class="tm">19:15:41</span><span class="nk"> &lt;gmaxwell&gt;</span> oh jesus.
+<a name="l-107"></a><span class="tm">19:15:43</span><span class="nk"> &lt;sipa&gt;</span> if you set both, both are enforced independently
+<a name="l-108"></a><span class="tm">19:15:43</span><span class="nk"> &lt;sdaftuar&gt;</span> but blockmaxsize is absurd, it should be removed.
+<a name="l-109"></a><span class="tm">19:15:48</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sdaftuar:</span> you think if you set no options you can not produce a segwit-tx containing block bigger than 750k?
+<a name="l-110"></a><span class="tm">19:15:52</span><span class="nk"> &lt;morcos&gt;</span> that doesn't seem right to me
+<a name="l-111"></a><span class="tm">19:16:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i believe that is correct
+<a name="l-112"></a><span class="tm">19:16:08</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, pretty sure that's correct
+<a name="l-113"></a><span class="tm">19:16:09</span><span class="nk"> &lt;sdaftuar&gt;</span> correct, you are capped at 750kb
+<a name="l-114"></a><span class="tm">19:16:09</span><span class="nk"> &lt;gmaxwell&gt;</span> That is correct.
+<a name="l-115"></a><span class="tm">19:16:18</span><span class="nk"> &lt;meshcollider&gt;</span> if you set blockmaxsize then blockmaxweight becomes blockmaxsize * WITNESS_SCALE_FACTOR doesn't it?
+<a name="l-116"></a><span class="tm">19:16:19</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15romanornr closed pull request #11127: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11127
+<a name="l-117"></a><span class="tm">19:16:20</span><span class="nk"> &lt;instagibbs&gt;</span> all miners have cranked up to 1MB
+<a name="l-118"></a><span class="tm">19:16:20</span><span class="nk"> &lt;morcos&gt;</span> ugh, we should never have released it in this state
+<a name="l-119"></a><span class="tm">19:16:41</span><span class="nk"> &lt;sdaftuar&gt;</span> +1
+<a name="l-120"></a><span class="tm">19:16:53</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-121"></a><span class="tm">19:17:03</span><span class="nk"> &lt;wumpus&gt;</span> but we're there anyhow, what now?
+<a name="l-122"></a><span class="tm">19:17:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">instagibbs:</span> which now means a cranking down to 1MB. :(
+<a name="l-123"></a><span class="tm">19:17:27</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> we should remove it and deprecate the command line option
+<a name="l-124"></a><span class="tm">19:17:28</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15hovah opened pull request #11128: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11128
+<a name="l-125"></a><span class="tm">19:17:37</span><span class="nk"> &lt;sdaftuar&gt;</span> as we indicated we may do in the future in the 0.13 release notes, iirc
+<a name="l-126"></a><span class="tm">19:17:41</span><span class="nk"> &lt;morcos&gt;</span> Announcement that you should set only blockmaxweight and you should set it to 4,000,000.  Plus change code to ignore blockmaxsize unless specifically set, and deprecate it.
+<a name="l-127"></a><span class="tm">19:17:44</span><span class="nk"> &lt;gmaxwell&gt;</span> Well we should remove the silly option. The maximum size is not really correlated with anything that is interesting to be set anymore.
+<a name="l-128"></a><span class="tm">19:17:47</span><span class="nk"> &lt;luke-jr&gt;</span> miners producing blocks larger than 750k (or 1 MB at most) is malicious toward the network, and advising they do so or deprecating the blockmaxsize option needed to control this, it what is absurd.
+<a name="l-129"></a><span class="tm">19:17:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> absolutely not
+<a name="l-130"></a><span class="tm">19:18:02</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> ack on removing blockmaxsize and leaving only maxblockweight
+<a name="l-131"></a><span class="tm">19:18:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Luke is faulty.
+<a name="l-132"></a><span class="tm">19:18:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> so they can still choose to do that with that option removed, right?
+<a name="l-133"></a><span class="tm">19:18:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> e.g. by setting the blockmaxweight lower?
+<a name="l-134"></a><span class="tm">19:18:33</span><span class="nk"> &lt;sdaftuar&gt;</span> or by using the gbt results and truncating themselves
+<a name="l-135"></a><span class="tm">19:18:35</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, so it sounds like #11100
+<a name="l-136"></a><span class="tm">19:18:38</span><span class="nk"> &lt;wumpus&gt;</span> that doesn't need two options
+<a name="l-137"></a><span class="tm">19:18:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> not effectively
+<a name="l-138"></a><span class="tm">19:18:48</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> why not?
+<a name="l-139"></a><span class="tm">19:18:55</span><span class="nk"> &lt;morcos&gt;</span> In general it is good that we have a culture of arguing things to death here, sometimes useful things result.  But in this case, we've been over this, we've heard Luke's arguments, and last time we gave in to end the argument
+<a name="l-140"></a><span class="tm">19:18:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> the assumption behind segwit is that size doesn't matter nearly as much as a new metric, weight
+<a name="l-141"></a><span class="tm">19:18:56</span><span class="nk"> &lt;wumpus&gt;</span> the complication here is having two options that interact in a complicated way
+<a name="l-142"></a><span class="tm">19:19:01</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> you're the one who always advocates for policy at the other end of gbt, or isnt that the design of gbt?
+<a name="l-143"></a><span class="tm">19:19:03</span><span class="nk"> &lt;wumpus&gt;</span> please don't confuse it with what the value should be
+<a name="l-144"></a><span class="tm">19:19:09</span><span class="nk"> &lt;praxeology1&gt;</span> I don't think you should depricate the maxblocksize option.  If anything, if you want the software to enforce a legacy block size of 1MB, then hard code the limit...  and remove the maxblocksize setting from the configuration.
+<a name="l-145"></a><span class="tm">19:19:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i'm sorry to hear you disagree about that point, but that ship has sailed
+<a name="l-146"></a><span class="tm">19:19:13</span><span class="nk"> &lt;luke-jr&gt;</span> the only way to limit size to 750k with blockmaxweight is =750000, which will make 250k blocks unless 100% of tx are segwit
+<a name="l-147"></a><span class="tm">19:19:18</span><span class="nk"> &lt;morcos&gt;</span> Unless someone else agrees with Luke, I htink its just time to say unfortunately we're proceeding against his objections on this issue
+<a name="l-148"></a><span class="tm">19:19:29</span><span class="nk"> &lt;jnewbery&gt;</span> Concept ACK 11100
+<a name="l-149"></a><span class="tm">19:19:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">praxeology1:</span> oh jesus christ you're also confused
+<a name="l-150"></a><span class="tm">19:19:58</span><span class="nk"> &lt;wumpus&gt;</span> yes, that sounds confused
+<a name="l-151"></a><span class="tm">19:19:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> that ship has not sailed. that's not an argument.
+<a name="l-152"></a><span class="tm">19:20:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">praxeology1:</span> THERE IS NO "LEGACY BLOCK SIZE" LIMIT ANYMORE!  Compatibility with old nodes achieved implicitly through how weight is constructed.
+<a name="l-153"></a><span class="tm">19:20:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">praxeology1:</span> these options only effect the type of blocks miners mine, and are currently a maze of confusing
+<a name="l-154"></a><span class="tm">19:20:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> segwit is active, regardless of your preferences, you should assume that rational actors will produce what the rules allow them to
+<a name="l-155"></a><span class="tm">19:20:44</span><span class="nk"> &lt;achow101&gt;</span> the parameter interaction is defined here: https://github.com/bitcoin/bitcoin/blob/master/src/miner.cpp#L81 for reference
+<a name="l-156"></a><span class="tm">19:20:49</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> then Bitcoin is dead.
+<a name="l-157"></a><span class="tm">19:20:56</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">praxeology1:</span> whats worse, the current options default to pissing away a significant amount of profit (so are always being overridden in practice, which has resulted in much confusion)
+<a name="l-158"></a><span class="tm">19:21:00</span><span class="nk"> &lt;jnewbery&gt;</span> what, dead again?!
+<a name="l-159"></a><span class="tm">19:21:03</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> then Bitcoin is evolving to actually be tested
+<a name="l-160"></a><span class="tm">19:21:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> you've failed to address any of the points which I raised against your last rant on this on github.
+<a name="l-161"></a><span class="tm">19:21:24</span><span class="nk"> &lt;praxeology1&gt;</span> OK... so if there is no legacy limit anymore... then why would there be a configuration option for it? :o  Are you saying post segwit activation, it has no effect now?
+<a name="l-162"></a><span class="tm">19:21:25</span><span class="nk"> &lt;kanzure&gt;</span> does 11100 completely encompass the proposed changes
+<a name="l-163"></a><span class="tm">19:21:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">kanzure:</span> I believe so
+<a name="l-164"></a><span class="tm">19:21:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i'm only interested in a Bitcoin that survives under the assumption that miners act rationally
+<a name="l-165"></a><span class="tm">19:21:47</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">praxeology1:</span> it has an effect, kind of. it really shouldn't though
+<a name="l-166"></a><span class="tm">19:21:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> and you should too
+<a name="l-167"></a><span class="tm">19:22:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> your "points" depend on assertions that have no evidence at this time, which you are trying to CAUSE to be true
+<a name="l-168"></a><span class="tm">19:22:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> in particular expecting people to throw money on the floor to protect interests like keeping IBD times slightly lower is a failed expectation. (which we knew would fail, which is also why many of us don't support those reckless blocksize uncapping proposals)
+<a name="l-169"></a><span class="tm">19:22:20</span><span class="nk"> &lt;wumpus&gt;</span> if you think a defaults change kills bitcoin, you're severly underestimating it
+<a name="l-170"></a><span class="tm">19:22:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> incentives are too broken for that to be possible right now
+<a name="l-171"></a><span class="tm">19:22:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> how so?
+<a name="l-172"></a><span class="tm">19:22:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> unless "rationally" includes altruism
+<a name="l-173"></a><span class="tm">19:22:34</span><span class="nk"> &lt;instagibbs&gt;</span> I motion to move onto a new discussion unless there's some new information to be shared
+<a name="l-174"></a><span class="tm">19:22:40</span><span class="nk"> &lt;sdaftuar&gt;</span> seconded
+<a name="l-175"></a><span class="tm">19:22:43</span><span class="nk"> &lt;wumpus&gt;</span> people are already overriding it on large scale, no one is using that stupid default
+<a name="l-176"></a><span class="tm">19:22:44</span><span class="nk"> &lt;sipa&gt;</span> seconded
+<a name="l-177"></a><span class="tm">19:22:48</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, other topics?
+<a name="l-178"></a><span class="tm">19:22:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.15.0 release</span>
+<a name="l-179"></a><span class="tm">19:22:59</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> overriding it to 1 MB, not 4 MB
+<a name="l-180"></a><span class="tm">19:23:00</span><span class="nk"> &lt;BlueMatt&gt;</span> second round of congrats on segwit?
+<a name="l-181"></a><span class="tm">19:23:01</span><span class="nk"> &lt;morcos&gt;</span> i'm against moving on unless we have agreed to get rid of the option and make an announcement
+<a name="l-182"></a><span class="tm">19:23:13</span><span class="nk"> &lt;kanzure&gt;</span> i could see luke-jr maybe working on the calculation there and showing numbers at some point. but probably not this moment. in the mean time i think 11100 review status should be checked?
+<a name="l-183"></a><span class="tm">19:23:13</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> I think we did
+<a name="l-184"></a><span class="tm">19:23:15</span><span class="nk"> &lt;morcos&gt;</span> we can't constantly do the wrong thing because luke is willing to argue longer than the rest of us
+<a name="l-185"></a><span class="tm">19:23:19</span><span class="nk"> &lt;morcos&gt;</span> at some point we must overrrule
+<a name="l-186"></a><span class="tm">19:23:36</span><span class="nk"> &lt;morcos&gt;</span> with 3 r's
+<a name="l-187"></a><span class="tm">19:23:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> you're the one who wants to do the wrong thing
+<a name="l-188"></a><span class="tm">19:23:39</span><span class="nk"> &lt;praxeology1&gt;</span> <span class="hi">BlueMatt:</span> Congratulations! wahoo!!!! :) :) :) :)
+<a name="l-189"></a><span class="tm">19:23:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> go ack 11100, I dont think there was any concept objection
+<a name="l-190"></a><span class="tm">19:23:50</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> he is not "the one" who wants to do what he is suggesting
+<a name="l-191"></a><span class="tm">19:23:53</span><span class="nk"> &lt;sdaftuar&gt;</span> he is one of many
+<a name="l-192"></a><span class="tm">19:23:53</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> a point of order, I prefer we don't force 'final' decisions to be made in the meetings due to attendance complications. I think what you suggest it clearly the general thrust of where things are going, however.
+<a name="l-193"></a><span class="tm">19:24:08</span><span class="nk"> &lt;BlueMatt&gt;</span> okkkkkk, so 0.15.0
+<a name="l-194"></a><span class="tm">19:24:14</span><span class="nk"> &lt;instagibbs&gt;</span> reviewing the PR is the action item
+<a name="l-195"></a><span class="tm">19:24:26</span><span class="nk"> &lt;gmaxwell&gt;</span> s/it/is/
+<a name="l-196"></a><span class="tm">19:24:27</span><span class="nk"> &lt;wumpus&gt;</span> this is getting really unruly
+<a name="l-197"></a><span class="tm">19:24:37</span><span class="nk"> &lt;BlueMatt&gt;</span> dooglus finally got some backtraces on #9683, which I think needs to be investigated for 0.15
+<a name="l-198"></a><span class="tm">19:24:41</span><span class="nk"> &lt;wumpus&gt;</span> I'm going to end this meeting if this continues
+<a name="l-199"></a><span class="tm">19:24:42</span><span class="nk"> &lt;BlueMatt&gt;</span> also #11126
+<a name="l-200"></a><span class="tm">19:25:12</span><span class="nk"> &lt;wumpus&gt;</span> any reports of new regressions with rc2?
+<a name="l-201"></a><span class="tm">19:26:07</span><span class="nk"> &lt;achow101&gt;</span> probably not
+<a name="l-202"></a><span class="tm">19:26:08</span><span class="nk"> &lt;wumpus&gt;</span> to be honest dooglus has been having issues no one else is having, for a long time, we should assist him but I'm not sure we should hold up a release for it
+<a name="l-203"></a><span class="tm">19:26:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> well are we gonna release today? I'll take a look at his issues this afternoon :)
+<a name="l-204"></a><span class="tm">19:26:32</span><span class="nk"> &lt;BlueMatt&gt;</span> i mean I'm not saying hold it up
+<a name="l-205"></a><span class="tm">19:26:39</span><span class="nk"> &lt;meshcollider&gt;</span> only issue I've heard with rc2 has been fanquakes gitian issue :)
+<a name="l-206"></a><span class="tm">19:26:40</span><span class="nk"> &lt;BlueMatt&gt;</span> just make sure its not an obvious "oh, thats broken" kind of thing
+<a name="l-207"></a><span class="tm">19:26:43</span><span class="nk"> &lt;wumpus&gt;</span> 11126 is an issue that only affects DEBUG_LOCKORDER in ithe initialization; nothing else is running at that moment
+<a name="l-208"></a><span class="tm">19:26:47</span><span class="nk"> &lt;wumpus&gt;</span> so it doesn't cause any real issue
+<a name="l-209"></a><span class="tm">19:26:57</span><span class="nk"> &lt;BlueMatt&gt;</span> ah, ok, i hadnt investigated it significantly
+<a name="l-210"></a><span class="tm">19:27:04</span><span class="nk"> &lt;cfields&gt;</span> i've had a few crashes lately that i mentioned here i think. I've finally been able to track them down to local changes. So, no concern for 0.15.
+<a name="l-211"></a><span class="tm">19:27:26</span><span class="nk"> &lt;BlueMatt&gt;</span> hmmmm, looks like dooglus' qt crash is the same one I couldnt debug
+<a name="l-212"></a><span class="tm">19:27:38</span><span class="nk"> &lt;BlueMatt&gt;</span> i wonder if he's also running qt over X forwarding
+<a name="l-213"></a><span class="tm">19:27:43</span><span class="nk"> &lt;BlueMatt&gt;</span> that appears to make it more likely
+<a name="l-214"></a><span class="tm">19:27:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> Seems like a free/alloc race in the table weak loading
+<a name="l-215"></a><span class="tm">19:28:10</span><span class="nk"> &lt;BlueMatt&gt;</span> it doesnt appear to be harmful, at least, some race in setting the table sort order or something like that
+<a name="l-216"></a><span class="tm">19:28:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> Could also be a Qt bug
+<a name="l-217"></a><span class="tm">19:28:25</span><span class="nk"> &lt;BlueMatt&gt;</span> indeed, could be
+<a name="l-218"></a><span class="tm">19:28:36</span><span class="nk"> &lt;BlueMatt&gt;</span> mine was 9883
+<a name="l-219"></a><span class="tm">19:29:22</span><span class="nk"> &lt;jonasschnelli&gt;</span> They are related
+<a name="l-220"></a><span class="tm">19:29:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> setSortingEnabled()
+<a name="l-221"></a><span class="tm">19:29:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll investigate
+<a name="l-222"></a><span class="tm">19:29:56</span><span class="nk"> &lt;BlueMatt&gt;</span> thanks
+<a name="l-223"></a><span class="tm">19:29:58</span><span class="nk"> &lt;jtimon&gt;</span> the deault of one is a function of what you set in another? that interaction should definitely go away asap, ideally to me by removing the size one, I don't care the weight default is 2000000 or whatever
+<a name="l-224"></a><span class="tm">19:30:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> If its racy,.. could be due to a large wallet
+<a name="l-225"></a><span class="tm">19:30:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> (many txns)
+<a name="l-226"></a><span class="tm">19:30:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#9883 </span><span class="cmdline">crashed in the leveldb iter?!</span>
+<a name="l-227"></a><span class="tm">19:30:29</span><span class="nk"> &lt;BlueMatt&gt;</span> the wallet I saw that on is not so large...maybe 1k txn?
+<a name="l-228"></a><span class="tm">19:30:46</span><span class="nk"> &lt;wumpus&gt;</span> oh wait, wrong thread, that was just going on at the time
+<a name="l-229"></a><span class="tm">19:30:52</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> not that I know...  I think it crashes via setSortingEnabled
+<a name="l-230"></a><span class="tm">19:31:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> QTableView::setSortingEnabled(bool) -&gt; QCollator::QCollator(QLocale const&amp;
+<a name="l-231"></a><span class="tm">19:31:11</span><span class="nk"> &lt;BlueMatt&gt;</span> dooglus also has some crashes where quick-exit races openssl mutex unlocking....I assume that is an openssl bug or so
+<a name="l-232"></a><span class="tm">19:31:27</span><span class="nk"> &lt;BlueMatt&gt;</span> its the old mutex-locked-during-destruction crash, though, so not harmful
+<a name="l-233"></a><span class="tm">19:31:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes, I see now, that's a more recognizable trace
+<a name="l-234"></a><span class="tm">19:31:31</span><span class="nk"> &lt;BlueMatt&gt;</span> just a scary warning
+<a name="l-235"></a><span class="tm">19:32:04</span><span class="nk"> &lt;wumpus&gt;</span> is something outside the GUI thread calling Qt functions perhaps?
+<a name="l-236"></a><span class="tm">19:32:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> your 9883, self compiled Qt? What version?
+<a name="l-237"></a><span class="tm">19:32:20</span><span class="nk"> &lt;BlueMatt&gt;</span> yes...uhhh, sec
+<a name="l-238"></a><span class="tm">19:32:28</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> that was my assumption
+<a name="l-239"></a><span class="tm">19:32:31</span><span class="nk"> &lt;wumpus&gt;</span> if so, that can explain the crashes with remote X, as well as this
+<a name="l-240"></a><span class="tm">19:32:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasa:</span> qt5 something
+<a name="l-241"></a><span class="tm">19:32:57</span><span class="nk"> &lt;wumpus&gt;</span> *only* the GUI thread may call Qt GUI functions, the rest should queue signals on the GUI thread
+<a name="l-242"></a><span class="tm">19:33:22</span><span class="nk"> &lt;wumpus&gt;</span> I haven't seen any violation of that, though
+<a name="l-243"></a><span class="tm">19:33:38</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yeah. But that would very likely show another thread calling a relevant Qt function during the crash
+<a name="l-244"></a><span class="tm">19:33:39</span><span class="nk"> &lt;jonasschnelli&gt;</span> (which it doesn't)
+<a name="l-245"></a><span class="tm">19:35:27</span><span class="nk"> &lt;wumpus&gt;</span> PSA regarding 0.15.0 final - I will not be able to tag releases while in the US, and I'm leaving wednesday night 30th, and return to NL the 12th
+<a name="l-246"></a><span class="tm">19:35:32</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, it appears to be an only-at-startup thing and afaict, at least for me is a very reliable either-crashes-or-works-fine thing, so I'm still not too worried
+<a name="l-247"></a><span class="tm">19:35:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> you'd say so, but not necessarily, it could just mess up some internal table state, or even internal X state
+<a name="l-248"></a><span class="tm">19:35:58</span><span class="nk"> &lt;BlueMatt&gt;</span> (hence the closure of the original bug, may be a qt bug)
+<a name="l-249"></a><span class="tm">19:35:58</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">wumpus:</span> so, final this week?
+<a name="l-250"></a><span class="tm">19:36:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. Possible.
+<a name="l-251"></a><span class="tm">19:36:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> yes, or second half of september
+<a name="l-252"></a><span class="tm">19:37:35</span><span class="nk"> &lt;gmaxwell&gt;</span> I would rather have 0.15 out sooner rather than later. so far I haven't seen any clear blockers.
+<a name="l-253"></a><span class="tm">19:37:41</span><span class="nk"> &lt;wumpus&gt;</span> and I guess we should work on 0.15.1 during coredev
+<a name="l-254"></a><span class="tm">19:37:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> agreed
+<a name="l-255"></a><span class="tm">19:37:50</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> Yes. Ideally.
+<a name="l-256"></a><span class="tm">19:37:53</span><span class="nk"> &lt;wumpus&gt;</span> segwit wallet support etc
+<a name="l-257"></a><span class="tm">19:37:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes
+<a name="l-258"></a><span class="tm">19:38:09</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> maybe tag locally, and delay pushing?
+<a name="l-259"></a><span class="tm">19:38:33</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> well it's more complicated, I could possibly push the tag, but I can't upload executables
+<a name="l-260"></a><span class="tm">19:38:49</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> there are others who can, right?
+<a name="l-261"></a><span class="tm">19:39:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think wumpus should do it.
+<a name="l-262"></a><span class="tm">19:39:09</span><span class="nk"> &lt;wumpus&gt;</span> yes, but they'll have to us their own release signing key
+<a name="l-263"></a><span class="tm">19:39:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's just 12 days (max +/-)
+<a name="l-264"></a><span class="tm">19:39:24</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> no (I mean theoretically we can *give* others access, but I see no reason to do so at this time)
+<a name="l-265"></a><span class="tm">19:39:27</span><span class="nk"> &lt;achow101&gt;</span> I think we should sign with a differnt release key and see if anyone notices :)
+<a name="l-266"></a><span class="tm">19:39:32</span><span class="nk"> &lt;meshcollider&gt;</span> yeah wumpus should do it, its not that time critical
+<a name="l-267"></a><span class="tm">19:39:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">achow101:</span> they will...
+<a name="l-268"></a><span class="tm">19:39:45 </span><span class="nka">* luke-jr</span> <span class="ac">shrugs</span>
+<a name="l-269"></a><span class="tm">19:39:46</span><span class="nk"> &lt;wumpus&gt;</span> oh people notice, my mail was full after stupping using my personal key for that
+<a name="l-270"></a><span class="tm">19:40:04</span><span class="nk"> &lt;wumpus&gt;</span> even though it was announced on the mailing lists etc
+<a name="l-271"></a><span class="tm">19:40:47</span><span class="nk"> &lt;wumpus&gt;</span> anyhow... let's release 0.15.0 soon if possible
+<a name="l-272"></a><span class="tm">19:40:57</span><span class="nk"> &lt;wumpus&gt;</span> if there's still something you'd like to debug over the weekend I can wait until after that
+<a name="l-273"></a><span class="tm">19:40:59</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, so I have no objections to tagging 0.15 this weekend/tomorrow if no other issues come up in that time
+<a name="l-274"></a><span class="tm">19:41:25</span><span class="nk"> &lt;wumpus&gt;</span> but hearing that cfields's concerns were with local code puts me at ease a bit about 0.15.0 at least :)
+<a name="l-275"></a><span class="tm">19:41:26</span><span class="nk"> &lt;luke-jr&gt;</span> the lock issue can probably be ignored, I guess?
+<a name="l-276"></a><span class="tm">19:41:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> not ignored, just fixed on master and next 0.15 branch release
+<a name="l-277"></a><span class="tm">19:41:53</span><span class="nk"> &lt;luke-jr&gt;</span> sure, that's what I mean. ignored for 0.15.0
+<a name="l-278"></a><span class="tm">19:42:06</span><span class="nk"> &lt;luke-jr&gt;</span> would be nice to get a test that reproduces it, but I'm not sure how
+<a name="l-279"></a><span class="tm">19:42:08</span><span class="nk"> &lt;wumpus&gt;</span> well as I understand it there are no threads in flight yet at that point
+<a name="l-280"></a><span class="tm">19:42:18</span><span class="nk"> &lt;gmaxwell&gt;</span> we understand it, it shouldn't block the release. (it's in init)
+<a name="l-281"></a><span class="tm">19:42:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> if that puts you at ease, i should invent some local problems and solve them more often :)
+<a name="l-282"></a><span class="tm">19:42:48</span><span class="nk"> &lt;meshcollider&gt;</span> 😂
+<a name="l-283"></a><span class="tm">19:42:49</span><span class="nk"> &lt;BlueMatt&gt;</span> lol
+<a name="l-284"></a><span class="tm">19:42:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> haha!
+<a name="l-285"></a><span class="tm">19:43:08</span><span class="nk"> &lt;wumpus&gt;</span> can cfields create an issue even cfields cannot debug
+<a name="l-286"></a><span class="tm">19:43:25</span><span class="nk"> &lt;cfields&gt;</span> haha
+<a name="l-287"></a><span class="tm">19:43:36</span><span class="nk"> &lt;wumpus&gt;</span> ok, any other topics?
+<a name="l-288"></a><span class="tm">19:43:45</span><span class="nk"> &lt;BlueMatt&gt;</span> Segwit is active!
+<a name="l-289"></a><span class="tm">19:43:59</span><span class="nk"> &lt;sipa&gt;</span> what? how?!
+<a name="l-290"></a><span class="tm">19:44:01</span><span class="nk"> &lt;wumpus&gt;</span> yeah! we can remove the point 'activate segwit' from the weekly agenda
+<a name="l-291"></a><span class="tm">19:44:10</span><span class="nk"> &lt;BlueMatt&gt;</span> heh
+<a name="l-292"></a><span class="tm">19:44:12</span><span class="nk"> &lt;kanzure&gt;</span> i have a topic. it can wait.
+<a name="l-293"></a><span class="tm">19:44:18</span><span class="nk"> &lt;luke-jr&gt;</span> what is it waiting for?
+<a name="l-294"></a><span class="tm">19:44:25</span><span class="nk"> &lt;wumpus&gt;</span> ther's only 15 minutes left so don't wait too long
+<a name="l-295"></a><span class="tm">19:44:36</span><span class="nk"> &lt;kanzure&gt;</span> i am collecting topic ideas for coredev.tech meetup. either pm me with things you want to see or in here.
+<a name="l-296"></a><span class="tm">19:44:45</span><span class="nk"> &lt;kanzure&gt;</span> and i will publish small document somewhere
+<a name="l-297"></a><span class="tm">19:44:51</span><span class="nk"> &lt;wumpus&gt;</span> segwit wallet support
+<a name="l-298"></a><span class="tm">19:44:53</span><span class="nk"> &lt;kanzure&gt;</span> it's not a schedule. just a braindump sorta.
+<a name="l-299"></a><span class="tm">19:44:55</span><span class="nk"> &lt;kanzure&gt;</span> oh.
+<a name="l-300"></a><span class="tm">19:44:58</span><span class="nk"> &lt;kanzure&gt;</span> okay added
+<a name="l-301"></a><span class="tm">19:45:53</span><span class="nk"> &lt;wumpus&gt;</span> (which is very general, probably should be divided up...)
+<a name="l-302"></a><span class="tm">19:46:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">kanzure:</span> thanks for collecting stuff for the CoreDev.tech in SF!
+<a name="l-303"></a><span class="tm">19:46:40</span><span class="nk"> &lt;kanzure&gt;</span> sure
+<a name="l-304"></a><span class="tm">19:46:52</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">wumpus:</span> I'd like #11053 to be reopened / reconsidered
+<a name="l-305"></a><span class="tm">19:47:02</span><span class="nk"> &lt;wumpus&gt;</span> GUI support, bech32 yes/no for this release, etc
+<a name="l-306"></a><span class="tm">19:47:11</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">refactor:</span> Make all #includes relative to project root
+<a name="l-307"></a><span class="tm">19:48:00</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jnewbery:</span> +1. I think my concerns there were mistaken for a NACK. I pretty much regret bringing them up.
+<a name="l-308"></a><span class="tm">19:48:11</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> eh, at least sending bech32 seems a necessity
+<a name="l-309"></a><span class="tm">19:48:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> no, not really, it just made me reconsider whether it's really a good idea
+<a name="l-310"></a><span class="tm">19:48:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> ideally we'd clear out src and move everything to subdirs
+<a name="l-311"></a><span class="tm">19:49:02</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> agree with that.
+<a name="l-312"></a><span class="tm">19:49:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> on the other hand this doesn't make things worse at least
+<a name="l-313"></a><span class="tm">19:49:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> #include "" is severly misused in our source code
+<a name="l-314"></a><span class="tm">19:49:48</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15sipa closed pull request #11128: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11128
+<a name="l-315"></a><span class="tm">19:50:17</span><span class="nk"> &lt;wumpus&gt;</span> if used it should be used to include relative to the directory of the source file, but it's used as a kind of wildcard include
+<a name="l-316"></a><span class="tm">19:50:35</span><span class="nk"> &lt;wumpus&gt;</span> *find it somewhere!*
+<a name="l-317"></a><span class="tm">19:51:48</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj reopened pull request #11053: refactor: Make all #includes relative to project root (06master...062017_08_includes_absolute) 02https://github.com/bitcoin/bitcoin/pull/11053
+<a name="l-318"></a><span class="tm">19:51:54</span><span class="nk"> &lt;gmaxwell&gt;</span> 12:44:01 &lt; wumpus&gt; yeah! we can remove the point 'activate segwit' from the weekly agenda
+<a name="l-319"></a><span class="tm">19:52:03</span><span class="nk"> &lt;wumpus&gt;</span> anyhow reopening the pull, it wasn't my intent to stop discussion on it, just to make it clear there's no urgency in mergin a certain solution
+<a name="l-320"></a><span class="tm">19:52:09</span><span class="nk"> &lt;gmaxwell&gt;</span> we should also go dig up the wallet improvements we couldn't make without segwit... and start working on them. :)
+<a name="l-321"></a><span class="tm">19:52:13</span><span class="nk"> &lt;instagibbs&gt;</span> wumpus, oh thought you just implemented those changes just now, haha
+<a name="l-322"></a><span class="tm">19:52:15</span><span class="nk"> &lt;jnewbery&gt;</span> thanks wumpus
+<a name="l-323"></a><span class="tm">19:52:20</span><span class="nk"> &lt;gmaxwell&gt;</span> (perhaps see the log of the meeting where we added that item)
+<a name="l-324"></a><span class="tm">19:52:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> agreed, i just don't see a ton of benefit in changing something that works
+<a name="l-325"></a><span class="tm">19:52:44</span><span class="nk"> &lt;cfields&gt;</span> however, if benches show that it's noticibly faster, i'm all for it :)
+<a name="l-326"></a><span class="tm">19:53:13</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> well the current state prevents having files with the same name in multiple places in the tree sanely
+<a name="l-327"></a><span class="tm">19:53:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> eh, what are you talking about?
+<a name="l-328"></a><span class="tm">19:53:40</span><span class="nk"> &lt;gmaxwell&gt;</span> how are include paths going to change the speed of anything?
+<a name="l-329"></a><span class="tm">19:53:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> that's what kind of triggered this, we can't have wallet/init.h and init.h right now because #include "" as we use it now gets confused
+<a name="l-330"></a><span class="tm">19:53:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it can reduce the amount of probing the compiler has to do
+<a name="l-331"></a><span class="tm">19:54:07</span><span class="nk"> &lt;meshcollider&gt;</span> (compile speed not runtime speed)
+<a name="l-332"></a><span class="tm">19:54:12</span><span class="nk"> &lt;cfields&gt;</span> wumpus made that point ^^ in the PR, i believe
+<a name="l-333"></a><span class="tm">19:54:23</span><span class="nk"> &lt;gmaxwell&gt;</span> okay, I'll look at the PR then.
+<a name="l-334"></a><span class="tm">19:54:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> e.g. including "primitives/primitives.h" in "primitvies/transaction.h" makes it look in primitives/primitives/transaction.h
+<a name="l-335"></a><span class="tm">19:54:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> which can affect compile speed in some setups
+<a name="l-336"></a><span class="tm">19:54:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> it's not the primary reason for making the change, though
+<a name="l-337"></a><span class="tm">19:55:52</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, other topics?
+<a name="l-338"></a><span class="tm">19:56:00</span><span class="nk"> &lt;cfields&gt;</span> anyway, i'm happy to see it reopened
+<a name="l-339"></a><span class="tm">19:56:12</span><span class="nk"> &lt;luke-jr&gt;</span> how about meeting plans?
+<a name="l-340"></a><span class="tm">19:56:19</span><span class="nk"> &lt;luke-jr&gt;</span> or should we just discuss that in the dedicated channel later?
+<a name="l-341"></a><span class="tm">19:56:28</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-342"></a><span class="tm">19:56:30</span><span class="nk"> &lt;wumpus&gt;</span> I thin kthe best reason for it is that it makes it immediately clear where to look for a file to developers
+<a name="l-343"></a><span class="tm">19:56:39</span><span class="nk"> &lt;luke-jr&gt;</span> (specifically, are people sticking around Friday, or leaving as soon as it's over?)
+<a name="l-344"></a><span class="tm">19:56:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> dedicated channel, i think
+<a name="l-345"></a><span class="tm">19:57:10</span><span class="nk"> &lt;wumpus&gt;</span> instead of eh, it's included with "", is it in the current dir? no? oh maybe it's under src/ directly
+<a name="l-346"></a><span class="tm">19:57:38</span><span class="nk"> &lt;meshcollider&gt;</span> which channel is that?
+<a name="l-347"></a><span class="tm">19:58:05</span><span class="nk"> &lt;kanzure&gt;</span> <span class="cmd">#bitcoin-core-dev</span><span class="cmdline"></span>
+<a name="l-348"></a><span class="tm">19:58:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">##</span><span class="cmdline"></span>
+<a name="l-349"></a><span class="tm">19:58:58</span><span class="nk"> &lt;kanzure&gt;</span> i didn't say what you thought i said
+<a name="l-350"></a><span class="tm">19:59:29</span><span class="nk"> &lt;kanzure&gt;</span> <span class="hi">luke-jr:</span> anyway there's enough people local to the area that you'll find friendlies even if the visitors leave.
+<a name="l-351"></a><span class="tm">19:59:29</span><span class="nk"> &lt;meshcollider&gt;</span> I guess there's some sort of filtering happening yae
+<a name="l-352"></a><span class="tm">20:00:08</span><span class="nk"> &lt;wumpus&gt;</span> and that concludes the meeting, thanks everyone
+<a name="l-353"></a><span class="tm">20:00:11</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

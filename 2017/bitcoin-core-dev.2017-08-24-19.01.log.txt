@@ -1,0 +1,353 @@
+19:01:45 <wumpus> #startmeeting
+19:01:45 <lightningbot> Meeting started Thu Aug 24 19:01:45 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:45 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:53 <gmaxwell> wumpus: you have the best nameping.
+19:02:12 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:02:17 <kanzure> hi.
+19:02:18 <achow101> hi
+19:02:32 <BlueMatt> happy segwit everyone
+19:02:51 <sipa> short topic: thanks and congrats everyone with SegWit... it seems it activated on the network without a glitch
+19:02:57 <wumpus> yes, congratulations everyone!
+19:03:03 <jonasschnelli> wohoo!
+19:03:06 <achow101> yay!
+19:03:10 <cfields> hi
+19:03:14 <wumpus> it took lots of time, and lots of sweat, but we did it
+19:03:36 <kanzure> whole bitcoin community did it
+19:03:44 <gmaxwell> sipa: well except the glitch of miners universally having maxblocksize=1000000 in their configs, resulting in overly small blocks even though there have been several oppturnityies to make bigger ones.
+19:03:59 <sipa> gmaxwell: everything on its time
+19:04:00 <luke-jr> s/glitch/good thing/
+19:04:06 <sipa> misconceptions are hard to fix
+19:04:07 <gmaxwell> You may well have jinxed us, since things blowing up might only happen with a >1MB block. :)
+19:04:10 <BlueMatt> yes, some miner appear to be confused by maxblocksize/maxblockweight options, we need #11100
+19:04:11 <wumpus> we should probably publicize some segwit miner's faq thing
+19:04:14 <wumpus> on bitcoincore.org
+19:04:26 <achow101> wumpus: isn't there already one?
+19:04:28 <luke-jr> wumpus: not if they don't encourage big blocks. :/
+19:04:32 <luke-jr> err, not if they do*
+19:04:33 <kanzure> luke-jr: it would have been better if the expectations around that would have been communicated, then i would agree with you about good thing. expectation mismatch is not ideal.
+19:04:48 <wumpus> achow101: there is a segwit faq but it doesn't include this
+19:04:51 <achow101> https://bitcoincore.org/en/2016/10/27/segwit-upgrade-guide/#miners
+19:05:02 <achow101> not really an faq I guess
+19:05:36 <gmaxwell> achow101: says nothing about needing to remove the maxblocksize setting and setting maxblockweight=4000000
+19:05:48 <luke-jr> there is no such need, nor is it good for them to do so
+19:06:19 <kanzure> luke-jr: it's about being honest about expectations. if miners expected the software to do something different, then we need to better document the configuration.
+19:06:30 <wumpus> kanzure: +1
+19:06:55 <harding> Is there anything else that should go into a current segwit faq for miners?
+19:06:55 <wumpus> there is apparently a lack of documentation for these optons and what they do, that's clear, no matter what your opinion on what their value should be is
+19:07:12 <kanzure> sounds like there's some requests for a post-activation faq
+19:07:18 <wumpus> #topic segwit faq for miners
+19:07:23 <luke-jr> hm, I thought we had documented it before, but I can't find it
+19:07:57 <BlueMatt> blockmaxsize really just needs to be removed, it has caused significant confusion with several mining pool operators...if you want to limit the block's size-in-bytes you can do that yourself as a gbt client (isnt that what gbt is for?)
+19:08:04 <gmaxwell> wumpus: it's super confusing for people.  esp the fact that the maxblocksize setting (which doesn't make any sense anymore) says it defaults to 750k so then I tell people to remove it and set maxblockweight=4000000 and they don't believe it'll make a >750k block.
+19:08:06 <wumpus> not sure if there's any other ones, have there been any other frequent questions about segwit by miners?
+19:08:22 <luke-jr> BlueMatt: size is often the bottleneck today, so it makes sense to limit by size
+19:08:36 <gmaxwell> so then I say, "it will but fine, just set blockmaxsize=4000000" and then they think if they set if over 1M they'll make invalid blocks. :(
+19:08:37 <BlueMatt> luke-jr: ok, then gbt clients can do so
+19:08:56 <gmaxwell> luke-jr: size is a bottleneck in _what_?
+19:09:17 <BlueMatt> wumpus: I've literally heard confusion to the tone of what gmaxwell described from every mining pool operator I spoke to
+19:09:19 <luke-jr> gmaxwell: IBD mainly at this point I guess
+19:09:22 <BlueMatt> that option needs to die
+19:09:26 <sipa> luke-jr: with BIP152, the size hardly matters, except if you're ridiculously bandwidth constraint to the point you'd be unable to keep a node synced in the first place
+19:09:38 <sipa> *constrained
+19:09:39 <achow101> luke-jr: IBD is too late to save already
+19:09:42 <luke-jr> sipa: blocksonly?
+19:09:43 <gmaxwell> luke-jr: not for anyone with an internet connection beyond a few megabits in speed.
+19:10:24 <gmaxwell> luke-jr: IBD time is limited by chainstate database operations for parties that aren't totally network starved.
+19:10:24 <luke-jr> achow101: it's nothing like as bad as it could be
+19:10:41 <cfields> i've seen a ton of questions about segwit and "the addresses that start with a 3"...
+19:10:50 <kanzure> ya i have seen mostly non-miner questions
+19:10:51 <BlueMatt> anyway, so aside from luke is there anyone who objects generally to removing -maxblocksize? (ala #11100)
+19:10:55 <wumpus> BlueMatt: IMO the solution to lack of documentation  should be documentation, changing around things more so there's differences between versions to explain too
+19:11:05 <cfields> a quick update and faq about segwit addresses, how they look, and how they'll look soon would be helpful imo. even if it's just re-hashed info
+19:11:10 <luke-jr> not long ago, the blockchain was 100 GB. now it's 150 GB. and every month 10 GB more with 2 MB blocks :/
+19:11:14 <kanzure> we can also copy-paste old segwit faq details anyway
+19:11:17 <kanzure> (or link to them)
+19:11:20 <sipa> luke-jr: prune
+19:11:27 <luke-jr> sipa: that doesn't eliminate IBD
+19:11:29 <wumpus> 'take the option away and the problem goes away' is a bit too simplistic at this point
+19:11:33 <BlueMatt> wumpus: 11100 now removes it but keeps it somewhat compaible in spirit with what most miners appear to still have in their config files...
+19:11:43 <BlueMatt> ehh, deprecates it
+19:11:51 <BlueMatt> and clearly states blockmaxsize is deprecated
+19:12:00 <BlueMatt> which roughly aligns with the expectation of everyone i spoke to
+19:12:06 <luke-jr> 11100 is stupid.
+19:12:13 <BlueMatt> there was confusion as to why blockmaxsize still existed in the context of segwit
+19:12:16 <meshcollider> deprecating makes sense to me
+19:12:30 <morcos> even i have trouble keeping up with what the interaction of these different options is
+19:12:41 <kanzure> needs an interaction matrix visualization
+19:12:52 <kanzure> where the cells indicate interaction :-)
+19:12:53 <morcos> we need to move towards getting rid of blockmaxsize, its confusion for no benefit....
+19:12:55 <achow101> is blockmaxsize taken into consideration with segwit or just ignored?
+19:13:01 <sipa> achow101: it is!
+19:13:04 <wumpus> deprecation is likely a good idea on the longer run, but not a fix to the misunderstanding created
+19:13:05 <instagibbs> taken into account
+19:13:15 <gmaxwell> achow101: it does something stupid, it truncates block construction when you reach that size.
+19:13:19 <achow101> bleh :/
+19:13:33 <luke-jr> it does what it's supposed to do
+19:13:48 <gmaxwell> it originally went away and luke threw a fit.  With segwit not active it made sense as a legacy support thing but it's active now.
+19:13:57 <morcos> wait a second
+19:13:59 <BlueMatt> wumpus: I disagree here, I was explicitly asked why it was not deprecated, because the consensus limit is around weight, so thats what people expect to be setting
+19:14:07 <luke-jr> gmaxwell: you're rewriting history now
+19:14:12 <BlueMatt> deprecation is, itself, documentation
+19:14:17 <wumpus> BlueMatt: but we're already in the screwed state that those options exist
+19:14:19 <morcos> i might be wrong (b/c the interaction is complicated) but isn't it just flat out wrong to say the default is 750K
+19:14:32 <morcos> isn't the default infinity?
+19:14:44 <sdaftuar> morcos: no, i don't think so.
+19:14:45 <sipa> morcos: i honestly don't know anymore
+19:14:49 <achow101> morcos: how so?
+19:14:50 <morcos> if you don't set blockmaxsize it doesn't even calculate it
+19:15:05 <gmaxwell> morcos: the default is 1/4 the configured weight which defaults to 3m.
+19:15:06 <sdaftuar> if you set nothing, you get a 750k default, i believe.  and a 3M weight max.
+19:15:07 <wumpus> I'm fine with marking it as deprecated anyhow
+19:15:09 <morcos> ok well we'll get to the bottom of it in a second, but look how ridiculous it is that we don't know
+19:15:18 <sdaftuar> if you set just blockmaxweight, then blockmaxsize is effectively infinity, i think.
+19:15:26 <bitcoin-git> [13bitcoin] 15romanornr opened pull request #11127: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11127
+19:15:29 <gmaxwell> sdaftuar: right.
+19:15:35 <sipa> if you set only one of them, the other is taken as infinity
+19:15:41 <gmaxwell> oh jesus.
+19:15:43 <sipa> if you set both, both are enforced independently
+19:15:43 <sdaftuar> but blockmaxsize is absurd, it should be removed.
+19:15:48 <morcos> sdaftuar: you think if you set no options you can not produce a segwit-tx containing block bigger than 750k?
+19:15:52 <morcos> that doesn't seem right to me
+19:16:03 <sipa> morcos: i believe that is correct
+19:16:08 <instagibbs> morcos, pretty sure that's correct
+19:16:09 <sdaftuar> correct, you are capped at 750kb
+19:16:09 <gmaxwell> That is correct.
+19:16:18 <meshcollider> if you set blockmaxsize then blockmaxweight becomes blockmaxsize * WITNESS_SCALE_FACTOR doesn't it?
+19:16:19 <bitcoin-git> [13bitcoin] 15romanornr closed pull request #11127: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11127
+19:16:20 <instagibbs> all miners have cranked up to 1MB
+19:16:20 <morcos> ugh, we should never have released it in this state
+19:16:41 <sdaftuar> +1
+19:16:53 <sipa> yes
+19:17:03 <wumpus> but we're there anyhow, what now?
+19:17:14 <gmaxwell> instagibbs: which now means a cranking down to 1MB. :(
+19:17:27 <sdaftuar> wumpus: we should remove it and deprecate the command line option
+19:17:28 <bitcoin-git> [13bitcoin] 15hovah opened pull request #11128: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11128
+19:17:37 <sdaftuar> as we indicated we may do in the future in the 0.13 release notes, iirc
+19:17:41 <morcos> Announcement that you should set only blockmaxweight and you should set it to 4,000,000.  Plus change code to ignore blockmaxsize unless specifically set, and deprecate it.
+19:17:44 <gmaxwell> Well we should remove the silly option. The maximum size is not really correlated with anything that is interesting to be set anymore.
+19:17:47 <luke-jr> miners producing blocks larger than 750k (or 1 MB at most) is malicious toward the network, and advising they do so or deprecating the blockmaxsize option needed to control this, it what is absurd.
+19:17:50 <luke-jr> morcos: absolutely not
+19:18:02 <jtimon> BlueMatt: ack on removing blockmaxsize and leaving only maxblockweight
+19:18:02 <gmaxwell> Luke is faulty.
+19:18:14 <wumpus> luke-jr: so they can still choose to do that with that option removed, right?
+19:18:25 <wumpus> luke-jr: e.g. by setting the blockmaxweight lower?
+19:18:33 <sdaftuar> or by using the gbt results and truncating themselves
+19:18:35 <BlueMatt> anyway, so it sounds like #11100
+19:18:38 <wumpus> that doesn't need two options
+19:18:39 <luke-jr> wumpus: not effectively
+19:18:48 <sdaftuar> luke-jr: why not?
+19:18:55 <morcos> In general it is good that we have a culture of arguing things to death here, sometimes useful things result.  But in this case, we've been over this, we've heard Luke's arguments, and last time we gave in to end the argument
+19:18:56 <sipa> luke-jr: the assumption behind segwit is that size doesn't matter nearly as much as a new metric, weight
+19:18:56 <wumpus> the complication here is having two options that interact in a complicated way
+19:19:01 <BlueMatt> luke-jr: you're the one who always advocates for policy at the other end of gbt, or isnt that the design of gbt?
+19:19:03 <wumpus> please don't confuse it with what the value should be
+19:19:09 <praxeology1> I don't think you should depricate the maxblocksize option.  If anything, if you want the software to enforce a legacy block size of 1MB, then hard code the limit...  and remove the maxblocksize setting from the configuration.
+19:19:12 <sipa> luke-jr: i'm sorry to hear you disagree about that point, but that ship has sailed
+19:19:13 <luke-jr> the only way to limit size to 750k with blockmaxweight is =750000, which will make 250k blocks unless 100% of tx are segwit
+19:19:18 <morcos> Unless someone else agrees with Luke, I htink its just time to say unfortunately we're proceeding against his objections on this issue
+19:19:29 <jnewbery> Concept ACK 11100
+19:19:37 <gmaxwell> praxeology1: oh jesus christ you're also confused
+19:19:58 <wumpus> yes, that sounds confused
+19:19:58 <luke-jr> sipa: that ship has not sailed. that's not an argument.
+19:20:13 <gmaxwell> praxeology1: THERE IS NO "LEGACY BLOCK SIZE" LIMIT ANYMORE!  Compatibility with old nodes achieved implicitly through how weight is constructed.
+19:20:25 <BlueMatt> praxeology1: these options only effect the type of blocks miners mine, and are currently a maze of confusing
+19:20:38 <sipa> luke-jr: segwit is active, regardless of your preferences, you should assume that rational actors will produce what the rules allow them to
+19:20:44 <achow101> the parameter interaction is defined here: https://github.com/bitcoin/bitcoin/blob/master/src/miner.cpp#L81 for reference
+19:20:49 <luke-jr> sipa: then Bitcoin is dead.
+19:20:56 <BlueMatt> praxeology1: whats worse, the current options default to pissing away a significant amount of profit (so are always being overridden in practice, which has resulted in much confusion)
+19:21:00 <jnewbery> what, dead again?!
+19:21:03 <sipa> luke-jr: then Bitcoin is evolving to actually be tested
+19:21:03 <gmaxwell> luke-jr: you've failed to address any of the points which I raised against your last rant on this on github.
+19:21:24 <praxeology1> OK... so if there is no legacy limit anymore... then why would there be a configuration option for it? :o  Are you saying post segwit activation, it has no effect now?
+19:21:25 <kanzure> does 11100 completely encompass the proposed changes
+19:21:38 <BlueMatt> kanzure: I believe so
+19:21:38 <sipa> luke-jr: i'm only interested in a Bitcoin that survives under the assumption that miners act rationally
+19:21:47 <achow101> praxeology1: it has an effect, kind of. it really shouldn't though
+19:21:55 <sipa> luke-jr: and you should too
+19:22:02 <luke-jr> gmaxwell: your "points" depend on assertions that have no evidence at this time, which you are trying to CAUSE to be true
+19:22:06 <gmaxwell> luke-jr: in particular expecting people to throw money on the floor to protect interests like keeping IBD times slightly lower is a failed expectation. (which we knew would fail, which is also why many of us don't support those reckless blocksize uncapping proposals)
+19:22:20 <wumpus> if you think a defaults change kills bitcoin, you're severly underestimating it
+19:22:22 <luke-jr> sipa: incentives are too broken for that to be possible right now
+19:22:30 <sipa> luke-jr: how so?
+19:22:30 <luke-jr> sipa: unless "rationally" includes altruism
+19:22:34 <instagibbs> I motion to move onto a new discussion unless there's some new information to be shared
+19:22:40 <sdaftuar> seconded
+19:22:43 <wumpus> people are already overriding it on large scale, no one is using that stupid default
+19:22:44 <sipa> seconded
+19:22:48 <BlueMatt> ok, other topics?
+19:22:57 <wumpus> #topic 0.15.0 release
+19:22:59 <luke-jr> wumpus: overriding it to 1 MB, not 4 MB
+19:23:00 <BlueMatt> second round of congrats on segwit?
+19:23:01 <morcos> i'm against moving on unless we have agreed to get rid of the option and make an announcement
+19:23:13 <kanzure> i could see luke-jr maybe working on the calculation there and showing numbers at some point. but probably not this moment. in the mean time i think 11100 review status should be checked?
+19:23:13 <BlueMatt> morcos: I think we did
+19:23:15 <morcos> we can't constantly do the wrong thing because luke is willing to argue longer than the rest of us
+19:23:19 <morcos> at some point we must overrrule
+19:23:36 <morcos> with 3 r's
+19:23:37 <luke-jr> morcos: you're the one who wants to do the wrong thing
+19:23:39 <praxeology1> BlueMatt: Congratulations! wahoo!!!! :) :) :) :)
+19:23:44 <BlueMatt> morcos: go ack 11100, I dont think there was any concept objection
+19:23:50 <sdaftuar> luke-jr: he is not "the one" who wants to do what he is suggesting
+19:23:53 <sdaftuar> he is one of many
+19:23:53 <gmaxwell> morcos: a point of order, I prefer we don't force 'final' decisions to be made in the meetings due to attendance complications. I think what you suggest it clearly the general thrust of where things are going, however.
+19:24:08 <BlueMatt> okkkkkk, so 0.15.0
+19:24:14 <instagibbs> reviewing the PR is the action item
+19:24:26 <gmaxwell> s/it/is/
+19:24:27 <wumpus> this is getting really unruly
+19:24:37 <BlueMatt> dooglus finally got some backtraces on #9683, which I think needs to be investigated for 0.15
+19:24:41 <wumpus> I'm going to end this meeting if this continues
+19:24:42 <BlueMatt> also #11126
+19:25:12 <wumpus> any reports of new regressions with rc2?
+19:26:07 <achow101> probably not
+19:26:08 <wumpus> to be honest dooglus has been having issues no one else is having, for a long time, we should assist him but I'm not sure we should hold up a release for it
+19:26:28 <BlueMatt> wumpus: well are we gonna release today? I'll take a look at his issues this afternoon :)
+19:26:32 <BlueMatt> i mean I'm not saying hold it up
+19:26:39 <meshcollider> only issue I've heard with rc2 has been fanquakes gitian issue :)
+19:26:40 <BlueMatt> just make sure its not an obvious "oh, thats broken" kind of thing
+19:26:43 <wumpus> 11126 is an issue that only affects DEBUG_LOCKORDER in ithe initialization; nothing else is running at that moment
+19:26:47 <wumpus> so it doesn't cause any real issue
+19:26:57 <BlueMatt> ah, ok, i hadnt investigated it significantly
+19:27:04 <cfields> i've had a few crashes lately that i mentioned here i think. I've finally been able to track them down to local changes. So, no concern for 0.15.
+19:27:26 <BlueMatt> hmmmm, looks like dooglus' qt crash is the same one I couldnt debug
+19:27:38 <BlueMatt> i wonder if he's also running qt over X forwarding
+19:27:43 <BlueMatt> that appears to make it more likely
+19:27:57 <jonasschnelli> Seems like a free/alloc race in the table weak loading
+19:28:10 <BlueMatt> it doesnt appear to be harmful, at least, some race in setting the table sort order or something like that
+19:28:20 <jonasschnelli> Could also be a Qt bug
+19:28:25 <BlueMatt> indeed, could be
+19:28:36 <BlueMatt> mine was 9883
+19:29:22 <jonasschnelli> They are related
+19:29:46 <jonasschnelli> setSortingEnabled()
+19:29:52 <jonasschnelli> I'll investigate
+19:29:56 <BlueMatt> thanks
+19:29:58 <jtimon> the deault of one is a function of what you set in another? that interaction should definitely go away asap, ideally to me by removing the size one, I don't care the weight default is 2000000 or whatever
+19:30:04 <jonasschnelli> If its racy,.. could be due to a large wallet
+19:30:10 <jonasschnelli> (many txns)
+19:30:13 <wumpus> #9883 crashed in the leveldb iter?!
+19:30:29 <BlueMatt> the wallet I saw that on is not so large...maybe 1k txn?
+19:30:46 <wumpus> oh wait, wrong thread, that was just going on at the time
+19:30:52 <jonasschnelli> wumpus: not that I know...  I think it crashes via setSortingEnabled
+19:31:04 <jonasschnelli> QTableView::setSortingEnabled(bool) -> QCollator::QCollator(QLocale const&
+19:31:11 <BlueMatt> dooglus also has some crashes where quick-exit races openssl mutex unlocking....I assume that is an openssl bug or so
+19:31:27 <BlueMatt> its the old mutex-locked-during-destruction crash, though, so not harmful
+19:31:30 <wumpus> jonasschnelli: yes, I see now, that's a more recognizable trace
+19:31:31 <BlueMatt> just a scary warning
+19:32:04 <wumpus> is something outside the GUI thread calling Qt functions perhaps?
+19:32:10 <jonasschnelli> BlueMatt: your 9883, self compiled Qt? What version?
+19:32:20 <BlueMatt> yes...uhhh, sec
+19:32:28 <BlueMatt> wumpus: that was my assumption
+19:32:31 <wumpus> if so, that can explain the crashes with remote X, as well as this
+19:32:39 <BlueMatt> jonasa: qt5 something
+19:32:57 <wumpus> *only* the GUI thread may call Qt GUI functions, the rest should queue signals on the GUI thread
+19:33:22 <wumpus> I haven't seen any violation of that, though
+19:33:38 <jonasschnelli> wumpus: Yeah. But that would very likely show another thread calling a relevant Qt function during the crash
+19:33:39 <jonasschnelli> (which it doesn't)
+19:35:27 <wumpus> PSA regarding 0.15.0 final - I will not be able to tag releases while in the US, and I'm leaving wednesday night 30th, and return to NL the 12th
+19:35:32 <BlueMatt> anyway, it appears to be an only-at-startup thing and afaict, at least for me is a very reliable either-crashes-or-works-fine thing, so I'm still not too worried
+19:35:57 <wumpus> jonasschnelli: you'd say so, but not necessarily, it could just mess up some internal table state, or even internal X state
+19:35:58 <BlueMatt> (hence the closure of the original bug, may be a qt bug)
+19:35:58 <achow101> wumpus: so, final this week?
+19:36:08 <jonasschnelli> wumpus: Yes. Possible.
+19:36:26 <wumpus> achow101: yes, or second half of september
+19:37:35 <gmaxwell> I would rather have 0.15 out sooner rather than later. so far I haven't seen any clear blockers.
+19:37:41 <wumpus> and I guess we should work on 0.15.1 during coredev
+19:37:46 <BlueMatt> gmaxwell: agreed
+19:37:50 <jonasschnelli> wumpus: Yes. Ideally.
+19:37:53 <wumpus> segwit wallet support etc
+19:37:57 <jonasschnelli> Yes
+19:38:09 <luke-jr> wumpus: maybe tag locally, and delay pushing?
+19:38:33 <wumpus> luke-jr: well it's more complicated, I could possibly push the tag, but I can't upload executables
+19:38:49 <luke-jr> wumpus: there are others who can, right?
+19:39:02 <jonasschnelli> I think wumpus should do it.
+19:39:09 <wumpus> yes, but they'll have to us their own release signing key
+19:39:12 <jonasschnelli> It's just 12 days (max +/-)
+19:39:24 <BlueMatt> luke-jr: no (I mean theoretically we can *give* others access, but I see no reason to do so at this time)
+19:39:27 <achow101> I think we should sign with a differnt release key and see if anyone notices :)
+19:39:32 <meshcollider> yeah wumpus should do it, its not that time critical
+19:39:45 <jonasschnelli> achow101: they will...
+19:39:45 * luke-jr shrugs
+19:39:46 <wumpus> oh people notice, my mail was full after stupping using my personal key for that
+19:40:04 <wumpus> even though it was announced on the mailing lists etc
+19:40:47 <wumpus> anyhow... let's release 0.15.0 soon if possible
+19:40:57 <wumpus> if there's still something you'd like to debug over the weekend I can wait until after that
+19:40:59 <BlueMatt> anyway, so I have no objections to tagging 0.15 this weekend/tomorrow if no other issues come up in that time
+19:41:25 <wumpus> but hearing that cfields's concerns were with local code puts me at ease a bit about 0.15.0 at least :)
+19:41:26 <luke-jr> the lock issue can probably be ignored, I guess?
+19:41:43 <wumpus> luke-jr: not ignored, just fixed on master and next 0.15 branch release
+19:41:53 <luke-jr> sure, that's what I mean. ignored for 0.15.0
+19:42:06 <luke-jr> would be nice to get a test that reproduces it, but I'm not sure how
+19:42:08 <wumpus> well as I understand it there are no threads in flight yet at that point
+19:42:18 <gmaxwell> we understand it, it shouldn't block the release. (it's in init)
+19:42:27 <cfields> wumpus: if that puts you at ease, i should invent some local problems and solve them more often :)
+19:42:48 <meshcollider> 😂
+19:42:49 <BlueMatt> lol
+19:42:50 <wumpus> cfields: haha!
+19:43:08 <wumpus> can cfields create an issue even cfields cannot debug
+19:43:25 <cfields> haha
+19:43:36 <wumpus> ok, any other topics?
+19:43:45 <BlueMatt> Segwit is active!
+19:43:59 <sipa> what? how?!
+19:44:01 <wumpus> yeah! we can remove the point 'activate segwit' from the weekly agenda
+19:44:10 <BlueMatt> heh
+19:44:12 <kanzure> i have a topic. it can wait.
+19:44:18 <luke-jr> what is it waiting for?
+19:44:25 <wumpus> ther's only 15 minutes left so don't wait too long
+19:44:36 <kanzure> i am collecting topic ideas for coredev.tech meetup. either pm me with things you want to see or in here.
+19:44:45 <kanzure> and i will publish small document somewhere
+19:44:51 <wumpus> segwit wallet support
+19:44:53 <kanzure> it's not a schedule. just a braindump sorta.
+19:44:55 <kanzure> oh.
+19:44:58 <kanzure> okay added
+19:45:53 <wumpus> (which is very general, probably should be divided up...)
+19:46:23 <jonasschnelli> kanzure: thanks for collecting stuff for the CoreDev.tech in SF!
+19:46:40 <kanzure> sure
+19:46:52 <jnewbery> wumpus: I'd like #11053 to be reopened / reconsidered
+19:47:02 <wumpus> GUI support, bech32 yes/no for this release, etc
+19:47:11 <jnewbery> refactor: Make all #includes relative to project root
+19:48:00 <cfields> jnewbery: +1. I think my concerns there were mistaken for a NACK. I pretty much regret bringing them up.
+19:48:11 <luke-jr> wumpus: eh, at least sending bech32 seems a necessity
+19:48:41 <wumpus> cfields: no, not really, it just made me reconsider whether it's really a good idea
+19:48:52 <wumpus> cfields: ideally we'd clear out src and move everything to subdirs
+19:49:02 <cfields> wumpus: agree with that.
+19:49:15 <wumpus> cfields: on the other hand this doesn't make things worse at least
+19:49:32 <wumpus> cfields: #include "" is severly misused in our source code
+19:49:48 <bitcoin-git> [13bitcoin] 15sipa closed pull request #11128: Make Bitcoin Core compatible with NYA segwit2x (06master...06s2x) 02https://github.com/bitcoin/bitcoin/pull/11128
+19:50:17 <wumpus> if used it should be used to include relative to the directory of the source file, but it's used as a kind of wildcard include
+19:50:35 <wumpus> *find it somewhere!*
+19:51:48 <bitcoin-git> [13bitcoin] 15laanwj reopened pull request #11053: refactor: Make all #includes relative to project root (06master...062017_08_includes_absolute) 02https://github.com/bitcoin/bitcoin/pull/11053
+19:51:54 <gmaxwell> 12:44:01 < wumpus> yeah! we can remove the point 'activate segwit' from the weekly agenda
+19:52:03 <wumpus> anyhow reopening the pull, it wasn't my intent to stop discussion on it, just to make it clear there's no urgency in mergin a certain solution
+19:52:09 <gmaxwell> we should also go dig up the wallet improvements we couldn't make without segwit... and start working on them. :)
+19:52:13 <instagibbs> wumpus, oh thought you just implemented those changes just now, haha
+19:52:15 <jnewbery> thanks wumpus
+19:52:20 <gmaxwell> (perhaps see the log of the meeting where we added that item)
+19:52:24 <cfields> wumpus: agreed, i just don't see a ton of benefit in changing something that works
+19:52:44 <cfields> however, if benches show that it's noticibly faster, i'm all for it :)
+19:53:13 <wumpus> cfields: well the current state prevents having files with the same name in multiple places in the tree sanely
+19:53:14 <sipa> cfields: eh, what are you talking about?
+19:53:40 <gmaxwell> how are include paths going to change the speed of anything?
+19:53:44 <wumpus> cfields: that's what kind of triggered this, we can't have wallet/init.h and init.h right now because #include "" as we use it now gets confused
+19:53:53 <wumpus> gmaxwell: it can reduce the amount of probing the compiler has to do
+19:54:07 <meshcollider> (compile speed not runtime speed)
+19:54:12 <cfields> wumpus made that point ^^ in the PR, i believe
+19:54:23 <gmaxwell> okay, I'll look at the PR then.
+19:54:26 <wumpus> gmaxwell: e.g. including "primitives/primitives.h" in "primitvies/transaction.h" makes it look in primitives/primitives/transaction.h
+19:54:42 <wumpus> gmaxwell: which can affect compile speed in some setups
+19:54:49 <wumpus> gmaxwell: it's not the primary reason for making the change, though
+19:55:52 <BlueMatt> ok, other topics?
+19:56:00 <cfields> anyway, i'm happy to see it reopened
+19:56:12 <luke-jr> how about meeting plans?
+19:56:19 <luke-jr> or should we just discuss that in the dedicated channel later?
+19:56:28 <sipa> yes
+19:56:30 <wumpus> I thin kthe best reason for it is that it makes it immediately clear where to look for a file to developers
+19:56:39 <luke-jr> (specifically, are people sticking around Friday, or leaving as soon as it's over?)
+19:56:53 <BlueMatt> luke-jr: dedicated channel, i think
+19:57:10 <wumpus> instead of eh, it's included with "", is it in the current dir? no? oh maybe it's under src/ directly
+19:57:38 <meshcollider> which channel is that?
+19:58:05 <kanzure> #bitcoin-core-dev
+19:58:25 <jonasschnelli> ##
+19:58:58 <kanzure> i didn't say what you thought i said
+19:59:29 <kanzure> luke-jr: anyway there's enough people local to the area that you'll find friendlies even if the visitors leave.
+19:59:29 <meshcollider> I guess there's some sort of filtering happening yae
+20:00:08 <wumpus> and that concludes the meeting, thanks everyone
+20:00:11 <wumpus> #endmeeting
