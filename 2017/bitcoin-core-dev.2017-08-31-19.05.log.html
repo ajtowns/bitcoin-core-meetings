@@ -1,0 +1,394 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:05:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:05:58</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Aug 31 19:05:58 2017 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:05:58</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:06:13</span><span class="nk"> &lt;sipa&gt;</span> I'm not sure whether gmaxwell is available right now
+<a name="l-5"></a><span class="tm">19:06:26</span><span class="nk"> &lt;sipa&gt;</span> topics?
+<a name="l-6"></a><span class="tm">19:06:39</span><span class="nk"> &lt;meshcollider&gt;</span> it still lists wumpus as present lol
+<a name="l-7"></a><span class="tm">19:07:12</span><span class="nk"> &lt;achow101&gt;</span> Anything with 0.15.0?
+<a name="l-8"></a><span class="tm">19:07:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">meshcollider:</span> it's not a list of present people, just a mention to wake them up
+<a name="l-9"></a><span class="tm">19:07:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-10"></a><span class="tm">19:07:23</span><span class="nk"> &lt;gmaxwell&gt;</span> I'm not really here.
+<a name="l-11"></a><span class="tm">19:07:27</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-12"></a><span class="tm">19:07:44</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> there's a string issue, but not sure it matters much
+<a name="l-13"></a><span class="tm">19:07:49</span><span class="nk"> &lt;luke-jr&gt;</span> the debug log tooltip IIRC
+<a name="l-14"></a><span class="tm">19:07:56</span><span class="nk"> &lt;cfields&gt;</span> any observed 0.15 bugs?
+<a name="l-15"></a><span class="tm">19:07:57</span><span class="nk"> &lt;sipa&gt;</span> what is up with #11198?
+<a name="l-16"></a><span class="tm">19:08:08</span><span class="nk"> &lt;kanzure&gt;</span> next meeting unlikely to be on irc
+<a name="l-17"></a><span class="tm">19:08:23</span><span class="nk"> &lt;achow101&gt;</span> (I'm not really here, hard to irc on a bike)
+<a name="l-18"></a><span class="tm">19:09:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> there was someone complaining rc3 is crashing on windows
+<a name="l-19"></a><span class="tm">19:09:09</span><span class="nk"> &lt;luke-jr&gt;</span> what is #11198? (I'm stuck at CLI)
+<a name="l-20"></a><span class="tm">19:09:13</span><span class="nk"> &lt;morcos&gt;</span> heh, i am here, for a change
+<a name="l-21"></a><span class="tm">19:09:17</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">0.15.0</span>
+<a name="l-22"></a><span class="tm">19:09:18</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> heh, that hardly seems like something worth waiting for
+<a name="l-23"></a><span class="tm">19:09:22</span><span class="nk"> &lt;gmaxwell&gt;</span> achow101 was going to try reproducing.
+<a name="l-24"></a><span class="tm">19:09:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> Fix display of package name on 'open config file' tooltip
+<a name="l-25"></a><span class="tm">19:09:32</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> hmm, link? or discussion?
+<a name="l-26"></a><span class="tm">19:09:47</span><span class="nk"> &lt;achow101&gt;</span> The rc3 problem was fixed with iirc
+<a name="l-27"></a><span class="tm">19:09:58</span><span class="nk"> &lt;achow101&gt;</span> (the windows crash thing)
+<a name="l-28"></a><span class="tm">19:10:03</span><span class="nk"> &lt;instagibbs&gt;</span> present
+<a name="l-29"></a><span class="tm">19:10:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> https://bitcointalk.org/index.php?topic=2132893.0
+<a name="l-30"></a><span class="tm">19:10:19</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, running fine here on windows fwiw
+<a name="l-31"></a><span class="tm">19:10:21</span><span class="nk"> &lt;gmaxwell&gt;</span> ohcrap this again:
+<a name="l-32"></a><span class="tm">19:10:22</span><span class="nk"> &lt;luke-jr&gt;</span> IMO a tooltip doesn't need to block final, but since we're waiting a week anyway, might as well do a RC with it? (maybe merge in the -acceptnonstdtxn fix too)
+<a name="l-33"></a><span class="tm">19:10:23</span><span class="nk"> &lt;gmaxwell&gt;</span> Problem solved!  Running bitcoin-qt with the '-resetguisettings' switch fixed it.  Thanks to MeshCollider on github for the fix! Smiley
+<a name="l-34"></a><span class="tm">19:10:36</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ that is now the third person I've seen screwed by this.
+<a name="l-35"></a><span class="tm">19:10:44</span><span class="nk"> &lt;gmaxwell&gt;</span> did we change something that created this problem
+<a name="l-36"></a><span class="tm">19:10:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> that's the crash?
+<a name="l-37"></a><span class="tm">19:10:54</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> apparently it wasn't actually a crash
+<a name="l-38"></a><span class="tm">19:11:07</span><span class="nk"> &lt;gmaxwell&gt;</span> the symptom is you start bitcoin and it vanishes after the splash
+<a name="l-39"></a><span class="tm">19:11:11</span><span class="nk"> &lt;sipa&gt;</span> just the window appearing in an offscreen location?
+<a name="l-40"></a><span class="tm">19:11:17</span><span class="nk"> &lt;luke-jr&gt;</span> ah
+<a name="l-41"></a><span class="tm">19:11:20</span><span class="nk"> &lt;sipa&gt;</span> can we add a test for that?
+<a name="l-42"></a><span class="tm">19:11:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> we do already IIRC
+<a name="l-43"></a><span class="tm">19:11:35</span><span class="nk"> &lt;sipa&gt;</span> (if window is beyond screen coordinates, reset gui settings automatically)
+<a name="l-44"></a><span class="tm">19:11:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> ^
+<a name="l-45"></a><span class="tm">19:11:58</span><span class="nk"> &lt;gmaxwell&gt;</span> 16:19 &lt; gmaxwell&gt; jonasschnelli: I just had someone on IRC that had their GUI not displaying after upgrading to 0.14.2 ... this fixed it https://github.com/bitcoin/bitcoin/issues/7869#issuecomment-209265754  is there some underlying bug we need to fix?
+<a name="l-46"></a><span class="tm">19:12:02</span><span class="nk"> &lt;gmaxwell&gt;</span> 11:19 &lt; jonasschnelli&gt; gmaxwell: most possible problem of a not-appearing GUI is probably persisted windows coordinates outside of the screen boundaries.
+<a name="l-47"></a><span class="tm">19:12:05</span><span class="nk"> &lt;gmaxwell&gt;</span> 11:20 &lt; jonasschnelli&gt; could be fixed by checking the screen bounds against the QSettings coords
+<a name="l-48"></a><span class="tm">19:12:08</span><span class="nk"> &lt;gmaxwell&gt;</span> 11:21 &lt; jonasschnelli&gt; -resetguisettings will just evict all user based Qt overrides (and things like window coordinates)
+<a name="l-49"></a><span class="tm">19:12:12</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="cmd">#11171 </span><span class="cmdline">for reference</span>
+<a name="l-50"></a><span class="tm">19:12:16</span><span class="nk"> &lt;sipa&gt;</span> thnaks
+<a name="l-51"></a><span class="tm">19:12:54</span><span class="nk"> &lt;gmaxwell&gt;</span> it worries me that I've never seen this complain before and now three in a few weeks, all with people testing 0.15rc
+<a name="l-52"></a><span class="tm">19:13:04</span><span class="nk"> &lt;gmaxwell&gt;</span> complaint*
+<a name="l-53"></a><span class="tm">19:13:10</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> could it be the Qt version bump?
+<a name="l-54"></a><span class="tm">19:13:22</span><span class="nk"> &lt;gmaxwell&gt;</span> thats beyond my pay grade to speculate.
+<a name="l-55"></a><span class="tm">19:14:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> all windows complaints?
+<a name="l-56"></a><span class="tm">19:14:11</span><span class="nk"> &lt;gmaxwell&gt;</span> yes
+<a name="l-57"></a><span class="tm">19:14:12</span><span class="nk"> &lt;luke-jr&gt;</span> a shame the users have done the workaround..
+<a name="l-58"></a><span class="tm">19:14:28</span><span class="nk"> &lt;gmaxwell&gt;</span> it's a pretty bad failure mode, silently gone...
+<a name="l-59"></a><span class="tm">19:14:32</span><span class="nk"> &lt;luke-jr&gt;</span> if we can get it reproduced again, it'd be nice to get the registry entries involved
+<a name="l-60"></a><span class="tm">19:14:36</span><span class="nk"> &lt;cfields&gt;</span> i wonder if they're all multi-monitor
+<a name="l-61"></a><span class="tm">19:14:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> well I told one to do it because it was a hail mary... I had no idea it would actually fix it.
+<a name="l-62"></a><span class="tm">19:14:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> hmm, monitors of different sizes maybe?
+<a name="l-63"></a><span class="tm">19:15:15</span><span class="nk"> &lt;gmaxwell&gt;</span> we can ask.
+<a name="l-64"></a><span class="tm">19:15:22</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> i was thinking: bitcoin-qt on monitor 2, shutdown, restart with only monitor 1
+<a name="l-65"></a><span class="tm">19:15:30</span><span class="nk"> &lt;luke-jr&gt;</span> I could totally see different-sized monitors confusing this
+<a name="l-66"></a><span class="tm">19:15:46</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> am I wrong that we don't check for visible coordinates?
+<a name="l-67"></a><span class="tm">19:15:51</span><span class="nk"> &lt;luke-jr&gt;</span> err, that we do*
+<a name="l-68"></a><span class="tm">19:16:16</span><span class="nk"> &lt;luke-jr&gt;</span> (which would probably fail if the monitors are different sizes, due to blocked-off regions within the total dimensions)
+<a name="l-69"></a><span class="tm">19:16:21</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> no clue
+<a name="l-70"></a><span class="tm">19:17:20</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">Gmaxwell:</span> I believe it's a registry problem
+<a name="l-71"></a><span class="tm">19:17:40</span><span class="nk"> &lt;achow101&gt;</span> Since qsettings stores things in registry
+<a name="l-72"></a><span class="tm">19:18:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> i think the registry is just a storage medium
+<a name="l-73"></a><span class="tm">19:18:27</span><span class="nk"> &lt;gmaxwell&gt;</span> did we just start doing this... or
+<a name="l-74"></a><span class="tm">19:18:51</span><span class="nk"> &lt;sipa&gt;</span> i think bitcoin-qt has done that since forver, and nothing changed wrt to that now
+<a name="l-75"></a><span class="tm">19:18:55</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">Gmaxwell:</span> I don't think so. It's been reported a few times before with older versions
+<a name="l-76"></a><span class="tm">19:19:12</span><span class="nk"> &lt;meshcollider&gt;</span> relevant code? https://github.com/bitcoin/bitcoin/blob/master/src/qt/guiutil.cpp#L852
+<a name="l-77"></a><span class="tm">19:20:15</span><span class="nk"> &lt;BlueMatt&gt;</span> we always see a flood of reports of old issues upon new rc's
+<a name="l-78"></a><span class="tm">19:20:36</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, okay!
+<a name="l-79"></a><span class="tm">19:21:27</span><span class="nk"> &lt;MarcoFalke&gt;</span> The "Fix for issues with startup and multiple monitors on windows." is already included https://github.com/bitcoin/bitcoin/commit/e9ff818b69c2f8ce4a151d1a81a3e22a4319c93d
+<a name="l-80"></a><span class="tm">19:22:24</span><span class="nk"> &lt;ryanofsky&gt;</span> that doesn't seem like a sufficient fix if x and y are just outside screen geometry
+<a name="l-81"></a><span class="tm">19:22:33</span><span class="nk"> &lt;jtimon&gt;</span> anything else regarding 0.15 ?
+<a name="l-82"></a><span class="tm">19:22:41</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">MarcoFalke:</span> new in 0.15?
+<a name="l-83"></a><span class="tm">19:22:46</span><span class="nk"> &lt;MarcoFalke&gt;</span> jup
+<a name="l-84"></a><span class="tm">19:22:47</span><span class="nk"> &lt;luke-jr&gt;</span> maybe it's the problem..?
+<a name="l-85"></a><span class="tm">19:23:04</span><span class="nk"> &lt;MarcoFalke&gt;</span> Yes, I think the fix is not sufficient
+<a name="l-86"></a><span class="tm">19:24:01</span><span class="nk"> &lt;ryanofsky&gt;</span> would need to add || pos.x() &gt; screen.width() || pos.y() &gt; screen.height()
+<a name="l-87"></a><span class="tm">19:24:16</span><span class="nk"> &lt;gmaxwell&gt;</span> from that code it looks obvious how to fix this.
+<a name="l-88"></a><span class="tm">19:24:19</span><span class="nk"> &lt;gmaxwell&gt;</span> what ryanofsky said
+<a name="l-89"></a><span class="tm">19:24:32</span><span class="nk"> &lt;gmaxwell&gt;</span> well almost obvious
+<a name="l-90"></a><span class="tm">19:24:46</span><span class="nk"> &lt;luke-jr&gt;</span> that won't work for the different-sizes scenario, but sure
+<a name="l-91"></a><span class="tm">19:24:48</span><span class="nk"> &lt;achow101&gt;</span> replicated the problem. will write up how in the issue after this class I am in
+<a name="l-92"></a><span class="tm">19:24:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">ryanofsky:</span> that one will lets the window be at width(),height(). :P
+<a name="l-93"></a><span class="tm">19:24:54</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, no idea what QApplication::desktop()-&gt;screenNumber(parent) == -1 does, but guess it doesnt work on win....someone able to test?
+<a name="l-94"></a><span class="tm">19:25:05</span><span class="nk"> &lt;achow101&gt;</span> tl;dr look at the registry for qsettings for nWindowPos
+<a name="l-95"></a><span class="tm">19:25:20</span><span class="nk"> &lt;ryanofsky&gt;</span> BlueMatt, that is probably the check for no longer connected multimonitor
+<a name="l-96"></a><span class="tm">19:25:47</span><span class="nk"> &lt;meshcollider&gt;</span> ^^ if its -1 means the screen doesn't exist
+<a name="l-97"></a><span class="tm">19:25:49</span><span class="nk"> &lt;achow101&gt;</span> if the setting is for an off screen point, nothing will show
+<a name="l-98"></a><span class="tm">19:25:58</span><span class="nk"> &lt;gmaxwell&gt;</span> yea but it may do nothing on windows, perhaps on windows the window is just off screen.
+<a name="l-99"></a><span class="tm">19:26:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">ryanofsky:</span> yea, but that should work if you're on no screen? no idea
+<a name="l-100"></a><span class="tm">19:26:19</span><span class="nk"> &lt;BlueMatt&gt;</span> anyway, I'll stop speculating above my paygrade
+<a name="l-101"></a><span class="tm">19:26:38</span><span class="nk"> &lt;sipa&gt;</span> can someone open a bug?
+<a name="l-102"></a><span class="tm">19:26:51</span><span class="nk"> &lt;BlueMatt&gt;</span> ^ that
+<a name="l-103"></a><span class="tm">19:27:14</span><span class="nk"> &lt;gmaxwell&gt;</span> just reopen 7869 perhaps
+<a name="l-104"></a><span class="tm">19:27:20</span><span class="nk"> &lt;jtimon&gt;</span> perhaps also PR ryanofsky's potential solution ?
+<a name="l-105"></a><span class="tm">19:27:23</span><span class="nk"> &lt;sipa&gt;</span> i don't think we need to solve this problem in this meeting (though there seem few other topics)
+<a name="l-106"></a><span class="tm">19:27:32</span><span class="nk"> &lt;ryanofsky&gt;</span> i think achow101 said he would write it up?
+<a name="l-107"></a><span class="tm">19:27:40</span><span class="nk"> &lt;luke-jr&gt;</span> so that's 3 things for an rc4 I guess?
+<a name="l-108"></a><span class="tm">19:27:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> 3?
+<a name="l-109"></a><span class="tm">19:27:51</span><span class="nk"> &lt;achow101&gt;</span> I'll make a new issue with the thing I just found
+<a name="l-110"></a><span class="tm">19:27:51</span><span class="nk"> &lt;gmaxwell&gt;</span> We should talk about progress for full segwit support.
+<a name="l-111"></a><span class="tm">19:27:53</span><span class="nk"> &lt;meshcollider&gt;</span> whats the 3rd?
+<a name="l-112"></a><span class="tm">19:27:57</span><span class="nk"> &lt;instagibbs&gt;</span> gmaxwell, ack
+<a name="l-113"></a><span class="tm">19:28:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> thanks!
+<a name="l-114"></a><span class="tm">19:28:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> 1) positioning; 2) debug log tooltip; 3) acceptnonstdtxn help
+<a name="l-115"></a><span class="tm">19:28:28</span><span class="nk"> &lt;morcos&gt;</span> i know i'm the cause of rc3, but i actually advocate for drawing the line somewhere
+<a name="l-116"></a><span class="tm">19:28:31</span><span class="nk"> &lt;luke-jr&gt;</span> maybe 4) Polish translation update
+<a name="l-117"></a><span class="tm">19:28:41</span><span class="nk"> &lt;morcos&gt;</span> it wasn't clear to me if we have to wait 2 weeks now until we have a new RC
+<a name="l-118"></a><span class="tm">19:28:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> IMO the positioning issue is sufficient to warrant rc4
+<a name="l-119"></a><span class="tm">19:28:55</span><span class="nk"> &lt;morcos&gt;</span> if so i think none of those are maybe sufficient for RC4
+<a name="l-120"></a><span class="tm">19:28:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> let's discuss this when wumpus is available
+<a name="l-121"></a><span class="tm">19:29:21</span><span class="nk"> &lt;luke-jr&gt;</span> especially if users are encountering it
+<a name="l-122"></a><span class="tm">19:29:26</span><span class="nk"> &lt;morcos&gt;</span> ok. at the very least lets, note that its a question, instead of a conclusion that there will be RC4
+<a name="l-123"></a><span class="tm">19:29:27</span><span class="nk"> &lt;meshcollider&gt;</span> yeah and first lets make sure the fix for the positioning issue actually solves the problem lol
+<a name="l-124"></a><span class="tm">19:29:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> but there is a workaround no?
+<a name="l-125"></a><span class="tm">19:29:46</span><span class="nk"> &lt;morcos&gt;</span> how much valuable info do you lose my resetguisettings
+<a name="l-126"></a><span class="tm">19:29:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> indeed
+<a name="l-127"></a><span class="tm">19:29:51</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> not a nice one - you lose all your other GUI settings
+<a name="l-128"></a><span class="tm">19:29:58</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> all gui settings
+<a name="l-129"></a><span class="tm">19:30:06</span><span class="nk"> &lt;achow101&gt;</span> it can also be fixed with regedt
+<a name="l-130"></a><span class="tm">19:30:11</span><span class="nk"> &lt;sipa&gt;</span> achow101 said he'd open a bug with relevant information - let's discuss there when we have that
+<a name="l-131"></a><span class="tm">19:30:22</span><span class="nk"> &lt;luke-jr&gt;</span> k
+<a name="l-132"></a><span class="tm">19:30:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="topic">#topic </span><span class="topicline">full segwit support</span>
+<a name="l-133"></a><span class="tm">19:31:37</span><span class="nk"> &lt;sipa&gt;</span> i have a question: should we 1) automatically add witness redeem scripts for newly generated addresses, or 2) bypass the restriction that the redeemscript must be available for P2WPKH when the pubkey itself is available?
+<a name="l-134"></a><span class="tm">19:32:07</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> could you explain that a bit more thoroughly
+<a name="l-135"></a><span class="tm">19:32:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> #1
+<a name="l-136"></a><span class="tm">19:32:21</span><span class="nk"> &lt;sipa&gt;</span> the downside of 2) is that we'd accept segwit payments to converted-p2pkh-to-p2wpkh addresses (which i think is a bad property), but that it significantly reduced the overhead of adding a key
+<a name="l-137"></a><span class="tm">19:32:29</span><span class="nk"> &lt;meshcollider&gt;</span> I'd say 1 is better
+<a name="l-138"></a><span class="tm">19:33:06</span><span class="nk"> &lt;BlueMatt&gt;</span> i guess drawback of 1 is you cant receive via segwit to old addresses?
+<a name="l-139"></a><span class="tm">19:33:09</span><span class="nk"> &lt;BlueMatt&gt;</span> I'm ok with that
+<a name="l-140"></a><span class="tm">19:33:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i would call that an advantage
+<a name="l-141"></a><span class="tm">19:33:23</span><span class="nk"> &lt;BlueMatt&gt;</span> agreed
+<a name="l-142"></a><span class="tm">19:33:29</span><span class="nk"> &lt;sipa&gt;</span> ideally we don't accept anything to an address that wasn't given out
+<a name="l-143"></a><span class="tm">19:33:41</span><span class="nk"> &lt;sdaftuar&gt;</span> ^ that
+<a name="l-144"></a><span class="tm">19:33:41</span><span class="nk"> &lt;gmaxwell&gt;</span> we should really try to avoid accepting an address that we'd never issue if at all possible, it's very dangerous if people think they can do that and have it work.
+<a name="l-145"></a><span class="tm">19:33:49</span><span class="nk"> &lt;meshcollider&gt;</span> I guess there'd still be a way to manually do it if you wanted to though right?
+<a name="l-146"></a><span class="tm">19:33:51</span><span class="nk"> &lt;luke-jr&gt;</span> indeed, if we accept segwit to non-segwit addresses, people might get a false impression it's supported, and lose money
+<a name="l-147"></a><span class="tm">19:33:53</span><span class="nk"> &lt;Chris_Stewart_5&gt;</span> is #1 really that expensive?
+<a name="l-148"></a><span class="tm">19:34:01</span><span class="nk"> &lt;sipa&gt;</span> alternatively, we can also have a boolean in the key meta data saying that the "corresponding" address is segwit
+<a name="l-149"></a><span class="tm">19:34:20</span><span class="nk"> &lt;sipa&gt;</span> in which case we bypass the need-redeemscript property, but just for keys with that flag set
+<a name="l-150"></a><span class="tm">19:34:40</span><span class="nk"> &lt;sipa&gt;</span> but at the cost of extra complexity
+<a name="l-151"></a><span class="tm">19:34:44</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> is hte issue wiht 1) bloat?
+<a name="l-152"></a><span class="tm">19:34:48</span><span class="nk"> &lt;luke-jr&gt;</span> but when generating an address, it should only automatically add it if the user wants a witness address; we need to support at least P2SH-wrapper addresses until Bech32 adoption is widespread..
+<a name="l-153"></a><span class="tm">19:34:50</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> yes, just bloat
+<a name="l-154"></a><span class="tm">19:34:55</span><span class="nk"> &lt;gmaxwell&gt;</span> manually sure, it's like importing a key.
+<a name="l-155"></a><span class="tm">19:35:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> that brings us to another question - my view is that we shouldn't support choosing on a per-address basis whether it should be segwit or not; just a wallet-wide flag that you now want segwit
+<a name="l-156"></a><span class="tm">19:35:40</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> I like the key metadata approach; that lets us refuse non-segwit payments to segwit keys
+<a name="l-157"></a><span class="tm">19:35:43</span><span class="nk"> &lt;sipa&gt;</span> the reason for that is for interaction with hd auto topup
+<a name="l-158"></a><span class="tm">19:35:49</span><span class="nk"> &lt;gmaxwell&gt;</span> ^ I think so to, wallet wide because of recovery.
+<a name="l-159"></a><span class="tm">19:35:53</span><span class="nk"> &lt;instagibbs&gt;</span> i think wallets make a lot more sense if by default you do one or the other, and support importing otherwise
+<a name="l-160"></a><span class="tm">19:35:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> +1 on no per-address choosing
+<a name="l-161"></a><span class="tm">19:36:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> then nobody can reasonably use p2wpkh until support for bech32 is universal? :/
+<a name="l-162"></a><span class="tm">19:36:06</span><span class="nk"> &lt;gmaxwell&gt;</span> importing one shows that violate the wallet wide is fine.
+<a name="l-163"></a><span class="tm">19:36:07</span><span class="nk"> &lt;morcos&gt;</span> the whole point of segwit (well one of them) is we think thats the right way to do transactions)
+<a name="l-164"></a><span class="tm">19:36:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> we could also do that on-disk, but in-memory keep the bloat-y version?
+<a name="l-165"></a><span class="tm">19:36:29</span><span class="nk"> &lt;sdaftuar&gt;</span> how will the migration to bech32 work?
+<a name="l-166"></a><span class="tm">19:36:42</span><span class="nk"> &lt;instagibbs&gt;</span> luke-jr, is there any reason we cant return multiple address types? thinking out loud :)
+<a name="l-167"></a><span class="tm">19:36:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i think we'll be forced to support bech32 as an optional thing and treat bech32 and its p2sh embdeed version identially
+<a name="l-168"></a><span class="tm">19:36:49</span><span class="nk"> &lt;luke-jr&gt;</span> also, doesn't this mean you can't upgrade existing wallets?
+<a name="l-169"></a><span class="tm">19:36:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> send to it first, and when ~everyone can send it it, we start generating addresses.
+<a name="l-170"></a><span class="tm">19:36:51</span><span class="nk"> &lt;instagibbs&gt;</span> if we're doing a hard switchover, we can break api a bit?
+<a name="l-171"></a><span class="tm">19:37:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">instagibbs:</span> eww :(
+<a name="l-172"></a><span class="tm">19:37:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> ugh.
+<a name="l-173"></a><span class="tm">19:37:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> there's no way we can switch over an entire wallet to bech32
+<a name="l-174"></a><span class="tm">19:37:26</span><span class="nk"> &lt;sipa&gt;</span> at least not the first ... year?
+<a name="l-175"></a><span class="tm">19:37:26</span><span class="nk"> &lt;gmaxwell&gt;</span> certantly not today!
+<a name="l-176"></a><span class="tm">19:37:33</span><span class="nk"> &lt;gmaxwell&gt;</span> yes sure. and
+<a name="l-177"></a><span class="tm">19:37:33</span><span class="nk"> &lt;instagibbs&gt;</span> luke-jr, elaborate the ew
+<a name="l-178"></a><span class="tm">19:37:35</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> that's why per-address is useful
+<a name="l-179"></a><span class="tm">19:37:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> but per-address is inherently incompatible with hd auto topup
+<a name="l-180"></a><span class="tm">19:37:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> per-address is not backup durable.
+<a name="l-181"></a><span class="tm">19:38:07</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-182"></a><span class="tm">19:38:18</span><span class="nk"> &lt;luke-jr&gt;</span> what if we use separate HD chains for each type?
+<a name="l-183"></a><span class="tm">19:38:21</span><span class="nk"> &lt;gmaxwell&gt;</span> why are we expanding scope to recieve BIP173 addresses. I think we should not make this scope expansion now.
+<a name="l-184"></a><span class="tm">19:38:32</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">gmaxwell:</span> what did you not like, having bech32 and p2sh both supported together?
+<a name="l-185"></a><span class="tm">19:38:37</span><span class="nk"> &lt;sipa&gt;</span> i think we have two options (which apply to both segwit/legacy and to p2sh/bech32): treat them as identical and accept payments to both, or switch over the wallet entirely
+<a name="l-186"></a><span class="tm">19:38:37</span><span class="nk"> &lt;BlueMatt&gt;</span> &lt;luke-jr&gt; also, doesn't this mean you can't upgrade existing wallets? &lt;-- yea. this. the discussion about hd-upgrade kinda devolved (I've been mia for a week so may be behind), but it seems to me with the current disk structure we need hd-upgrade before we can do segwit-upgrade unless we want to start forking the -upgradewallet stuff
+<a name="l-187"></a><span class="tm">19:39:00</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> because then people can randomly turn your addresses to the other kind which you've never given out and pay you.
+<a name="l-188"></a><span class="tm">19:39:47</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, I think its unacceptable to do that cause we have shit like breaking uncompressed keys, so we really, really dont want to support people blindly converting addresses, sets a terrible understanding
+<a name="l-189"></a><span class="tm">19:39:48</span><span class="nk"> &lt;sipa&gt;</span> my view is that we should treat bech32 and p2sh as identical - because, by design, they are identical - every segwit version is supposed to work in both
+<a name="l-190"></a><span class="tm">19:39:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> even the ability to upgrade an existing HD wallet to a segwit+HD wallet would be nice
+<a name="l-191"></a><span class="tm">19:39:52</span><span class="nk"> &lt;gmaxwell&gt;</span> the pre-segwit vs segwit version of that question is incredibly dangerous.   p2sh-embed vs not, is perhaps less so.
+<a name="l-192"></a><span class="tm">19:39:59</span><span class="nk"> &lt;sipa&gt;</span> but we should not treat segwit and p2pkh as identical
+<a name="l-193"></a><span class="tm">19:39:59</span><span class="nk"> &lt;morcos&gt;</span> so we can do this in 2 stages?  switch whole wallet to p2sh embedded segwit, and then in 6-12 mos switch whole wallet to bech32?
+<a name="l-194"></a><span class="tm">19:40:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> we should have specified this as part of the segwit bips then. :(  but okay, it could be done.
+<a name="l-195"></a><span class="tm">19:40:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I'm ok with that
+<a name="l-196"></a><span class="tm">19:40:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> that was my expectation, and we will have to do is regardless at least in terms of what addresses we return.
+<a name="l-197"></a><span class="tm">19:40:41</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> well, we could , for example switch over enterily for segwit/legacy but treat identical for p2sh/bech32, no?
+<a name="l-198"></a><span class="tm">19:40:52</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> that's exactly what i'm suggesting
+<a name="l-199"></a><span class="tm">19:40:58</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> i think sipa is advocating for (and I like) - switch wallet over to "segwit" and give users the addresses in p2sh-embedded form, but really thats a ui-level thing
+<a name="l-200"></a><span class="tm">19:41:07 </span><span class="nka">* jtimon</span> <span class="ac">nods</span>
+<a name="l-201"></a><span class="tm">19:41:09</span><span class="nk"> &lt;BlueMatt&gt;</span> and maybe a flag for "i gave this address out as version X"
+<a name="l-202"></a><span class="tm">19:41:11</span><span class="nk"> &lt;sipa&gt;</span> however, the bech32 question is not very urgent now
+<a name="l-203"></a><span class="tm">19:41:21</span><span class="nk"> &lt;sipa&gt;</span> while switchover the segwit is
+<a name="l-204"></a><span class="tm">19:41:43</span><span class="nk"> &lt;sipa&gt;</span> i guess there are a) support both for our own keys b) use separate hd chains for segwit c) switchover wallet as a whole
+<a name="l-205"></a><span class="tm">19:41:46</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> right so we'd be capable of receiving a bech32 payment, but we would not give those out for some time?
+<a name="l-206"></a><span class="tm">19:41:52</span><span class="nk"> &lt;sipa&gt;</span> i think (c) is best
+<a name="l-207"></a><span class="tm">19:41:59</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yes
+<a name="l-208"></a><span class="tm">19:42:22</span><span class="nk"> &lt;instagibbs&gt;</span> BlueMatt, and send I hope?
+<a name="l-209"></a><span class="tm">19:42:22</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> wait, I'm  confused...does c include a and b?
+<a name="l-210"></a><span class="tm">19:42:24</span><span class="nk"> &lt;luke-jr&gt;</span> (c) will slow adoption
+<a name="l-211"></a><span class="tm">19:42:37</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> they are 3 distinct possibilities
+<a name="l-212"></a><span class="tm">19:43:01</span><span class="nk"> &lt;achow101&gt;</span> (c) works well with multi wallet
+<a name="l-213"></a><span class="tm">19:43:10</span><span class="nk"> &lt;sipa&gt;</span> (c) means there is a wallet-wide flag that says "SEGWIT: YES", and if so, all new addresses are generated as segwit, and integrated with hd topup
+<a name="l-214"></a><span class="tm">19:43:24</span><span class="nk"> &lt;sipa&gt;</span> but no separate chains for segwit or not
+<a name="l-215"></a><span class="tm">19:43:25</span><span class="nk"> &lt;instagibbs&gt;</span> achow101, right, my ledger support will likely simply utilize multiwallet for crossover
+<a name="l-216"></a><span class="tm">19:43:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> and if we wanted to convert an old wallet we could just import all the keys.
+<a name="l-217"></a><span class="tm">19:43:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> ah, yes, back to my previous question...what form does that flag take
+<a name="l-218"></a><span class="tm">19:43:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i see
+<a name="l-219"></a><span class="tm">19:43:45</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> cause its damn-dirty to add a flag like that and not use our versioning stuff
+<a name="l-220"></a><span class="tm">19:43:50</span><span class="nk"> &lt;achow101&gt;</span> If we do that, we can also implement the optional features thing for wallets
+<a name="l-221"></a><span class="tm">19:43:54</span><span class="nk"> &lt;BlueMatt&gt;</span> but using our versioning stuff means we need hd-upgrade
+<a name="l-222"></a><span class="tm">19:44:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i want to get rid of the version stuff and have feature flags
+<a name="l-223"></a><span class="tm">19:44:02</span><span class="nk"> &lt;BlueMatt&gt;</span> which i think we need, but may delay things
+<a name="l-224"></a><span class="tm">19:44:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> but exponential blowup of feature options :(
+<a name="l-225"></a><span class="tm">19:44:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes...
+<a name="l-226"></a><span class="tm">19:45:03</span><span class="nk"> &lt;sipa&gt;</span> so perhaps the question is: is there any reason why wallets shouldn't have that segwit flag (apart from backup reasons)
+<a name="l-227"></a><span class="tm">19:45:10 </span><span class="nka">* BlueMatt</span> <span class="ac">sees no reason to *not* use existing versioning, but only question is possible delay</span>
+<a name="l-228"></a><span class="tm">19:45:32</span><span class="nk"> &lt;instagibbs&gt;</span> BlueMatt, sorry delay how
+<a name="l-229"></a><span class="tm">19:45:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, like anything else in the wallet, if user doesnt say -upgradewallet, we'd prefer to not break their backward compat
+<a name="l-230"></a><span class="tm">19:45:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">instagibbs:</span> because if we use the versioning stuff, hd-upgrade must happen first
+<a name="l-231"></a><span class="tm">19:46:00</span><span class="nk"> &lt;morcos&gt;</span> Someone should write up a more comprehensive wallet plan.  The only thing that's clear is we need to support any kind of wallet that has existed in the past
+<a name="l-232"></a><span class="tm">19:46:02</span><span class="nk"> &lt;instagibbs&gt;</span> Ah, user delay, noted
+<a name="l-233"></a><span class="tm">19:46:19</span><span class="nk"> &lt;meshcollider&gt;</span> well it would only happen when they choose to upgrade to segwit only, so you can just give them a warning then right
+<a name="l-234"></a><span class="tm">19:46:19</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> what if the payer can't pay to segwit ? I think that's why luke wants to be able to genreate legacy for receiving, no?
+<a name="l-235"></a><span class="tm">19:46:21</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, some people will be in person in a few days.... would be a good time to review such a doc
+<a name="l-236"></a><span class="tm">19:46:22</span><span class="nk"> &lt;morcos&gt;</span> But we don't need to support any possible combination..  So we shouldn't have segwit non-HD chain split wallets for example
+<a name="l-237"></a><span class="tm">19:46:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> every wallet can send to P2SH
+<a name="l-238"></a><span class="tm">19:46:29</span><span class="nk"> &lt;morcos&gt;</span> so lets make sure there is no way to create that
+<a name="l-239"></a><span class="tm">19:46:32</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> we've generally supported opening new wallets with old versions as long as they are un-upgraded, too
+<a name="l-240"></a><span class="tm">19:46:40</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">sipa:</span> , oh, right, never mind
+<a name="l-241"></a><span class="tm">19:46:52</span><span class="nk"> &lt;gmaxwell&gt;</span> for upgrading I think we'd set the flag, start exploring the segwit address chain from 0 and import all the old keys as whatever they are.
+<a name="l-242"></a><span class="tm">19:47:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, understood, but apart from that, is there any reason why someone would not want their wallet to construct segwit outputs?
+<a name="l-243"></a><span class="tm">19:47:09</span><span class="nk"> &lt;sipa&gt;</span> *addresses
+<a name="l-244"></a><span class="tm">19:47:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">morcos:</span> yes, well then we need a "list of acceptable feature flag combinations" against which we check the wallet on load.... :/
+<a name="l-245"></a><span class="tm">19:47:16</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> no, only wallets that are trying to stay unupgraded.
+<a name="l-246"></a><span class="tm">19:47:27</span><span class="nk"> &lt;morcos&gt;</span> or for instance having segwit implies HD-chain split...
+<a name="l-247"></a><span class="tm">19:47:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> not to my knowledge, no
+<a name="l-248"></a><span class="tm">19:47:30</span><span class="nk"> &lt;sipa&gt;</span> so do we need a flag at all?
+<a name="l-249"></a><span class="tm">19:47:40</span><span class="nk"> &lt;sipa&gt;</span> as opposed to just start doing it automatically in a new version
+<a name="l-250"></a><span class="tm">19:47:43</span><span class="nk"> &lt;BlueMatt&gt;</span> only upgrade, to me
+<a name="l-251"></a><span class="tm">19:47:56</span><span class="nk"> &lt;BlueMatt&gt;</span> well we'd need users to do a -walletupgrade
+<a name="l-252"></a><span class="tm">19:48:01</span><span class="nk"> &lt;sipa&gt;</span> i don't think so
+<a name="l-253"></a><span class="tm">19:48:11</span><span class="nk"> &lt;BlueMatt&gt;</span> errr, I'm not a fan of that
+<a name="l-254"></a><span class="tm">19:48:29</span><span class="nk"> &lt;meshcollider&gt;</span> If you give them the setting somewhere in Qt then it can give them a compat warning when they go to upgrade it
+<a name="l-255"></a><span class="tm">19:48:30</span><span class="nk"> &lt;BlueMatt&gt;</span> that'd be the first time we break opening new wallets with an old version by default (and have no way to not break it!)
+<a name="l-256"></a><span class="tm">19:48:32</span><span class="nk"> &lt;sipa&gt;</span> maybe i'm missing something, but i see no failure scenario
+<a name="l-257"></a><span class="tm">19:48:39</span><span class="nk"> &lt;BlueMatt&gt;</span> i guess if we do that we should switch to bdb 5
+<a name="l-258"></a><span class="tm">19:48:47</span><span class="nk"> &lt;gmaxwell&gt;</span> if there is a reason we're unaware of the user can stay on the old version until we add support for whatever we want.
+<a name="l-259"></a><span class="tm">19:48:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> downgrading
+<a name="l-260"></a><span class="tm">19:48:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> elaborate
+<a name="l-261"></a><span class="tm">19:49:06</span><span class="nk"> &lt;sipa&gt;</span> old versions will produce old addresses, and not add the witness redeem script
+<a name="l-262"></a><span class="tm">19:49:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> if I take my wallet, use it with 0.16, I should be able to use the same wallet with 0.12 again
+<a name="l-263"></a><span class="tm">19:49:10</span><span class="nk"> &lt;jtimon&gt;</span> do we want to support downgrading wallets?
+<a name="l-264"></a><span class="tm">19:49:25</span><span class="nk"> &lt;luke-jr&gt;</span> until I use -walletupgrade ofc
+<a name="l-265"></a><span class="tm">19:49:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> its always been the case that you can pretty easily run your wallet with an old version as long as it is not upgraded
+<a name="l-266"></a><span class="tm">19:49:30</span><span class="nk"> &lt;BlueMatt&gt;</span> with no significant feature loss
+<a name="l-267"></a><span class="tm">19:49:34</span><span class="nk"> &lt;sipa&gt;</span> new versions will produce new address, add their redeemscript, and when downgrading, those addresses will keep working
+<a name="l-268"></a><span class="tm">19:49:37</span><span class="nk"> &lt;BlueMatt&gt;</span> and definitely not with missing transactions
+<a name="l-269"></a><span class="tm">19:49:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i don't see a problem
+<a name="l-270"></a><span class="tm">19:49:45</span><span class="nk"> &lt;achow101&gt;</span> So upgrade it with a version number
+<a name="l-271"></a><span class="tm">19:49:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> old versions don't know how to sign for segwit UTXOs..
+<a name="l-272"></a><span class="tm">19:49:51</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> missing transactions
+<a name="l-273"></a><span class="tm">19:49:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> ?
+<a name="l-274"></a><span class="tm">19:50:12</span><span class="nk"> &lt;sipa&gt;</span> segwit address will work fine in older versions, if we use the redeemscript add construction
+<a name="l-275"></a><span class="tm">19:50:13</span><span class="nk"> &lt;BlueMatt&gt;</span> if you receive a payment using segwit and then open that wallet with an old version, it will not be there
+<a name="l-276"></a><span class="tm">19:50:20</span><span class="nk"> &lt;sipa&gt;</span> yes it will be
+<a name="l-277"></a><span class="tm">19:50:24</span><span class="nk"> &lt;sipa&gt;</span> at least down to 0.13.0
+<a name="l-278"></a><span class="tm">19:50:30</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> and it will spend?
+<a name="l-279"></a><span class="tm">19:50:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> yes
+<a name="l-280"></a><span class="tm">19:50:41</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> the signing code for segwit works fine
+<a name="l-281"></a><span class="tm">19:50:48</span><span class="nk"> &lt;BlueMatt&gt;</span> mm, fair, though will fail for native segwit, I suppose?
+<a name="l-282"></a><span class="tm">19:50:51</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-283"></a><span class="tm">19:50:58</span><span class="nk"> &lt;sipa&gt;</span> but ignore bech32 for now
+<a name="l-284"></a><span class="tm">19:51:02</span><span class="nk"> &lt;jtimon&gt;</span> dow we want to support wallet downgrade beyond 0.13 ?
+<a name="l-285"></a><span class="tm">19:51:08</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> okay, so how does this all work for people who actively do not wish to use segwit transactions?
+<a name="l-286"></a><span class="tm">19:51:10</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jtimon:</span> that's a good question
+<a name="l-287"></a><span class="tm">19:51:16</span><span class="nk"> &lt;BlueMatt&gt;</span> ohhhhhhhhhh, wait, errrrrr, wont everythin break anyway cause it wont deserialize segwit-formatted txn in the wallet pre-0.13.0?
+<a name="l-288"></a><span class="tm">19:51:22</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes
+<a name="l-289"></a><span class="tm">19:51:30</span><span class="nk"> &lt;BlueMatt&gt;</span> lol, ok, well we're not fixing that one
+<a name="l-290"></a><span class="tm">19:51:34</span><span class="nk"> &lt;BlueMatt&gt;</span> so I dont care
+<a name="l-291"></a><span class="tm">19:51:39</span><span class="nk"> &lt;morcos&gt;</span> we're talking about 2 different things...  are you saying if i open an 0.12 wallet in 0.16, then i can't reopen it in 0.12
+<a name="l-292"></a><span class="tm">19:51:41</span><span class="nk"> &lt;sipa&gt;</span> i guess BlueMatt answered jtimon's question
+<a name="l-293"></a><span class="tm">19:51:43</span><span class="nk"> &lt;morcos&gt;</span> that sounds like a terrible idea
+<a name="l-294"></a><span class="tm">19:51:49</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's fine if use of segwit makes the wallet 0.15.1+
+<a name="l-295"></a><span class="tm">19:51:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> that's already the case...
+<a name="l-296"></a><span class="tm">19:51:53</span><span class="nk"> &lt;morcos&gt;</span> if you upgrade it, then yeah of course you don't need to be able to go backwards
+<a name="l-297"></a><span class="tm">19:52:01</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm not ok with that, I think
+<a name="l-298"></a><span class="tm">19:52:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> why?
+<a name="l-299"></a><span class="tm">19:52:02</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> huh?
+<a name="l-300"></a><span class="tm">19:52:10</span><span class="nk"> &lt;gmaxwell&gt;</span> wut
+<a name="l-301"></a><span class="tm">19:52:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> because of what BlueMatt says
+<a name="l-302"></a><span class="tm">19:52:12</span><span class="nk"> &lt;morcos&gt;</span> i don't think so at all
+<a name="l-303"></a><span class="tm">19:52:18</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> I'm fine with it being 0.13.0, which it already is
+<a name="l-304"></a><span class="tm">19:52:22</span><span class="nk"> &lt;morcos&gt;</span> hmm.
+<a name="l-305"></a><span class="tm">19:52:25</span><span class="nk"> &lt;sipa&gt;</span> you can receive a segwit transaction that pays you (via legacy output)
+<a name="l-306"></a><span class="tm">19:52:29</span><span class="nk"> &lt;morcos&gt;</span> i don't think so
+<a name="l-307"></a><span class="tm">19:52:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> do we have any need to make it 0.15.1?
+<a name="l-308"></a><span class="tm">19:52:31</span><span class="nk"> &lt;sipa&gt;</span> that will be stored as a segwit txn in your wallet
+<a name="l-309"></a><span class="tm">19:52:33</span><span class="nk"> &lt;gmaxwell&gt;</span> I bet it doesn't work for 0.13.0
+<a name="l-310"></a><span class="tm">19:52:35</span><span class="nk"> &lt;BlueMatt&gt;</span> do we get any features from that, really?
+<a name="l-311"></a><span class="tm">19:52:36</span><span class="nk"> &lt;sipa&gt;</span> which 0.12 won't open
+<a name="l-312"></a><span class="tm">19:52:37</span><span class="nk"> &lt;morcos&gt;</span> oh maybe
+<a name="l-313"></a><span class="tm">19:52:38</span><span class="nk"> &lt;morcos&gt;</span> durn
+<a name="l-314"></a><span class="tm">19:52:44</span><span class="nk"> &lt;luke-jr&gt;</span> ugh
+<a name="l-315"></a><span class="tm">19:52:51</span><span class="nk"> &lt;meshcollider&gt;</span> Not if you just open the wallet without generating new addresses though ?
+<a name="l-316"></a><span class="tm">19:52:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> how about testing resources if nothing else... but also you'll corrupt your wallet, when it doesn't know how to extend the keypool.
+<a name="l-317"></a><span class="tm">19:53:07</span><span class="nk"> &lt;luke-jr&gt;</span> does that mean if 0.12 receives a segwit tx, it will break newer??
+<a name="l-318"></a><span class="tm">19:53:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> there can be a segwit address that pays you via a plain old p2pkh address
+<a name="l-319"></a><span class="tm">19:53:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> if the wallet is un-upgraded it wont break?
+<a name="l-320"></a><span class="tm">19:53:30</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> obviously if its an hd wallet old versions will refuse to open
+<a name="l-321"></a><span class="tm">19:53:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> if it's unupgraded it's not giving out segwit addresses.
+<a name="l-322"></a><span class="tm">19:53:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> though testing resources are obviously always an issue
+<a name="l-323"></a><span class="tm">19:54:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> sipa was proposing that it give out segwit addresses even if it is unupgraded
+<a name="l-324"></a><span class="tm">19:54:30</span><span class="nk"> &lt;luke-jr&gt;</span> what happens right now, if we have a segwit tx in the wallet without witness data? :/
+<a name="l-325"></a><span class="tm">19:54:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> how the heck does this even work for HD chains.
+<a name="l-326"></a><span class="tm">19:54:32</span><span class="nk"> &lt;instagibbs&gt;</span> 6 minutes
+<a name="l-327"></a><span class="tm">19:54:49</span><span class="nk"> &lt;meshcollider&gt;</span> sipa
+<a name="l-328"></a><span class="tm">19:54:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> it will work fine, unless you downgrade at the same time as you recover
+<a name="l-329"></a><span class="tm">19:55:00</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> hd doesnt matter...wait, sipa was saying no new hd chain, maybe we should reopen that part of the discussion :p
+<a name="l-330"></a><span class="tm">19:55:01</span><span class="nk"> &lt;meshcollider&gt;</span> isnt that only the case if you gave out the address
+<a name="l-331"></a><span class="tm">19:55:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> no
+<a name="l-332"></a><span class="tm">19:55:14</span><span class="nk"> &lt;sipa&gt;</span> 19:53:19 &lt; sipa&gt; meshcollider: there can be a segwit address that pays you via a plain old p2pkh address
+<a name="l-333"></a><span class="tm">19:55:28</span><span class="nk"> &lt;sipa&gt;</span> ^ in that case you don't ever generated a segwit address
+<a name="l-334"></a><span class="tm">19:55:29</span><span class="nk"> &lt;meshcollider&gt;</span> Can anyone generate that themselves?
+<a name="l-335"></a><span class="tm">19:55:42</span><span class="nk"> &lt;jtimon&gt;</span> in any case, is the question adding a new wallet version or not?
+<a name="l-336"></a><span class="tm">19:55:42</span><span class="nk"> &lt;BlueMatt&gt;</span> lol, sounds like we've got a lot to discuss next week
+<a name="l-337"></a><span class="tm">19:55:50</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">homework:</span> everyone go farmiliarize yourself with wallet
+<a name="l-338"></a><span class="tm">19:55:53</span><span class="nk"> &lt;BlueMatt&gt;</span> ALL OF WALLET =D
+<a name="l-339"></a><span class="tm">19:55:54</span><span class="nk"> &lt;achow101&gt;</span> I'm horribly confused now
+<a name="l-340"></a><span class="tm">19:56:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> no, but the sender can be segwit enabled while you aren't
+<a name="l-341"></a><span class="tm">19:56:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> every time I do that, I get the inclination to throw it all away and start from scratch :x
+<a name="l-342"></a><span class="tm">19:56:33</span><span class="nk"> &lt;cfields&gt;</span> heh, we desperately need to break this discussion up into chunks
+<a name="l-343"></a><span class="tm">19:56:40</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> yes
+<a name="l-344"></a><span class="tm">19:56:51</span><span class="nk"> &lt;instagibbs&gt;</span> can someone whip up a table or something of concerns
+<a name="l-345"></a><span class="tm">19:56:56</span><span class="nk"> &lt;instagibbs&gt;</span> action item?
+<a name="l-346"></a><span class="tm">19:57:01</span><span class="nk"> &lt;luke-jr&gt;</span> kanzure has one
+<a name="l-347"></a><span class="tm">19:57:06</span><span class="nk"> &lt;luke-jr&gt;</span> just needs updating
+<a name="l-348"></a><span class="tm">19:57:08</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">Kanzure:</span> add to list?
+<a name="l-349"></a><span class="tm">19:57:15</span><span class="nk"> &lt;meshcollider&gt;</span> oh I see yeah, true
+<a name="l-350"></a><span class="tm">19:57:21</span><span class="nk"> &lt;instagibbs&gt;</span> oh, for that too, if you're in SF next week
+<a name="l-351"></a><span class="tm">19:57:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">kanzure:</span> and update it so that it's backwards compatible to the last list, please.
+<a name="l-352"></a><span class="tm">19:57:36</span><span class="nk"> &lt;achow101&gt;</span> Lol
+<a name="l-353"></a><span class="tm">19:57:54</span><span class="nk"> &lt;sipa&gt;</span> a) how to deal with 0.13.1 through 0.15.0 receiving a segwit transaction and then downgrading to 0.12.x or below
+<a name="l-354"></a><span class="tm">19:58:05</span><span class="nk"> &lt;sipa&gt;</span> b) how to switch to generating segwit addresses
+<a name="l-355"></a><span class="tm">19:58:11</span><span class="nk"> &lt;sipa&gt;</span> c) how to switch to generating bech32 addresses
+<a name="l-356"></a><span class="tm">19:58:39</span><span class="nk"> &lt;jtimon&gt;</span> I won't go this time :( have productive discussions there, and fun too!
+<a name="l-357"></a><span class="tm">19:58:44</span><span class="nk"> &lt;BlueMatt&gt;</span> d) how to deal with 0.15.1 downgradingg to 0.13.1 (in both hd and non-hd modes)
+<a name="l-358"></a><span class="tm">19:59:05</span><span class="nk"> &lt;BlueMatt&gt;</span> e) whether to use a new hd chain for segwit addresses
+<a name="l-359"></a><span class="tm">19:59:13</span><span class="nk"> &lt;sipa&gt;</span> e falls under b
+<a name="l-360"></a><span class="tm">19:59:18</span><span class="nk"> &lt;BlueMatt&gt;</span> err, ok
+<a name="l-361"></a><span class="tm">19:59:21</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> please just don't support that. It makes no sense to back and revalidate segwit wallet support in old versions.
+<a name="l-362"></a><span class="tm">19:59:43</span><span class="nk"> &lt;gmaxwell&gt;</span> we will not manage to adequately test it and it will sharply constrain our implementation choices.
+<a name="l-363"></a><span class="tm">19:59:45</span><span class="nk"> &lt;sipa&gt;</span> any last minute short topic?
+<a name="l-364"></a><span class="tm">19:59:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> then we should explicitly break it...but, anyway, lets have this discussion next week
+<a name="l-365"></a><span class="tm">19:59:48</span><span class="nk"> &lt;gmaxwell&gt;</span> and lead to weird corner case bugs.
+<a name="l-366"></a><span class="tm">20:00:01</span><span class="nk"> &lt;instagibbs&gt;</span> sipa, activate schnorr?
+<a name="l-367"></a><span class="tm">20:00:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

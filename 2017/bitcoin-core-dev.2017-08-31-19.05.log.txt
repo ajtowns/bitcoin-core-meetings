@@ -1,0 +1,367 @@
+19:05:58 <sipa> #startmeeting
+19:05:58 <lightningbot> Meeting started Thu Aug 31 19:05:58 2017 UTC.  The chair is sipa. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:05:58 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:06:13 <sipa> I'm not sure whether gmaxwell is available right now
+19:06:26 <sipa> topics?
+19:06:39 <meshcollider> it still lists wumpus as present lol
+19:07:12 <achow101> Anything with 0.15.0?
+19:07:16 <luke-jr> meshcollider: it's not a list of present people, just a mention to wake them up
+19:07:18 <gmaxwell> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:07:23 <gmaxwell> I'm not really here.
+19:07:27 <kanzure> hi.
+19:07:44 <luke-jr> achow101: there's a string issue, but not sure it matters much
+19:07:49 <luke-jr> the debug log tooltip IIRC
+19:07:56 <cfields> any observed 0.15 bugs?
+19:07:57 <sipa> what is up with #11198?
+19:08:08 <kanzure> next meeting unlikely to be on irc
+19:08:23 <achow101> (I'm not really here, hard to irc on a bike)
+19:09:01 <gmaxwell> cfields: there was someone complaining rc3 is crashing on windows
+19:09:09 <luke-jr> what is #11198? (I'm stuck at CLI)
+19:09:13 <morcos> heh, i am here, for a change
+19:09:17 <sipa> #topic 0.15.0
+19:09:18 <cfields> sipa: heh, that hardly seems like something worth waiting for
+19:09:22 <gmaxwell> achow101 was going to try reproducing.
+19:09:25 <sipa> luke-jr: Fix display of package name on 'open config file' tooltip
+19:09:32 <cfields> gmaxwell: hmm, link? or discussion?
+19:09:47 <achow101> The rc3 problem was fixed with iirc
+19:09:58 <achow101> (the windows crash thing)
+19:10:03 <instagibbs> present
+19:10:11 <gmaxwell> cfields: https://bitcointalk.org/index.php?topic=2132893.0
+19:10:19 <instagibbs> gmaxwell, running fine here on windows fwiw
+19:10:21 <gmaxwell> ohcrap this again:
+19:10:22 <luke-jr> IMO a tooltip doesn't need to block final, but since we're waiting a week anyway, might as well do a RC with it? (maybe merge in the -acceptnonstdtxn fix too)
+19:10:23 <gmaxwell> Problem solved!  Running bitcoin-qt with the '-resetguisettings' switch fixed it.  Thanks to MeshCollider on github for the fix! Smiley
+19:10:36 <gmaxwell> ^ that is now the third person I've seen screwed by this.
+19:10:44 <gmaxwell> did we change something that created this problem
+19:10:47 <luke-jr> gmaxwell: that's the crash?
+19:10:54 <gmaxwell> luke-jr: apparently it wasn't actually a crash
+19:11:07 <gmaxwell> the symptom is you start bitcoin and it vanishes after the splash
+19:11:11 <sipa> just the window appearing in an offscreen location?
+19:11:17 <luke-jr> ah
+19:11:20 <sipa> can we add a test for that?
+19:11:32 <luke-jr> sipa: we do already IIRC
+19:11:35 <sipa> (if window is beyond screen coordinates, reset gui settings automatically)
+19:11:38 <sipa> jonasschnelli: ^
+19:11:58 <gmaxwell> 16:19 < gmaxwell> jonasschnelli: I just had someone on IRC that had their GUI not displaying after upgrading to 0.14.2 ... this fixed it https://github.com/bitcoin/bitcoin/issues/7869#issuecomment-209265754  is there some underlying bug we need to fix?
+19:12:02 <gmaxwell> 11:19 < jonasschnelli> gmaxwell: most possible problem of a not-appearing GUI is probably persisted windows coordinates outside of the screen boundaries.
+19:12:05 <gmaxwell> 11:20 < jonasschnelli> could be fixed by checking the screen bounds against the QSettings coords
+19:12:08 <gmaxwell> 11:21 < jonasschnelli> -resetguisettings will just evict all user based Qt overrides (and things like window coordinates)
+19:12:12 <meshcollider> #11171 for reference
+19:12:16 <sipa> thnaks
+19:12:54 <gmaxwell> it worries me that I've never seen this complain before and now three in a few weeks, all with people testing 0.15rc
+19:13:04 <gmaxwell> complaint*
+19:13:10 <luke-jr> gmaxwell: could it be the Qt version bump?
+19:13:22 <gmaxwell> thats beyond my pay grade to speculate.
+19:14:06 <cfields> gmaxwell: all windows complaints?
+19:14:11 <gmaxwell> yes
+19:14:12 <luke-jr> a shame the users have done the workaround..
+19:14:28 <gmaxwell> it's a pretty bad failure mode, silently gone...
+19:14:32 <luke-jr> if we can get it reproduced again, it'd be nice to get the registry entries involved
+19:14:36 <cfields> i wonder if they're all multi-monitor
+19:14:49 <gmaxwell> luke-jr: well I told one to do it because it was a hail mary... I had no idea it would actually fix it.
+19:14:53 <luke-jr> cfields: hmm, monitors of different sizes maybe?
+19:15:15 <gmaxwell> we can ask.
+19:15:22 <cfields> luke-jr: i was thinking: bitcoin-qt on monitor 2, shutdown, restart with only monitor 1
+19:15:30 <luke-jr> I could totally see different-sized monitors confusing this
+19:15:46 <luke-jr> cfields: am I wrong that we don't check for visible coordinates?
+19:15:51 <luke-jr> err, that we do*
+19:16:16 <luke-jr> (which would probably fail if the monitors are different sizes, due to blocked-off regions within the total dimensions)
+19:16:21 <cfields> luke-jr: no clue
+19:17:20 <achow101> Gmaxwell: I believe it's a registry problem
+19:17:40 <achow101> Since qsettings stores things in registry
+19:18:04 <sipa> achow101: i think the registry is just a storage medium
+19:18:27 <gmaxwell> did we just start doing this... or
+19:18:51 <sipa> i think bitcoin-qt has done that since forver, and nothing changed wrt to that now
+19:18:55 <achow101> Gmaxwell: I don't think so. It's been reported a few times before with older versions
+19:19:12 <meshcollider> relevant code? https://github.com/bitcoin/bitcoin/blob/master/src/qt/guiutil.cpp#L852
+19:20:15 <BlueMatt> we always see a flood of reports of old issues upon new rc's
+19:20:36 <gmaxwell> yea, okay!
+19:21:27 <MarcoFalke> The "Fix for issues with startup and multiple monitors on windows." is already included https://github.com/bitcoin/bitcoin/commit/e9ff818b69c2f8ce4a151d1a81a3e22a4319c93d
+19:22:24 <ryanofsky> that doesn't seem like a sufficient fix if x and y are just outside screen geometry
+19:22:33 <jtimon> anything else regarding 0.15 ?
+19:22:41 <luke-jr> MarcoFalke: new in 0.15?
+19:22:46 <MarcoFalke> jup
+19:22:47 <luke-jr> maybe it's the problem..?
+19:23:04 <MarcoFalke> Yes, I think the fix is not sufficient
+19:24:01 <ryanofsky> would need to add || pos.x() > screen.width() || pos.y() > screen.height()
+19:24:16 <gmaxwell> from that code it looks obvious how to fix this.
+19:24:19 <gmaxwell> what ryanofsky said
+19:24:32 <gmaxwell> well almost obvious
+19:24:46 <luke-jr> that won't work for the different-sizes scenario, but sure
+19:24:48 <achow101> replicated the problem. will write up how in the issue after this class I am in
+19:24:49 <gmaxwell> ryanofsky: that one will lets the window be at width(),height(). :P
+19:24:54 <BlueMatt> yea, no idea what QApplication::desktop()->screenNumber(parent) == -1 does, but guess it doesnt work on win....someone able to test?
+19:25:05 <achow101> tl;dr look at the registry for qsettings for nWindowPos
+19:25:20 <ryanofsky> BlueMatt, that is probably the check for no longer connected multimonitor
+19:25:47 <meshcollider> ^^ if its -1 means the screen doesn't exist
+19:25:49 <achow101> if the setting is for an off screen point, nothing will show
+19:25:58 <gmaxwell> yea but it may do nothing on windows, perhaps on windows the window is just off screen.
+19:26:08 <BlueMatt> ryanofsky: yea, but that should work if you're on no screen? no idea
+19:26:19 <BlueMatt> anyway, I'll stop speculating above my paygrade
+19:26:38 <sipa> can someone open a bug?
+19:26:51 <BlueMatt> ^ that
+19:27:14 <gmaxwell> just reopen 7869 perhaps
+19:27:20 <jtimon> perhaps also PR ryanofsky's potential solution ?
+19:27:23 <sipa> i don't think we need to solve this problem in this meeting (though there seem few other topics)
+19:27:32 <ryanofsky> i think achow101 said he would write it up?
+19:27:40 <luke-jr> so that's 3 things for an rc4 I guess?
+19:27:46 <sipa> luke-jr: 3?
+19:27:51 <achow101> I'll make a new issue with the thing I just found
+19:27:51 <gmaxwell> We should talk about progress for full segwit support.
+19:27:53 <meshcollider> whats the 3rd?
+19:27:57 <instagibbs> gmaxwell, ack
+19:28:06 <sipa> achow101: thanks!
+19:28:06 <luke-jr> sipa: 1) positioning; 2) debug log tooltip; 3) acceptnonstdtxn help
+19:28:28 <morcos> i know i'm the cause of rc3, but i actually advocate for drawing the line somewhere
+19:28:31 <luke-jr> maybe 4) Polish translation update
+19:28:41 <morcos> it wasn't clear to me if we have to wait 2 weeks now until we have a new RC
+19:28:52 <luke-jr> morcos: IMO the positioning issue is sufficient to warrant rc4
+19:28:55 <morcos> if so i think none of those are maybe sufficient for RC4
+19:28:59 <sipa> morcos: let's discuss this when wumpus is available
+19:29:21 <luke-jr> especially if users are encountering it
+19:29:26 <morcos> ok. at the very least lets, note that its a question, instead of a conclusion that there will be RC4
+19:29:27 <meshcollider> yeah and first lets make sure the fix for the positioning issue actually solves the problem lol
+19:29:32 <morcos> luke-jr: but there is a workaround no?
+19:29:46 <morcos> how much valuable info do you lose my resetguisettings
+19:29:46 <sipa> meshcollider: indeed
+19:29:51 <luke-jr> morcos: not a nice one - you lose all your other GUI settings
+19:29:58 <achow101> morcos: all gui settings
+19:30:06 <achow101> it can also be fixed with regedt
+19:30:11 <sipa> achow101 said he'd open a bug with relevant information - let's discuss there when we have that
+19:30:22 <luke-jr> k
+19:30:26 <sipa> #topic full segwit support
+19:31:37 <sipa> i have a question: should we 1) automatically add witness redeem scripts for newly generated addresses, or 2) bypass the restriction that the redeemscript must be available for P2WPKH when the pubkey itself is available?
+19:32:07 <morcos> sipa: could you explain that a bit more thoroughly
+19:32:20 <BlueMatt> sipa: #1
+19:32:21 <sipa> the downside of 2) is that we'd accept segwit payments to converted-p2pkh-to-p2wpkh addresses (which i think is a bad property), but that it significantly reduced the overhead of adding a key
+19:32:29 <meshcollider> I'd say 1 is better
+19:33:06 <BlueMatt> i guess drawback of 1 is you cant receive via segwit to old addresses?
+19:33:09 <BlueMatt> I'm ok with that
+19:33:19 <sipa> BlueMatt: i would call that an advantage
+19:33:23 <BlueMatt> agreed
+19:33:29 <sipa> ideally we don't accept anything to an address that wasn't given out
+19:33:41 <sdaftuar> ^ that
+19:33:41 <gmaxwell> we should really try to avoid accepting an address that we'd never issue if at all possible, it's very dangerous if people think they can do that and have it work.
+19:33:49 <meshcollider> I guess there'd still be a way to manually do it if you wanted to though right?
+19:33:51 <luke-jr> indeed, if we accept segwit to non-segwit addresses, people might get a false impression it's supported, and lose money
+19:33:53 <Chris_Stewart_5> is #1 really that expensive?
+19:34:01 <sipa> alternatively, we can also have a boolean in the key meta data saying that the "corresponding" address is segwit
+19:34:20 <sipa> in which case we bypass the need-redeemscript property, but just for keys with that flag set
+19:34:40 <sipa> but at the cost of extra complexity
+19:34:44 <morcos> sipa: is hte issue wiht 1) bloat?
+19:34:48 <luke-jr> but when generating an address, it should only automatically add it if the user wants a witness address; we need to support at least P2SH-wrapper addresses until Bech32 adoption is widespread..
+19:34:50 <sipa> morcos: yes, just bloat
+19:34:55 <gmaxwell> manually sure, it's like importing a key.
+19:35:32 <sipa> luke-jr: that brings us to another question - my view is that we shouldn't support choosing on a per-address basis whether it should be segwit or not; just a wallet-wide flag that you now want segwit
+19:35:40 <luke-jr> sipa: I like the key metadata approach; that lets us refuse non-segwit payments to segwit keys
+19:35:43 <sipa> the reason for that is for interaction with hd auto topup
+19:35:49 <gmaxwell> ^ I think so to, wallet wide because of recovery.
+19:35:53 <instagibbs> i think wallets make a lot more sense if by default you do one or the other, and support importing otherwise
+19:35:53 <morcos> sipa: +1 on no per-address choosing
+19:36:04 <luke-jr> sipa: then nobody can reasonably use p2wpkh until support for bech32 is universal? :/
+19:36:06 <gmaxwell> importing one shows that violate the wallet wide is fine.
+19:36:07 <morcos> the whole point of segwit (well one of them) is we think thats the right way to do transactions)
+19:36:18 <BlueMatt> sipa: we could also do that on-disk, but in-memory keep the bloat-y version?
+19:36:29 <sdaftuar> how will the migration to bech32 work?
+19:36:42 <instagibbs> luke-jr, is there any reason we cant return multiple address types? thinking out loud :)
+19:36:48 <sipa> luke-jr: i think we'll be forced to support bech32 as an optional thing and treat bech32 and its p2sh embdeed version identially
+19:36:49 <luke-jr> also, doesn't this mean you can't upgrade existing wallets?
+19:36:49 <gmaxwell> sdaftuar: send to it first, and when ~everyone can send it it, we start generating addresses.
+19:36:51 <instagibbs> if we're doing a hard switchover, we can break api a bit?
+19:37:04 <luke-jr> instagibbs: eww :(
+19:37:06 <gmaxwell> sipa: ugh.
+19:37:19 <sipa> gmaxwell: there's no way we can switch over an entire wallet to bech32
+19:37:26 <sipa> at least not the first ... year?
+19:37:26 <gmaxwell> certantly not today!
+19:37:33 <gmaxwell> yes sure. and
+19:37:33 <instagibbs> luke-jr, elaborate the ew
+19:37:35 <luke-jr> sipa: that's why per-address is useful
+19:37:49 <sipa> luke-jr: but per-address is inherently incompatible with hd auto topup
+19:37:52 <gmaxwell> luke-jr: per-address is not backup durable.
+19:38:07 <luke-jr> hmm
+19:38:18 <luke-jr> what if we use separate HD chains for each type?
+19:38:21 <gmaxwell> why are we expanding scope to recieve BIP173 addresses. I think we should not make this scope expansion now.
+19:38:32 <morcos> gmaxwell: what did you not like, having bech32 and p2sh both supported together?
+19:38:37 <sipa> i think we have two options (which apply to both segwit/legacy and to p2sh/bech32): treat them as identical and accept payments to both, or switch over the wallet entirely
+19:38:37 <BlueMatt> <luke-jr> also, doesn't this mean you can't upgrade existing wallets? <-- yea. this. the discussion about hd-upgrade kinda devolved (I've been mia for a week so may be behind), but it seems to me with the current disk structure we need hd-upgrade before we can do segwit-upgrade unless we want to start forking the -upgradewallet stuff
+19:39:00 <gmaxwell> morcos: because then people can randomly turn your addresses to the other kind which you've never given out and pay you.
+19:39:47 <BlueMatt> yea, I think its unacceptable to do that cause we have shit like breaking uncompressed keys, so we really, really dont want to support people blindly converting addresses, sets a terrible understanding
+19:39:48 <sipa> my view is that we should treat bech32 and p2sh as identical - because, by design, they are identical - every segwit version is supposed to work in both
+19:39:52 <luke-jr> BlueMatt: even the ability to upgrade an existing HD wallet to a segwit+HD wallet would be nice
+19:39:52 <gmaxwell> the pre-segwit vs segwit version of that question is incredibly dangerous.   p2sh-embed vs not, is perhaps less so.
+19:39:59 <sipa> but we should not treat segwit and p2pkh as identical
+19:39:59 <morcos> so we can do this in 2 stages?  switch whole wallet to p2sh embedded segwit, and then in 6-12 mos switch whole wallet to bech32?
+19:40:18 <gmaxwell> sipa: we should have specified this as part of the segwit bips then. :(  but okay, it could be done.
+19:40:21 <BlueMatt> sipa: I'm ok with that
+19:40:38 <gmaxwell> morcos: that was my expectation, and we will have to do is regardless at least in terms of what addresses we return.
+19:40:41 <jtimon> sipa: well, we could , for example switch over enterily for segwit/legacy but treat identical for p2sh/bech32, no?
+19:40:52 <sipa> jtimon: that's exactly what i'm suggesting
+19:40:58 <BlueMatt> morcos: i think sipa is advocating for (and I like) - switch wallet over to "segwit" and give users the addresses in p2sh-embedded form, but really thats a ui-level thing
+19:41:07 * jtimon nods
+19:41:09 <BlueMatt> and maybe a flag for "i gave this address out as version X"
+19:41:11 <sipa> however, the bech32 question is not very urgent now
+19:41:21 <sipa> while switchover the segwit is
+19:41:43 <sipa> i guess there are a) support both for our own keys b) use separate hd chains for segwit c) switchover wallet as a whole
+19:41:46 <morcos> BlueMatt: right so we'd be capable of receiving a bech32 payment, but we would not give those out for some time?
+19:41:52 <sipa> i think (c) is best
+19:41:59 <BlueMatt> morcos: yes
+19:42:22 <instagibbs> BlueMatt, and send I hope?
+19:42:22 <BlueMatt> sipa: wait, I'm  confused...does c include a and b?
+19:42:24 <luke-jr> (c) will slow adoption
+19:42:37 <sipa> BlueMatt: they are 3 distinct possibilities
+19:43:01 <achow101> (c) works well with multi wallet
+19:43:10 <sipa> (c) means there is a wallet-wide flag that says "SEGWIT: YES", and if so, all new addresses are generated as segwit, and integrated with hd topup
+19:43:24 <sipa> but no separate chains for segwit or not
+19:43:25 <instagibbs> achow101, right, my ledger support will likely simply utilize multiwallet for crossover
+19:43:31 <gmaxwell> sipa: and if we wanted to convert an old wallet we could just import all the keys.
+19:43:32 <BlueMatt> sipa: ah, yes, back to my previous question...what form does that flag take
+19:43:41 <sipa> BlueMatt: i see
+19:43:45 <BlueMatt> sipa: cause its damn-dirty to add a flag like that and not use our versioning stuff
+19:43:50 <achow101> If we do that, we can also implement the optional features thing for wallets
+19:43:54 <BlueMatt> but using our versioning stuff means we need hd-upgrade
+19:44:01 <sipa> BlueMatt: i want to get rid of the version stuff and have feature flags
+19:44:02 <BlueMatt> which i think we need, but may delay things
+19:44:20 <BlueMatt> sipa: but exponential blowup of feature options :(
+19:44:35 <sipa> BlueMatt: yes...
+19:45:03 <sipa> so perhaps the question is: is there any reason why wallets shouldn't have that segwit flag (apart from backup reasons)
+19:45:10 * BlueMatt sees no reason to *not* use existing versioning, but only question is possible delay
+19:45:32 <instagibbs> BlueMatt, sorry delay how
+19:45:42 <BlueMatt> sipa: yes, like anything else in the wallet, if user doesnt say -upgradewallet, we'd prefer to not break their backward compat
+19:45:53 <BlueMatt> instagibbs: because if we use the versioning stuff, hd-upgrade must happen first
+19:46:00 <morcos> Someone should write up a more comprehensive wallet plan.  The only thing that's clear is we need to support any kind of wallet that has existed in the past
+19:46:02 <instagibbs> Ah, user delay, noted
+19:46:19 <meshcollider> well it would only happen when they choose to upgrade to segwit only, so you can just give them a warning then right
+19:46:19 <jtimon> sipa: what if the payer can't pay to segwit ? I think that's why luke wants to be able to genreate legacy for receiving, no?
+19:46:21 <instagibbs> morcos, some people will be in person in a few days.... would be a good time to review such a doc
+19:46:22 <morcos> But we don't need to support any possible combination..  So we shouldn't have segwit non-HD chain split wallets for example
+19:46:28 <sipa> jtimon: every wallet can send to P2SH
+19:46:29 <morcos> so lets make sure there is no way to create that
+19:46:32 <BlueMatt> morcos: we've generally supported opening new wallets with old versions as long as they are un-upgraded, too
+19:46:40 <jtimon> sipa: , oh, right, never mind
+19:46:52 <gmaxwell> for upgrading I think we'd set the flag, start exploring the segwit address chain from 0 and import all the old keys as whatever they are.
+19:47:09 <sipa> BlueMatt: yes, understood, but apart from that, is there any reason why someone would not want their wallet to construct segwit outputs?
+19:47:09 <sipa> *addresses
+19:47:09 <BlueMatt> morcos: yes, well then we need a "list of acceptable feature flag combinations" against which we check the wallet on load.... :/
+19:47:16 <gmaxwell> sipa: no, only wallets that are trying to stay unupgraded.
+19:47:27 <morcos> or for instance having segwit implies HD-chain split...
+19:47:29 <BlueMatt> sipa: not to my knowledge, no
+19:47:30 <sipa> so do we need a flag at all?
+19:47:40 <sipa> as opposed to just start doing it automatically in a new version
+19:47:43 <BlueMatt> only upgrade, to me
+19:47:56 <BlueMatt> well we'd need users to do a -walletupgrade
+19:48:01 <sipa> i don't think so
+19:48:11 <BlueMatt> errr, I'm not a fan of that
+19:48:29 <meshcollider> If you give them the setting somewhere in Qt then it can give them a compat warning when they go to upgrade it
+19:48:30 <BlueMatt> that'd be the first time we break opening new wallets with an old version by default (and have no way to not break it!)
+19:48:32 <sipa> maybe i'm missing something, but i see no failure scenario
+19:48:39 <BlueMatt> i guess if we do that we should switch to bdb 5
+19:48:47 <gmaxwell> if there is a reason we're unaware of the user can stay on the old version until we add support for whatever we want.
+19:48:48 <luke-jr> sipa: downgrading
+19:48:53 <sipa> luke-jr: elaborate
+19:49:06 <sipa> old versions will produce old addresses, and not add the witness redeem script
+19:49:08 <luke-jr> sipa: if I take my wallet, use it with 0.16, I should be able to use the same wallet with 0.12 again
+19:49:10 <jtimon> do we want to support downgrading wallets?
+19:49:25 <luke-jr> until I use -walletupgrade ofc
+19:49:25 <BlueMatt> sipa: its always been the case that you can pretty easily run your wallet with an old version as long as it is not upgraded
+19:49:30 <BlueMatt> with no significant feature loss
+19:49:34 <sipa> new versions will produce new address, add their redeemscript, and when downgrading, those addresses will keep working
+19:49:37 <BlueMatt> and definitely not with missing transactions
+19:49:38 <sipa> BlueMatt: i don't see a problem
+19:49:45 <achow101> So upgrade it with a version number
+19:49:48 <luke-jr> sipa: old versions don't know how to sign for segwit UTXOs..
+19:49:51 <BlueMatt> sipa: missing transactions
+19:49:58 <sipa> BlueMatt: ?
+19:50:12 <sipa> segwit address will work fine in older versions, if we use the redeemscript add construction
+19:50:13 <BlueMatt> if you receive a payment using segwit and then open that wallet with an old version, it will not be there
+19:50:20 <sipa> yes it will be
+19:50:24 <sipa> at least down to 0.13.0
+19:50:30 <luke-jr> sipa: and it will spend?
+19:50:34 <sipa> luke-jr: yes
+19:50:41 <sipa> luke-jr: the signing code for segwit works fine
+19:50:48 <BlueMatt> mm, fair, though will fail for native segwit, I suppose?
+19:50:51 <sipa> yes
+19:50:58 <sipa> but ignore bech32 for now
+19:51:02 <jtimon> dow we want to support wallet downgrade beyond 0.13 ?
+19:51:08 <luke-jr> sipa: okay, so how does this all work for people who actively do not wish to use segwit transactions?
+19:51:10 <sipa> jtimon: that's a good question
+19:51:16 <BlueMatt> ohhhhhhhhhh, wait, errrrrr, wont everythin break anyway cause it wont deserialize segwit-formatted txn in the wallet pre-0.13.0?
+19:51:22 <sipa> BlueMatt: yes
+19:51:30 <BlueMatt> lol, ok, well we're not fixing that one
+19:51:34 <BlueMatt> so I dont care
+19:51:39 <morcos> we're talking about 2 different things...  are you saying if i open an 0.12 wallet in 0.16, then i can't reopen it in 0.12
+19:51:41 <sipa> i guess BlueMatt answered jtimon's question
+19:51:43 <morcos> that sounds like a terrible idea
+19:51:49 <gmaxwell> I think it's fine if use of segwit makes the wallet 0.15.1+
+19:51:51 <sipa> morcos: that's already the case...
+19:51:53 <morcos> if you upgrade it, then yeah of course you don't need to be able to go backwards
+19:52:01 <BlueMatt> gmaxwell: I'm not ok with that, I think
+19:52:02 <luke-jr> sipa: why?
+19:52:02 <morcos> sipa: huh?
+19:52:10 <gmaxwell> wut
+19:52:11 <sipa> morcos: because of what BlueMatt says
+19:52:12 <morcos> i don't think so at all
+19:52:18 <BlueMatt> gmaxwell: I'm fine with it being 0.13.0, which it already is
+19:52:22 <morcos> hmm.
+19:52:25 <sipa> you can receive a segwit transaction that pays you (via legacy output)
+19:52:29 <morcos> i don't think so
+19:52:29 <BlueMatt> gmaxwell: do we have any need to make it 0.15.1?
+19:52:31 <sipa> that will be stored as a segwit txn in your wallet
+19:52:33 <gmaxwell> I bet it doesn't work for 0.13.0
+19:52:35 <BlueMatt> do we get any features from that, really?
+19:52:36 <sipa> which 0.12 won't open
+19:52:37 <morcos> oh maybe
+19:52:38 <morcos> durn
+19:52:44 <luke-jr> ugh
+19:52:51 <meshcollider> Not if you just open the wallet without generating new addresses though ?
+19:52:57 <gmaxwell> BlueMatt: how about testing resources if nothing else... but also you'll corrupt your wallet, when it doesn't know how to extend the keypool.
+19:53:07 <luke-jr> does that mean if 0.12 receives a segwit tx, it will break newer??
+19:53:19 <sipa> meshcollider: there can be a segwit address that pays you via a plain old p2pkh address
+19:53:19 <BlueMatt> gmaxwell: if the wallet is un-upgraded it wont break?
+19:53:30 <BlueMatt> gmaxwell: obviously if its an hd wallet old versions will refuse to open
+19:53:38 <gmaxwell> BlueMatt: if it's unupgraded it's not giving out segwit addresses.
+19:53:48 <BlueMatt> gmaxwell: though testing resources are obviously always an issue
+19:54:02 <BlueMatt> gmaxwell: sipa was proposing that it give out segwit addresses even if it is unupgraded
+19:54:30 <luke-jr> what happens right now, if we have a segwit tx in the wallet without witness data? :/
+19:54:31 <gmaxwell> BlueMatt: how the heck does this even work for HD chains.
+19:54:32 <instagibbs> 6 minutes
+19:54:49 <meshcollider> sipa
+19:54:58 <sipa> gmaxwell: it will work fine, unless you downgrade at the same time as you recover
+19:55:00 <BlueMatt> gmaxwell: hd doesnt matter...wait, sipa was saying no new hd chain, maybe we should reopen that part of the discussion :p
+19:55:01 <meshcollider> isnt that only the case if you gave out the address
+19:55:07 <sipa> meshcollider: no
+19:55:14 <sipa> 19:53:19 < sipa> meshcollider: there can be a segwit address that pays you via a plain old p2pkh address
+19:55:28 <sipa> ^ in that case you don't ever generated a segwit address
+19:55:29 <meshcollider> Can anyone generate that themselves?
+19:55:42 <jtimon> in any case, is the question adding a new wallet version or not?
+19:55:42 <BlueMatt> lol, sounds like we've got a lot to discuss next week
+19:55:50 <BlueMatt> homework: everyone go farmiliarize yourself with wallet
+19:55:53 <BlueMatt> ALL OF WALLET =D
+19:55:54 <achow101> I'm horribly confused now
+19:56:09 <sipa> meshcollider: no, but the sender can be segwit enabled while you aren't
+19:56:13 <luke-jr> BlueMatt: every time I do that, I get the inclination to throw it all away and start from scratch :x
+19:56:33 <cfields> heh, we desperately need to break this discussion up into chunks
+19:56:40 <BlueMatt> cfields: yes
+19:56:51 <instagibbs> can someone whip up a table or something of concerns
+19:56:56 <instagibbs> action item?
+19:57:01 <luke-jr> kanzure has one
+19:57:06 <luke-jr> just needs updating
+19:57:08 <achow101> Kanzure: add to list?
+19:57:15 <meshcollider> oh I see yeah, true
+19:57:21 <instagibbs> oh, for that too, if you're in SF next week
+19:57:24 <cfields> kanzure: and update it so that it's backwards compatible to the last list, please.
+19:57:36 <achow101> Lol
+19:57:54 <sipa> a) how to deal with 0.13.1 through 0.15.0 receiving a segwit transaction and then downgrading to 0.12.x or below
+19:58:05 <sipa> b) how to switch to generating segwit addresses
+19:58:11 <sipa> c) how to switch to generating bech32 addresses
+19:58:39 <jtimon> I won't go this time :( have productive discussions there, and fun too!
+19:58:44 <BlueMatt> d) how to deal with 0.15.1 downgradingg to 0.13.1 (in both hd and non-hd modes)
+19:59:05 <BlueMatt> e) whether to use a new hd chain for segwit addresses
+19:59:13 <sipa> e falls under b
+19:59:18 <BlueMatt> err, ok
+19:59:21 <gmaxwell> BlueMatt: please just don't support that. It makes no sense to back and revalidate segwit wallet support in old versions.
+19:59:43 <gmaxwell> we will not manage to adequately test it and it will sharply constrain our implementation choices.
+19:59:45 <sipa> any last minute short topic?
+19:59:46 <BlueMatt> gmaxwell: then we should explicitly break it...but, anyway, lets have this discussion next week
+19:59:48 <gmaxwell> and lead to weird corner case bugs.
+20:00:01 <instagibbs> sipa, activate schnorr?
+20:00:02 <sipa> #endmeeting
