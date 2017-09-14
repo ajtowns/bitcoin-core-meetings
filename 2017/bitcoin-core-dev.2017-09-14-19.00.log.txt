@@ -1,0 +1,397 @@
+19:00:07 <wumpus> #startmeeting
+19:00:07 <lightningbot> Meeting started Thu Sep 14 19:00:07 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:07 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:10 <sipa> present
+19:00:20 <instagibbs> hi
+19:00:20 <gmaxwell> sipa: you're late
+19:00:22 <jonasschnelli> Hy
+19:00:30 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:00:52 <cfields_> hi
+19:01:00 <sipa> short topic: congrats for 0.15.0!
+19:01:08 <Chris_Stewart_5> yay!
+19:01:14 <cfields_> woohoo
+19:01:21 <wumpus> congrats and thanks everyone
+19:01:26 <instagibbs> \o/
+19:01:26 <jonasschnelli> !
+19:01:37 <harrymm> :)
+19:01:51 <wumpus> #topic high priority for review
+19:01:55 <instagibbs> beatings will continue until 0.15.1 is out the door
+19:02:17 <wumpus> we managed to merge quite a lot during the coredev meet, so there's some place for new things in https://github.com/bitcoin/bitcoin/projects/8
+19:03:05 <wumpus> so any suggestions?
+19:03:14 <achow101> hi
+19:03:52 * BlueMatt is keeping hi
+19:03:53 <BlueMatt> s
+19:03:57 * sipa also
+19:04:07 <BlueMatt> sipa: you dont have one
+19:04:17 <wumpus> anything for 0.15.1 maybe?
+19:04:26 <sipa> #11167 then
+19:04:29 <gribble> https://github.com/bitcoin/bitcoin/issues/11167 | Full BIP173 (Bech32) support by sipa · Pull Request #11167 · bitcoin/bitcoin · GitHub
+19:04:39 <instagibbs> #11089
+19:04:41 <gribble> https://github.com/bitcoin/bitcoin/issues/11089 | Enable various p2sh-p2wpkh functionality by luke-jr · Pull Request #11089 · bitcoin/bitcoin · GitHub
+19:04:52 <wumpus> added 11167
+19:04:55 <BlueMatt> where are we on 0.15.1?
+19:05:16 <cfields_> i have a pretty long stream of stuff to prep for libevent, but i don't want to burn everyone out by nagging too much. would you all prefer a few prs, all of which build on each-other, and a final one that incorporates everything?
+19:05:23 <sipa> i'll work on the segwit-by-default stuff for 0.15.1
+19:05:31 <wumpus> added 11089
+19:06:18 <cfields_> (#10663 is the first of those. It's by no means high priority, other than it's necessary for the rest)
+19:06:18 <wumpus> cfields_: that depends; if some part stands on itself, it might make sense to PR it first then give it as a blocker
+19:06:19 <gribble> https://github.com/bitcoin/bitcoin/issues/10663 | net: split resolve out of connect by theuni · Pull Request #10663 · bitcoin/bitcoin · GitHub
+19:06:41 <wumpus> that says enough, added 10663
+19:06:45 <jonasschnelli> cfields_ I Prefer a single one to get the overall pictures
+19:07:06 <cfields_> wumpus: thanks
+19:07:07 <wumpus> but if it's a single one there's just so damn much to review
+19:07:10 <instagibbs> jonasschnelli, or all of them, chained, with backpointers to first one to review
+19:07:16 <gmaxwell> this gui crash issues should be considered a 0.15.1 blocker, but we still aren't sure of the precise cause.
+19:07:25 <BlueMatt> jonasschnelli: sure, but you cant merge that...opening one which will be final eventually and then breaking it into chunks is also ok
+19:07:30 <wumpus> gmaxwell: agree
+19:07:33 <BlueMatt> gmaxwell: yup :(
+19:07:46 <cfields_> jonasschnelli: ok, i can break them up into nice chunks, and have a tracking PR with them all rebased on top of eachother
+19:07:51 <gmaxwell> considering the flood of reports I am really no longer able to believe we didn't recently introduce it.
+19:07:56 <cfields_> i think that's pretty common these days
+19:08:07 <wumpus> cfields_: sounds good to me
+19:08:12 <gmaxwell> (maybe via a dep upgrade)
+19:08:13 <michagogo> o/
+19:08:27 <jonasschnelli> one for conceptual overview and multiple for real merge
+19:08:28 <wumpus> gmaxwell: agreed
+19:08:41 <cfields_> gmaxwell: possible that other clients are dinking with config files?
+19:09:01 <jonasschnelli> (sorry phone typping)
+19:09:04 <gmaxwell> that was a theory I had too but have seen no evidence of it.
+19:09:20 <gmaxwell> harrymm: have you run bitcoin unlimited or bitcoin cash or likewise on that system you crashed on?
+19:09:25 <morcos> Wouldn't we see 0.14 reports in that case
+19:09:28 <wumpus> we really need a config or regtest dump from someone that has the issue
+19:09:33 <BlueMatt> harrymm: how are those -qt debug symbols coming?
+19:09:40 <wumpus> before they run -resetguisettings
+19:09:55 <wumpus> in retrospect we should have made resetguisettings dump the settings to a backup file
+19:10:00 <jonasschnelli> cfields_ : perfect
+19:10:14 <cfields_> gmaxwell: iirc we didn't bump qt for 0.15. so deps seem unlikely
+19:10:23 <achow101> wumpus: we should start doing that now
+19:10:25 <wumpus> I mean you only run it when something is wrong
+19:10:30 <wumpus> achow101: yes
+19:11:06 <wumpus> #action Make -resetguisettings dump settings to troubleshooting file in datadir
+19:11:09 <gmaxwell> cfields_: well I'm not completely sure that the issue is 0.15.x specific based on report load it could have been, say, 0.14.2 too ... and just a lot of people are upgrading.
+19:11:32 <sipa> "oh, it's faster, i'll try running a full node again"
+19:12:04 <cfields_> gmaxwell: what's the OS diversity?
+19:12:06 <wumpus> but it was *never* reported for 0.14.x
+19:12:14 <sipa> wumpus: fair point...
+19:12:14 <wumpus> it would explain more reports, sure
+19:12:22 <gmaxwell> we have a linux report now. so far mostly windows reports.
+19:12:41 <achow101> gmaxwell: I suspect that's because more people use windows than linux
+19:12:42 <gmaxwell> I don't think we've had a mac report. maybe there are just no mac users. :P
+19:13:05 <cfields_> ah damn, i was thinking it could be a windows update
+19:13:06 <sipa> did we update qt in between 0.14.2 and 0.15.0?
+19:13:20 <harrymm> gmaxwell: not those you mentioned. i did try some other bitcoin python stuff at various times tho
+19:13:32 <cfields_> hmm. I can run on osx and plug/unplug monitors like a madman.
+19:13:37 <gmaxwell> harrymm: thanks.
+19:13:43 <achow101> cfields_: it's not a monitor problem
+19:13:49 <gmaxwell> So thats counter evidence to the theory that bch or bu is corrupting it.
+19:14:03 <wumpus> the monitor problem just disappears the window
+19:14:07 <wumpus> I think this is unrelated
+19:14:15 <achow101> This is definitely unrelated
+19:14:25 <cfields_> ok
+19:14:38 <jonasschnelli> is that still the offscreen issue?
+19:14:44 <gmaxwell> There may be two issues fixed with the same thing or two manifestiations of the same issue.
+19:14:56 <harrymm> BlueMatt: i got the right symbols down and loaded into gdb, but there's still many symbols i don't have. i was checking if the relevant ones were there but not sure i have the right skills anyway so i will pastebin what i have
+19:15:00 <achow101> jonasschnelli: it's the #11171 issue
+19:15:02 <gribble> https://github.com/bitcoin/bitcoin/issues/11171 | RC2 Exits After Initialization · Issue #11171 · bitcoin/bitcoin · GitHub
+19:15:17 <achow101> which is not an offscreen issue although we initially thought it was
+19:15:21 <jonasschnelli> again:  GUI: TransactionTablePriv::refreshWallet
+19:15:48 <wumpus> jonasschnelli: was that the same problem?
+19:15:57 * BlueMatt gets the impression there are at least 2 distinct issues here (+ the offscreen one which is not a segfault, right?)
+19:16:02 <wumpus> jonasschnelli: I don'tremember that one was fixed by clearing gui settings
+19:16:10 <wumpus> the offscreen issue is not a segfault, ever
+19:16:14 <jonasschnelli> no... not possible IMO
+19:16:31 <jonasschnelli> 11171 seems totally unrelated to the offscreen issue
+19:16:34 <wumpus> the refreshWallet crash was intermittent, very hard to reproduce
+19:16:34 * BlueMatt also doesnt believe this exists on 0.14.2...so far 2 reports from ppa folks, and they tend to be a rather well-upgraded bunch
+19:16:37 <wumpus> this one is 100% reproducible
+19:16:44 <wumpus> unless you clear the settings
+19:16:56 <jonasschnelli> Okay. I'll track down 11171
+19:17:01 <BlueMatt> harrymm: yea, pastebin what you have would be great
+19:17:12 <achow101> jonasschnelli: that's what we're doing now with harrymm :)
+19:17:31 <jonasschnelli> xyzzy099 == harrymm?
+19:17:35 <gmaxwell> BlueMatt: offscreen gets the same report from users though:  window doesn't appear, resetting the gui settings fixes it.
+19:17:52 <jonasschnelli> gmaxwell: I have tracked this down and it's no longer present in 0.15
+19:17:52 <achow101> jonasschnelli: no, different people, same symptoms, possibly same problem
+19:17:56 <jonasschnelli> (official builds)
+19:18:08 <jonasschnelli> It may happen if you self compile with <Qt5.6
+19:18:12 <achow101> (symptoms being crash after splash screen)
+19:18:32 <wumpus> yes the offscreen one has unclear status on the release binaries, jonasschnelli's testing points at it being fixed
+19:18:34 <BlueMatt> jonasschnelli: which issue is that?
+19:18:40 <BlueMatt> ah, offscreen
+19:18:52 <achow101> wumpus: I believe the offscreen issue should be fixed in 0.15
+19:19:00 <wumpus> achow101: yes
+19:19:01 <BlueMatt> it'd be nice to fix the qt5 issues so that ppa can upgrade to it instead of being stuck on qt4......
+19:19:15 <jonasschnelli> It's fixed in 0.15.0 (I have tested with Win7,8.1/10)
+19:19:16 <wumpus> BlueMatt: just wait for unity to die
+19:19:20 <gmaxwell> jonasschnelli: how does <Qt5.6 come into it?
+19:19:52 <wumpus> wasn't the most serious qt5 problem on ubuntu the tray icon thing? no such issue on GNOME
+19:20:02 <jonasschnelli> gmaxwell: I'm not sure if Qt is related. I could not find if the bug was fixed upstream (I think we had a Qt depdendency upgrade from 0.14 to 0.15) or if its fixed in out sources.
+19:20:05 <BlueMatt> wumpus: heh, I mean there was discussion of killing the tray icon
+19:20:12 <BlueMatt> wumpus: yes, I believe the tray icon was ~the only blocker
+19:20:17 <gmaxwell> jonasschnelli: the problem is that we've had users reporting all through the rcs something that sounds like that, and now in releases. So just saying its fixed isn't helpful, since there is clearly something that isn't fixed.
+19:20:32 <wumpus> anyhow that's yet another different issue
+19:20:37 <BlueMatt> wumpus: there was some minimize issue that was also there, but I believe it was related...just kill the tray icon and its fixed, I think
+19:20:46 <achow101> gmaxwell: jonasschnelli: I think you're talking about different issues
+19:20:47 <jonasschnelli> gmaxwell: IMO its an upstream bug.
+19:20:48 <harrymm> BlueMatt: best backtrace I have: https://pastebin.com/ZEZUhEDW
+19:20:57 <wumpus> it's almost as if we have a lot of GUI issues and not many people working on the GUI :)
+19:21:04 <sipa> jonasschnelli: i don't understand
+19:21:13 <sipa> jonasschnelli: is it fixed, or is it an upstream bug?
+19:21:23 <wumpus> both - upstream bug that is fixed
+19:21:29 <jonasschnelli> the offscreen issue was present in our official 0.14.x bninaries while it's gone in our 0.15.0 binary
+19:21:37 <gmaxwell> or "is it fixed" or "can't reproduce"?
+19:21:38 <sipa> we're not talking about the offscreen issue...
+19:21:48 <wumpus> let's discuss one issue at a time
+19:21:51 <jonasschnelli> sipa: it is fixed,.. very likely in an upstream fix (could not track down the commit)
+19:21:51 <wumpus> this is getting crazy
+19:22:00 <sipa> jonasschnelli: then why are we getting reports?
+19:22:12 <gmaxwell> jonasschnelli: what patch fixed it in 0.15?
+19:22:26 <jonasschnelli> sipa: offscreen bug: could be because people compile with an Qt version below qt5.6?
+19:22:31 <wumpus> we really need a test for the offscreen issue, right now we have *no* way to evaluate any fix
+19:22:40 <wumpus> we could merge another PR that claims to fix it
+19:22:45 <wumpus> but I'm kind of sick of that
+19:22:49 <sipa> wait, i thought we were talking about the crash-at-startup issue?
+19:22:50 <BlueMatt> https://github.com/bitcoin/bitcoin/blob/0.15/src/qt/sendcoinsdialog.cpp#L131 <-- the bug
+19:22:58 <jonasschnelli> gmaxwell: I need to track it down. I just tested 0.14.1 and 0.15.0 on win7,8.1,10 and verfied that it is fixed in 0.15
+19:23:09 <BlueMatt> ok, but lets be clear there are multiple bugs here
+19:23:09 <achow101> BlueMatt: yay!
+19:23:13 <jonasschnelli> sipa: sorry,... we slipped to the offscreen issue.
+19:23:18 <sipa> okay, ignore me
+19:23:19 <BlueMatt> the offscreen issue, which jonasschnelli believes to be fixed
+19:23:23 <gmaxwell> jonasschnelli: what does verified that it's fixed in 0.15 mean?  Does that just mean you were unable to reproduce it at all?
+19:23:31 <BlueMatt> also the settings issue, which is L131 as above based on harrymm's backtrace
+19:23:37 <wumpus> gmaxwell: yes, that means it
+19:23:51 <jonasschnelli> gmaxwell: I set the window position by RegEdit to 3000,3000, 0.14 has the issue, 0.15 doens't
+19:24:07 <achow101> BlueMatt: I don't see how there's a bug there
+19:24:23 <wumpus> jonasschnelli: thanks for doing a sane, reproducible test :)
+19:25:02 <jonasschnelli> 11171 is far more important
+19:25:10 <gmaxwell> jonasschnelli: okay, but if the issue users are hitting is that the use positions the window in the bottom left of the screen (below task bar) then they'd still be hitting it... since the reproduction was synthetic.
+19:25:10 <wumpus> I agree
+19:25:20 <wumpus> crash bugs are more important, and this happens for a lot more users
+19:25:45 <gmaxwell> I know that at least one of the users I helped during the RCs wasn't crashing (Because they had to kill bitcoin-qt in their task manager)
+19:25:52 <jtimon> oops, I'm late
+19:25:57 <jonasschnelli> gmaxwell: I can investigate again and report
+19:25:58 <jtimon> yay 0.15!
+19:26:03 <sipa> gmaxwell: sure, but there's only so much we can do
+19:26:19 <gmaxwell> sipa: we could stop saving the position.
+19:26:29 <wumpus> yes, ideally we should test all 8 areas outside the screen, something for an automated test
+19:26:49 <wumpus> or just nuke the remember-position functionality
+19:27:03 <jonasschnelli> my observation is that Qt handles offscreen situation pretty well... if a certain area of the window is offscreen, it re-centers.
+19:27:05 <wumpus> the longer this remains an issue the more I'm tempted to the latter
+19:27:17 <sipa> does -resetguisettings change anything but the remembered window coordinates?
+19:27:35 <gmaxwell> jonasschnelli: QT5 but perhaps not QT4? (which, for example, the ppa uses, I believe)
+19:27:37 <wumpus> sipa: yes, it clears all settings set through the gui optioins dialog
+19:27:38 <jonasschnelli> It may kill your dbcache / proxy settings
+19:27:47 <sipa> oh!
+19:27:56 <jonasschnelli> Oh. PPA / QT4
+19:28:02 <achow101> Oh, I think I found harrymm's bug
+19:28:03 <jonasschnelli> Yes. The issue is very likely present there...
+19:28:04 <wumpus> as well as all other things the GUI remembers (there might be something in the send dialog with fee, I vaguely remember)
+19:28:07 <gmaxwell> sipa: you missed earlier discussion, based on debuglog traffic achow has suggested its actually the proxy that is implicated in the crash.,
+19:28:11 <jonasschnelli> I don't see a reason to do the PPA with Qt4?
+19:28:22 <BlueMatt> achow101: yea, there's only one button in that group
+19:28:23 <gmaxwell> sipa: I pointed out that 0.15 did change proxy handling (name lookup) but a cause of a crash isn't obvious there.
+19:28:25 <sipa> gmaxwell: ah
+19:28:48 <achow101> BlueMatt: I mean how different settings for nCustomFeeRadio cause a segfault
+19:28:50 <jonasschnelli> Maybe we just add a failsafe: if offscreen then re-center... (but sounds simpler then it is)
+19:28:59 <gmaxwell> the user in here with the crash on linux knows the function where the segfault happens for him (inside a qt button setting function)
+19:29:09 <wumpus> achow101: interesting, so it might be the custom fee setting?
+19:29:12 <BlueMatt> achow101: yes
+19:29:21 <wumpus> achow101: I forgot about that one completely as it's not in the options dialog
+19:29:25 <BlueMatt> wumpus: it appears to be a what-button-had-you-clicked-on-in-14.2 issue
+19:29:29 <achow101> wumpus: yes
+19:29:36 <achow101> I set nCustomFeeRadio=1 and that causes a segfault
+19:29:37 <gmaxwell> oh we also changed the options for fees at some point in recent memory, could people have settings that made sense in 0.14 but not now?
+19:29:46 <wumpus> gmaxwell: ouch
+19:29:53 <sipa> achow101: nice catch
+19:29:57 <gmaxwell> sounds like it.
+19:29:58 <BlueMatt> we deleted a button
+19:30:04 <jonasschnelli> could it happend by https://github.com/bitcoin/bitcoin/pull/10769?
+19:30:09 <BlueMatt> there is only one button in that group
+19:30:09 <gmaxwell> consistent with the segfault location that harrymm reported too
+19:30:12 <BlueMatt> so it obviously segfaults
+19:30:57 <morcos> well that was a productive first half of the meeting
+19:31:13 <wumpus> so nCustomFeeRadio should be removed completely? or are there other settitngs?
+19:31:28 <harrymm> good work :)
+19:31:37 <gmaxwell> 0.15.1 next week? :P
+19:31:44 <wumpus> debugging an issue during the meeting is kinda cool
+19:31:57 <jonasschnelli> heh...
+19:32:00 <sipa> bughunting-by-committee
+19:32:00 <dgenr8> my money was on sinister alt clients
+19:32:27 <gmaxwell> oh had nothing to do with sinister, just incompatible.
+19:32:34 <sipa> where everyone forgets it's really achow101 who found it
+19:32:40 <wumpus> sinister alt clients could have more custom fee settings, we should be robust against corrupt configuration in any case :)
+19:32:54 <gmaxwell> thats the advantages of committess, one guy does all the work and everyone gets the credit!
+19:33:01 <achow101> lol
+19:33:09 <wumpus> haha good old USSR-style
+19:33:14 <achow101> I found a way to reliably reproduce it
+19:33:27 <gmaxwell> committees*
+19:33:27 <achow101> which is the ncustomefeeradio thing, but I'm not sure what to do going forward
+19:33:38 <sipa> achow101: i'm pretty sure that's the root cause
+19:33:41 <wumpus> so how do we solve it?
+19:33:52 <sipa> do we have to figure that out now?
+19:34:04 <sipa> if there are no other topics, why not, i guess
+19:34:04 <gmaxwell> achow101 will figure it out. our work here is done.
+19:34:06 <wumpus> no, not really, I just wonder what is the use of a radio button with one option
+19:34:20 <jonasschnelli> I'll can tackle the groupCustomFee segfault today
+19:34:27 <wumpus> anyhow, any other topics?
+19:34:35 <gmaxwell> wumpus: so you have the freedom to choose the Correct option, of course.
+19:34:49 <instagibbs> any color car as long as it is black
+19:35:02 <wumpus> gmaxwell: lol!
+19:35:03 <gmaxwell> time to ford ahead.
+19:35:20 <BlueMatt> ok, fix is easy, I'll get it fixed right after meeting
+19:35:22 <achow101> jonasschnelli: great!
+19:35:24 <wumpus> anything to discuss for 0.15.1?
+19:35:26 <BlueMatt> https://github.com/bitcoin/bitcoin/commit/6ba2214e0fe57ecb9271819d2422ec44a9020a8d fixes it for now
+19:35:34 <sipa> if there's nothing else; i have some open questions about segwit-by-default support in 0.15.1
+19:35:46 <wumpus> #topic segwit-by-default support in 0.15.1
+19:35:54 <BlueMatt> oh, wait, hmm
+19:36:13 <sipa> my idea was to have a cmdline option to select a default address style, which could be p2pkh, p2sh-p2wpkh, or p2wpkh
+19:36:23 <BlueMatt> or jonasschnelli can do it
+19:36:27 <sipa> (where the middle one is default)
+19:36:31 <sipa> and have an optional argument to getnewaddress to override it
+19:36:34 <BlueMatt> sipa: seems reasonable?
+19:36:43 <sipa> open question: separate option for change?
+19:37:05 <instagibbs> imo yes
+19:37:14 <BlueMatt> imo yes
+19:37:24 <achow101> sipa: yes
+19:37:26 <sipa> open question: do we want to return both p2wpkh and p2sh-p2wpkh (for now), as there is an efficiency gain when you want to give both to a peer
+19:37:42 <sipa> downside: may not want we want to support longer term with split chains
+19:37:46 <achow101> no, I think that will confuse people
+19:37:49 <sipa> upside: more efficient to rescan
+19:37:52 <instagibbs> I'd say no
+19:37:58 <jonasschnelli> may confuse
+19:38:10 <instagibbs> users who care will crank the option surely
+19:38:17 <gmaxwell> we can't do that by default, interface breaking change.  If you want to call getnewaddress with style=gangnam and it returns both, that would be fine.
+19:38:39 <achow101> style=gangnam <-- lol
+19:38:56 <morcos> yep, i tested, running 0.14, setting the at least button, 0.15 crashes
+19:39:00 <sipa> but style=gangnam would be pre-deprecated, and scheduled for removal in a future version
+19:39:03 <morcos> oops was backlogged
+19:39:12 <achow101> morcos: good to know that
+19:39:13 <wumpus> hahahahaa
+19:39:57 <BlueMatt> achow101: morcos also tested the 6ba2...fix from above, which fixed it, though the real fix isnt something that stupidly hacky
+19:40:05 <sipa> ok, end of my topic
+19:40:07 <cfields_> let's just let users decide with a 1-option combo-box :p
+19:40:10 <gmaxwell> I'd say we could make the GUI show both too, except the URI/qr code can't really do that.
+19:40:19 <cfields_> er, radio
+19:40:25 <sipa> cfields_: unary encoding, i like it
+19:40:39 <morcos> wait, i'm confused
+19:40:44 <morcos> are you serious about giving both addresses
+19:40:48 <morcos> no, why would we do that
+19:40:49 <BlueMatt> lets not do that
+19:40:56 <BlueMatt> you could also just call getnewaddress twice
+19:40:59 <BlueMatt> who cares
+19:41:17 <gmaxwell> morcos: as an option. The reason is so you can say "here is the bech32 one if you can pay to it, otherwise use X"
+19:41:17 <morcos> you should have a way of selecting which type of address you want for change or for getnewaddress
+19:41:29 <morcos> then give them 2 different keys
+19:41:34 <morcos> that's how it'll work in 0.16
+19:41:56 <morcos> lets not try to be cheap and save a couple of keys and start teaching people that you can use one or the other
+19:41:57 <sipa> BlueMatt: my wallet.dat barely fits on a 3.5" floppy disk anymore...
+19:42:15 <cfields_> morcos: +1
+19:42:17 <instagibbs> will there be an argument to getnewaddress to override?
+19:42:21 <instagibbs> id hope so
+19:42:21 <morcos> i agree that's a downside, but its more important to set the precedent that these thigns are NOT interoperable
+19:42:24 <sipa> instagibbs: i hope so, yes
+19:42:24 <morcos> yes
+19:42:30 <instagibbs> ok, then that's fine
+19:42:34 <gmaxwell> okay... when I talked to sipa about it my objection was that we couldn't support it in the future. his counter was that we don't have to offer it in the future.
+19:42:35 <instagibbs> i prefer
+19:42:42 <BlueMatt> somehow I doubt bdb is useable on floppy-latency disks anyway :p
+19:42:53 <gmaxwell> instagibbs: yes, there would be an option, setting would just set the default.
+19:43:14 <instagibbs> then I see no reason to return both
+19:43:20 <wumpus> yes,we need to make it very clear they're not interoperable, that you can't, in general just convert the one to the othe and have it work
+19:43:30 <BlueMatt> then require two getnewaddress calls
+19:43:38 <sipa> sounds good, you need to call getnewaddress twice
+19:43:40 <sipa> ack
+19:43:44 <achow101> +1
+19:43:46 <sipa> no gangnam
+19:44:29 <morcos> also in the scheme of things, each 0.15.1 wallet is wasting 2000 + N * (# getnewaddress calls) + (# changes) keys.... where N is 2 if you do what I want (only in the cases where you give out both) or 1 if you do what you want
+19:44:40 <morcos> it makes no difference relatively speaking for almost all users
+19:45:26 <jtimon> wumpus: ack on removing remember position functionality until we can test it automatically
+19:45:48 <gmaxwell> jtimon has the gribble disease.
+19:45:56 <wumpus> jtimon: that'd make sense, I guess
+19:46:09 <gmaxwell> (20 minutes behind. :) )
+19:46:16 <wumpus> seems the segwit-by-default topic is conclded, anything else?
+19:47:15 <gmaxwell> I think we need to announce a workaround for this issue we all collectively figured out through our joint effort where no one person did all the work during the meeting.
+19:47:23 <wumpus> haha yes gribble's behavior seemed very curious and random, before I realized it was just backlogged (or rather, github was?)
+19:47:43 <BlueMatt> yes, do we have a mechanism for release errata?
+19:47:46 <wumpus> or make a 0.15.0.1
+19:48:04 <BlueMatt> given the ppa is still not up (cause arm qt...) I'll probably ship that with the hacky workaround patch posted above
+19:48:15 <BlueMatt> unless there are objections
+19:48:18 <wumpus> did you manage to debug the ARM qt issue? I'm curious
+19:48:29 <wumpus> no objections, if you can patch it in your distro, do so
+19:48:35 <wumpus> it's zero risk...
+19:48:44 <BlueMatt> there appear to now be at least two separate issues, a miscompile, and I now have a stacktrace for another test_bitcoin-qt fail that I'm looking at now
+19:48:46 <achow101> BlueMatt: I believe (not tested yet) that you can just remove L131 entirely
+19:48:55 <sipa> let's fix the things at least in the 0.15 branch
+19:49:16 <gmaxwell> I won't ack 0.15.0.1 because I do none of the required work for it but it might be nice.
+19:49:17 <sipa> then depending on progress we can see whether it goes in 0.15.1, or if a 0.15.0.1 may be needed (at release manager's discretion...)
+19:49:20 <wumpus> achow101: possibly, but BlueMatt's fix is obviosuly correct, a better fix is to just remove the setting completely
+19:49:21 <BlueMatt> achow101: well the commit linked above works, so whatever
+19:49:26 <wumpus> achow101: and the single-choice radio button
+19:49:27 <gmaxwell> what sipa said
+19:49:43 <wumpus> but for a quick hack that change is good
+19:49:53 <morcos> in master can we please fix properly, remove the whole group
+19:49:59 <wumpus> yes
+19:50:01 <sipa> yes
+19:50:03 <achow101> yes
+19:50:14 <gmaxwell> yes
+19:50:53 <gmaxwell> someone will need to contemplate how to prevent this kind of issue in the future.
+19:50:56 <wumpus> well yes let's fix it on the branch then decide whether to do 0.15.0.1
+19:51:10 <wumpus> better testing of the gui is the only answer
+19:51:13 <achow101> gmaxwell: fuzz the qsettings options :)
+19:51:17 <instagibbs> remove all features until qt is a single button
+19:51:32 <jonasschnelli> Better GUI tests... but more important, "upgrade tests"
+19:51:33 <gmaxwell> "moon"
+19:51:41 <wumpus> hah
+19:51:44 <jonasschnelli> Non of our test do cover upgrade of wallets, etc.
+19:51:44 <gmaxwell> (responding to instagibbs)
+19:52:00 <instagibbs> jonasschnelli, hmm good point
+19:52:26 <jonasschnelli> Upgrade tests would probably require static data files from older versions....
+19:52:31 <wumpus> well at least the reduced one radio buttons group to one button, that's a start...
+19:52:34 <morcos> was fuzz qsettings a joke?   i did that with the fee estimation changes manually, i think thats a good idea
+19:52:37 <wumpus> s/the/we/
+19:52:42 <achow101> morcos: not really
+19:52:56 <wumpus> no, it's not a joke, it'd help with robustness against corrupt configs a lot
+19:53:03 <morcos> ok, the smiley threw me
+19:53:05 <wumpus> but as we're not even fuzzing bitcoin.conf settings yet
+19:53:07 <achow101> but it would mean a lot more changes since weird shit in qsettings totally screws up qt
+19:53:22 <morcos> ha ha, fuzzing bitcoin.conf DEFINITELY breaks things
+19:53:23 <achow101> we would need better bad-setting rejection
+19:53:29 <wumpus> gui testing is always at least 3 times as much work
+19:53:30 <jtimon> sipa: yeah, both formats seems like un ugly optimization. Doesn't look like it's worth it
+19:54:09 <gmaxwell> sipa: I think he's still 20min behind.
+19:54:11 <jonasschnelli> Not sure if fuzzing qt-settings (QSettings) make sense. It's not a file edited by users
+19:54:16 <morcos> is jtimon working on-site on the blockstream Mars project
+19:54:17 <BlueMatt> jtimon: is stuck on moon
+19:54:21 <jtimon> gmaxwell: well, I arrived 30 mins late
+19:54:22 <jonasschnelli> Fuzzing peers.dat or similar would also make little sense I guess
+19:54:23 <wumpus> jonasschnelli: but it can get corrupt, like anything
+19:54:43 <wumpus> though I agree there's a limit
+19:54:54 <instagibbs> that would at least test it handles corrupted files right
+19:55:00 <instagibbs> recently ran into a case where we werent
+19:55:17 <jonasschnelli> Corrupt files should be handled by Qt IMO
+19:55:25 <morcos> usually with bitcoin.conf we don't change the meaning of the options (cough cough sipa)
+19:55:26 <jonasschnelli> The file itself is hidden on our application layer
+19:55:30 <jonasschnelli> We just deal with QSettings
+19:55:42 <morcos> we could be better about making sure we rename options in QT if we are goign to change their meaning
+19:55:47 <wumpus> yes
+19:56:00 <wumpus> much, much better to lose the setting than crash
+19:56:03 <jonasschnelli> morcos: yes!
+19:56:06 <wumpus> unless it's soomething like the proxy
+19:56:40 <wumpus> but a nicety like remembering the fee setting? nah
+19:56:42 <jtimon> 0.15.0.1 ? why not 15.0.1 directly and we stop writing the 0. prefix now? /me hides
+19:56:42 <jonasschnelli> I don't understand why the crash does not happen on OSX (could only reproduce on Linux)
+19:57:11 <wumpus> likely the implementation of radio button group is different there
+19:57:36 <wumpus> making it return e.g. a dummy object instead of corruption or null when reading out of range
+19:57:44 <wumpus> macosx users just got lucky
+19:58:09 <sipa> wumpus: we have occasionally had x.x.x.1 released for bugfixes that affect just some platforms
+19:58:14 <sipa> *releases
+19:58:14 <instagibbs> 2 minutes
+19:58:15 <morcos> one could argue they were silently forced to lose their at least setting which made them erroneously pay the wrong fees
+19:58:26 <wumpus> sipa: yes, I wouldn't like to burn 0.15.1 on this mainly
+19:58:32 <sipa> wumpus: agreed
+19:58:48 <jtimon> finally catched up...to late to suggest a topic, but perhaps we can talk about it after the meeting
+19:59:21 <jtimon> is about an index for scriptPubKeys
+19:59:42 <wumpus> yes, we're done for today
+19:59:45 <wumpus> #endmeeting
