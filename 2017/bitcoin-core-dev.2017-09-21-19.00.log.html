@@ -1,0 +1,366 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:26</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Sep 21 19:00:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:26</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-5"></a><span class="tm">19:00:55</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-6"></a><span class="tm">19:00:59</span><span class="nk"> &lt;sipa&gt;</span> hi.
+<a name="l-7"></a><span class="tm">19:01:04</span><span class="nk"> &lt;meshcollider&gt;</span> hello
+<a name="l-8"></a><span class="tm">19:01:09</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:01:24</span><span class="nk"> &lt;sdaftuar&gt;</span> hey
+<a name="l-10"></a><span class="tm">19:01:26</span><span class="nk"> &lt;luke-jr&gt;</span> hi
+<a name="l-11"></a><span class="tm">19:01:42</span><span class="nk"> &lt;jnewbery&gt;</span> hello
+<a name="l-12"></a><span class="tm">19:02:06</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-13"></a><span class="tm">19:02:17</span><span class="nk"> &lt;wumpus&gt;</span> so PSA: we've released 0.15.0.1 with a single patch #11332, compared to 0.15.0, to solve the qt crash issue for some users
+<a name="l-14"></a><span class="tm">19:02:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11332 | Fix possible crash with invalid nCustomFeeRadio in QSettings (achow101, TheBlueMatt) by jonasschnelli · Pull Request #11332 · bitcoin/bitcoin · GitHub
+<a name="l-15"></a><span class="tm">19:02:26</span><span class="nk"> &lt;sdaftuar&gt;</span> yay
+<a name="l-16"></a><span class="tm">19:02:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high-priority for review</span>
+<a name="l-17"></a><span class="tm">19:03:10</span><span class="nk"> &lt;achow101&gt;</span> <span class="cmd">#10871 </span><span class="cmdline">please?</span>
+<a name="l-18"></a><span class="tm">19:03:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10871 | Handle getinfo in bitcoin-cli w/ -getinfo (revival of #8843) by achow101 · Pull Request #10871 · bitcoin/bitcoin · GitHub
+<a name="l-19"></a><span class="tm">19:03:31</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we made much progress on review, this week (me included)
+<a name="l-20"></a><span class="tm">19:03:49</span><span class="nk"> &lt;BlueMatt&gt;</span> no, we (or at least I) did not :(
+<a name="l-21"></a><span class="tm">19:04:23</span><span class="nk"> &lt;sipa&gt;</span> regarding that: i've seen several reports of people wondering what happened because getinfo doesn't work... i guess they went from 0.14 to 0.5.99 and never saw the deprecation
+<a name="l-22"></a><span class="tm">19:04:50</span><span class="nk"> &lt;gmaxwell&gt;</span> Well they shouldn't run 0.5, that would be bad.
+<a name="l-23"></a><span class="tm">19:04:50</span><span class="nk"> &lt;wumpus&gt;</span> added 10871
+<a name="l-24"></a><span class="tm">19:04:51</span><span class="nk"> &lt;BlueMatt&gt;</span> heh, so, what, when a new release is announced they just build master? :(
+<a name="l-25"></a><span class="tm">19:05:07</span><span class="nk"> &lt;luke-jr&gt;</span> Maybe `bitcoin-cli getinfo` should print a message informing the user about the new RPCs, like we did when bitcoind client got deprecated
+<a name="l-26"></a><span class="tm">19:05:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> some people do that.
+<a name="l-27"></a><span class="tm">19:05:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> also thought about that
+<a name="l-28"></a><span class="tm">19:05:19</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> wat
+<a name="l-29"></a><span class="tm">19:05:26</span><span class="nk"> &lt;luke-jr&gt;</span> lol
+<a name="l-30"></a><span class="tm">19:05:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it should at least print a deprecated message
+<a name="l-31"></a><span class="tm">19:05:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> gmaxwell is joking about my typo (0.5 instead of 0.15)
+<a name="l-32"></a><span class="tm">19:05:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> so...what you're saying is we should start using a "develop" branch with master pointing to released versions?
+<a name="l-33"></a><span class="tm">19:05:54</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> i figured......
+<a name="l-34"></a><span class="tm">19:05:54</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> instead of just about a missing call, as if it's never existed
+<a name="l-35"></a><span class="tm">19:06:21</span><span class="nk"> &lt;sipa&gt;</span> i like the approach being used for the estimatefee deprecation
+<a name="l-36"></a><span class="tm">19:06:23</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> github lets you change the default branch, so we could just make it the latest stable branch
+<a name="l-37"></a><span class="tm">19:06:24</span><span class="nk"> &lt;goatpig&gt;</span> dont poeple typically pull tags, not just the head of a branch (in this case master)
+<a name="l-38"></a><span class="tm">19:06:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> or we can just change the github default branch to something else, you know
+<a name="l-39"></a><span class="tm">19:06:31</span><span class="nk"> &lt;luke-jr&gt;</span> problem is, it's also the default for PRs…
+<a name="l-40"></a><span class="tm">19:06:34</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> yea, possible
+<a name="l-41"></a><span class="tm">19:06:36</span><span class="nk"> &lt;sipa&gt;</span> where it disappears, but you have a cmdline switch to re-enable
+<a name="l-42"></a><span class="tm">19:06:40</span><span class="nk"> &lt;BlueMatt&gt;</span> I mean really not joking there that's a serious issue
+<a name="l-43"></a><span class="tm">19:06:49</span><span class="nk"> &lt;wumpus&gt;</span> but yes, PRs also go there by default, whichi s kinda annoying
+<a name="l-44"></a><span class="tm">19:06:55</span><span class="nk"> &lt;BlueMatt&gt;</span> people building master right after release is usually bad cause we merge lots of fun stuff on master right after release :/
+<a name="l-45"></a><span class="tm">19:06:56</span><span class="nk"> &lt;achow101&gt;</span> topic suggestion: deprecation stuff a la #11031
+<a name="l-46"></a><span class="tm">19:06:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+<a name="l-47"></a><span class="tm">19:07:05</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose we can expect developers to be smarter than users
+<a name="l-48"></a><span class="tm">19:07:22</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I am not saying we should, just pointing out people do that. We have warnings on master... so I don't worry too much.
+<a name="l-49"></a><span class="tm">19:07:22</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> i like that too. or even an rpc arg like -force-deprecated.
+<a name="l-50"></a><span class="tm">19:07:27</span><span class="nk"> &lt;wumpus&gt;</span> PRs to branches are really annoying, so I'd prefer to just keep the status quo there
+<a name="l-51"></a><span class="tm">19:07:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yea, maybe we should make the warnings louder?
+<a name="l-52"></a><span class="tm">19:07:37</span><span class="nk"> &lt;BlueMatt&gt;</span> that may be acceptable similar
+<a name="l-53"></a><span class="tm">19:07:38</span><span class="nk"> &lt;sipa&gt;</span> i think the reports  saw were from pretty much first time users "how do i set this up", and following a guide to build from source
+<a name="l-54"></a><span class="tm">19:07:43</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> better to force the user to be involved IMO
+<a name="l-55"></a><span class="tm">19:07:55</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> agree
+<a name="l-56"></a><span class="tm">19:08:06</span><span class="nk"> &lt;wumpus&gt;</span> it can't be the release announcement, as I mention the exact tag to check out there...
+<a name="l-57"></a><span class="tm">19:08:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-58"></a><span class="tm">19:08:15</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> that's what i meant.
+<a name="l-59"></a><span class="tm">19:08:31</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> a RPC arg wouldn't have the user involved
+<a name="l-60"></a><span class="tm">19:08:44</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe bitcoind should need a -iknowthisisunreleasedunstableversion option :(
+<a name="l-61"></a><span class="tm">19:08:46</span><span class="nk"> &lt;luke-jr&gt;</span> software would just set it
+<a name="l-62"></a><span class="tm">19:08:48</span><span class="nk"> &lt;wumpus&gt;</span> maybe would make sense to add a git clone command in there too for people that can't figure that out themselves
+<a name="l-63"></a><span class="tm">19:08:58</span><span class="nk"> &lt;BlueMatt&gt;</span> or configure could take it
+<a name="l-64"></a><span class="tm">19:09:05</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> default to testnet?
+<a name="l-65"></a><span class="tm">19:09:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> oh ok, different definitions of user. i see what you mean.
+<a name="l-66"></a><span class="tm">19:09:19</span><span class="nk"> &lt;wumpus&gt;</span> configure already has that information, so that'd make sense
+<a name="l-67"></a><span class="tm">19:09:21</span><span class="nk"> &lt;BlueMatt&gt;</span> ./configure --this-version-is-unreleased-and-possibly-unstable
+<a name="l-68"></a><span class="tm">19:09:37</span><span class="nk"> &lt;BlueMatt&gt;</span> that would make people think twice and make people fix their guides
+<a name="l-69"></a><span class="tm">19:09:43</span><span class="nk"> &lt;luke-jr&gt;</span> s/unstable/insecure/ ☺
+<a name="l-70"></a><span class="tm">19:09:50</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> we would forget to make it default to mainnet for releases
+<a name="l-71"></a><span class="tm">19:10:01</span><span class="nk"> &lt;BlueMatt&gt;</span> heh, ok, at the risk of bikeshedding, I vote cfields implement it...I dunno anything 'bout autotools
+<a name="l-72"></a><span class="tm">19:10:02</span><span class="nk"> &lt;BlueMatt&gt;</span> :p
+<a name="l-73"></a><span class="tm">19:10:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> would we? release-process.md
+<a name="l-74"></a><span class="tm">19:10:04</span><span class="nk"> &lt;wumpus&gt;</span> I've never forget to set IS_RELEASE to true for releases
+<a name="l-75"></a><span class="tm">19:10:21</span><span class="nk"> &lt;wumpus&gt;</span> a few times we've forgot to bump the version number but only for *minor* releases
+<a name="l-76"></a><span class="tm">19:10:22</span><span class="nk"> &lt;luke-jr&gt;</span> or just have -testnet default to !IS_RELEASE
+<a name="l-77"></a><span class="tm">19:10:43</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-78"></a><span class="tm">19:10:46</span><span class="nk"> &lt;wumpus&gt;</span> and for branches the IS_RELEASE is always true anyhow
+<a name="l-79"></a><span class="tm">19:10:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> I kinda like it not modifying the bitcoind at all now that i think about it
+<a name="l-80"></a><span class="tm">19:11:01</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> an alternative would be to have a bitcoin-releases repo (under the same org), to which only release tags get pushed
+<a name="l-81"></a><span class="tm">19:11:04</span><span class="nk"> &lt;BlueMatt&gt;</span> build the same bitcoind, but make people type something that says "is not release"
+<a name="l-82"></a><span class="tm">19:11:13</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> and direct people to clone from there if they just want stable things
+<a name="l-83"></a><span class="tm">19:11:16</span><span class="nk"> &lt;sipa&gt;</span> but meh...
+<a name="l-84"></a><span class="tm">19:11:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> I don't know...
+<a name="l-85"></a><span class="tm">19:11:29</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> heh, if we make it not build from bitcoin/bitcoin, ok
+<a name="l-86"></a><span class="tm">19:11:33</span><span class="nk"> &lt;wumpus&gt;</span> I really prefer not to mess with the repopsotiry too much
+<a name="l-87"></a><span class="tm">19:11:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree with wumpus
+<a name="l-88"></a><span class="tm">19:11:45</span><span class="nk"> &lt;morcos&gt;</span> This doesn't seem that large a problem to me...
+<a name="l-89"></a><span class="tm">19:11:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> yes, agree - i don't think we should do anything
+<a name="l-90"></a><span class="tm">19:11:48</span><span class="nk"> &lt;wumpus&gt;</span> agree
+<a name="l-91"></a><span class="tm">19:11:54</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-92"></a><span class="tm">19:11:59</span><span class="nk"> &lt;BlueMatt&gt;</span> agreed, though I'd vote for a configure flag
+<a name="l-93"></a><span class="tm">19:11:59</span><span class="nk"> &lt;achow101&gt;</span> we could move the repo to bitcoin-core and break all of those guides :)
+<a name="l-94"></a><span class="tm">19:12:03</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, I think we don't need to do anything except hunt down and kill people with bad guides. :P
+<a name="l-95"></a><span class="tm">19:12:03</span><span class="nk"> &lt;sipa&gt;</span> achow101 had a topic
+<a name="l-96"></a><span class="tm">19:12:06</span><span class="nk"> &lt;BlueMatt&gt;</span> its not a huge issue, but it sounds rather dangerous
+<a name="l-97"></a><span class="tm">19:12:11</span><span class="nk"> &lt;sipa&gt;</span> (though maybe we've covered it already)
+<a name="l-98"></a><span class="tm">19:12:13</span><span class="nk"> &lt;gmaxwell&gt;</span> perhaps increase the profile of tarball downloads.
+<a name="l-99"></a><span class="tm">19:12:18</span><span class="nk"> &lt;BlueMatt&gt;</span> and I dont think hunting down guide-writers is possible
+<a name="l-100"></a><span class="tm">19:12:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> now that sounds like a good action item
+<a name="l-101"></a><span class="tm">19:12:33</span><span class="nk"> &lt;wumpus&gt;</span> $action hunt down and kill people with bad guides
+<a name="l-102"></a><span class="tm">19:12:44</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> publishers, not technically authors.
+<a name="l-103"></a><span class="tm">19:12:49</span><span class="nk"> &lt;jnewbery&gt;</span> any other feedback on the approach in #11031? I think it's a useful pattern for deprecating RPCs (which we'll need to do a few times)
+<a name="l-104"></a><span class="tm">19:12:51</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+<a name="l-105"></a><span class="tm">19:13:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">deprecation stuff a la #11031</span>
+<a name="l-106"></a><span class="tm">19:13:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+<a name="l-107"></a><span class="tm">19:13:37</span><span class="nk"> &lt;luke-jr&gt;</span> there's only 363 0.15.99 nodes
+<a name="l-108"></a><span class="tm">19:14:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> I'd expect there to be ~0 on mainnet aside from some developer test nodes, fwiw
+<a name="l-109"></a><span class="tm">19:14:18</span><span class="nk"> &lt;achow101&gt;</span> I think that we might run into a problem where people just have -deprecatedrpc (or whatever it is called) and enable all deprecated behavior until it disappears
+<a name="l-110"></a><span class="tm">19:14:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> thats fine, at least they were made to type "I know this is going away soon"
+<a name="l-111"></a><span class="tm">19:14:47</span><span class="nk"> &lt;BlueMatt&gt;</span> so they cant show up and complain that its gone
+<a name="l-112"></a><span class="tm">19:14:48</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jnewbery:</span> i like it (better than an rpc arg, on second thought), though the name could use some bikeshedding :(
+<a name="l-113"></a><span class="tm">19:15:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> my crawler counts 2496
+<a name="l-114"></a><span class="tm">19:15:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> oh.. no .99,.. sry
+<a name="l-115"></a><span class="tm">19:15:51</span><span class="nk"> &lt;wumpus&gt;</span> I also prefer command line arg to rpc arg
+<a name="l-116"></a><span class="tm">19:15:59</span><span class="nk"> &lt;wumpus&gt;</span> it's enough to type it once
+<a name="l-117"></a><span class="tm">19:16:04</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">achow101:</span> it's designed such that the user needs to include `-enablerpcmethod=&lt;method1&gt; -enablerpcmethod=&lt;method2&gt; ...` to avoid the problem of a user just setting `-enablealldepractedrpcmethods` and forgetting
+<a name="l-118"></a><span class="tm">19:16:42</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">cfields:</span> yes, name could probably be improved
+<a name="l-119"></a><span class="tm">19:16:45</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, don't have a deprecatedall, it needs to be specific.
+<a name="l-120"></a><span class="tm">19:16:50</span><span class="nk"> &lt;wumpus&gt;</span> the purpose is just to signal, not to overburden a user with extra work updating their client applications (apart from getting rid of using the RPC call in the first place)
+<a name="l-121"></a><span class="tm">19:16:53</span><span class="nk"> &lt;meshcollider&gt;</span> hmm yeah "-enablerpcmethod=" should probably have the word "deprecated" in it
+<a name="l-122"></a><span class="tm">19:17:00</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-123"></a><span class="tm">19:17:11</span><span class="nk"> &lt;achow101&gt;</span> I propose calling it -enableddeprecatedrpc
+<a name="l-124"></a><span class="tm">19:17:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-125"></a><span class="tm">19:17:18</span><span class="nk"> &lt;wumpus&gt;</span> otherwise it sounds more like a silly security feature
+<a name="l-126"></a><span class="tm">19:17:20</span><span class="nk"> &lt;meshcollider&gt;</span> +!
+<a name="l-127"></a><span class="tm">19:17:33</span><span class="nk"> &lt;meshcollider&gt;</span> s/!/1/
+<a name="l-128"></a><span class="tm">19:17:57</span><span class="nk"> &lt;sipa&gt;</span> -yesimnaughtyandneedtoupdatemyclienttonotuserpcmethod=name
+<a name="l-129"></a><span class="tm">19:18:15</span><span class="nk"> &lt;achow101&gt;</span> although maybe enabled may not necessarily be the best word for that since we have PRCs that themselves are not deprecated but have deprecated output fields and only the deprecated output fields would show if that option is set
+<a name="l-130"></a><span class="tm">19:18:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">thought:</span> should rpcuser auth always throw RPC_METHOD_DEPRECATED? if so, how does the user bypass it?
+<a name="l-131"></a><span class="tm">19:18:43</span><span class="nk"> &lt;morcos&gt;</span> -deprecatedrpc is good enough
+<a name="l-132"></a><span class="tm">19:18:45</span><span class="nk"> &lt;luke-jr&gt;</span> maybe -enabledeprecated= would be better
+<a name="l-133"></a><span class="tm">19:18:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> yes!
+<a name="l-134"></a><span class="tm">19:18:51</span><span class="nk"> &lt;morcos&gt;</span> in a light pink
+<a name="l-135"></a><span class="tm">19:18:53</span><span class="nk"> &lt;gmaxwell&gt;</span> -backwardscompatibilitylaunchcode=0xdeadbeef234828429342893429  &lt; that could trigger fields that are going away. :P
+<a name="l-136"></a><span class="tm">19:19:05</span><span class="nk"> &lt;wumpus&gt;</span> hehehe
+<a name="l-137"></a><span class="tm">19:19:16</span><span class="nk"> &lt;gmaxwell&gt;</span> (and you need to read the release notes to get the launch code)
+<a name="l-138"></a><span class="tm">19:19:21</span><span class="nk"> &lt;gmaxwell&gt;</span> (or source)
+<a name="l-139"></a><span class="tm">19:19:29</span><span class="nk"> &lt;jnewbery&gt;</span> ok, -deprecatedrpc it is
+<a name="l-140"></a><span class="tm">19:19:35</span><span class="nk"> &lt;wumpus&gt;</span> release notes scavenger hunt
+<a name="l-141"></a><span class="tm">19:19:37</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> where the launchcode is the git commit, so it changes every day until release
+<a name="l-142"></a><span class="tm">19:20:16</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jnewbery:</span> ack
+<a name="l-143"></a><span class="tm">19:20:17</span><span class="nk"> &lt;gmaxwell&gt;</span> well the idea there was that each depricated feature would have its own code. So you'd look up the code and specify it.
+<a name="l-144"></a><span class="tm">19:20:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> too strong for mere deprecation IMO
+<a name="l-145"></a><span class="tm">19:20:41</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> yes, though it solved the how about deprecated fields case.
+<a name="l-146"></a><span class="tm">19:20:46</span><span class="nk"> &lt;luke-jr&gt;</span> something like that feels more like to allow changing consensus-critical stuff
+<a name="l-147"></a><span class="tm">19:20:55</span><span class="nk"> &lt;achow101&gt;</span> I suppose we can then put all of the deprecated account RPCs behind that argument
+<a name="l-148"></a><span class="tm">19:21:06</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> you're deprecating me? :(
+<a name="l-149"></a><span class="tm">19:21:11</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-150"></a><span class="tm">19:21:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> how about if the "launch code" matches the method name for methods? :p
+<a name="l-151"></a><span class="tm">19:21:22</span><span class="nk"> &lt;luke-jr&gt;</span> and "accounts" for accounts
+<a name="l-152"></a><span class="tm">19:21:29</span><span class="nk"> &lt;wumpus&gt;</span> in the case of accounts it'd be a group not one single call
+<a name="l-153"></a><span class="tm">19:21:30</span><span class="nk"> &lt;luke-jr&gt;</span> "rpcuser" for -rpcuser
+<a name="l-154"></a><span class="tm">19:21:42</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-155"></a><span class="tm">19:21:55</span><span class="nk"> &lt;luke-jr&gt;</span> this code already fits that paradigm I think, except for the param name
+<a name="l-156"></a><span class="tm">19:21:57</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> doing that for rpcuser is going to annoy a lot of people
+<a name="l-157"></a><span class="tm">19:22:16</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> yes, that can be discussed separately; it was an example
+<a name="l-158"></a><span class="tm">19:22:19</span><span class="nk"> &lt;wumpus&gt;</span> I  think we should keep the discussion of what things to deprecate separate
+<a name="l-159"></a><span class="tm">19:22:26</span><span class="nk"> &lt;sipa&gt;</span> agree
+<a name="l-160"></a><span class="tm">19:22:33</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-161"></a><span class="tm">19:23:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> removing the account support via -depracaterpc and positioned arguments seems pretty difficult and/or dangerous.
+<a name="l-162"></a><span class="tm">19:24:08</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">achow101:</span> As long as you're happy with that I'll update 11031 with the new name so you can rebase your various RPC deprecation PRs on it
+<a name="l-163"></a><span class="tm">19:24:18</span><span class="nk"> &lt;luke-jr&gt;</span> "rpc" probably shouldn't be in the arg name.
+<a name="l-164"></a><span class="tm">19:24:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> users may be confuse why account are deprecated but still work while -depacaterpc=accounts
+<a name="l-165"></a><span class="tm">19:24:59</span><span class="nk"> &lt;luke-jr&gt;</span> -enabledeprecated seemed nicer IMO
+<a name="l-166"></a><span class="tm">19:25:05</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">jnewbery:</span> I guess so. I haven't looked over 11031 in a while so I want to review it before rebasing
+<a name="l-167"></a><span class="tm">19:25:12</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> it's just the account rpcs that are deprecated, accounts themselves will work as labels
+<a name="l-168"></a><span class="tm">19:25:16</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="hi">jonasschnelli:</span> are you suggesting disable the account system completely?
+<a name="l-169"></a><span class="tm">19:25:23</span><span class="nk"> &lt;meshcollider&gt;</span> (without deprecation)
+<a name="l-170"></a><span class="tm">19:25:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> yes. That makes sense.
+<a name="l-171"></a><span class="tm">19:25:52</span><span class="nk"> &lt;wumpus&gt;</span> we'll not rip out the account arguments from any non-account RPC calls
+<a name="l-172"></a><span class="tm">19:26:00</span><span class="nk"> &lt;wumpus&gt;</span> just that move etc are deprecated
+<a name="l-173"></a><span class="tm">19:26:22</span><span class="nk"> &lt;achow101&gt;</span> topic suggestion: what to deprecate
+<a name="l-174"></a><span class="tm">19:26:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> But the transition of having a -enabledepracatedrpc= and not disabling the depracated account features seems not to be ideal.. although I guess it's okay
+<a name="l-175"></a><span class="tm">19:27:02</span><span class="nk"> &lt;wumpus&gt;</span> I doubt there is any ideal way to deprecate a monster like the accounts feature, tbh
+<a name="l-176"></a><span class="tm">19:27:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> getbalance &lt;non-*&gt; should fail too
+<a name="l-177"></a><span class="tm">19:27:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes
+<a name="l-178"></a><span class="tm">19:28:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> no "rpc" :/
+<a name="l-179"></a><span class="tm">19:28:17</span><span class="nk"> &lt;wumpus&gt;</span> do we have any more upbeat topic than deprecation?
+<a name="l-180"></a><span class="tm">19:28:37</span><span class="nk"> &lt;gmaxwell&gt;</span> China blocking bitcoin?
+<a name="l-181"></a><span class="tm">19:28:38</span><span class="nk"> &lt;gmaxwell&gt;</span> (not really)
+<a name="l-182"></a><span class="tm">19:28:39</span><span class="nk"> &lt;meshcollider&gt;</span> segwit wallet support progress?
+<a name="l-183"></a><span class="tm">19:28:43</span><span class="nk"> &lt;gmaxwell&gt;</span> That
+<a name="l-184"></a><span class="tm">19:28:52</span><span class="nk"> &lt;sipa&gt;</span> i'll have a PR soon
+<a name="l-185"></a><span class="tm">19:28:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit wallet support progress</span>
+<a name="l-186"></a><span class="tm">19:28:55</span><span class="nk"> &lt;wumpus&gt;</span> thanks
+<a name="l-187"></a><span class="tm">19:29:06</span><span class="nk"> &lt;sipa&gt;</span> otherwise, review #11167
+<a name="l-188"></a><span class="tm">19:29:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> Have you heard from thomasv about them blocking v&gt;0
+<a name="l-189"></a><span class="tm">19:29:09</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11167 | Full BIP173 (Bech32) support by sipa · Pull Request #11167 · bitcoin/bitcoin · GitHub
+<a name="l-190"></a><span class="tm">19:29:26</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> yes, we discussed it in here yesterday
+<a name="l-191"></a><span class="tm">19:29:26</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> how soon is soon
+<a name="l-192"></a><span class="tm">19:29:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> this week, i hope
+<a name="l-193"></a><span class="tm">19:29:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> are you also tackling the GUI?
+<a name="l-194"></a><span class="tm">19:30:04</span><span class="nk"> &lt;gmaxwell&gt;</span> did you take my advice and call the new file key-i-key-i-o.cpp
+<a name="l-195"></a><span class="tm">19:30:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> no, i'll need help for that
+<a name="l-196"></a><span class="tm">19:30:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> just key_io
+<a name="l-197"></a><span class="tm">19:30:32</span><span class="nk"> &lt;meshcollider&gt;</span> haha
+<a name="l-198"></a><span class="tm">19:30:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> please point me to your branch after the meeting so I can start to work on that
+<a name="l-199"></a><span class="tm">19:30:58</span><span class="nk"> &lt;sipa&gt;</span> (for context, gmaxwell is talking about the followup #11372, which is not for 0.15.1)
+<a name="l-200"></a><span class="tm">19:30:59</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11372 | Address encoding cleanup by sipa · Pull Request #11372 · bitcoin/bitcoin · GitHub
+<a name="l-201"></a><span class="tm">19:31:01</span><span class="nk"> &lt;gmaxwell&gt;</span> There should be almost no GUI intersection, other than perhaps offering the default overrides in the gui.
+<a name="l-202"></a><span class="tm">19:31:23</span><span class="nk"> &lt;sipa&gt;</span> yeah, i expect some expert mode setting to choose the address type - but otherwise it can just use the default
+<a name="l-203"></a><span class="tm">19:31:36</span><span class="nk"> &lt;gmaxwell&gt;</span> oh right, point of use switching, sure.
+<a name="l-204"></a><span class="tm">19:31:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> yes. That is what I though...
+<a name="l-205"></a><span class="tm">19:32:07</span><span class="nk"> &lt;sipa&gt;</span> not that much to say about the topic otherwise
+<a name="l-206"></a><span class="tm">19:32:14</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> another thing in the GUI is that we should eventually have a BIP173 error hinter.  We need a monospace text entry field that can be told to underline characters or something like that.
+<a name="l-207"></a><span class="tm">19:32:25</span><span class="nk"> &lt;gmaxwell&gt;</span> (not necessarily a 0.15.1 feature in any case)
+<a name="l-208"></a><span class="tm">19:32:29</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes! I just wanted to write that
+<a name="l-209"></a><span class="tm">19:32:53</span><span class="nk"> &lt;gmaxwell&gt;</span> well sipa's bip173 patch doesn't have the error finder in it.
+<a name="l-210"></a><span class="tm">19:33:03</span><span class="nk"> &lt;sipa&gt;</span> i think there is another question, that ThomasV brought up yesterday
+<a name="l-211"></a><span class="tm">19:33:14</span><span class="nk"> &lt;sipa&gt;</span> what to do with private key import/export for segwit addresses
+<a name="l-212"></a><span class="tm">19:33:24</span><span class="nk"> &lt;gmaxwell&gt;</span> Though we've written one (a port of it to JS is on that demo page)... it deserves a nice gui handling though (even the js demo is kind of lame, in that it can't highlight inline)
+<a name="l-213"></a><span class="tm">19:33:33</span><span class="nk"> &lt;wumpus&gt;</span> some importmulti ?
+<a name="l-214"></a><span class="tm">19:33:35</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> importmulti
+<a name="l-215"></a><span class="tm">19:33:36</span><span class="nk"> &lt;sipa&gt;</span> importmulti can handle this natively
+<a name="l-216"></a><span class="tm">19:33:44</span><span class="nk"> &lt;wumpus&gt;</span> ok, seems good enough for me then
+<a name="l-217"></a><span class="tm">19:33:50</span><span class="nk"> &lt;gmaxwell&gt;</span> importmulti was my first thought too.
+<a name="l-218"></a><span class="tm">19:33:54</span><span class="nk"> &lt;achow101&gt;</span> deprecate the other import* rpcs
+<a name="l-219"></a><span class="tm">19:33:54</span><span class="nk"> &lt;sipa&gt;</span> but perhaps at least a warning for importprivkey / dumpprivkey is needed
+<a name="l-220"></a><span class="tm">19:34:01</span><span class="nk"> &lt;wumpus&gt;</span> just highlight that the old import* rpcs don't work with segwit
+<a name="l-221"></a><span class="tm">19:34:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> yes. Or depracate?
+<a name="l-222"></a><span class="tm">19:34:11</span><span class="nk"> &lt;gmaxwell&gt;</span> When we do the changes that split the key types later, we'll have more to think about. Right now any key is all keytypes.
+<a name="l-223"></a><span class="tm">19:34:18</span><span class="nk"> &lt;wumpus&gt;</span> or deprecate them at some point, but not for a minor release
+<a name="l-224"></a><span class="tm">19:34:30</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-225"></a><span class="tm">19:34:39</span><span class="nk"> &lt;gmaxwell&gt;</span> we can announce an intent at any time. (I think we just did.)
+<a name="l-226"></a><span class="tm">19:34:46</span><span class="nk"> &lt;ThomasV&gt;</span> importmulti does not seem as easy to use as a serialized format
+<a name="l-227"></a><span class="tm">19:34:54</span><span class="nk"> &lt;wumpus&gt;</span> yes, intent+reason could be menitoned in the release notes
+<a name="l-228"></a><span class="tm">19:35:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">ThomasV:</span> i consider that a feature :)
+<a name="l-229"></a><span class="tm">19:35:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">ThomasV:</span> because of versioning issues, we're not going to solve a new serialized format right now.
+<a name="l-230"></a><span class="tm">19:35:23</span><span class="nk"> &lt;jonasschnelli&gt;</span> importmulti is a bit cumbersome to use,... but should the okay for an RPC layer
+<a name="l-231"></a><span class="tm">19:35:24</span><span class="nk"> &lt;wumpus&gt;</span> importing keys in bitcoin core is considered advanced functionality anyhow
+<a name="l-232"></a><span class="tm">19:36:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">ThomasV:</span> as said, i don't mind discussing a more convenient import format for some use case, but we're not going to solve that instantly
+<a name="l-233"></a><span class="tm">19:36:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> importaddress and key with the current rescan-everything approach must go away at some point anyways
+<a name="l-234"></a><span class="tm">19:36:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yeah... that too
+<a name="l-235"></a><span class="tm">19:36:25</span><span class="nk"> &lt;ThomasV&gt;</span> <span class="hi">gmaxwell:</span> we were also considering an import format along the lines of bip124
+<a name="l-236"></a><span class="tm">19:36:28</span><span class="nk"> &lt;gmaxwell&gt;</span> raw key handling frequently results in funds loss, even for advanced users too.. but I do think we should ultimately be embedding the required metadata to actually use a key. but it's not something we can really do right now.
+<a name="l-237"></a><span class="tm">19:36:55</span><span class="nk"> &lt;achow101&gt;</span> the bech32-for-privkeys thing could be something for segwit only and have a the witness version number included in that?
+<a name="l-238"></a><span class="tm">19:37:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> yes
+<a name="l-239"></a><span class="tm">19:37:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> yes, or no - i'm not sure
+<a name="l-240"></a><span class="tm">19:37:29</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> witness version number isn't the right data.
+<a name="l-241"></a><span class="tm">19:37:40</span><span class="nk"> &lt;sipa&gt;</span> i think we need a 'pure private key' format, which is just a key
+<a name="l-242"></a><span class="tm">19:37:43</span><span class="nk"> &lt;instagibbs&gt;</span> doesn't tell you how it's being used, specifically
+<a name="l-243"></a><span class="tm">19:37:45</span><span class="nk"> &lt;sipa&gt;</span> to minimize the data needed for backup
+<a name="l-244"></a><span class="tm">19:37:58</span><span class="nk"> &lt;wumpus&gt;</span> more like a 'key use'
+<a name="l-245"></a><span class="tm">19:37:59</span><span class="nk"> &lt;gmaxwell&gt;</span> it effectively needs to communicate the scriptpubkey (perhaps be template reference).
+<a name="l-246"></a><span class="tm">19:38:01</span><span class="nk"> &lt;sipa&gt;</span> the associated addresses/chains/... can be stored separately
+<a name="l-247"></a><span class="tm">19:38:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not sure if we should really support exporting / importing private keys over an RPC layer in the long run
+<a name="l-248"></a><span class="tm">19:38:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> but if you're going for minimal, you'd backup the seed, not the keys?
+<a name="l-249"></a><span class="tm">19:38:15</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> yeah... that's a hard question
+<a name="l-250"></a><span class="tm">19:38:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> still needs metadata.
+<a name="l-251"></a><span class="tm">19:38:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> how so?
+<a name="l-252"></a><span class="tm">19:38:40</span><span class="nk"> &lt;wumpus&gt;</span> right, you could backup the seed, and some metadata, no need to backup the keys themselves
+<a name="l-253"></a><span class="tm">19:38:42</span><span class="nk"> &lt;achow101&gt;</span> &lt;scriptpubkey&gt;|&lt;privkey(s)&gt;
+<a name="l-254"></a><span class="tm">19:39:01</span><span class="nk"> &lt;gmaxwell&gt;</span> I mean you need to know _what_ chains or key types are expected. Otherwise it's a lossy search problem to figure out what you should be actually getting.
+<a name="l-255"></a><span class="tm">19:39:10</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-256"></a><span class="tm">19:39:12</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> sure, but i think that can be separate
+<a name="l-257"></a><span class="tm">19:39:47</span><span class="nk"> &lt;sipa&gt;</span> ideally, your wallet has 1 piece of actually secret data, and then a bunch of chains/addresses/scripts/... that use keys derived from that secret data
+<a name="l-258"></a><span class="tm">19:39:51</span><span class="nk"> &lt;gmaxwell&gt;</span> it's critical data without which you can't recover the keys... and with which you can.  (maybe you could bruteforce it out, under somewhat reasonble assumptions...)
+<a name="l-259"></a><span class="tm">19:40:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> Conceptual, we should work towards private key separation with a daemon (or agent) and core only deals with public keys. The private-keys agent/tool could still be in the repository (or different one)
+<a name="l-260"></a><span class="tm">19:40:12</span><span class="nk"> &lt;gmaxwell&gt;</span> it's also potentially a rather small amount of data.
+<a name="l-261"></a><span class="tm">19:40:30</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> an example i came up yesterday is CLTV scripts
+<a name="l-262"></a><span class="tm">19:40:43</span><span class="nk"> &lt;sipa&gt;</span> there is no way you can enumerate all CLTV scripts from a particular seed
+<a name="l-263"></a><span class="tm">19:41:02</span><span class="nk"> &lt;gmaxwell&gt;</span> no, indeed, but the inability to back up CLTV cleanly was one of the motivations for CSV.
+<a name="l-264"></a><span class="tm">19:41:16</span><span class="nk"> &lt;sipa&gt;</span> but perhaps there is no need, if you have built-in backups of the chain data (which don't risk monetary loss), and a separate backup of the private key
+<a name="l-265"></a><span class="tm">19:41:30</span><span class="nk"> &lt;luke-jr&gt;</span> so three levels of data really: the seed itself, the types/chains/etc, and the comments/labels
+<a name="l-266"></a><span class="tm">19:41:36</span><span class="nk"> &lt;sipa&gt;</span> the private key in that case is just a piece of secret data, referred to by the chains
+<a name="l-267"></a><span class="tm">19:41:48</span><span class="nk"> &lt;gmaxwell&gt;</span> asking people to handle two critical to maintain pieces of information instead of one would be unfortunate.
+<a name="l-268"></a><span class="tm">19:42:10</span><span class="nk"> &lt;gmaxwell&gt;</span> (and by unfortunate I mean result in non-negligible funds loss in practice)
+<a name="l-269"></a><span class="tm">19:42:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> maybe concatenate seed + types/chains/etc in practice
+<a name="l-270"></a><span class="tm">19:42:36</span><span class="nk"> &lt;sipa&gt;</span> sure, for simple situations you can create a convenient format that handles both simultaneously
+<a name="l-271"></a><span class="tm">19:42:38</span><span class="nk"> &lt;gmaxwell&gt;</span> sure. that would be okay to.
+<a name="l-272"></a><span class="tm">19:42:40</span><span class="nk"> &lt;wumpus&gt;</span> you could encode it into one identifier somehow...
+<a name="l-273"></a><span class="tm">19:42:43</span><span class="nk"> &lt;wumpus&gt;</span> sounds easy enough
+<a name="l-274"></a><span class="tm">19:42:45</span><span class="nk"> &lt;gmaxwell&gt;</span> (re to both luke and sipa)
+<a name="l-275"></a><span class="tm">19:42:59</span><span class="nk"> &lt;sipa&gt;</span> but i expect there to be cases where you really just want to backup a key, and will handle the metadata (which is too complicated) yourself
+<a name="l-276"></a><span class="tm">19:43:02</span><span class="nk"> &lt;gmaxwell&gt;</span> the logical seperation sounds fine, but for at least the common case there should be some format for combined data.
+<a name="l-277"></a><span class="tm">19:43:21</span><span class="nk"> &lt;sipa&gt;</span> sure
+<a name="l-278"></a><span class="tm">19:43:22</span><span class="nk"> &lt;morcos&gt;</span> +1 for the common case combined format
+<a name="l-279"></a><span class="tm">19:43:32</span><span class="nk"> &lt;gmaxwell&gt;</span> A possible metadata flag is  'external, good luck'. :)
+<a name="l-280"></a><span class="tm">19:44:13</span><span class="nk"> &lt;jonasschnelli&gt;</span> X509
+<a name="l-281"></a><span class="tm">19:44:20</span><span class="nk"> &lt;sipa&gt;</span> JSONx!!
+<a name="l-282"></a><span class="tm">19:44:21</span><span class="nk"> &lt;ThomasV&gt;</span> lol
+<a name="l-283"></a><span class="tm">19:44:26 </span><span class="nka">* jonasschnelli</span> <span class="ac">*ducks*</span>
+<a name="l-284"></a><span class="tm">19:44:40</span><span class="nk"> &lt;wumpus&gt;</span> you could always back up the key and metadata separately, then combine them before importing, or have import accept multiple formats, this is just details
+<a name="l-285"></a><span class="tm">19:44:49</span><span class="nk"> &lt;gmaxwell&gt;</span> Could just have a box where people can just type in x86 machine code and it will decode the result for you ...  almost as flexible as x509.
+<a name="l-286"></a><span class="tm">19:44:57</span><span class="nk"> &lt;gmaxwell&gt;</span> :-)
+<a name="l-287"></a><span class="tm">19:45:10</span><span class="nk"> &lt;luke-jr&gt;</span> XD
+<a name="l-288"></a><span class="tm">19:45:20</span><span class="nk"> &lt;sipa&gt;</span> ok, other topics?
+<a name="l-289"></a><span class="tm">19:45:29</span><span class="nk"> &lt;wumpus&gt;</span> nice, though too easy to use, should be some ancient 8-bit assembly like z80 or 6502
+<a name="l-290"></a><span class="tm">19:46:08</span><span class="nk"> &lt;sipa&gt;</span> INTERCAL
+<a name="l-291"></a><span class="tm">19:46:13</span><span class="nk"> &lt;luke-jr&gt;</span> suggested topic: it would be really nice to get #7533 in, since it is a constant rebase hell otherwise; comments on how to improve the code quality (ugh, macros) appreciated
+<a name="l-292"></a><span class="tm">19:46:15</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7533 | RPC: sendrawtransaction: Allow the user to ignore/override specific rejections by luke-jr · Pull Request #7533 · bitcoin/bitcoin · GitHub
+<a name="l-293"></a><span class="tm">19:46:16</span><span class="nk"> &lt;gmaxwell&gt;</span> I've had to use 6502 assembly in the last couple years ... (for a mystery hunt puzzle)
+<a name="l-294"></a><span class="tm">19:46:26</span><span class="nk"> &lt;wumpus&gt;</span> yeah
+<a name="l-295"></a><span class="tm">19:47:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> did you still manage to? :)
+<a name="l-296"></a><span class="tm">19:47:08</span><span class="nk"> &lt;gmaxwell&gt;</span> other topics: did people see on the mailing list that there is a new Dandelion post?
+<a name="l-297"></a><span class="tm">19:47:16</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">wumpus:</span> you suggested topic high-priority for review earlier. Did you want to discuss individual PRs or were you just asking if people had PRs they want added to the list?
+<a name="l-298"></a><span class="tm">19:47:38</span><span class="nk"> &lt;meshcollider&gt;</span> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-September/015030.html
+<a name="l-299"></a><span class="tm">19:47:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Dandelion post</span>
+<a name="l-300"></a><span class="tm">19:48:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> both is ok, though there are too many PRs on the list right now, would prefer some to be reviewed first - the point of it focusing review is lost if we just add all PRs in there :)
+<a name="l-301"></a><span class="tm">19:48:38</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't know that I have much to say, other that I thought it should get some attention (I know not everyone reads the list closely). I think this will be a good thing to implement and the people working on it are pretty eager.
+<a name="l-302"></a><span class="tm">19:48:48</span><span class="nk"> &lt;gmaxwell&gt;</span> (and responsive)
+<a name="l-303"></a><span class="tm">19:49:40</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">wumpus:</span> ok, tit-for-tat. I'll review a couple of those in the next week. Can you add #10740. I think it's ready for initial review
+<a name="l-304"></a><span class="tm">19:49:40</span><span class="nk"> &lt;wumpus&gt;</span> thanks for mentioning it, I indeed missed it
+<a name="l-305"></a><span class="tm">19:49:42</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10740 | [wallet] dynamic loading/unloading of wallets by jnewbery · Pull Request #10740 · bitcoin/bitcoin · GitHub
+<a name="l-306"></a><span class="tm">19:49:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-September/015030.html</span>
+<a name="l-307"></a><span class="tm">19:50:12 </span><span class="nka">* BlueMatt</span> <span class="ac">is curious how this interacts with the questions about mempool sync</span>
+<a name="l-308"></a><span class="tm">19:50:20</span><span class="nk"> &lt;BlueMatt&gt;</span> though I havent read the dandelion stuff much
+<a name="l-309"></a><span class="tm">19:50:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> ok added
+<a name="l-310"></a><span class="tm">19:50:43</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> externally to it. Basically it's a quiet forwarding thing that has little to no mempool interaction.
+<a name="l-311"></a><span class="tm">19:50:53</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">wumpus:</span> thanks!
+<a name="l-312"></a><span class="tm">19:50:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> so that public distribution of transactions happens away from the source.
+<a name="l-313"></a><span class="tm">19:51:36</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> well based on the dandelion tl; dr i just got, it seems to me that dandelion is essentially the old mempool-sync proposal of "relay txn to only one, maybe two peers but then do sync of your mempool with your peers every so often to propagate things more fully"
+<a name="l-314"></a><span class="tm">19:51:48</span><span class="nk"> &lt;BlueMatt&gt;</span> except they replace sync with "broadcast after a while"
+<a name="l-315"></a><span class="tm">19:52:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> kind of. it's not in your mempool though when it passes through in the one at a time propagation.
+<a name="l-316"></a><span class="tm">19:52:35</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> but dandelion has rebroadcast too, which can't be avoided (if you dandelion-forwarded a TX, but don't see it N seconds later on the normal network, you yourself start broadcasting it normally)
+<a name="l-317"></a><span class="tm">19:52:57</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> why not dandelion it again?
+<a name="l-318"></a><span class="tm">19:53:23</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, I'm asking for comparison between dandelion and the old mempool-sync proposal of gmaxwell
+<a name="l-319"></a><span class="tm">19:53:34</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> the dandelion stem isn't expected to reach the entire network
+<a name="l-320"></a><span class="tm">19:53:54</span><span class="nk"> &lt;BlueMatt&gt;</span> it sounds to me like the gmaxwell proposal is effeciely similar, though maybe dandelion pointed out (correctly, I suppose) that you want to not add it to your mempool until later to preserve privacy
+<a name="l-321"></a><span class="tm">19:53:56</span><span class="nk"> &lt;sipa&gt;</span> so you still need something outside of dandelion-forward and mempool reconciliation
+<a name="l-322"></a><span class="tm">19:54:00</span><span class="nk"> &lt;gmaxwell&gt;</span> Peer hands you a txn with a private flag. Assuming the txn is valid wrt your mempool, you set it aside and forward it on to a single other peer (determinstically selected based on the input peer).  At random, you drop the private flag when you relay it with some fixed probablity.   If the txn is offered by other peers you fetch it.
+<a name="l-323"></a><span class="tm">19:54:36</span><span class="nk"> &lt;gmaxwell&gt;</span> If after a timeout you never see it from other peers you broadcast it yourself.. but that only happens if someone in the 'stem' path drops the ball.
+<a name="l-324"></a><span class="tm">19:54:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> there seems to be some overlap, but i don't think dandelion+sync is a complete solution
+<a name="l-325"></a><span class="tm">19:55:07</span><span class="nk"> &lt;gmaxwell&gt;</span> so it is similar to my relay improvement proposal, but the privacy requirements mean that it doesn't accomplish syncing itself.
+<a name="l-326"></a><span class="tm">19:55:12</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> hmm, i was just asking if you didn't see it, why you wouldn't repeat the whole process assuming the stem got cut somehwere, and hoping that you can get to the fluff on try 2.  why fall back to old method
+<a name="l-327"></a><span class="tm">19:55:39</span><span class="nk"> &lt;BlueMatt&gt;</span> wait, wait doesnt "(determinstically selected based on the input peer)" imply that you can still group transactions from a single source based on where you first saw them....sure where you first saw them wont be the guy who created it, but it'll still be the same for all txn from the same guy
+<a name="l-328"></a><span class="tm">19:55:44</span><span class="nk"> &lt;BlueMatt&gt;</span> maybe I should shut up and go read it
+<a name="l-329"></a><span class="tm">19:55:44</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> the 'fluff' is just normal tx relay
+<a name="l-330"></a><span class="tm">19:55:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> so it is like my relay bandwidth improving proposal, without improving relay bandwidth. :P
+<a name="l-331"></a><span class="tm">19:56:20</span><span class="nk"> &lt;BlueMatt&gt;</span> heh, yea, ok
+<a name="l-332"></a><span class="tm">19:56:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> only if you are inside the stem yourself.  (this was a change their latest work makes)
+<a name="l-333"></a><span class="tm">19:56:38</span><span class="nk"> &lt;BlueMatt&gt;</span> hmm, alright
+<a name="l-334"></a><span class="tm">19:57:24</span><span class="nk"> &lt;gmaxwell&gt;</span> the tradeoff is that if you don't do the determinstic routing and the sender sends lots of txn you are certian to be in the stem for some of them.
+<a name="l-335"></a><span class="tm">19:57:49</span><span class="nk"> &lt;gmaxwell&gt;</span> basically related to the guardnodes problem in tor.
+<a name="l-336"></a><span class="tm">19:58:38</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, it would be good to have more critical eyes on their design. I've only just started thinking about the implications of the change to determinstic paths.
+<a name="l-337"></a><span class="tm">20:00:01</span><span class="nk"> &lt;sipa&gt;</span> PLOINK
+<a name="l-338"></a><span class="tm">20:00:11</span><span class="nk"> &lt;wumpus&gt;</span> yes, extrememly important for privacy to not make any mistakes here
+<a name="l-339"></a><span class="tm">20:00:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

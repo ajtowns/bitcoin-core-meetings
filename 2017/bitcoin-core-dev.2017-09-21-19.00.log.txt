@@ -1,0 +1,339 @@
+19:00:26 <wumpus> #startmeeting
+19:00:26 <lightningbot> Meeting started Thu Sep 21 19:00:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:26 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:49 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:00:55 <kanzure> hi.
+19:00:59 <sipa> hi.
+19:01:04 <meshcollider> hello
+19:01:09 <cfields> hi
+19:01:24 <sdaftuar> hey
+19:01:26 <luke-jr> hi
+19:01:42 <jnewbery> hello
+19:02:06 <achow101> hi
+19:02:17 <wumpus> so PSA: we've released 0.15.0.1 with a single patch #11332, compared to 0.15.0, to solve the qt crash issue for some users
+19:02:18 <gribble> https://github.com/bitcoin/bitcoin/issues/11332 | Fix possible crash with invalid nCustomFeeRadio in QSettings (achow101, TheBlueMatt) by jonasschnelli · Pull Request #11332 · bitcoin/bitcoin · GitHub
+19:02:26 <sdaftuar> yay
+19:02:49 <wumpus> #topic high-priority for review
+19:03:10 <achow101> #10871 please?
+19:03:12 <gribble> https://github.com/bitcoin/bitcoin/issues/10871 | Handle getinfo in bitcoin-cli w/ -getinfo (revival of #8843) by achow101 · Pull Request #10871 · bitcoin/bitcoin · GitHub
+19:03:31 <wumpus> I don't think we made much progress on review, this week (me included)
+19:03:49 <BlueMatt> no, we (or at least I) did not :(
+19:04:23 <sipa> regarding that: i've seen several reports of people wondering what happened because getinfo doesn't work... i guess they went from 0.14 to 0.5.99 and never saw the deprecation
+19:04:50 <gmaxwell> Well they shouldn't run 0.5, that would be bad.
+19:04:50 <wumpus> added 10871
+19:04:51 <BlueMatt> heh, so, what, when a new release is announced they just build master? :(
+19:05:07 <luke-jr> Maybe `bitcoin-cli getinfo` should print a message informing the user about the new RPCs, like we did when bitcoind client got deprecated
+19:05:12 <gmaxwell> BlueMatt: some people do that.
+19:05:15 <wumpus> luke-jr: also thought about that
+19:05:19 <BlueMatt> gmaxwell: wat
+19:05:26 <luke-jr> lol
+19:05:34 <wumpus> luke-jr: it should at least print a deprecated message
+19:05:44 <sipa> BlueMatt: gmaxwell is joking about my typo (0.5 instead of 0.15)
+19:05:46 <BlueMatt> gmaxwell: so...what you're saying is we should start using a "develop" branch with master pointing to released versions?
+19:05:54 <BlueMatt> sipa: i figured......
+19:05:54 <wumpus> luke-jr: instead of just about a missing call, as if it's never existed
+19:06:21 <sipa> i like the approach being used for the estimatefee deprecation
+19:06:23 <luke-jr> BlueMatt: github lets you change the default branch, so we could just make it the latest stable branch
+19:06:24 <goatpig> dont poeple typically pull tags, not just the head of a branch (in this case master)
+19:06:26 <wumpus> BlueMatt: or we can just change the github default branch to something else, you know
+19:06:31 <luke-jr> problem is, it's also the default for PRs…
+19:06:34 <BlueMatt> wumpus: yea, possible
+19:06:36 <sipa> where it disappears, but you have a cmdline switch to re-enable
+19:06:40 <BlueMatt> I mean really not joking there that's a serious issue
+19:06:49 <wumpus> but yes, PRs also go there by default, whichi s kinda annoying
+19:06:55 <BlueMatt> people building master right after release is usually bad cause we merge lots of fun stuff on master right after release :/
+19:06:56 <achow101> topic suggestion: deprecation stuff a la #11031
+19:06:57 <gribble> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+19:07:05 <luke-jr> I suppose we can expect developers to be smarter than users
+19:07:22 <gmaxwell> BlueMatt: I am not saying we should, just pointing out people do that. We have warnings on master... so I don't worry too much.
+19:07:22 <cfields> sipa: i like that too. or even an rpc arg like -force-deprecated.
+19:07:27 <wumpus> PRs to branches are really annoying, so I'd prefer to just keep the status quo there
+19:07:33 <BlueMatt> gmaxwell: yea, maybe we should make the warnings louder?
+19:07:37 <BlueMatt> that may be acceptable similar
+19:07:38 <sipa> i think the reports  saw were from pretty much first time users "how do i set this up", and following a guide to build from source
+19:07:43 <luke-jr> cfields: better to force the user to be involved IMO
+19:07:55 <sipa> wumpus: agree
+19:08:06 <wumpus> it can't be the release announcement, as I mention the exact tag to check out there...
+19:08:13 <jonasschnelli> hi
+19:08:15 <cfields> luke-jr: that's what i meant.
+19:08:31 <luke-jr> cfields: a RPC arg wouldn't have the user involved
+19:08:44 <BlueMatt> maybe bitcoind should need a -iknowthisisunreleasedunstableversion option :(
+19:08:46 <luke-jr> software would just set it
+19:08:48 <wumpus> maybe would make sense to add a git clone command in there too for people that can't figure that out themselves
+19:08:58 <BlueMatt> or configure could take it
+19:09:05 <luke-jr> BlueMatt: default to testnet?
+19:09:17 <cfields> luke-jr: oh ok, different definitions of user. i see what you mean.
+19:09:19 <wumpus> configure already has that information, so that'd make sense
+19:09:21 <BlueMatt> ./configure --this-version-is-unreleased-and-possibly-unstable
+19:09:37 <BlueMatt> that would make people think twice and make people fix their guides
+19:09:43 <luke-jr> s/unstable/insecure/ ☺
+19:09:50 <achow101> luke-jr: we would forget to make it default to mainnet for releases
+19:10:01 <BlueMatt> heh, ok, at the risk of bikeshedding, I vote cfields implement it...I dunno anything 'bout autotools
+19:10:02 <BlueMatt> :p
+19:10:04 <luke-jr> achow101: would we? release-process.md
+19:10:04 <wumpus> I've never forget to set IS_RELEASE to true for releases
+19:10:21 <wumpus> a few times we've forgot to bump the version number but only for *minor* releases
+19:10:22 <luke-jr> or just have -testnet default to !IS_RELEASE
+19:10:43 <cfields> heh
+19:10:46 <wumpus> and for branches the IS_RELEASE is always true anyhow
+19:10:49 <BlueMatt> luke-jr: I kinda like it not modifying the bitcoind at all now that i think about it
+19:11:01 <sipa> wumpus: an alternative would be to have a bitcoin-releases repo (under the same org), to which only release tags get pushed
+19:11:04 <BlueMatt> build the same bitcoind, but make people type something that says "is not release"
+19:11:13 <sipa> wumpus: and direct people to clone from there if they just want stable things
+19:11:16 <sipa> but meh...
+19:11:23 <wumpus> sipa: I don't know...
+19:11:29 <BlueMatt> sipa: heh, if we make it not build from bitcoin/bitcoin, ok
+19:11:33 <wumpus> I really prefer not to mess with the repopsotiry too much
+19:11:44 <jonasschnelli> agree with wumpus
+19:11:45 <morcos> This doesn't seem that large a problem to me...
+19:11:48 <sipa> wumpus: yes, agree - i don't think we should do anything
+19:11:48 <wumpus> agree
+19:11:54 <wumpus> any other topics?
+19:11:59 <BlueMatt> agreed, though I'd vote for a configure flag
+19:11:59 <achow101> we could move the repo to bitcoin-core and break all of those guides :)
+19:12:03 <gmaxwell> yea, I think we don't need to do anything except hunt down and kill people with bad guides. :P
+19:12:03 <sipa> achow101 had a topic
+19:12:06 <BlueMatt> its not a huge issue, but it sounds rather dangerous
+19:12:11 <sipa> (though maybe we've covered it already)
+19:12:13 <gmaxwell> perhaps increase the profile of tarball downloads.
+19:12:18 <BlueMatt> and I dont think hunting down guide-writers is possible
+19:12:25 <wumpus> gmaxwell: now that sounds like a good action item
+19:12:33 <wumpus> $action hunt down and kill people with bad guides
+19:12:44 <gmaxwell> BlueMatt: publishers, not technically authors.
+19:12:49 <jnewbery> any other feedback on the approach in #11031? I think it's a useful pattern for deprecating RPCs (which we'll need to do a few times)
+19:12:51 <gribble> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+19:13:27 <wumpus> #topic deprecation stuff a la #11031
+19:13:29 <gribble> https://github.com/bitcoin/bitcoin/issues/11031 | [rpc] deprecate estimatefee by jnewbery · Pull Request #11031 · bitcoin/bitcoin · GitHub
+19:13:37 <luke-jr> there's only 363 0.15.99 nodes
+19:14:02 <BlueMatt> luke-jr: I'd expect there to be ~0 on mainnet aside from some developer test nodes, fwiw
+19:14:18 <achow101> I think that we might run into a problem where people just have -deprecatedrpc (or whatever it is called) and enable all deprecated behavior until it disappears
+19:14:43 <BlueMatt> achow101: thats fine, at least they were made to type "I know this is going away soon"
+19:14:47 <BlueMatt> so they cant show up and complain that its gone
+19:14:48 <cfields> jnewbery: i like it (better than an rpc arg, on second thought), though the name could use some bikeshedding :(
+19:15:05 <jonasschnelli> luke-jr: my crawler counts 2496
+19:15:16 <jonasschnelli> oh.. no .99,.. sry
+19:15:51 <wumpus> I also prefer command line arg to rpc arg
+19:15:59 <wumpus> it's enough to type it once
+19:16:04 <jnewbery> achow101: it's designed such that the user needs to include `-enablerpcmethod=<method1> -enablerpcmethod=<method2> ...` to avoid the problem of a user just setting `-enablealldepractedrpcmethods` and forgetting
+19:16:42 <jnewbery> cfields: yes, name could probably be improved
+19:16:45 <gmaxwell> yea, don't have a deprecatedall, it needs to be specific.
+19:16:50 <wumpus> the purpose is just to signal, not to overburden a user with extra work updating their client applications (apart from getting rid of using the RPC call in the first place)
+19:16:53 <meshcollider> hmm yeah "-enablerpcmethod=" should probably have the word "deprecated" in it
+19:17:00 <wumpus> yes
+19:17:11 <achow101> I propose calling it -enableddeprecatedrpc
+19:17:17 <jonasschnelli> ack
+19:17:18 <wumpus> otherwise it sounds more like a silly security feature
+19:17:20 <meshcollider> +!
+19:17:33 <meshcollider> s/!/1/
+19:17:57 <sipa> -yesimnaughtyandneedtoupdatemyclienttonotuserpcmethod=name
+19:18:15 <achow101> although maybe enabled may not necessarily be the best word for that since we have PRCs that themselves are not deprecated but have deprecated output fields and only the deprecated output fields would show if that option is set
+19:18:33 <luke-jr> thought: should rpcuser auth always throw RPC_METHOD_DEPRECATED? if so, how does the user bypass it?
+19:18:43 <morcos> -deprecatedrpc is good enough
+19:18:45 <luke-jr> maybe -enabledeprecated= would be better
+19:18:51 <wumpus> morcos: yes!
+19:18:51 <morcos> in a light pink
+19:18:53 <gmaxwell> -backwardscompatibilitylaunchcode=0xdeadbeef234828429342893429  < that could trigger fields that are going away. :P
+19:19:05 <wumpus> hehehe
+19:19:16 <gmaxwell> (and you need to read the release notes to get the launch code)
+19:19:21 <gmaxwell> (or source)
+19:19:29 <jnewbery> ok, -deprecatedrpc it is
+19:19:35 <wumpus> release notes scavenger hunt
+19:19:37 <cfields> gmaxwell: where the launchcode is the git commit, so it changes every day until release
+19:20:16 <cfields> jnewbery: ack
+19:20:17 <gmaxwell> well the idea there was that each depricated feature would have its own code. So you'd look up the code and specify it.
+19:20:19 <luke-jr> gmaxwell: too strong for mere deprecation IMO
+19:20:41 <gmaxwell> luke-jr: yes, though it solved the how about deprecated fields case.
+19:20:46 <luke-jr> something like that feels more like to allow changing consensus-critical stuff
+19:20:55 <achow101> I suppose we can then put all of the deprecated account RPCs behind that argument
+19:21:06 <cfields> gmaxwell: you're deprecating me? :(
+19:21:11 <wumpus> yes
+19:21:14 <luke-jr> gmaxwell: how about if the "launch code" matches the method name for methods? :p
+19:21:22 <luke-jr> and "accounts" for accounts
+19:21:29 <wumpus> in the case of accounts it'd be a group not one single call
+19:21:30 <luke-jr> "rpcuser" for -rpcuser
+19:21:42 <wumpus> right
+19:21:55 <luke-jr> this code already fits that paradigm I think, except for the param name
+19:21:57 <achow101> luke-jr: doing that for rpcuser is going to annoy a lot of people
+19:22:16 <luke-jr> achow101: yes, that can be discussed separately; it was an example
+19:22:19 <wumpus> I  think we should keep the discussion of what things to deprecate separate
+19:22:26 <sipa> agree
+19:22:33 <achow101> ok
+19:23:56 <jonasschnelli> removing the account support via -depracaterpc and positioned arguments seems pretty difficult and/or dangerous.
+19:24:08 <jnewbery> achow101: As long as you're happy with that I'll update 11031 with the new name so you can rebase your various RPC deprecation PRs on it
+19:24:18 <luke-jr> "rpc" probably shouldn't be in the arg name.
+19:24:43 <jonasschnelli> users may be confuse why account are deprecated but still work while -depacaterpc=accounts
+19:24:59 <luke-jr> -enabledeprecated seemed nicer IMO
+19:25:05 <achow101> jnewbery: I guess so. I haven't looked over 11031 in a while so I want to review it before rebasing
+19:25:12 <wumpus> jonasschnelli: it's just the account rpcs that are deprecated, accounts themselves will work as labels
+19:25:16 <meshcollider> jonasschnelli: are you suggesting disable the account system completely?
+19:25:23 <meshcollider> (without deprecation)
+19:25:48 <jonasschnelli> wumpus: yes. That makes sense.
+19:25:52 <wumpus> we'll not rip out the account arguments from any non-account RPC calls
+19:26:00 <wumpus> just that move etc are deprecated
+19:26:22 <achow101> topic suggestion: what to deprecate
+19:26:36 <jonasschnelli> But the transition of having a -enabledepracatedrpc= and not disabling the depracated account features seems not to be ideal.. although I guess it's okay
+19:27:02 <wumpus> I doubt there is any ideal way to deprecate a monster like the accounts feature, tbh
+19:27:06 <luke-jr> wumpus: getbalance <non-*> should fail too
+19:27:35 <wumpus> luke-jr: yes
+19:28:13 <luke-jr> jonasschnelli: no "rpc" :/
+19:28:17 <wumpus> do we have any more upbeat topic than deprecation?
+19:28:37 <gmaxwell> China blocking bitcoin?
+19:28:38 <gmaxwell> (not really)
+19:28:39 <meshcollider> segwit wallet support progress?
+19:28:43 <gmaxwell> That
+19:28:52 <sipa> i'll have a PR soon
+19:28:52 <wumpus> #topic segwit wallet support progress
+19:28:55 <wumpus> thanks
+19:29:06 <sipa> otherwise, review #11167
+19:29:07 <gmaxwell> sipa: Have you heard from thomasv about them blocking v>0
+19:29:09 <gribble> https://github.com/bitcoin/bitcoin/issues/11167 | Full BIP173 (Bech32) support by sipa · Pull Request #11167 · bitcoin/bitcoin · GitHub
+19:29:26 <sipa> gmaxwell: yes, we discussed it in here yesterday
+19:29:26 <achow101> sipa: how soon is soon
+19:29:33 <sipa> achow101: this week, i hope
+19:29:58 <jonasschnelli> sipa: are you also tackling the GUI?
+19:30:04 <gmaxwell> did you take my advice and call the new file key-i-key-i-o.cpp
+19:30:11 <sipa> jonasschnelli: no, i'll need help for that
+19:30:21 <sipa> gmaxwell: just key_io
+19:30:32 <meshcollider> haha
+19:30:35 <jonasschnelli> sipa: please point me to your branch after the meeting so I can start to work on that
+19:30:58 <sipa> (for context, gmaxwell is talking about the followup #11372, which is not for 0.15.1)
+19:30:59 <gribble> https://github.com/bitcoin/bitcoin/issues/11372 | Address encoding cleanup by sipa · Pull Request #11372 · bitcoin/bitcoin · GitHub
+19:31:01 <gmaxwell> There should be almost no GUI intersection, other than perhaps offering the default overrides in the gui.
+19:31:23 <sipa> yeah, i expect some expert mode setting to choose the address type - but otherwise it can just use the default
+19:31:36 <gmaxwell> oh right, point of use switching, sure.
+19:31:49 <jonasschnelli> sipa: yes. That is what I though...
+19:32:07 <sipa> not that much to say about the topic otherwise
+19:32:14 <gmaxwell> jonasschnelli: another thing in the GUI is that we should eventually have a BIP173 error hinter.  We need a monospace text entry field that can be told to underline characters or something like that.
+19:32:25 <gmaxwell> (not necessarily a 0.15.1 feature in any case)
+19:32:29 <jonasschnelli> Yes! I just wanted to write that
+19:32:53 <gmaxwell> well sipa's bip173 patch doesn't have the error finder in it.
+19:33:03 <sipa> i think there is another question, that ThomasV brought up yesterday
+19:33:14 <sipa> what to do with private key import/export for segwit addresses
+19:33:24 <gmaxwell> Though we've written one (a port of it to JS is on that demo page)... it deserves a nice gui handling though (even the js demo is kind of lame, in that it can't highlight inline)
+19:33:33 <wumpus> some importmulti ?
+19:33:35 <achow101> sipa: importmulti
+19:33:36 <sipa> importmulti can handle this natively
+19:33:44 <wumpus> ok, seems good enough for me then
+19:33:50 <gmaxwell> importmulti was my first thought too.
+19:33:54 <achow101> deprecate the other import* rpcs
+19:33:54 <sipa> but perhaps at least a warning for importprivkey / dumpprivkey is needed
+19:34:01 <wumpus> just highlight that the old import* rpcs don't work with segwit
+19:34:07 <jonasschnelli> sipa: yes. Or depracate?
+19:34:11 <gmaxwell> When we do the changes that split the key types later, we'll have more to think about. Right now any key is all keytypes.
+19:34:18 <wumpus> or deprecate them at some point, but not for a minor release
+19:34:30 <sipa> right
+19:34:39 <gmaxwell> we can announce an intent at any time. (I think we just did.)
+19:34:46 <ThomasV> importmulti does not seem as easy to use as a serialized format
+19:34:54 <wumpus> yes, intent+reason could be menitoned in the release notes
+19:35:09 <sipa> ThomasV: i consider that a feature :)
+19:35:12 <gmaxwell> ThomasV: because of versioning issues, we're not going to solve a new serialized format right now.
+19:35:23 <jonasschnelli> importmulti is a bit cumbersome to use,... but should the okay for an RPC layer
+19:35:24 <wumpus> importing keys in bitcoin core is considered advanced functionality anyhow
+19:36:02 <sipa> ThomasV: as said, i don't mind discussing a more convenient import format for some use case, but we're not going to solve that instantly
+19:36:07 <jonasschnelli> importaddress and key with the current rescan-everything approach must go away at some point anyways
+19:36:18 <wumpus> jonasschnelli: yeah... that too
+19:36:25 <ThomasV> gmaxwell: we were also considering an import format along the lines of bip124
+19:36:28 <gmaxwell> raw key handling frequently results in funds loss, even for advanced users too.. but I do think we should ultimately be embedding the required metadata to actually use a key. but it's not something we can really do right now.
+19:36:55 <achow101> the bech32-for-privkeys thing could be something for segwit only and have a the witness version number included in that?
+19:37:10 <wumpus> achow101: yes
+19:37:25 <sipa> achow101: yes, or no - i'm not sure
+19:37:29 <gmaxwell> achow101: witness version number isn't the right data.
+19:37:40 <sipa> i think we need a 'pure private key' format, which is just a key
+19:37:43 <instagibbs> doesn't tell you how it's being used, specifically
+19:37:45 <sipa> to minimize the data needed for backup
+19:37:58 <wumpus> more like a 'key use'
+19:37:59 <gmaxwell> it effectively needs to communicate the scriptpubkey (perhaps be template reference).
+19:38:01 <sipa> the associated addresses/chains/... can be stored separately
+19:38:02 <jonasschnelli> Not sure if we should really support exporting / importing private keys over an RPC layer in the long run
+19:38:14 <luke-jr> sipa: but if you're going for minimal, you'd backup the seed, not the keys?
+19:38:15 <sipa> jonasschnelli: yeah... that's a hard question
+19:38:23 <gmaxwell> sipa: still needs metadata.
+19:38:29 <sipa> gmaxwell: how so?
+19:38:40 <wumpus> right, you could backup the seed, and some metadata, no need to backup the keys themselves
+19:38:42 <achow101> <scriptpubkey>|<privkey(s)>
+19:39:01 <gmaxwell> I mean you need to know _what_ chains or key types are expected. Otherwise it's a lossy search problem to figure out what you should be actually getting.
+19:39:10 <wumpus> yes
+19:39:12 <sipa> gmaxwell: sure, but i think that can be separate
+19:39:47 <sipa> ideally, your wallet has 1 piece of actually secret data, and then a bunch of chains/addresses/scripts/... that use keys derived from that secret data
+19:39:51 <gmaxwell> it's critical data without which you can't recover the keys... and with which you can.  (maybe you could bruteforce it out, under somewhat reasonble assumptions...)
+19:40:08 <jonasschnelli> Conceptual, we should work towards private key separation with a daemon (or agent) and core only deals with public keys. The private-keys agent/tool could still be in the repository (or different one)
+19:40:12 <gmaxwell> it's also potentially a rather small amount of data.
+19:40:30 <sipa> gmaxwell: an example i came up yesterday is CLTV scripts
+19:40:43 <sipa> there is no way you can enumerate all CLTV scripts from a particular seed
+19:41:02 <gmaxwell> no, indeed, but the inability to back up CLTV cleanly was one of the motivations for CSV.
+19:41:16 <sipa> but perhaps there is no need, if you have built-in backups of the chain data (which don't risk monetary loss), and a separate backup of the private key
+19:41:30 <luke-jr> so three levels of data really: the seed itself, the types/chains/etc, and the comments/labels
+19:41:36 <sipa> the private key in that case is just a piece of secret data, referred to by the chains
+19:41:48 <gmaxwell> asking people to handle two critical to maintain pieces of information instead of one would be unfortunate.
+19:42:10 <gmaxwell> (and by unfortunate I mean result in non-negligible funds loss in practice)
+19:42:24 <luke-jr> gmaxwell: maybe concatenate seed + types/chains/etc in practice
+19:42:36 <sipa> sure, for simple situations you can create a convenient format that handles both simultaneously
+19:42:38 <gmaxwell> sure. that would be okay to.
+19:42:40 <wumpus> you could encode it into one identifier somehow...
+19:42:43 <wumpus> sounds easy enough
+19:42:45 <gmaxwell> (re to both luke and sipa)
+19:42:59 <sipa> but i expect there to be cases where you really just want to backup a key, and will handle the metadata (which is too complicated) yourself
+19:43:02 <gmaxwell> the logical seperation sounds fine, but for at least the common case there should be some format for combined data.
+19:43:21 <sipa> sure
+19:43:22 <morcos> +1 for the common case combined format
+19:43:32 <gmaxwell> A possible metadata flag is  'external, good luck'. :)
+19:44:13 <jonasschnelli> X509
+19:44:20 <sipa> JSONx!!
+19:44:21 <ThomasV> lol
+19:44:26 * jonasschnelli *ducks*
+19:44:40 <wumpus> you could always back up the key and metadata separately, then combine them before importing, or have import accept multiple formats, this is just details
+19:44:49 <gmaxwell> Could just have a box where people can just type in x86 machine code and it will decode the result for you ...  almost as flexible as x509.
+19:44:57 <gmaxwell> :-)
+19:45:10 <luke-jr> XD
+19:45:20 <sipa> ok, other topics?
+19:45:29 <wumpus> nice, though too easy to use, should be some ancient 8-bit assembly like z80 or 6502
+19:46:08 <sipa> INTERCAL
+19:46:13 <luke-jr> suggested topic: it would be really nice to get #7533 in, since it is a constant rebase hell otherwise; comments on how to improve the code quality (ugh, macros) appreciated
+19:46:15 <gribble> https://github.com/bitcoin/bitcoin/issues/7533 | RPC: sendrawtransaction: Allow the user to ignore/override specific rejections by luke-jr · Pull Request #7533 · bitcoin/bitcoin · GitHub
+19:46:16 <gmaxwell> I've had to use 6502 assembly in the last couple years ... (for a mystery hunt puzzle)
+19:46:26 <wumpus> yeah
+19:47:07 <wumpus> gmaxwell: did you still manage to? :)
+19:47:08 <gmaxwell> other topics: did people see on the mailing list that there is a new Dandelion post?
+19:47:16 <jnewbery> wumpus: you suggested topic high-priority for review earlier. Did you want to discuss individual PRs or were you just asking if people had PRs they want added to the list?
+19:47:38 <meshcollider> https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-September/015030.html
+19:47:42 <wumpus> #topic Dandelion post
+19:48:18 <wumpus> jnewbery: both is ok, though there are too many PRs on the list right now, would prefer some to be reviewed first - the point of it focusing review is lost if we just add all PRs in there :)
+19:48:38 <gmaxwell> I don't know that I have much to say, other that I thought it should get some attention (I know not everyone reads the list closely). I think this will be a good thing to implement and the people working on it are pretty eager.
+19:48:48 <gmaxwell> (and responsive)
+19:49:40 <jnewbery> wumpus: ok, tit-for-tat. I'll review a couple of those in the next week. Can you add #10740. I think it's ready for initial review
+19:49:40 <wumpus> thanks for mentioning it, I indeed missed it
+19:49:42 <gribble> https://github.com/bitcoin/bitcoin/issues/10740 | [wallet] dynamic loading/unloading of wallets by jnewbery · Pull Request #10740 · bitcoin/bitcoin · GitHub
+19:49:55 <wumpus> #link https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-September/015030.html
+19:50:12 * BlueMatt is curious how this interacts with the questions about mempool sync
+19:50:20 <BlueMatt> though I havent read the dandelion stuff much
+19:50:43 <wumpus> jnewbery: ok added
+19:50:43 <gmaxwell> BlueMatt: externally to it. Basically it's a quiet forwarding thing that has little to no mempool interaction.
+19:50:53 <jnewbery> wumpus: thanks!
+19:50:58 <gmaxwell> BlueMatt: so that public distribution of transactions happens away from the source.
+19:51:36 <BlueMatt> gmaxwell: well based on the dandelion tl; dr i just got, it seems to me that dandelion is essentially the old mempool-sync proposal of "relay txn to only one, maybe two peers but then do sync of your mempool with your peers every so often to propagate things more fully"
+19:51:48 <BlueMatt> except they replace sync with "broadcast after a while"
+19:52:07 <gmaxwell> BlueMatt: kind of. it's not in your mempool though when it passes through in the one at a time propagation.
+19:52:35 <sipa> BlueMatt: but dandelion has rebroadcast too, which can't be avoided (if you dandelion-forwarded a TX, but don't see it N seconds later on the normal network, you yourself start broadcasting it normally)
+19:52:57 <morcos> sipa: why not dandelion it again?
+19:53:23 <BlueMatt> sipa: yes, I'm asking for comparison between dandelion and the old mempool-sync proposal of gmaxwell
+19:53:34 <sipa> morcos: the dandelion stem isn't expected to reach the entire network
+19:53:54 <BlueMatt> it sounds to me like the gmaxwell proposal is effeciely similar, though maybe dandelion pointed out (correctly, I suppose) that you want to not add it to your mempool until later to preserve privacy
+19:53:56 <sipa> so you still need something outside of dandelion-forward and mempool reconciliation
+19:54:00 <gmaxwell> Peer hands you a txn with a private flag. Assuming the txn is valid wrt your mempool, you set it aside and forward it on to a single other peer (determinstically selected based on the input peer).  At random, you drop the private flag when you relay it with some fixed probablity.   If the txn is offered by other peers you fetch it.
+19:54:36 <gmaxwell> If after a timeout you never see it from other peers you broadcast it yourself.. but that only happens if someone in the 'stem' path drops the ball.
+19:54:56 <sipa> BlueMatt: there seems to be some overlap, but i don't think dandelion+sync is a complete solution
+19:55:07 <gmaxwell> so it is similar to my relay improvement proposal, but the privacy requirements mean that it doesn't accomplish syncing itself.
+19:55:12 <morcos> sipa: hmm, i was just asking if you didn't see it, why you wouldn't repeat the whole process assuming the stem got cut somehwere, and hoping that you can get to the fluff on try 2.  why fall back to old method
+19:55:39 <BlueMatt> wait, wait doesnt "(determinstically selected based on the input peer)" imply that you can still group transactions from a single source based on where you first saw them....sure where you first saw them wont be the guy who created it, but it'll still be the same for all txn from the same guy
+19:55:44 <BlueMatt> maybe I should shut up and go read it
+19:55:44 <sipa> morcos: the 'fluff' is just normal tx relay
+19:55:48 <gmaxwell> BlueMatt: so it is like my relay bandwidth improving proposal, without improving relay bandwidth. :P
+19:56:20 <BlueMatt> heh, yea, ok
+19:56:28 <gmaxwell> BlueMatt: only if you are inside the stem yourself.  (this was a change their latest work makes)
+19:56:38 <BlueMatt> hmm, alright
+19:57:24 <gmaxwell> the tradeoff is that if you don't do the determinstic routing and the sender sends lots of txn you are certian to be in the stem for some of them.
+19:57:49 <gmaxwell> basically related to the guardnodes problem in tor.
+19:58:38 <gmaxwell> in any case, it would be good to have more critical eyes on their design. I've only just started thinking about the implications of the change to determinstic paths.
+20:00:01 <sipa> PLOINK
+20:00:11 <wumpus> yes, extrememly important for privacy to not make any mistakes here
+20:00:18 <wumpus> #endmeeting
