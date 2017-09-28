@@ -1,0 +1,426 @@
+19:01:29 <wumpus> #startmeeting
+19:01:29 <lightningbot> Meeting started Thu Sep 28 19:01:29 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:29 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:35 <achow101> hi
+19:01:36 <meshcollider> Hello again
+19:01:47 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:48 <meshcollider> lightningbot?
+19:02:10 <cfields> hi
+19:02:20 <wumpus> luke-jr: yes, you could ignore DST for yourself and live in GMT time, the difficulty is shop opening times and such :)
+19:02:22 <jnewbery> hi
+19:02:23 <kanzure> hi.
+19:02:29 <Chris_Stewart_5> hello
+19:02:32 <wumpus> oh no the bot is missing
+19:02:38 <wumpus> #action find the bot
+19:02:46 <achow101> is it?
+19:02:58 <petertodd> wumpus: one of the perils of replacing humans with machines
+19:03:13 <wumpus> ehh.. no it isn't, sorry
+19:03:33 <wumpus> petertodd: but it lives in the cloud! humans can't live in a cloud!
+19:03:42 <wumpus> #topic High priority for review
+19:04:00 * BlueMatt 's is staying....
+19:04:01 <BlueMatt> again
+19:04:22 <BlueMatt> 10663 got merged
+19:04:25 <BlueMatt> same with 10871
+19:04:44 <jonasschnelli> hi
+19:04:45 <wumpus> yes, finally
+19:04:57 <BlueMatt> =D
+19:05:19 <wumpus> BlueMatt: yours has wallet in the name, that seems to put a curse on it with regard to reviewers
+19:05:31 <luke-jr> XD
+19:05:33 <jonasschnelli> Maybe someone can review #10387 (in high prio), ideally cfields
+19:05:35 <gribble> https://github.com/bitcoin/bitcoin/issues/10387 | Implement BIP159, define and signal NODE_NETWORK_LIMITED (pruned peers) by jonasschnelli · Pull Request #10387 · bitcoin/bitcoin · GitHub
+19:05:45 <jonasschnelli> Would be great to have this in 0.16
+19:05:55 <wumpus> which reminds me
+19:05:57 <cfields> jonasschnelli: will do asap
+19:06:01 <wumpus> #topic put up 0.16 release schedule
+19:06:04 <jonasschnelli> cfields: thanks!
+19:06:11 <BlueMatt> wumpus: yea, I think so...I havent been pushing it cause folks want 0.15.1 first, but afterwards I really want that to go in asap, cause I really want to have it in early in 0.16 so it simmers for months
+19:06:40 <wumpus> 10387 is already in "high priority for review"
+19:06:45 <jonasschnelli> Yes
+19:06:49 <wumpus> BlueMatt: seems it has had quite some review though
+19:06:52 <jonasschnelli> Just no reviews. :)
+19:06:58 <BlueMatt> #11089 needs to get removed from high priority, it needs major rebase
+19:07:00 <gribble> https://github.com/bitcoin/bitcoin/issues/11089 | Enable various p2sh-p2wpkh functionality by luke-jr · Pull Request #11089 · bitcoin/bitcoin · GitHub
+19:07:02 <achow101> #10637 for high prio review?
+19:07:05 <gribble> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+19:07:17 <wumpus> BlueMatt: ok
+19:07:22 <gmaxwell> jonasschnelli: Oh, I'm surprised that patch is so large, I was kinda hoping to see it widely backported so pruned nodes on older branches could see it advertised.
+19:07:26 <jonasschnelli> Maybe next to the release schedule for 0.16, ... what do we want in 0.16?
+19:07:37 <sipa> most of 11089's functionality is included in #11403
+19:07:38 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:07:44 <jonasschnelli> gmaxwell: I'm happy if you see a way how to reduce it
+19:07:47 <jonasschnelli> Or split it
+19:08:07 <gmaxwell> jonasschnelli: yea, will look. Sorry, didn't see it until now.
+19:08:12 <wumpus> 11089 removed for now
+19:08:13 <jonasschnelli> Although +264 −13 shouldn't be too large
+19:08:27 <jonasschnelli> (incl. new test)
+19:08:54 <morcos> oh man i feel like i'm buried under PR's to review ...   maybe i'd make some progress if you could review via tweet
+19:09:02 <jonasschnelli> heh
+19:09:18 <luke-jr> would be nice to have GUI multiwallet in 0.16, but #10615 is stuck on desires for refactoring :/
+19:09:19 <gribble> https://github.com/bitcoin/bitcoin/issues/10615 | RPC: Allow rpcauth configs to specify a 4th parameter naming a specific wallet (multiwallet RPC support) by luke-jr · Pull Request #10615 · bitcoin/bitcoin · GitHub
+19:09:40 <BlueMatt> luke-jr: I think it is unacceptable to add so many more ifdef WALLET in bitcoin server
+19:09:45 <jonasschnelli> luke-jr: can you remove the rpcauth part? It's not necesdarry and contraversial.
+19:09:48 <wumpus> this is tagged for 0.16 right now (both issues and PRs):https://github.com/bitcoin/bitcoin/milestones/0.16.0
+19:09:48 <BlueMatt> (and believe it would be easy to remove them)
+19:09:52 <gmaxwell> jonasschnelli: I don't understand why the flags set would change at runtime?  Setting the flag is a property of the node's configuration.
+19:10:03 <sipa> morcos: well there is @BitcoinMerges...
+19:10:08 <gmaxwell> (and in our case we don't have any configuration where it shouldn't be set, AFAIK)
+19:10:23 <wumpus> morcos: well at least we can fit twice as much code in a tweet now...
+19:10:24 <morcos> sipa: that's brilliant, at least it would constantly remind me
+19:10:29 <jonasschnelli> gmaxwell: maybe no longer required with a single NODE_NETWORK_LIMITED bit
+19:10:32 <luke-jr> jonasschnelli: I think that's possible, but I don't see why it should be controversial, and doesn't help with BlueMatt's refactoring wants
+19:10:49 <jonasschnelli> luke-jr: it's a fact that it is contraversial
+19:10:57 <jonasschnelli> * controversial
+19:11:05 <gmaxwell> jonasschnelli: ah! right, so this code was originally based on the more complex spec.
+19:11:11 <BlueMatt> luke-jr: I dont think I'm the only one who objects to ifdef wallet's being added to http server cpp files........
+19:11:31 <jonasschnelli> gmaxwell: thanks for pointing out... i'll review it and check if I can remove the runtime switching
+19:11:34 <wumpus> BlueMatt: no, you aren't, that's obviously wrong, we've been working hard to remove those as they cause circular refs :(
+19:11:49 <jnewbery> luke-jr: cherry-picking the non-controversial commits from your PR gives us the GUI functionality without adding a bunch of server->wallet dependencies or the rpcauth stuff
+19:12:15 <luke-jr> jnewbery: I don't see how that's possible
+19:12:20 <gmaxwell> jonasschnelli: my completely ignorant (only barely read the patch) thought is that there should be one commit which should be a nearly one line change to just set the bit everywhere.. then another commit or two for the relay, then another for selection.  And the first commit we'd backport, maybe the second, but not the third.
+19:12:45 <luke-jr> BlueMatt: so httprpc calls a callback for "populate JSONRequest with metadata" which is only used for this one thing?
+19:12:50 <luke-jr> BlueMatt: or what did you have in mind?
+19:12:53 <wumpus> see e.g. #7965. We want to go toward 0 wallet references in bitcoin_server
+19:12:54 <gribble> https://github.com/bitcoin/bitcoin/issues/7965 | Remaining instances of ENABLE_WALLET in `libbitcoin_server.a` · Issue #7965 · bitcoin/bitcoin · GitHub
+19:13:14 <jonasschnelli> gmaxwell: I thought it is basically like that (factored in a bit more commits though)
+19:13:17 <achow101> wumpus: we can check getinfo off that list now
+19:13:25 <wumpus> achow101: thanks good point
+19:13:30 <BlueMatt> luke-jr: yes, that would be sufficient
+19:13:33 <BlueMatt> imo
+19:13:54 <luke-jr> ok, I'll try that
+19:13:58 <wumpus> achow101: updated
+19:14:15 <BlueMatt> luke-jr: you may wish to seek concept acks on the *idea* of rpc auth-based multiwallet
+19:14:20 <BlueMatt> I'm ok with it, but I dont know if others are
+19:14:28 <luke-jr> #action refactor #10615 for a "populate JSONRequest" callback, and separate out rpcauth stuff
+19:14:29 <gribble> https://github.com/bitcoin/bitcoin/issues/10615 | RPC: Allow rpcauth configs to specify a 4th parameter naming a specific wallet (multiwallet RPC support) by luke-jr · Pull Request #10615 · bitcoin/bitcoin · GitHub
+19:14:54 <gmaxwell> jonasschnelli: ah, right though the setter isn't simple like I expected but now I understand why.
+19:14:54 <jonasschnelli> BlueMatt , luke-jr : the rpcauth multiwallet is completely orthogonal to GUI multiwallet
+19:14:59 <gmaxwell> and that should be fixable.
+19:15:23 <wumpus> jonasschnelli: indeed, let's not confound things unnecessarily
+19:15:34 <luke-jr> jonasschnelli: yeah, I'll split it off
+19:15:48 <jonasschnelli> yes. It's smells like smuggling in controversial stuff packed in a nice feature
+19:15:55 <gmaxwell> Yes, please split those things up. (I say this as a supporter of rpcauth based multiwallet control)
+19:16:04 <sipa> i'm ok with rpcauth-based multiwallet, but i think it may be a longer-term thing; it would probably require some review of security of non-wallet RPCs (should a wallet-specific rpc user be allowed to call stop?)
+19:16:25 <luke-jr> sipa: well, it wasn't meant to be a security thing, but maybe we can consider that
+19:16:44 <sipa> yeah, just saying - i think multiwallet gui can be done much faster
+19:16:47 <luke-jr> right
+19:16:48 <BlueMatt> I was assuming rpcauth-based multiwallet would only allow you to call wallet functions
+19:16:52 <sipa> everyone clearly wants it
+19:16:56 <gmaxwell> sipa: main interest I have in it is anti-footgun. Can't spend accidentally what you don't have access too.
+19:16:58 <jonasschnelli> rpcauth opens up the usecase and suddenly users think Core is a 100k multiuser wallet system
+19:17:08 <jonasschnelli> we just need to be sure we want this
+19:17:08 <wumpus> yes, multiwallet GUI isn't controversial in any way
+19:17:18 <gmaxwell> jonasschnelli: Then we can simply say it isn't. I don't think that is a good argument.
+19:17:38 <morcos> yeah lets pleast punt on rpcauth for now... seems better use of our time to move towards splitting off wallet
+19:17:41 <wumpus> the gui even has some scaffolding already to be able to handle multiple wallets IIRC, of course it's not complete
+19:17:43 <achow101> gmaxwell: people will probably still use it that way though
+19:17:46 <luke-jr> leaving `stop` etc accessible makes it clearly not that IMO
+19:17:48 <jonasschnelli> We may end up in the same situation like the accounts... i'm not against it. But we should discuss it wisely and not related to GUI multiwallet
+19:18:01 <wumpus> morcos: +1, I'm kind of sick of discussing that tbh
+19:18:12 <jonasschnelli> `/rpcauth (ack)
+19:18:17 <luke-jr> wumpus: #11383 is there already, just needs to get past this initial stuff
+19:18:19 <gribble> https://github.com/bitcoin/bitcoin/issues/11383 | Basic Multiwallet GUI support by luke-jr · Pull Request #11383 · bitcoin/bitcoin · GitHub
+19:18:25 <wumpus> luke-jr: yes
+19:18:38 <wumpus> so anything that needs to be discussed with regard to  GUI multiwallet?
+19:19:04 <luke-jr> someone mentioned that they think the current design is too unobservable
+19:19:05 <wumpus> if not, any other topics?
+19:19:14 <jonasschnelli> the UI itself is not clear yeat. But luke-jr first approach is something we could have in 0.16
+19:19:25 <BlueMatt> yes, next topic?
+19:19:40 <jonasschnelli> topic: I wanted to ask if there are opinions against the concept of RPC long poll
+19:19:47 <jonasschnelli> I'd like to work on this for 0.16
+19:19:48 <wumpus> #topic RPC long poll
+19:19:49 <sipa> i'd like to bring up segwit wallet support
+19:20:00 <luke-jr> proposed topic: would be nice to get some code review on https://github.com/BitcoinHardfork/bitcoin/pulls PRs before November in case we need it (other PRs welcome)
+19:20:10 <BlueMatt> jonasschnelli: please give a tl;dr; of what it is :)
+19:20:12 <wumpus> jonasschnelli: no, no problems with it, I think it's superior to other ways we've considered
+19:20:14 <jonasschnelli> RPC long poll would allow similar push benefits then ZMQ offers but without any dependencies
+19:20:29 <gmaxwell> jonasschnelli: long poll for what specifically?
+19:20:36 <luke-jr> jonasschnelli: we already have RPC long poll
+19:20:37 <wumpus> for any of the current notifications
+19:20:43 <wumpus> blocks, transactions, wallet events
+19:20:47 <gmaxwell> you mean like blocks and transactions...
+19:20:48 <jonasschnelli> you open an http connection (with a timeout of lets say 60seconds)... once a new block/tx pops in, you get it back and reopen the timeout 60 channel
+19:20:49 <gmaxwell> ah.
+19:20:58 <jonasschnelli> It's how Cellphone OSes do push notifications
+19:21:00 <wumpus> yes. the stuff that now requires launching an external notify script
+19:21:03 <jonasschnelli> very nat friendlly
+19:21:11 <wumpus> jonasschnelli: yes, it's very basic and easy to use
+19:21:19 <gmaxwell> Well. "Better than ZMQ"-- part of the argument against it in the past was socket monopolization but with libevent now that should be much less of an issue.
+19:21:22 <jonasschnelli> Very easy to use... no ZMQ library, just an http client
+19:21:24 <sdaftuar> how does reopening work?  i don't understand how you avoid missing transactions in between
+19:21:41 <luke-jr> gmaxwell: hopefully. libevent has a history of having problems in this area IIRC
+19:21:46 <jonasschnelli> sdaftuar: you just open the http channel again... there is a queue on the server..
+19:21:47 <wumpus> it's not meant as a competition to ZMQ, ZMQ will stay
+19:21:51 <jonasschnelli> losing notifications is impossible
+19:21:57 <jonasschnelli> (or very unlikely)
+19:22:02 <luke-jr> sdaftuar: you have a session
+19:22:12 <gmaxwell> jonasschnelli: impossible and very unlikely are not the same. :P
+19:22:21 <cfields> didn't we have this discussion wrt waitfornewblock and friends? I'm missing how this is different
+19:22:23 <wumpus> zmq is for low latency notifications, longpoll is for easy notifications over the same channel RPC already works
+19:22:25 <jonasschnelli> yeah.. probably same level then ZMQ (where you can also loose nots)
+19:22:43 <wumpus> zmq requires careful extra setup
+19:22:50 <luke-jr> or order the events, and have the client request with the last-seen-event (as GBT does)
+19:22:52 <jonasschnelli> It would allow clients to better interect with Core without opening an ZMQ & RPC channel (only RPC)
+19:22:56 <gmaxwell> if you are using it to notice new transactions, losing a message means you fail to credit a customer with a $10,000 deposit... and look like a theif or even actually lose the money. :)
+19:23:00 <jonasschnelli> and it would allow *auth based notifications"
+19:23:03 <jonasschnelli> like wallet notifications
+19:23:10 <jonasschnelli> (which should be behing the auth)
+19:23:33 <jonasschnelli> notifications may lead to an RPC roundtrip...
+19:23:40 <wumpus> gmaxwell: true, but the -Xnotify that launches a script can also fail to launch a script in some cases, losing notification
+19:23:41 <BlueMatt> if its for wallet you can just use it to get info about when you need to call listsinceblock
+19:23:43 <gmaxwell> ZMQ has wire protocol incompatiblity between versions, which makes it harder to use except in very tightly coupled setups.
+19:23:44 <jonasschnelli> It just ellimitens constant triggering
+19:23:50 <BlueMatt> which isnt so bad...but for mempool its unclear how you can do it safely
+19:23:55 <wumpus> gmaxwell: we have to be realistic too
+19:23:59 <sipa> wumpus: but on the next notification you'll notice it
+19:24:11 <gmaxwell> wumpus: Is there a reason we can't give a reliable notification?
+19:24:12 <wumpus> sipa: yes, that's why the zmq notifications have sequence numebrs too
+19:24:15 <luke-jr> we probably don't want to use the same LP for wallet and non-wallet
+19:24:41 <wumpus> sipa: you'll notice that you've lost an event, you just don't know what it is so need to do reconciliation in that case
+19:24:54 <jonasschnelli> My LP PR (which I'm currently re-doing) has sequence numbers
+19:25:02 <cfields> ah
+19:25:04 <wumpus> gmaxwell: well the problem is that send buffers can be full
+19:25:16 <jonasschnelli> If you miss a notification, do a data re-sync
+19:25:19 <sipa> i wonder if we shouldn't think about something more generic... you configure "i have an RPC client, which is interested in all events which satisfy condition X, Y, Z....", and then there can be means for the client to read the event log, or get notifications when there are new events, ...
+19:25:20 <wumpus> gmaxwell: 100%(ish) reliable notifications means storing them to disk if the client isn't processing them
+19:25:34 <sipa> and the server keeps track of what the client has seen and hasn't
+19:25:50 <BlueMatt> (as long as all of those events come out of the CValidationInterface =D)
+19:25:53 <luke-jr> sipa: that makes me think of pruning - "I need to use block data, so don't prune until I say I'm done with it"
+19:25:53 <wumpus> gmaxwell: I mean reliable messaging/notification is a huge topic in itself..
+19:26:02 <luke-jr> sipa: not the same thing, but perhaps has some overlap
+19:26:04 <gmaxwell> wumpus: or allowing the send buffer to grow to the point that it gets swapped out and ultimately crashes. :)
+19:26:10 <sipa> luke-jr: indeed, it seems related
+19:26:19 <wumpus> gmaxwell: yes, in which case it's lost too
+19:26:21 <jonasschnelli> sipa: my LP PR does basically something like that. You can register a UUID for notifications and the server keeps track what you have received and what not
+19:26:29 <jonasschnelli> It's multi-client capable
+19:26:46 <wumpus> luke-jr: yeah there's certainly overlap there
+19:26:52 <gmaxwell> wumpus: yes, though cold start init is something that everything has to have and has to have tested, as it happens at every start.
+19:26:56 <wumpus> luke-jr: block consumers ideally should be able to set a low-water mark
+19:27:14 <luke-jr> maybe they should share jonasschnelli's UUID
+19:27:18 <wumpus> gmaxwell: well it needs reconciliation, you could also do that if you miss a notification ( which can be detected from the sequence number)
+19:27:40 <wumpus> gmaxwell: so if you have something to handle potential crashes, you also have something to handle the case where a message gets lost
+19:27:42 <luke-jr> although for block consumption, we'd want to store it in a persistent db IMO
+19:28:02 <luke-jr> (or could use rwconf and have a config param, but that seems ugly for this)
+19:28:16 <gmaxwell> obligitory question: Is any user asking for this or is it just interesting?
+19:28:39 <jonasschnelli> gmaxwell: Yes. Me as an user... :)
+19:28:42 <wumpus> yes yes yes
+19:28:48 <luke-jr> gmaxwell: the block consumption part would allow Armory to do pruning, at least ;0
+19:28:51 <wumpus> joinmarket for example would like a better notification mechanism
+19:28:52 <jonasschnelli> (for the hardware wallet client i'm working)
+19:28:55 <cfields> luke-jr: hmm, so clients could issue a single rpc command and have new blocks announcements replayed after a day offline?
+19:29:09 <wumpus> gmaxwell: they currently have a hack where you have to set walletnotify in bitcoin.conf, which isn't very flexible and easy to forget
+19:29:15 <luke-jr> cfields: I don't see why not
+19:29:23 <wumpus> gmaxwell: if their software could just subscribe to events through RPC, that problem'd be solved
+19:29:33 <cfields> that's interesting
+19:29:34 <jonasschnelli> See also https://github.com/bitcoin/bitcoin/pull/10554
+19:29:35 <gmaxwell> wumpus: why doesn't it just poll?
+19:29:36 <wumpus> no need for restarting bitcoind even!
+19:29:37 <jonasschnelli> #10554
+19:29:39 <gribble> https://github.com/bitcoin/bitcoin/issues/10554 | ZMQ: add publishers for wallet transactions. by somdoron · Pull Request #10554 · bitcoin/bitcoin · GitHub
+19:29:41 <BlueMatt> jonasschnelli: if its not a big bother, then, as wumpus points out, can you ask the joinmarket guys if your proposed protocol is sufficient for them? would be good to be in sync on it
+19:29:52 <luke-jr> related: my GUI NetWatch branch has a circular memory-efficient buffer of weak-linked txs and blocks
+19:29:53 <wumpus> gmaxwell: because polling sucks
+19:29:55 <jonasschnelli> BlueMatt: good point
+19:30:10 <wumpus> it causes extra delays, at least, and uses more CPU time
+19:30:25 <wumpus> (depending on how fast you poll)
+19:30:40 <jonasschnelli> wumpus: and the UX may suck,... LP gives you a TX, block within ms not s
+19:30:51 <wumpus> I really don't understand why we're arguing whether to add a sane notification system at all and considering repetitive polling good enough
+19:30:52 <gmaxwell> ISTM the caller will need a consierable amount of complexity to avoid losing data, vs sending a poll every coupld seconds.  Polling faster than seconds hardly makes sense in the context of bitcoin in any case, since txn take seconds to propagate through the network.
+19:31:08 <gmaxwell> wumpus: because we already have one almost unused unreliable notification system.
+19:31:16 <wumpus> sigh, never mind
+19:31:19 <wumpus> another topic?
+19:31:24 <jonasschnelli> sipa had one
+19:31:34 <gmaxwell> bleh, I'm not trying to bludgon it.
+19:31:35 <wumpus> and no, zmq is not unused
+19:31:52 <jonasschnelli> IMO it is heavely used in some enterprises
+19:31:53 <wumpus> just that you're not using  or it's not good/reliable enough for you it doesn't mean no one is using it
+19:32:10 <gmaxwell> I've never encountered someone using it in production. I don't doubt that it is somewhere.
+19:32:17 <wumpus> as I've said many times, loss of messages can be handled if it can be detected, and it can be detected using the sequence numbers
+19:32:23 * BlueMatt 's preferred method of notification is the "hey, you should poll now" method
+19:32:26 <sipa> i think there is a lot of merit in creating a reliable event logging system for clients to observe
+19:32:36 <luke-jr> BlueMatt: indeed, blocknotify is sane IMO
+19:32:41 <sipa> if we have that, adding a notification for "you have new events!" seems both trivial and obvious
+19:32:52 <jnewbery> suggested topic: next Bitcoin Core meetup
+19:32:58 <jonasschnelli> BlueMatt: ZMQ / LP is  "hey, you should poll now"
+19:32:59 <cfields> agreed. and agree with wumpus. Seems like a no-brainer to me.
+19:33:00 <luke-jr> jnewbery: another one?
+19:33:01 <jonasschnelli> We only send hashes
+19:33:19 <BlueMatt> jonasschnelli: I wouldnt even send hashes
+19:33:27 <gmaxwell> But we don't get a report flow on it that suggests that its in use...  And the advice I give is to poll because it's reliable, hard to get wrong, and has no scaling issues on any system that can keep up with the network.   And the reason I was asking questions is because I was trying to understand what the gain in having another one would be... one thought I had was maybe it would be more reliab
+19:33:30 <BlueMatt> just do the old "disconnect upon new data" pattern
+19:33:33 <gmaxwell> le, but I see why thats hard.
+19:33:35 <luke-jr> blocknotify='killall -USR1 programname' ☺
+19:34:08 <sipa> 19:19:49 < sipa> i'd like to bring up segwit wallet support
+19:34:20 <wumpus> gmaxwell: you can do polling in addition to processing notifications, that's what I mean with 'reconciliation'
+19:34:24 <morcos> notification system for topic suggestions?
+19:34:39 <gmaxwell> Obviously if people want to work on it, I don't mind. I'll even spend some time reviewing it.  But there are so many other things we've left half complete... so thats just my reservation. I'm sorry for frustrating you.
+19:35:01 <wumpus> anyhow, time for sipa's topic
+19:35:06 <wumpus> #topic segwit wallet support
+19:35:13 <sipa> yay!
+19:35:14 <morcos> for the record i'm also wary about adding more and more notification systems, but that's not to say i don't think we shouldn't improve from where we are now
+19:35:25 <wumpus> morcos: you've just missed that topic
+19:35:29 <wumpus> :p
+19:35:50 <sipa> so, i have a PR #11403 which i think implements most of what we want, except some import/export and message signing
+19:35:52 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:36:00 <sipa> however, i think there are 2 differences compared to what we discussed before
+19:36:44 <sipa> 1) importprivkey works, and actually imports all corresponding addresses for that given key (P2PKH, P2SH-P2WPKH, P2WPKH)
+19:36:48 <wumpus> nice
+19:37:42 <sipa> that's not how i want things to work long term, but it's very hard and probably confusing to users to almost everywhere follow the "a key corresponds to all 3 forms of corresponding addresses", except when importing (and importing is inevitably needed anyway for testing)
+19:38:38 <sipa> 2) once you generate a segwit address with this patch, you can't really downgrade to older software anymore (unless you go fix your missing addresses with addwitnessaddress), though no new backup is needed
+19:39:05 <luke-jr> why 2?
+19:39:06 <BlueMatt> wait, why?
+19:39:07 <morcos> 2 confuses me
+19:39:19 <sipa> which differs from the earlier idea of every new addresses effectively calling addwitnessaddress
+19:39:24 <BlueMatt> yea, what we discussed was auto-addwitnessaddress
+19:39:34 <morcos> i think it depends on what we are expecting 0.16 to do
+19:39:39 <sipa> well, auto-addwitnessaddress doesn't actually achieve what you want either
+19:40:58 <morcos> if the manual upgrade of a wallet to 0.16 is going to auto add all 3 versions of all keys, then what you are suggesting seems maybe ok...   but that will lead to more bloat in 0.16 as opposed to just having the scripts already in the wallet moved over
+19:41:37 <sipa> effectively what the patch does is just implicitly making redeemscripts for all your keys known, without writing them to the file
+19:42:00 <meshcollider> Oh so if you wrote them to the file downgrading would be fine
+19:42:32 <achow101> sipa: why not write them?
+19:42:32 <sipa> meshcollider: not really... new transactions you receive while downgrading are risky
+19:42:41 <sipa> achow101: bloat, and it doesn't fully solve the problem
+19:42:45 <BlueMatt> sipa: yes, why did you decide to do that over the previous discussion?
+19:43:03 <luke-jr> morcos: don't add segwit stuff for old keys..
+19:43:32 <sipa> BlueMatt: because keys the old version adds to the keypool during auto-topup won't get their witnesses added, and will go undetected
+19:43:39 <gmaxwell> meshcollider: writing them doesn't make downgrading fine though, because the downgraded one won't be adding them for things in the keypool. so in the presences of restores they'd potentially silently lose funds.
+19:43:55 <luke-jr> would be pretty ugly if the address list tripled in size simply with an upgrade; ideally we should only list one type per key, perhaps excepting the import case
+19:44:06 <BlueMatt> sipa: huh? I figured youd "auto-addwitnessaddress" when you getnewaddress/get the address for gui/etc
+19:44:10 <BlueMatt> not when the key is generated
+19:44:17 <sipa> BlueMatt: that won't work at all
+19:44:27 <gmaxwell> luke-jr: we're kinda stuck with that right now, obviously when we change the wallet design we can move to a model where there is a 1:1 matching between chains and keys. But thats a major redesign.
+19:44:30 <sipa> BlueMatt: as old versions will then miss all transactions received while offline
+19:44:32 <luke-jr> gmaxwell: if you getnewaddress with an older version, you won't get a segwit address, so they don't *need* to be added..
+19:44:33 <BlueMatt> sipa: yes, please explain why
+19:44:42 <sipa> (their keypool entries won't have witnesses, so won't be watched for)
+19:44:48 <luke-jr> gmaxwell: we can leave existing keys alone, at least
+19:44:48 <BlueMatt> ah, i see your point
+19:44:56 <gmaxwell> BlueMatt: then backup and restore is completely no durable and you'll miss payments if you start with a restored wallet...
+19:44:59 <gmaxwell> yea.
+19:45:29 <luke-jr> gmaxwell: only if you restore a backup with an old version?
+19:45:36 <luke-jr> that seems like a very niche problem area
+19:45:42 <sipa> there is a possible best-effort approach of adding witnesses for all keypool entries and new addresses... but given that that's not even water tight...
+19:45:51 <luke-jr> "when restoring a backup, don't use old versions" seems the straightforward "fix"
+19:45:55 <gmaxwell> luke-jr: no, the best we could do is store a flag where the segwittyness starts and handle that, but because users are _already_ using addwitnessaddress this would not resolve their current recovery problems while adding for all does.
+19:46:26 <gmaxwell> luke-jr: this whole discussion is about old restores, if you don't do that all is fantastic in sipa's code.
+19:46:40 <luke-jr> gmaxwell: so I'm a user. I upgrade, and suddenly my address list has 500 new addresses. So instead of making new ones, I just use those up..
+19:46:46 <BlueMatt> sipa: so downgrades are broken anyway cause they wont know to scan for witness-ified scripts anyway
+19:46:50 <BlueMatt> (and you have to do a rescan or so)
+19:46:54 <gmaxwell> by old restores I mean downgrade.
+19:47:08 <luke-jr> gmaxwell: it sounds like sipa's code will fail to work properly if you simply downgrade with a wallet that's used a segwit address
+19:47:20 <luke-jr> no backup/restore involved
+19:47:26 <BlueMatt> sipa: so it sounds like we're back to needing to bump wallet version?
+19:47:41 <sipa> BlueMatt: that would be nice, yes...
+19:47:45 <gmaxwell> luke-jr: right, it doesn't downgrade.
+19:48:05 <gmaxwell> luke-jr: but downgrading is just not possible to support here. At best it can look kinda like it works but lose funds.
+19:48:10 <BlueMatt> sipa: so are we back to the wallet-overhaul-ish approach, then?
+19:48:13 <morcos> sipa: it would be really helpful if you would spell this all out in a document.  including how it'll interact with 0.16
+19:48:18 <luke-jr> if it doesn't downgrade, I see no value in this temporary approach
+19:48:24 <sipa> morcos: it's spelled out
+19:48:25 <sipa> BlueMatt: NO
+19:48:28 <gmaxwell> jesus fucking christ.
+19:48:39 <sipa> BlueMatt: all we need is a version number
+19:48:41 <morcos> lets find flaws in the overall plan now, and not wait and realize we made a mistake now that makes 0.16 more difficult
+19:48:47 <sipa> overhauling will take far longer
+19:48:49 <morcos> sipa: where is it spelled out
+19:48:53 <sipa> morcos: it doesn't make 0.16 harder
+19:48:54 <gmaxwell> luke-jr: If you don't see value in supporting segwit this year then I don't have anything more to discuss with you.
+19:48:56 <morcos> i agree, overhaul is goign to take a long time
+19:49:05 <morcos> but i just want to understand now what we are going to do
+19:49:10 <BlueMatt> sipa: well at a minimum its now blocked on hd upgrade, then, no?
+19:49:21 <sipa> BlueMatt: no
+19:49:24 <BlueMatt> why not?
+19:49:34 <gmaxwell> BlueMatt: there is a pretty straight forward fix, set the version to maximum and introduce a new version field.
+19:49:47 <BlueMatt> argh, lets not
+19:49:52 <sipa> hd upgrade requires a new backup
+19:49:54 <sipa> _this doesn't_
+19:50:12 <BlueMatt> hd upgrade requires no more backup than keypool topup
+19:50:15 <sipa> it should simply be "minimum software version to read this file is X"
+19:50:22 <BlueMatt> (hd upgrade doesnt neccessarily imply you *must* wipe your keypool)
+19:50:35 <sipa> BlueMatt: it will write a hd master key though, which must be backed up
+19:50:36 <BlueMatt> (and is also quite simple)
+19:51:01 <BlueMatt> sipa: no more than topping up your keypool? or you mean you'd want to be able to use segwit-wallet without keypool topup and with an encrypted (and locked) wallet?
+19:51:25 <sipa> so to be clear... it *is* possible to make downgrade work, if restoring a backup with an older version isn't a concern - though at the cost of some bloat
+19:51:33 <sipa> and it may make expectations unclear
+19:52:07 <BlueMatt> you mean as long as you dont restore a backup, just use the latest wallet, right?
+19:52:15 <BlueMatt> ie via the addwitnessaddress method?
+19:52:18 <sipa> yes
+19:52:22 <gmaxwell> restoring a backup is always a concern though.  I don't understand why downgrading suddenly shows up as a hard requirement. It's something that you generally can't do with a new feature except through the cheat of introducing it first but disabled.
+19:52:51 <BlueMatt> gmaxwell: yes, but we generally "support" it in the sense that you have to manually do -walletupgrade if you want new features
+19:52:56 <sdaftuar> gmaxwell: i agree that restoring a backup is important, and supporting downgrade not a big deal
+19:53:01 <morcos> sipa: i'm sorry if i missed this, but can you point me to where this is spelled out or just explain what we will do when you upgrade to a 0.16 wallet?  Add 3x number of keys pkscripts to your ismine set?  which we'll do for all keys in your wallet for all time?
+19:53:04 <gmaxwell> BlueMatt: don't restore a backup, don't run concurrent copies... perhaps some other corner cases we haven't considered.
+19:53:06 <BlueMatt> and thus we support running the latest version and going back to the previous release eg if there's some critical issue for you
+19:53:13 <sipa> > Every wallet key implicitly adds its corresponding P2WPKH script to the wallet's known redeemscripts - without writing to the file. This is simpler, needs significantly less space on disk, needs no one-time upgrade for existing keys, but does mean that once a SegWit address has been used, you can't really downgrade to older software anymore.
+19:53:16 <BlueMatt> "don't restore a backup"???
+19:53:21 <sipa> ^ from my PR description
+19:53:41 <BlueMatt> sipa: yes, to me that implies we need to bump wallet version
+19:53:45 <morcos> i would distinguish that from the addwitness approach where you wouldn't have to do that (but you could have an i'm upgrading from a backup option that does do that to make sure you didn't miss anything)
+19:53:53 <BlueMatt> which is fine, but that leads us back to the question of hd upgrade
+19:54:04 <BlueMatt> we can do some hack to let people upgrade to segwit-wallet without an hd upgrade
+19:54:12 <BlueMatt> or we can jsut implement hd upgrade, which I think is rather trivial
+19:54:28 <promag> instagibbs: is https://github.com/bitcoin/bitcoin/pull/11407/files#diff-06ca130427d8b52a085dc51ffea1a541R545 really necessary?
+19:54:32 <gmaxwell> BlueMatt: Trivial but invalidates their backups.
+19:54:37 <instagibbs> promag, meeting wait please
+19:54:47 <BlueMatt> gmaxwell: see previous discussion on keypool? or do you mean locked wallets?
+19:54:50 <BlueMatt> thats a rather narrow use-case, no?
+19:55:15 <sipa> BlueMatt: yeah, i don't know
+19:55:25 <sipa> i may be convinced of doing the addwitnessaddress approach
+19:55:36 * BlueMatt would prefer hd-upgrade over dirty hacks, but I'm open to discussion
+19:55:55 <sipa> though i'm uneasy with the inability to restore while downgrading
+19:56:06 <BlueMatt> yea, I'd tend to agree
+19:56:19 <luke-jr> what if we bump the wallet version only in backups?
+19:56:20 <sipa> on the other hand - everything will be fixed by upgrading again and rescanning
+19:56:26 <gmaxwell> BlueMatt: hdupgrade invalidates backups, even without a locked wallet. Though thats another point you have to unlock to do it.
+19:56:35 <wumpus> 3 minutes to go
+19:57:05 <gmaxwell> I think if restore isn't reliable we shouldn't run with the older version. Thats a big footgun in a mixed wallet where you may not notice a non-trivial percentage of funds vanishing.
+19:57:23 <luke-jr> backups don't need to use the same version as the latest-wallet
+19:57:34 <sipa> luke-jr: people use cp to make backups
+19:57:39 <luke-jr> sipa: that's broken
+19:57:43 <luke-jr> :/
+19:57:51 <sipa> luke-jr: irrelevant - it will cause lost funds
+19:58:04 <luke-jr> it can cause lost funds even as-is
+19:58:26 <gmaxwell> luke-jr: yes, but it's a minor addition to make it not load in older software.
+19:58:52 <jnewbery> suggested topic: next Bitcoin Core meetup
+19:58:52 <sipa> so, open for discussion perhaps on the PR: auto-add witnesses so downgrading when not restoring a backup works, or some scheme of versioning to make old software fail
+19:58:57 <sipa> endtopic
+19:58:59 <wumpus> #topic suggested topic: next Bitcoin Core meetup (jnewbery)
+19:59:01 <BlueMatt> sdaftuar: points out that downgrade + restore is always broken
+19:59:06 <achow101> jnewbery: already?
+19:59:08 <BlueMatt> cause even if you bump the version number....
+19:59:10 <instagibbs> NYC :D
+19:59:15 <BlueMatt> hence why its nice to have an explicit walletupgrade
+19:59:34 <jnewbery> ok, just a quick announcement - we're in the early stages of planning the next one in NYC the week of March 5th 2018
+19:59:34 <sipa> jnewbery: what timeframe were you thinking of?
+19:59:40 <luke-jr> BlueMatt: can you elaborate on sdaftuar's point after meeting?
+19:59:44 <jnewbery> more details to follow by email
+19:59:47 <BlueMatt> luke-jr: yes
+20:00:02 <wumpus> achow101: better to plan it long in advance so people can take it into account, instead of on short notice
+20:00:15 <luke-jr> I'm expecting a baby in February, so I will probably pass on the March meetup
+20:00:17 <jonasschnelli> jnewbery: thanks for the date! thanks for organising.
+20:00:18 <cfields> jnewbery: woohoo! thanks for planning!
+20:00:24 <sipa> jnewbery: cool, on the way back from Financial Crypto :)
+20:00:26 <instagibbs> \o/ marked on it calender
+20:00:30 * jonasschnelli can't attend NYC... to bad
+20:00:30 <wumpus> jnewbery: works for me
+20:01:12 <cfields> luke-jr: didn't know that, congrats :)
+20:01:18 <wumpus> jonasschnelli: that's two times US in a row, let's plan another one in europe next
+20:01:19 <luke-jr> cfields: thx
+20:01:45 <promag> europe +1
+20:01:47 <jonasschnelli> wumpus: I can organise fall 2018 in Europe
+20:01:50 <luke-jr> we haven't done Australia or Russia yet. but those might just be inconvenient for too many people :p
+20:01:52 <jnewbery> New York is almost in Europe. Just a short flight :)
+20:02:00 <meshcollider> Australia +1 ;)
+20:02:01 <luke-jr> jnewbery: lol
+20:02:01 <achow101> lol
+20:02:16 <jonasschnelli> jnewbery: hehe
+20:02:22 <wumpus> austrialia would be fine with me too, russia meh
+20:02:26 <instagibbs> not incredibly bad for Tokyo folks
+20:02:27 * cfields votes for fanquake to host one at his place
+20:02:48 <wumpus> anyhow thanks everyone, it's time to wrap up the meeting
+20:02:52 * sipa votes for Iceland in the summer
+20:03:06 <jonasschnelli> Iceland would be cool...
+20:03:18 <jonasschnelli> and cold
+20:03:19 <wumpus> jonasschnelli: finally a meeting in UTC+0!
+20:03:20 <BlueMatt> wumpus: long since time
+20:03:20 <meshcollider> https://www.irccloud.com/pastebin/XrHj6tr8
+20:03:23 <wumpus> #endmeeting
