@@ -1,0 +1,308 @@
+19:02:18 <jonasschnelli> #startmeeting
+19:02:18 <lightningbot> Meeting started Thu Oct  5 19:02:18 2017 UTC.  The chair is jonasschnelli. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:18 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:22 <wumpus> yes
+19:02:26 <jonasschnelli> Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+19:02:32 <kanzure> hi.
+19:02:34 <jonasschnelli> wumpus: sry: though your where OL
+19:02:42 <cfields> hi
+19:02:43 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:02:43 <meshcollider> Hello
+19:02:45 <achow101> hi
+19:02:49 <luke-jr> hi
+19:03:10 <wumpus> jonasschnelli: yes I was a bit late, sorry
+19:03:21 <wumpus> #topic high-priority for review
+19:03:43 <michagogo> Huh?
+19:03:43 <jonasschnelli> #chair wumpus
+19:03:43 <lightningbot> Current chairs: jonasschnelli wumpus
+19:03:44 <achow101> #10637 please?
+19:03:47 <gribble> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+19:04:15 <michagogo> Oh, right
+19:04:19 <michagogo> It's actually Thursday
+19:04:34 <wumpus> achow101: ok
+19:05:16 <wumpus> I also added #11389 today as it's blocking segwit wallet support
+19:05:16 * jtimon locks at #8498 and hides for the rest of the meeting
+19:05:17 <gribble> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+19:05:20 <gribble> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+19:05:47 <meshcollider> #11403 itself should be in there too probably?
+19:05:50 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:06:07 <sipa> wumpus: i haven't had the time to work further on 11403, though concept review is certainly welcome
+19:06:16 <jnewbery> I've been reviewing 11389 this afternoon. It looks generally good, but breaks assumevalid.py, which I'm trying to fix now
+19:06:28 <jtimon> s/locks/looks/
+19:06:47 <BlueMatt> sipa: I think we need a document on the various possible approaches, tbh
+19:06:58 <sipa> BlueMatt: yes, i'll work on that soon
+19:07:00 <BlueMatt> there are a few and talking through all of them is going to need something more formal
+19:07:02 <BlueMatt> thanks
+19:07:21 <morcos> achow101: does 10637 implement all the coin selection logic we discussed in SF or only BnB?  Is there a high level description somewhere of what the PR is purporting to accomplish and what else will need to be done before 0.16?
+19:07:32 <achow101> morcos: only BnB
+19:07:48 <achow101> morcos: IIRC Murch is working on all of the coin selection stuff that we discussed
+19:07:52 <wumpus> btw I posted a proposed release schedule for 0.16.0 yesterday
+19:07:55 <wumpus> #link https://github.com/bitcoin/bitcoin/issues/11449
+19:08:28 <morcos> achow101: ok.. i've already forgotten what that is, so might be nice to have that written up in an issue or something so we remember the goal and can think about how this BnB implementation is going to fit into the big picture
+19:09:16 <achow101> morcos: the description of what 10637 does is in the first comment.
+19:09:35 <achow101> I can make an issue for coin selection changes in general
+19:09:42 <achow101> *to keep track of
+19:10:53 <wumpus> ok, I think that concludes high priority for review proposals
+19:10:57 <wumpus> any other topics?
+19:11:20 <achow101> topic suggestion: bad block interrogation/invalid block peer banning
+19:11:25 <wumpus> #action achow101 make an issue for coin selection changes in general
+19:11:38 <wumpus> #topic bad block interrogation/invalid block peer banning
+19:11:53 <achow101> relevant PR is #11446 (I did this in class so it kinda sucks)
+19:11:54 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:12:06 <Murch> hey, sorry, was still in a meeting
+19:12:34 <achow101> basically the idea is gmaxwell's. when we receive an invalid block, we want to make sure that all of our peers would also reject that block as invalid. If they don't ban them
+19:12:37 <Murch> I've been working on it, but since I do that in my free time in the evenings, it's been rather slow.
+19:12:53 <luke-jr> wumpus: this feels delayed?
+19:13:07 <gmaxwell> The general idea is that we aren't sufficiently agressive about punting peers on different consensus rules, so they can DOS attack us by sucking up slots, potentially hours per peer leaving us isolated... So there are number of things we can to do seek and destroy to speed up up.
+19:13:09 <wumpus> luke-jr: what feels delayed?
+19:13:14 <luke-jr> wumpus: 0.16
+19:13:17 <Murch> @achow101: If you want to collaborate on a write-up, I'd make myself available for that.
+19:13:20 <gmaxwell> luke-jr: release schedule is delayed because of 0.15.1
+19:13:23 <achow101> Murch: ok
+19:13:24 <luke-jr> i c
+19:13:31 <wumpus> luke-jr: yes, two months extra added, I mention that in the issue
+19:13:53 <achow101> what I wanted to discuss was the way to actually go about determining who to ban
+19:14:20 <Murch> @achow101: Gonna be traveling the next three weeks, so I might actually have more time. ;)
+19:14:22 <sipa> what is the issue with just looking at headers?
+19:14:23 <gmaxwell> achow101: I was kinda hoping we could implement something just from the messages we already get, it's my belief (could be wrong) that effectively we always learn the peers best header chain-- so we can begin kicking off peers based on that, as a first pass.
+19:14:34 <luke-jr> achow101: this contradicts the fixes in #10593
+19:14:36 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:14:58 <gmaxwell> achow101: I think we should be also drawing a distinction between inbound and outbound: the issue is what if we have a peer that accepts a broader set of blocks but would switch to our chain after learning of it.
+19:15:15 <achow101> gmaxwell: that's what I am not sure about. I don't think we necessarily know our peer's best header chain. suppose both us and them are fully synced, how do we know their best header chain until a new block appears?
+19:15:47 <wumpus> luke-jr: maybe two months is too much, but we'll see...
+19:16:03 <luke-jr> wumpus: nah, that sounds reasonable
+19:16:06 <sipa> achow101: when a new block appears, assuming it's PoW-valid to us, we'll learn about it through inv/headers/cb/...
+19:16:14 <jonasschnelli> Yes. +2 M seems okay to me
+19:16:36 <gmaxwell> sipa: but I believe he's right, we would have to wait for a new block, which is among the situations we're trying to resolve.
+19:17:07 <achow101> sipa: right, but I'm concerned about before a new block appears. we just connected to them or they just connected to us. we want to know then if we should ban them or not
+19:17:20 <luke-jr> IMO the desirable logic would be: for outbound connections, disconnect (don't ban) peers that aren't on the same chain; for inbound, tolerate it unless they reject a known-valid block
+19:17:22 <sdaftuar> we send getheaders messages on connect, typically
+19:17:25 <gmaxwell> For example say we are surrounded by ForkCoin peers, they are rejecting all bitcoin blocks.  There are few forkcoin miners so they only get blocks once per day.
+19:18:01 <gmaxwell> We don't want to wait for them to get a new block just to figure out our current batch of peers are already on a chain we reject.
+19:18:02 <achow101> sdaftuar: are you sure? all I could find is that we sometimes send getheaders, not all the time
+19:18:29 <sdaftuar> achow101: we send getheaders messages to all our peers at some point after startup, but they might ignore them
+19:18:34 <cfields> sdaftuar: not to incoming light clients, i think?
+19:18:35 <sdaftuar> eg if they are doing ibd themselves or something
+19:18:44 <sdaftuar> not to light clients, correct
+19:18:52 <sipa> light clients don't matter here
+19:18:53 <sdaftuar> but to inbound node_network ndoes we do
+19:19:07 <gmaxwell> If we _always_ sent getheaders and then kicked outbound peers whos chain has a block we've rejected, then I think that is the best we can do per that concern (still not a perfect fix, since you're isolated until forkcoin finds at least one block)
+19:19:18 <achow101> sdaftuar: if we are sending getheaders, if they are on a different chain, we still wouldn't necessarily know because our start block may not be on their best chain
+19:19:23 <gmaxwell> oh hm. then perhaps we already do where it matters.
+19:19:42 <sdaftuar> gmaxwell: the difficult part might be that you don't know the chain they're on is invalid
+19:19:47 <sdaftuar> if it's got less work than yours
+19:19:53 <RealM9> Topic suggestion: s2x
+19:20:04 <jonasschnelli> RealM9: no
+19:20:06 <luke-jr> sdaftuar: do you care?
+19:20:28 <luke-jr> if they're rejecting your better chain, you want to disconnect them anyway
+19:20:33 <gmaxwell> sdaftuar: seems like a seperate concern, we should also be kicking outbound peers that have less work than us, I think.
+19:20:38 <RealM9> Ok, but community is pretty interested. Are you going to change POW?
+19:20:43 <sdaftuar> gmaxwell: i think that would be a good idea, yeah
+19:20:43 <gmaxwell> But it would be silly to be overly agressive.
+19:20:48 <sipa> RealM9: us?
+19:20:58 <achow101> sdaftuar: gmaxwell what I propose is that we send a getheaders for our earliest known invalid block (within a certain time frame) and see if they respond with invalid blocks
+19:21:18 <luke-jr> RealM9: that's a decision for the community, not for developers. anyhow, ask on #bitcoin if you really want to discuss it
+19:21:34 <gmaxwell> achow101: I don't think we need to do that: for sync purposes any outbound peer we should be makign sure we learn their headers chain period (they may have a better chain than us and we should sync up ASAP)
+19:21:36 <sdaftuar> achow101: i'm not sure that's necessary?
+19:21:45 <morcos> RealM9: we're in a meeting , but please see: https://bitcoincore.org/en/2017/08/18/btc1-misleading-statements/
+19:21:49 <gmaxwell> achow101: if we're already doing that we'll notice known invalid block in their header chaip (well we will once we have code for that)
+19:21:52 <sdaftuar> i think if we do gmaxwell's suggestion of booting inbound peers who are on less work chains, then we'd be in good shape
+19:21:58 <sdaftuar> s/inbound/outbound/
+19:22:14 <luke-jr> I think we may actually want to track the headers of invalid chains..
+19:22:21 <achow101> what about inbound peers?
+19:22:31 <gmaxwell> For _inbound_ I think we should be setting a flag that they're consensus inconsistent which excludes them from the inbound peer management connection reservation.
+19:22:35 <sdaftuar> achow101: i think we should more aggerssively evict inbound peers if they appear to be on invalid chains
+19:22:43 <gmaxwell> so they'll get kicked off in favor of other inbound peers.
+19:22:52 <meshcollider> Agreed
+19:23:02 <gmaxwell> so we don't need to be agressive: they'll just get pushed out by other inbound peers.
+19:23:02 <luke-jr> consider: if an invalid chain has higher hashrate than the real chain, and then suddenly the invalid chain's hashrate drops off, without an equivalent increase on the main chain, we should consider that a possible attack and hold back on confirming transactions until it is resolved
+19:23:16 <sdaftuar> gmaxwell: yes i agree with you
+19:23:49 <achow101> my point is how do we know that an inbound peer is on an invalid chain?
+19:24:03 <gmaxwell> luke-jr: I think there is some need for smarter wallet confirmation logic but I think thats a seperate matter. (there was a paper 6-ish months ago that also points out the the reorg probablity math in the whitepaper is somewhat incomplete)
+19:24:19 <sdaftuar> achow101: set a flag if they relay an invalid block/blockheader
+19:24:32 <luke-jr> gmaxwell: right, but this is relevant because we can't assume "relays invalid headers" means the other node *accepts* the invalid block
+19:24:44 <gmaxwell> and we still interogate their headers if they're NODE_NETWORK/NODE_LIMITED
+19:24:58 <luke-jr> sdaftuar: we intentionally relay blocks before checking validity now
+19:25:03 <achow101> sdaftuar: that requires them to have a block to relay to us, which could take hours or days
+19:25:18 <gmaxwell> luke-jr: the protocol does not have you realying a header of a block you haven't accepted. If you do that you risk dos attacking peers already.
+19:25:19 <sdaftuar> achow101: i don't think we need to worry as much about inbound peers
+19:25:34 <sdaftuar> achow101: for instance an attacker can already try to use all your inbound slots and not send you anything
+19:25:40 <gmaxwell> luke-jr: the only place that happens in the protocol is HB BIP152 messages.
+19:25:51 <achow101> sdaftuar: right, ok
+19:25:58 <luke-jr> gmaxwell: which may be all you see from CB peers
+19:26:18 <gmaxwell> sdaftuar: yes, for inbound we can just deprive them of reservations.
+19:26:49 <sdaftuar> luke-jr: even with bip152 the headers need to be valid
+19:27:04 <luke-jr> sdaftuar: yes, the header itself; but it can be a valid header for an invalid block
+19:27:16 <gmaxwell> yes, though we'd catch it on the _next_ block.
+19:27:19 <sdaftuar> luke-jr: if it builds on an invalid chain, i believe the header would be invalid
+19:27:26 <achow101> so when we connect to an outbound peer, we will send them a getheaders so we know their best headers chain and ban accordingly
+19:27:29 <luke-jr> (note I tried to keep track of peer bestblocks in #10512 and basically gave up)
+19:27:31 <gribble> https://github.com/bitcoin/bitcoin/issues/10512 | Rework same-chain from abusing DoS banning, to explicit checks by luke-jr · Pull Request #10512 · bitcoin/bitcoin · GitHub
+19:27:41 <gmaxwell> when they relay a CB message for a child of an invalid block.
+19:28:04 <gmaxwell> achow101: yes, but based on the above I believe we already always send it.
+19:28:11 <achow101> the other part of 11446 is to ban other peers for relaying us an invalid block for which we already know is invalid
+19:28:20 <gmaxwell> achow101: because we send it to nodenetwork peers and outbound always are (or or disconnected)
+19:28:20 <achow101> but I'm not sure how that interacts with compact blocks
+19:28:33 <gmaxwell> achow101: FWIW, I think we should probably be just disconnecting and not banning.
+19:28:37 <sdaftuar> achow101: oh that interaction might be tricky
+19:28:54 <achow101> gmaxwell: why not ban?
+19:29:07 <gmaxwell> I think the interaction isn't too bad, for this purpose a BIP152 CB HB block is relaying you the header of its parent.
+19:29:22 <luke-jr> achow101: in a softfork, old nodes will send invalid blocks
+19:29:27 <luke-jr> potentially
+19:29:42 <gmaxwell> achow101: because it's hardly any better and it means that when some dimbulb tries running forkcoin it results in him being unable to run Bitcoin (perhaps concurrently) on the same host.
+19:30:03 <achow101> gmaxwell: ok
+19:30:04 <gmaxwell> it also blocks inbound from that peer, which we'd be find allowing.
+19:30:09 <gmaxwell> s/find/fine/
+19:30:34 <gmaxwell> In general we should be moving away from bans except when the thing we banned for was expensive for us.
+19:31:03 <achow101> so 11446 can really just be reduced to an ~1 line change to disconnect on a header for a block we already know is invalid
+19:31:11 <BlueMatt> yea, that
+19:31:18 <sdaftuar> achow101: agree, though we have to be careful about compact blocks i think
+19:31:20 <luke-jr> achow101: aka #10593 …
+19:31:22 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:31:48 <gmaxwell> achow101: yes, but for compact block interactions (HB mode will relay us blocks that are invalid).
+19:32:27 <achow101> gmaxwell: so we would have to check the specific type of invalidness and whether it was a CB?
+19:32:31 <gmaxwell> luke-jr: IIRC when you proposed that before you got squaked at that it would undermine our protection against isolation...
+19:33:04 <gmaxwell> achow101: or just don't do it for the peers maked for HB CBs for now
+19:33:17 <achow101> gmaxwell: isn't that likely to be most peers though
+19:33:19 <achow101> ?
+19:33:23 <gmaxwell> No, it's at most three.
+19:33:33 <luke-jr> gmaxwell: I don't see how. It's literally what achow101 was just describing.
+19:34:32 <luke-jr> gmaxwell: maybe you're thinking of the predecessor 10512?
+19:34:35 <achow101> luke-jr: it doesn't look like you are handling invalid duplicates?
+19:34:40 <gmaxwell> probably.
+19:34:58 <gmaxwell> achow101: in any case, we can pick this up on a PR and later discussion.
+19:35:09 <achow101> gmaxwell: ok
+19:36:08 <achow101> next topic then?
+19:36:09 <wumpus> any other topics?
+19:36:10 <luke-jr> achow101: IIRC it does, we can go over it later if you like
+19:36:14 <achow101> luke-jr: ok
+19:37:09 <jnewbery> luke-jr: any progress on multiwallet GUI without the rpcauth parts?
+19:37:21 <wumpus> #topic multiwallet ui
+19:37:32 <luke-jr> jnewbery: not yet, I'll plan to push the update later today
+19:38:04 <jnewbery> great! I had a look myself, and I think it's just a one-line change to the debug console commit
+19:38:05 <jonasschnelli> https://github.com/bitcoin/bitcoin/pull/11383
+19:38:12 <sipa> topic suggestion: dealing with platform-specific code
+19:38:24 <jonasschnelli> luke-jr: I can continue to work on 11383 if you want?
+19:38:32 <jonasschnelli> (remove the auth stuff :P)
+19:38:50 <luke-jr> jnewbery: certainly not that simple.. still need to resolve wallet name to CWallet earlier
+19:39:13 <jnewbery> ok, well I've got a branch that works with just that change. Happy to share with you
+19:39:47 <gmaxwell> Sounds good.
+19:40:00 <luke-jr> jnewbery: push it and I'll take a look
+19:40:17 <jnewbery> thanks
+19:41:03 <wumpus> #topic dealing with platform-specific code (sipa)
+19:41:19 <sipa> i've recently been looking into faster parallel hashing code
+19:41:37 <wumpus> hashing as in sha256?
+19:41:50 <sipa> in particular, for 8-way parallel SHA256 (which would be useful in merkle root computation and block deserialization), a 5x speedup is doable with AVX2
+19:42:04 <sipa> and maybe 2.5x with SSE2
+19:42:22 <wumpus> and parallel in this case means computing multiple hashes of multiple pieces of data at once?
+19:42:27 <sipa> correct
+19:42:28 <luke-jr> how much speedup is this for the entire IBD?
+19:42:57 <gmaxwell> luke-jr: It saves something like 10 minutes on IBD.  But the greater impact is in block relay.
+19:43:01 <wumpus> (I guess there are constraints there, do all the inputs need to be the same size?)
+19:43:05 <luke-jr> I imagine merkle root is a tiny fraction of the overall process, but otoh it's also possibly a blocker on parallelization
+19:43:05 <gmaxwell> Where hash tree computation is most of the time.
+19:43:25 <luke-jr> gmaxwell: it is? :O
+19:43:32 <sipa> wumpus: yes and no; for now, it's just a primitive that you give a pointer to N 64-byte inputs, and produces 32-byte outputs
+19:43:33 <luke-jr> oh, because the signature checks are cached?
+19:43:37 <BlueMatt> in terms of compact block relay, merkle root calculation and deserialize are about the only big timesinks before you can relay
+19:43:46 <sipa> wumpus: which is specific for merkle root computation
+19:43:48 <gmaxwell> luke-jr: yes for HB BIP152 we don't to validation except hashing!
+19:43:50 <sipa> but it can certainly be adapted
+19:44:37 <wumpus> sipa: ok
+19:44:38 <cfields> sipa: i had a scare when reviewing some new leveldb crc32 changes that i thought (at first glance) could be a consensus issue. I was very angry at myself at that point for not adding a fallback un-optimized verification of the optimized path.
+19:44:43 <sipa> anyway, there are multiple ways to integrate this: separate asm code, inline asm blocks, or code using intrinsics (my preference, it's much more easy to review, and has no OS-specific warts like the L label prefix...)
+19:44:56 <gmaxwell> sipa has actually implemented the 8-way AVX2 sha2 and a hash tree computation that uses it... along with specialized implementation of 64-byte input double sha2.. which affords an addition 20%-ish speedup over generic sha2.
+19:45:09 <cfields> very cool :)
+19:45:12 <wumpus> I prefer intrinsics
+19:45:21 <wumpus> (except for arm32 whre they suck)
+19:45:48 <sipa> so, for intrinsics... do we want to have a separate LIBCRYPTO_AVX2 LIBCRYPTO_SSE2 LIBCRYPTO_... with different compile flags each?
+19:46:05 <sipa> or could we rely on __attribute__((target("avx2")))
+19:46:05 <gmaxwell> Historically, For some code you cannot achieve equivilent performance w/ intrinsics because you must manage register allocation precisely for things to work, but that isn't the case here....
+19:46:08 <wumpus> but 64 bit platforms the SIMD instructions have been specially tweaked to work well with compilers and intrinsics
+19:46:12 <sipa> (which works on both clang and gcc)
+19:46:36 <cfields> sipa: i think we should test for the target attribute and use it if possible, but not completely rely on it
+19:46:44 <cfields> iirc that improves dispatching time as well?
+19:46:49 <sipa> cfields: no
+19:46:57 <wumpus> different compile flags for different compile units, that's the only portable way
+19:47:01 <luke-jr> sipa: I think we can't assume intrinsics for all platforms, so we want the separate lib route
+19:47:07 <gmaxwell> dispatching is via a function pointer ultimately in all those cases.
+19:47:14 <wumpus> luke-jr: you're confusing, that's not about intrinsics
+19:47:30 <sipa> the only difference is avoiding the need for build system complication
+19:47:35 <wumpus> intrinsics inthis case are headers like xmmintr.h which provides functions that work on vector types
+19:47:42 <sipa> exactly
+19:47:52 <luke-jr> wumpus: __attribute__((target("avx2"))) isn't an option for separate asm code, though, right?
+19:48:00 <sipa> luke-jr: it also isn't needed for asm code
+19:48:02 <cfields> gmaxwell: isn't there elf data that allows them to be setup at load time?
+19:48:14 <wumpus> oh no no ELF magic please
+19:48:24 <luke-jr> hmm
+19:48:36 <cfields> not by hand, i thought __attribute__(target) did that behind the scenes
+19:48:41 <sipa> target("avx2") just means "this function is compiled as if -mavx2 was passed on the command line
+19:49:02 <sipa> cfields: GCC also has target("default"), where you can have multiple versions of the same function... which causes automatic dispatch to be added
+19:49:08 <sipa> that's non-portable and has other issues
+19:49:09 <gmaxwell> cfields: they're setup at load time, yes-- but they're still just a function pointer, which we could also have setup at load time.  Though it is nice that the function override trick can make them run before main.
+19:49:11 <wumpus> I'm normally not scared of low level ELF hacking, but for bitcoin, let's try to keep it safe and portable
+19:49:12 <luke-jr> sipa: how does it behave if I have an explicit -mno-avx2?
+19:49:15 <sipa> (in particular clang doesn't have that)
+19:49:17 <cfields> sipa: ah yes, that's what i was thinking of.
+19:49:33 <sipa> cfields: so i'm not suggesting using that
+19:49:39 <sipa> luke-jr: i assume it overrides it
+19:49:43 <cfields> ok
+19:50:02 <luke-jr> I suppose I can test it
+19:50:05 <wumpus> yes, gcc can do it automatically on some platforms, but I'm afraid the only portable way is to make our own dispatch logic
+19:50:15 <sipa> yes, we'll want our own dispatch logic anyway
+19:50:18 <wumpus> we already have some CPUID bits checking
+19:50:20 <sipa> so we can test things
+19:50:21 <wumpus> so it's nothing new erally
+19:50:25 <sipa> and report which version is being chosen
+19:50:29 <cfields> np, i wasn't suggesting. just trying to understand the advantages of one vs the other.
+19:50:30 <wumpus> yes, exactly
+19:51:01 <sipa> but if possible i'd like to avoid the overhead of needing half a dozen libcrypto_XXX.a things that need to be linked in everywhere
+19:51:08 <sipa> though that's really the only advantage
+19:51:38 <wumpus> so I'd say: yes, use intrinsics instead of inline/offline asm,  and use our own dispatching, and compile units compiled with appropriate compiler flags
+19:51:55 <sipa> okay.
+19:52:28 <gmaxwell> can we say prefer intrinsics instead of use? :) I don't think we'd eschew inline asm if we thought it was better in a particular case.
+19:52:29 <wumpus> yes regarding build system it's just verbose, not really complex
+19:52:41 <cfields> sipa: see my point above about a fallback, though. In the case of mismatch hashes, i think it's worthwhile to re-check with a generic implementation before deciding it's failed.
+19:53:12 <gmaxwell> cfields: we should be testing these things in startup tests.
+19:53:12 <luke-jr> (yes, it seems to override -mno-*
+19:53:17 <wumpus> gmaxwell: well if there's a case you can do much better than the compiler, sure...
+19:53:37 * BlueMatt has a weak preference for compile units, but only cause I'd use them in FIBRE for my FEC stuff, too, but thats not much of a reasoning
+19:54:26 * luke-jr hopes we can have POWER9 asm in 0.16 <.<
+19:54:32 * BlueMatt agrees
+19:54:38 <cfields> gmaxwell: an implementation bug in some branch of one optimized path is scary...
+19:54:56 <gmaxwell> cfields: try differently if it fails is just not reasonable in a lot of cases; and often would add a lot of complexity (now you have to not cache hashes, but instead only use hash-verify methods) ... and we don't have expected values for thigns like single transaction hashes, just hash roots.
+19:54:57 <cfields> gmaxwell: in particular, the crc issue had to do with incoming data alignment on x86_64
+19:55:24 <wumpus> cfields: I agree
+19:55:51 <wumpus> cfields: I think we should only do asm optimization in cases where it really makes a lot of difference, for that reason, ther risk has to be worth it
+19:56:01 <gmaxwell> cfields: yes, thats something that always needs careful review and we should have unit tests that also stress alignment.
+19:56:33 <wumpus> special-casing everything makes things a lot harder to review, and test, especially when it starts to need different kinds of hardware
+19:56:54 <wumpus> but for testable low-level primitives like SHA256 I'd say it's ok
+19:57:11 <gmaxwell> good thing no one is talking about special casing everything. :)
+19:57:29 <gmaxwell> yea, sha2 etc have simple testable interfaces.
+19:57:37 <wumpus> no, that's just one extreme, I've seen soome graphics drivers which are scary in that regard :)
+19:58:09 <gmaxwell> But benchmarks!
+19:58:11 <wumpus> oh let's special case 4x4 tiles, 4x5 tiles, 4x6 tiles, ... for 3 different architectures
+19:58:20 <wumpus> right :)
+19:58:27 <cfields> mmm. I don't see the harm in doing a quick re-check in a few certain cases (merkle mismatch is a good example)
+19:58:51 <wumpus> special-casing benchmarks is a curious form of over-learning
+19:58:55 <cfields> anyway, i've made my case
+19:59:01 <gmaxwell> cfields: because it requires restructing the code to not return hashes but instead only have uncachable hash_Verify methods.
+19:59:06 <wumpus> cfields: re-check in what case?
+19:59:24 <luke-jr> although someone did manage to screw up xpub serialisation at one point IIRC
+19:59:25 <wumpus> cfields: you mean re-run the validation w/ different implementations if an  incoming block fails?
+19:59:55 <wumpus> (what about false positives?)
+20:00:00 <cfields> wumpus: that's a big hammer, but yes-ish
+20:00:11 <gmaxwell> cfields: and for small functions like a hash a check in an innerloop will measurably lower performance. ... and you also create the opposite problem, what if the alternative function is the wrong one?
+20:00:26 <gmaxwell> (I'd actually consider whole block level more reasonable)
+20:00:29 <wumpus> gmaxwell: I think he means on a high level
+20:01:02 <wumpus> on the inner level it's just NASA-level crazy, let's run three implementations and see which ones agree
+20:01:06 <sipa> i think re-checking a block if it fails is reasonable... but why switch hash functions? it's massively more likely your CPU is fried than that the hash function implementation is wrong all along and you never noticed
+20:01:13 <gmaxwell> but then the dispatch is mutable not just set once at init. :(
+20:01:28 <wumpus> yeah ... I think we're overdesigning this
+20:01:30 <gmaxwell> right we have a constant slow stream of complaints from users whos hosts have falsely rejected the blockchain.
+20:01:37 <wumpus> just continue with what you were doing sipa :)
+20:01:40 <cfields> gmaxwell: just have a generic non-dispatchable one
+20:01:41 <gmaxwell> I would like to see that improved somehow.
+20:01:43 <wumpus> any other topics?
+20:01:46 <wumpus> oh wait, it's time
+20:01:57 <wumpus> #endmeeting

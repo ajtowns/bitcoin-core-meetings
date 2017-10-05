@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:02:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:02:18</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Oct  5 19:02:18 2017 UTC.  The chair is jonasschnelli. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:02:18</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:22</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-5"></a><span class="tm">19:02:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Meeting:</span> wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier
+<a name="l-6"></a><span class="tm">19:02:32</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-7"></a><span class="tm">19:02:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> sry: though your where OL
+<a name="l-8"></a><span class="tm">19:02:42</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:02:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-10"></a><span class="tm">19:02:43</span><span class="nk"> &lt;meshcollider&gt;</span> Hello
+<a name="l-11"></a><span class="tm">19:02:45</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:02:49</span><span class="nk"> &lt;luke-jr&gt;</span> hi
+<a name="l-13"></a><span class="tm">19:03:10</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> yes I was a bit late, sorry
+<a name="l-14"></a><span class="tm">19:03:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">high-priority for review</span>
+<a name="l-15"></a><span class="tm">19:03:43</span><span class="nk"> &lt;michagogo&gt;</span> Huh?
+<a name="l-16"></a><span class="tm">19:03:43</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="cmd">#chair </span><span class="cmdline">wumpus</span>
+<a name="l-17"></a><span class="tm">19:03:43</span><span class="nk"> &lt;lightningbot&gt;</span> Current chairs: jonasschnelli wumpus
+<a name="l-18"></a><span class="tm">19:03:44</span><span class="nk"> &lt;achow101&gt;</span> <span class="cmd">#10637 </span><span class="cmdline">please?</span>
+<a name="l-19"></a><span class="tm">19:03:47</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10637 | Coin Selection with Murchs algorithm by achow101 · Pull Request #10637 · bitcoin/bitcoin · GitHub
+<a name="l-20"></a><span class="tm">19:04:15</span><span class="nk"> &lt;michagogo&gt;</span> Oh, right
+<a name="l-21"></a><span class="tm">19:04:19</span><span class="nk"> &lt;michagogo&gt;</span> It's actually Thursday
+<a name="l-22"></a><span class="tm">19:04:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> ok
+<a name="l-23"></a><span class="tm">19:05:16</span><span class="nk"> &lt;wumpus&gt;</span> I also added #11389 today as it's blocking segwit wallet support
+<a name="l-24"></a><span class="tm">19:05:16 </span><span class="nka">* jtimon</span> <span class="ac">locks at #8498 and hides for the rest of the meeting</span>
+<a name="l-25"></a><span class="tm">19:05:17</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+<a name="l-26"></a><span class="tm">19:05:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8498 | Near-Bugfix: Optimization: Minimize the number of times it is checked that no money... by jtimon · Pull Request #8498 · bitcoin/bitcoin · GitHub
+<a name="l-27"></a><span class="tm">19:05:47</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="cmd">#11403 </span><span class="cmdline">itself should be in there too probably?</span>
+<a name="l-28"></a><span class="tm">19:05:50</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+<a name="l-29"></a><span class="tm">19:06:07</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> i haven't had the time to work further on 11403, though concept review is certainly welcome
+<a name="l-30"></a><span class="tm">19:06:16</span><span class="nk"> &lt;jnewbery&gt;</span> I've been reviewing 11389 this afternoon. It looks generally good, but breaks assumevalid.py, which I'm trying to fix now
+<a name="l-31"></a><span class="tm">19:06:28</span><span class="nk"> &lt;jtimon&gt;</span> s/locks/looks/
+<a name="l-32"></a><span class="tm">19:06:47</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I think we need a document on the various possible approaches, tbh
+<a name="l-33"></a><span class="tm">19:06:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes, i'll work on that soon
+<a name="l-34"></a><span class="tm">19:07:00</span><span class="nk"> &lt;BlueMatt&gt;</span> there are a few and talking through all of them is going to need something more formal
+<a name="l-35"></a><span class="tm">19:07:02</span><span class="nk"> &lt;BlueMatt&gt;</span> thanks
+<a name="l-36"></a><span class="tm">19:07:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">achow101:</span> does 10637 implement all the coin selection logic we discussed in SF or only BnB?  Is there a high level description somewhere of what the PR is purporting to accomplish and what else will need to be done before 0.16?
+<a name="l-37"></a><span class="tm">19:07:32</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> only BnB
+<a name="l-38"></a><span class="tm">19:07:48</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> IIRC Murch is working on all of the coin selection stuff that we discussed
+<a name="l-39"></a><span class="tm">19:07:52</span><span class="nk"> &lt;wumpus&gt;</span> btw I posted a proposed release schedule for 0.16.0 yesterday
+<a name="l-40"></a><span class="tm">19:07:55</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://github.com/bitcoin/bitcoin/issues/11449</span>
+<a name="l-41"></a><span class="tm">19:08:28</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">achow101:</span> ok.. i've already forgotten what that is, so might be nice to have that written up in an issue or something so we remember the goal and can think about how this BnB implementation is going to fit into the big picture
+<a name="l-42"></a><span class="tm">19:09:16</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> the description of what 10637 does is in the first comment.
+<a name="l-43"></a><span class="tm">19:09:35</span><span class="nk"> &lt;achow101&gt;</span> I can make an issue for coin selection changes in general
+<a name="l-44"></a><span class="tm">19:09:42</span><span class="nk"> &lt;achow101&gt;</span> *to keep track of
+<a name="l-45"></a><span class="tm">19:10:53</span><span class="nk"> &lt;wumpus&gt;</span> ok, I think that concludes high priority for review proposals
+<a name="l-46"></a><span class="tm">19:10:57</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-47"></a><span class="tm">19:11:20</span><span class="nk"> &lt;achow101&gt;</span> topic suggestion: bad block interrogation/invalid block peer banning
+<a name="l-48"></a><span class="tm">19:11:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">achow101 make an issue for coin selection changes in general</span>
+<a name="l-49"></a><span class="tm">19:11:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">bad block interrogation/invalid block peer banning</span>
+<a name="l-50"></a><span class="tm">19:11:53</span><span class="nk"> &lt;achow101&gt;</span> relevant PR is #11446 (I did this in class so it kinda sucks)
+<a name="l-51"></a><span class="tm">19:11:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+<a name="l-52"></a><span class="tm">19:12:06</span><span class="nk"> &lt;Murch&gt;</span> hey, sorry, was still in a meeting
+<a name="l-53"></a><span class="tm">19:12:34</span><span class="nk"> &lt;achow101&gt;</span> basically the idea is gmaxwell's. when we receive an invalid block, we want to make sure that all of our peers would also reject that block as invalid. If they don't ban them
+<a name="l-54"></a><span class="tm">19:12:37</span><span class="nk"> &lt;Murch&gt;</span> I've been working on it, but since I do that in my free time in the evenings, it's been rather slow.
+<a name="l-55"></a><span class="tm">19:12:53</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> this feels delayed?
+<a name="l-56"></a><span class="tm">19:13:07</span><span class="nk"> &lt;gmaxwell&gt;</span> The general idea is that we aren't sufficiently agressive about punting peers on different consensus rules, so they can DOS attack us by sucking up slots, potentially hours per peer leaving us isolated... So there are number of things we can to do seek and destroy to speed up up.
+<a name="l-57"></a><span class="tm">19:13:09</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> what feels delayed?
+<a name="l-58"></a><span class="tm">19:13:14</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> 0.16
+<a name="l-59"></a><span class="tm">19:13:17</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">@achow101:</span> If you want to collaborate on a write-up, I'd make myself available for that.
+<a name="l-60"></a><span class="tm">19:13:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> release schedule is delayed because of 0.15.1
+<a name="l-61"></a><span class="tm">19:13:23</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">Murch:</span> ok
+<a name="l-62"></a><span class="tm">19:13:24</span><span class="nk"> &lt;luke-jr&gt;</span> i c
+<a name="l-63"></a><span class="tm">19:13:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes, two months extra added, I mention that in the issue
+<a name="l-64"></a><span class="tm">19:13:53</span><span class="nk"> &lt;achow101&gt;</span> what I wanted to discuss was the way to actually go about determining who to ban
+<a name="l-65"></a><span class="tm">19:14:20</span><span class="nk"> &lt;Murch&gt;</span> <span class="hi">@achow101:</span> Gonna be traveling the next three weeks, so I might actually have more time. ;)
+<a name="l-66"></a><span class="tm">19:14:22</span><span class="nk"> &lt;sipa&gt;</span> what is the issue with just looking at headers?
+<a name="l-67"></a><span class="tm">19:14:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I was kinda hoping we could implement something just from the messages we already get, it's my belief (could be wrong) that effectively we always learn the peers best header chain-- so we can begin kicking off peers based on that, as a first pass.
+<a name="l-68"></a><span class="tm">19:14:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> this contradicts the fixes in #10593
+<a name="l-69"></a><span class="tm">19:14:36</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+<a name="l-70"></a><span class="tm">19:14:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I think we should be also drawing a distinction between inbound and outbound: the issue is what if we have a peer that accepts a broader set of blocks but would switch to our chain after learning of it.
+<a name="l-71"></a><span class="tm">19:15:15</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> that's what I am not sure about. I don't think we necessarily know our peer's best header chain. suppose both us and them are fully synced, how do we know their best header chain until a new block appears?
+<a name="l-72"></a><span class="tm">19:15:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> maybe two months is too much, but we'll see...
+<a name="l-73"></a><span class="tm">19:16:03</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> nah, that sounds reasonable
+<a name="l-74"></a><span class="tm">19:16:06</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> when a new block appears, assuming it's PoW-valid to us, we'll learn about it through inv/headers/cb/...
+<a name="l-75"></a><span class="tm">19:16:14</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. +2 M seems okay to me
+<a name="l-76"></a><span class="tm">19:16:36</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> but I believe he's right, we would have to wait for a new block, which is among the situations we're trying to resolve.
+<a name="l-77"></a><span class="tm">19:17:07</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> right, but I'm concerned about before a new block appears. we just connected to them or they just connected to us. we want to know then if we should ban them or not
+<a name="l-78"></a><span class="tm">19:17:20</span><span class="nk"> &lt;luke-jr&gt;</span> IMO the desirable logic would be: for outbound connections, disconnect (don't ban) peers that aren't on the same chain; for inbound, tolerate it unless they reject a known-valid block
+<a name="l-79"></a><span class="tm">19:17:22</span><span class="nk"> &lt;sdaftuar&gt;</span> we send getheaders messages on connect, typically
+<a name="l-80"></a><span class="tm">19:17:25</span><span class="nk"> &lt;gmaxwell&gt;</span> For example say we are surrounded by ForkCoin peers, they are rejecting all bitcoin blocks.  There are few forkcoin miners so they only get blocks once per day.
+<a name="l-81"></a><span class="tm">19:18:01</span><span class="nk"> &lt;gmaxwell&gt;</span> We don't want to wait for them to get a new block just to figure out our current batch of peers are already on a chain we reject.
+<a name="l-82"></a><span class="tm">19:18:02</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sdaftuar:</span> are you sure? all I could find is that we sometimes send getheaders, not all the time
+<a name="l-83"></a><span class="tm">19:18:29</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> we send getheaders messages to all our peers at some point after startup, but they might ignore them
+<a name="l-84"></a><span class="tm">19:18:34</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sdaftuar:</span> not to incoming light clients, i think?
+<a name="l-85"></a><span class="tm">19:18:35</span><span class="nk"> &lt;sdaftuar&gt;</span> eg if they are doing ibd themselves or something
+<a name="l-86"></a><span class="tm">19:18:44</span><span class="nk"> &lt;sdaftuar&gt;</span> not to light clients, correct
+<a name="l-87"></a><span class="tm">19:18:52</span><span class="nk"> &lt;sipa&gt;</span> light clients don't matter here
+<a name="l-88"></a><span class="tm">19:18:53</span><span class="nk"> &lt;sdaftuar&gt;</span> but to inbound node_network ndoes we do
+<a name="l-89"></a><span class="tm">19:19:07</span><span class="nk"> &lt;gmaxwell&gt;</span> If we _always_ sent getheaders and then kicked outbound peers whos chain has a block we've rejected, then I think that is the best we can do per that concern (still not a perfect fix, since you're isolated until forkcoin finds at least one block)
+<a name="l-90"></a><span class="tm">19:19:18</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sdaftuar:</span> if we are sending getheaders, if they are on a different chain, we still wouldn't necessarily know because our start block may not be on their best chain
+<a name="l-91"></a><span class="tm">19:19:23</span><span class="nk"> &lt;gmaxwell&gt;</span> oh hm. then perhaps we already do where it matters.
+<a name="l-92"></a><span class="tm">19:19:42</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> the difficult part might be that you don't know the chain they're on is invalid
+<a name="l-93"></a><span class="tm">19:19:47</span><span class="nk"> &lt;sdaftuar&gt;</span> if it's got less work than yours
+<a name="l-94"></a><span class="tm">19:19:53</span><span class="nk"> &lt;RealM9&gt;</span> Topic suggestion: s2x
+<a name="l-95"></a><span class="tm">19:20:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">RealM9:</span> no
+<a name="l-96"></a><span class="tm">19:20:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> do you care?
+<a name="l-97"></a><span class="tm">19:20:28</span><span class="nk"> &lt;luke-jr&gt;</span> if they're rejecting your better chain, you want to disconnect them anyway
+<a name="l-98"></a><span class="tm">19:20:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> seems like a seperate concern, we should also be kicking outbound peers that have less work than us, I think.
+<a name="l-99"></a><span class="tm">19:20:38</span><span class="nk"> &lt;RealM9&gt;</span> Ok, but community is pretty interested. Are you going to change POW?
+<a name="l-100"></a><span class="tm">19:20:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i think that would be a good idea, yeah
+<a name="l-101"></a><span class="tm">19:20:43</span><span class="nk"> &lt;gmaxwell&gt;</span> But it would be silly to be overly agressive.
+<a name="l-102"></a><span class="tm">19:20:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">RealM9:</span> us?
+<a name="l-103"></a><span class="tm">19:20:58</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sdaftuar:</span> gmaxwell what I propose is that we send a getheaders for our earliest known invalid block (within a certain time frame) and see if they respond with invalid blocks
+<a name="l-104"></a><span class="tm">19:21:18</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">RealM9:</span> that's a decision for the community, not for developers. anyhow, ask on #bitcoin if you really want to discuss it
+<a name="l-105"></a><span class="tm">19:21:34</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I don't think we need to do that: for sync purposes any outbound peer we should be makign sure we learn their headers chain period (they may have a better chain than us and we should sync up ASAP)
+<a name="l-106"></a><span class="tm">19:21:36</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> i'm not sure that's necessary?
+<a name="l-107"></a><span class="tm">19:21:45</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">RealM9:</span> we're in a meeting , but please see: https://bitcoincore.org/en/2017/08/18/btc1-misleading-statements/
+<a name="l-108"></a><span class="tm">19:21:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> if we're already doing that we'll notice known invalid block in their header chaip (well we will once we have code for that)
+<a name="l-109"></a><span class="tm">19:21:52</span><span class="nk"> &lt;sdaftuar&gt;</span> i think if we do gmaxwell's suggestion of booting inbound peers who are on less work chains, then we'd be in good shape
+<a name="l-110"></a><span class="tm">19:21:58</span><span class="nk"> &lt;sdaftuar&gt;</span> s/inbound/outbound/
+<a name="l-111"></a><span class="tm">19:22:14</span><span class="nk"> &lt;luke-jr&gt;</span> I think we may actually want to track the headers of invalid chains..
+<a name="l-112"></a><span class="tm">19:22:21</span><span class="nk"> &lt;achow101&gt;</span> what about inbound peers?
+<a name="l-113"></a><span class="tm">19:22:31</span><span class="nk"> &lt;gmaxwell&gt;</span> For _inbound_ I think we should be setting a flag that they're consensus inconsistent which excludes them from the inbound peer management connection reservation.
+<a name="l-114"></a><span class="tm">19:22:35</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> i think we should more aggerssively evict inbound peers if they appear to be on invalid chains
+<a name="l-115"></a><span class="tm">19:22:43</span><span class="nk"> &lt;gmaxwell&gt;</span> so they'll get kicked off in favor of other inbound peers.
+<a name="l-116"></a><span class="tm">19:22:52</span><span class="nk"> &lt;meshcollider&gt;</span> Agreed
+<a name="l-117"></a><span class="tm">19:23:02</span><span class="nk"> &lt;gmaxwell&gt;</span> so we don't need to be agressive: they'll just get pushed out by other inbound peers.
+<a name="l-118"></a><span class="tm">19:23:02</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">consider:</span> if an invalid chain has higher hashrate than the real chain, and then suddenly the invalid chain's hashrate drops off, without an equivalent increase on the main chain, we should consider that a possible attack and hold back on confirming transactions until it is resolved
+<a name="l-119"></a><span class="tm">19:23:16</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yes i agree with you
+<a name="l-120"></a><span class="tm">19:23:49</span><span class="nk"> &lt;achow101&gt;</span> my point is how do we know that an inbound peer is on an invalid chain?
+<a name="l-121"></a><span class="tm">19:24:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> I think there is some need for smarter wallet confirmation logic but I think thats a seperate matter. (there was a paper 6-ish months ago that also points out the the reorg probablity math in the whitepaper is somewhat incomplete)
+<a name="l-122"></a><span class="tm">19:24:19</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> set a flag if they relay an invalid block/blockheader
+<a name="l-123"></a><span class="tm">19:24:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> right, but this is relevant because we can't assume "relays invalid headers" means the other node *accepts* the invalid block
+<a name="l-124"></a><span class="tm">19:24:44</span><span class="nk"> &lt;gmaxwell&gt;</span> and we still interogate their headers if they're NODE_NETWORK/NODE_LIMITED
+<a name="l-125"></a><span class="tm">19:24:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> we intentionally relay blocks before checking validity now
+<a name="l-126"></a><span class="tm">19:25:03</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sdaftuar:</span> that requires them to have a block to relay to us, which could take hours or days
+<a name="l-127"></a><span class="tm">19:25:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> the protocol does not have you realying a header of a block you haven't accepted. If you do that you risk dos attacking peers already.
+<a name="l-128"></a><span class="tm">19:25:19</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> i don't think we need to worry as much about inbound peers
+<a name="l-129"></a><span class="tm">19:25:34</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> for instance an attacker can already try to use all your inbound slots and not send you anything
+<a name="l-130"></a><span class="tm">19:25:40</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> the only place that happens in the protocol is HB BIP152 messages.
+<a name="l-131"></a><span class="tm">19:25:51</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sdaftuar:</span> right, ok
+<a name="l-132"></a><span class="tm">19:25:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> which may be all you see from CB peers
+<a name="l-133"></a><span class="tm">19:26:18</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> yes, for inbound we can just deprive them of reservations.
+<a name="l-134"></a><span class="tm">19:26:49</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> even with bip152 the headers need to be valid
+<a name="l-135"></a><span class="tm">19:27:04</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sdaftuar:</span> yes, the header itself; but it can be a valid header for an invalid block
+<a name="l-136"></a><span class="tm">19:27:16</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, though we'd catch it on the _next_ block.
+<a name="l-137"></a><span class="tm">19:27:19</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">luke-jr:</span> if it builds on an invalid chain, i believe the header would be invalid
+<a name="l-138"></a><span class="tm">19:27:26</span><span class="nk"> &lt;achow101&gt;</span> so when we connect to an outbound peer, we will send them a getheaders so we know their best headers chain and ban accordingly
+<a name="l-139"></a><span class="tm">19:27:29</span><span class="nk"> &lt;luke-jr&gt;</span> (note I tried to keep track of peer bestblocks in #10512 and basically gave up)
+<a name="l-140"></a><span class="tm">19:27:31</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10512 | Rework same-chain from abusing DoS banning, to explicit checks by luke-jr · Pull Request #10512 · bitcoin/bitcoin · GitHub
+<a name="l-141"></a><span class="tm">19:27:41</span><span class="nk"> &lt;gmaxwell&gt;</span> when they relay a CB message for a child of an invalid block.
+<a name="l-142"></a><span class="tm">19:28:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> yes, but based on the above I believe we already always send it.
+<a name="l-143"></a><span class="tm">19:28:11</span><span class="nk"> &lt;achow101&gt;</span> the other part of 11446 is to ban other peers for relaying us an invalid block for which we already know is invalid
+<a name="l-144"></a><span class="tm">19:28:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> because we send it to nodenetwork peers and outbound always are (or or disconnected)
+<a name="l-145"></a><span class="tm">19:28:20</span><span class="nk"> &lt;achow101&gt;</span> but I'm not sure how that interacts with compact blocks
+<a name="l-146"></a><span class="tm">19:28:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> FWIW, I think we should probably be just disconnecting and not banning.
+<a name="l-147"></a><span class="tm">19:28:37</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> oh that interaction might be tricky
+<a name="l-148"></a><span class="tm">19:28:54</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> why not ban?
+<a name="l-149"></a><span class="tm">19:29:07</span><span class="nk"> &lt;gmaxwell&gt;</span> I think the interaction isn't too bad, for this purpose a BIP152 CB HB block is relaying you the header of its parent.
+<a name="l-150"></a><span class="tm">19:29:22</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> in a softfork, old nodes will send invalid blocks
+<a name="l-151"></a><span class="tm">19:29:27</span><span class="nk"> &lt;luke-jr&gt;</span> potentially
+<a name="l-152"></a><span class="tm">19:29:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> because it's hardly any better and it means that when some dimbulb tries running forkcoin it results in him being unable to run Bitcoin (perhaps concurrently) on the same host.
+<a name="l-153"></a><span class="tm">19:30:03</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> ok
+<a name="l-154"></a><span class="tm">19:30:04</span><span class="nk"> &lt;gmaxwell&gt;</span> it also blocks inbound from that peer, which we'd be find allowing.
+<a name="l-155"></a><span class="tm">19:30:09</span><span class="nk"> &lt;gmaxwell&gt;</span> s/find/fine/
+<a name="l-156"></a><span class="tm">19:30:34</span><span class="nk"> &lt;gmaxwell&gt;</span> In general we should be moving away from bans except when the thing we banned for was expensive for us.
+<a name="l-157"></a><span class="tm">19:31:03</span><span class="nk"> &lt;achow101&gt;</span> so 11446 can really just be reduced to an ~1 line change to disconnect on a header for a block we already know is invalid
+<a name="l-158"></a><span class="tm">19:31:11</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, that
+<a name="l-159"></a><span class="tm">19:31:18</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">achow101:</span> agree, though we have to be careful about compact blocks i think
+<a name="l-160"></a><span class="tm">19:31:20</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> aka #10593 …
+<a name="l-161"></a><span class="tm">19:31:22</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+<a name="l-162"></a><span class="tm">19:31:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> yes, but for compact block interactions (HB mode will relay us blocks that are invalid).
+<a name="l-163"></a><span class="tm">19:32:27</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> so we would have to check the specific type of invalidness and whether it was a CB?
+<a name="l-164"></a><span class="tm">19:32:31</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> IIRC when you proposed that before you got squaked at that it would undermine our protection against isolation...
+<a name="l-165"></a><span class="tm">19:33:04</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> or just don't do it for the peers maked for HB CBs for now
+<a name="l-166"></a><span class="tm">19:33:17</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> isn't that likely to be most peers though
+<a name="l-167"></a><span class="tm">19:33:19</span><span class="nk"> &lt;achow101&gt;</span> ?
+<a name="l-168"></a><span class="tm">19:33:23</span><span class="nk"> &lt;gmaxwell&gt;</span> No, it's at most three.
+<a name="l-169"></a><span class="tm">19:33:33</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> I don't see how. It's literally what achow101 was just describing.
+<a name="l-170"></a><span class="tm">19:34:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> maybe you're thinking of the predecessor 10512?
+<a name="l-171"></a><span class="tm">19:34:35</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> it doesn't look like you are handling invalid duplicates?
+<a name="l-172"></a><span class="tm">19:34:40</span><span class="nk"> &lt;gmaxwell&gt;</span> probably.
+<a name="l-173"></a><span class="tm">19:34:58</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> in any case, we can pick this up on a PR and later discussion.
+<a name="l-174"></a><span class="tm">19:35:09</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> ok
+<a name="l-175"></a><span class="tm">19:36:08</span><span class="nk"> &lt;achow101&gt;</span> next topic then?
+<a name="l-176"></a><span class="tm">19:36:09</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-177"></a><span class="tm">19:36:10</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> IIRC it does, we can go over it later if you like
+<a name="l-178"></a><span class="tm">19:36:14</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> ok
+<a name="l-179"></a><span class="tm">19:37:09</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">luke-jr:</span> any progress on multiwallet GUI without the rpcauth parts?
+<a name="l-180"></a><span class="tm">19:37:21</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">multiwallet ui</span>
+<a name="l-181"></a><span class="tm">19:37:32</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jnewbery:</span> not yet, I'll plan to push the update later today
+<a name="l-182"></a><span class="tm">19:38:04</span><span class="nk"> &lt;jnewbery&gt;</span> great! I had a look myself, and I think it's just a one-line change to the debug console commit
+<a name="l-183"></a><span class="tm">19:38:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> https://github.com/bitcoin/bitcoin/pull/11383
+<a name="l-184"></a><span class="tm">19:38:12</span><span class="nk"> &lt;sipa&gt;</span> topic suggestion: dealing with platform-specific code
+<a name="l-185"></a><span class="tm">19:38:24</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> I can continue to work on 11383 if you want?
+<a name="l-186"></a><span class="tm">19:38:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> (remove the auth stuff :P)
+<a name="l-187"></a><span class="tm">19:38:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jnewbery:</span> certainly not that simple.. still need to resolve wallet name to CWallet earlier
+<a name="l-188"></a><span class="tm">19:39:13</span><span class="nk"> &lt;jnewbery&gt;</span> ok, well I've got a branch that works with just that change. Happy to share with you
+<a name="l-189"></a><span class="tm">19:39:47</span><span class="nk"> &lt;gmaxwell&gt;</span> Sounds good.
+<a name="l-190"></a><span class="tm">19:40:00</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jnewbery:</span> push it and I'll take a look
+<a name="l-191"></a><span class="tm">19:40:17</span><span class="nk"> &lt;jnewbery&gt;</span> thanks
+<a name="l-192"></a><span class="tm">19:41:03</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">dealing with platform-specific code (sipa)</span>
+<a name="l-193"></a><span class="tm">19:41:19</span><span class="nk"> &lt;sipa&gt;</span> i've recently been looking into faster parallel hashing code
+<a name="l-194"></a><span class="tm">19:41:37</span><span class="nk"> &lt;wumpus&gt;</span> hashing as in sha256?
+<a name="l-195"></a><span class="tm">19:41:50</span><span class="nk"> &lt;sipa&gt;</span> in particular, for 8-way parallel SHA256 (which would be useful in merkle root computation and block deserialization), a 5x speedup is doable with AVX2
+<a name="l-196"></a><span class="tm">19:42:04</span><span class="nk"> &lt;sipa&gt;</span> and maybe 2.5x with SSE2
+<a name="l-197"></a><span class="tm">19:42:22</span><span class="nk"> &lt;wumpus&gt;</span> and parallel in this case means computing multiple hashes of multiple pieces of data at once?
+<a name="l-198"></a><span class="tm">19:42:27</span><span class="nk"> &lt;sipa&gt;</span> correct
+<a name="l-199"></a><span class="tm">19:42:28</span><span class="nk"> &lt;luke-jr&gt;</span> how much speedup is this for the entire IBD?
+<a name="l-200"></a><span class="tm">19:42:57</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> It saves something like 10 minutes on IBD.  But the greater impact is in block relay.
+<a name="l-201"></a><span class="tm">19:43:01</span><span class="nk"> &lt;wumpus&gt;</span> (I guess there are constraints there, do all the inputs need to be the same size?)
+<a name="l-202"></a><span class="tm">19:43:05</span><span class="nk"> &lt;luke-jr&gt;</span> I imagine merkle root is a tiny fraction of the overall process, but otoh it's also possibly a blocker on parallelization
+<a name="l-203"></a><span class="tm">19:43:05</span><span class="nk"> &lt;gmaxwell&gt;</span> Where hash tree computation is most of the time.
+<a name="l-204"></a><span class="tm">19:43:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> it is? :O
+<a name="l-205"></a><span class="tm">19:43:32</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> yes and no; for now, it's just a primitive that you give a pointer to N 64-byte inputs, and produces 32-byte outputs
+<a name="l-206"></a><span class="tm">19:43:33</span><span class="nk"> &lt;luke-jr&gt;</span> oh, because the signature checks are cached?
+<a name="l-207"></a><span class="tm">19:43:37</span><span class="nk"> &lt;BlueMatt&gt;</span> in terms of compact block relay, merkle root calculation and deserialize are about the only big timesinks before you can relay
+<a name="l-208"></a><span class="tm">19:43:46</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> which is specific for merkle root computation
+<a name="l-209"></a><span class="tm">19:43:48</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> yes for HB BIP152 we don't to validation except hashing!
+<a name="l-210"></a><span class="tm">19:43:50</span><span class="nk"> &lt;sipa&gt;</span> but it can certainly be adapted
+<a name="l-211"></a><span class="tm">19:44:37</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> ok
+<a name="l-212"></a><span class="tm">19:44:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> i had a scare when reviewing some new leveldb crc32 changes that i thought (at first glance) could be a consensus issue. I was very angry at myself at that point for not adding a fallback un-optimized verification of the optimized path.
+<a name="l-213"></a><span class="tm">19:44:43</span><span class="nk"> &lt;sipa&gt;</span> anyway, there are multiple ways to integrate this: separate asm code, inline asm blocks, or code using intrinsics (my preference, it's much more easy to review, and has no OS-specific warts like the L label prefix...)
+<a name="l-214"></a><span class="tm">19:44:56</span><span class="nk"> &lt;gmaxwell&gt;</span> sipa has actually implemented the 8-way AVX2 sha2 and a hash tree computation that uses it... along with specialized implementation of 64-byte input double sha2.. which affords an addition 20%-ish speedup over generic sha2.
+<a name="l-215"></a><span class="tm">19:45:09</span><span class="nk"> &lt;cfields&gt;</span> very cool :)
+<a name="l-216"></a><span class="tm">19:45:12</span><span class="nk"> &lt;wumpus&gt;</span> I prefer intrinsics
+<a name="l-217"></a><span class="tm">19:45:21</span><span class="nk"> &lt;wumpus&gt;</span> (except for arm32 whre they suck)
+<a name="l-218"></a><span class="tm">19:45:48</span><span class="nk"> &lt;sipa&gt;</span> so, for intrinsics... do we want to have a separate LIBCRYPTO_AVX2 LIBCRYPTO_SSE2 LIBCRYPTO_... with different compile flags each?
+<a name="l-219"></a><span class="tm">19:46:05</span><span class="nk"> &lt;sipa&gt;</span> or could we rely on __attribute__((target("avx2")))
+<a name="l-220"></a><span class="tm">19:46:05</span><span class="nk"> &lt;gmaxwell&gt;</span> Historically, For some code you cannot achieve equivilent performance w/ intrinsics because you must manage register allocation precisely for things to work, but that isn't the case here....
+<a name="l-221"></a><span class="tm">19:46:08</span><span class="nk"> &lt;wumpus&gt;</span> but 64 bit platforms the SIMD instructions have been specially tweaked to work well with compilers and intrinsics
+<a name="l-222"></a><span class="tm">19:46:12</span><span class="nk"> &lt;sipa&gt;</span> (which works on both clang and gcc)
+<a name="l-223"></a><span class="tm">19:46:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> i think we should test for the target attribute and use it if possible, but not completely rely on it
+<a name="l-224"></a><span class="tm">19:46:44</span><span class="nk"> &lt;cfields&gt;</span> iirc that improves dispatching time as well?
+<a name="l-225"></a><span class="tm">19:46:49</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> no
+<a name="l-226"></a><span class="tm">19:46:57</span><span class="nk"> &lt;wumpus&gt;</span> different compile flags for different compile units, that's the only portable way
+<a name="l-227"></a><span class="tm">19:47:01</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> I think we can't assume intrinsics for all platforms, so we want the separate lib route
+<a name="l-228"></a><span class="tm">19:47:07</span><span class="nk"> &lt;gmaxwell&gt;</span> dispatching is via a function pointer ultimately in all those cases.
+<a name="l-229"></a><span class="tm">19:47:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> you're confusing, that's not about intrinsics
+<a name="l-230"></a><span class="tm">19:47:30</span><span class="nk"> &lt;sipa&gt;</span> the only difference is avoiding the need for build system complication
+<a name="l-231"></a><span class="tm">19:47:35</span><span class="nk"> &lt;wumpus&gt;</span> intrinsics inthis case are headers like xmmintr.h which provides functions that work on vector types
+<a name="l-232"></a><span class="tm">19:47:42</span><span class="nk"> &lt;sipa&gt;</span> exactly
+<a name="l-233"></a><span class="tm">19:47:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> __attribute__((target("avx2"))) isn't an option for separate asm code, though, right?
+<a name="l-234"></a><span class="tm">19:48:00</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> it also isn't needed for asm code
+<a name="l-235"></a><span class="tm">19:48:02</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> isn't there elf data that allows them to be setup at load time?
+<a name="l-236"></a><span class="tm">19:48:14</span><span class="nk"> &lt;wumpus&gt;</span> oh no no ELF magic please
+<a name="l-237"></a><span class="tm">19:48:24</span><span class="nk"> &lt;luke-jr&gt;</span> hmm
+<a name="l-238"></a><span class="tm">19:48:36</span><span class="nk"> &lt;cfields&gt;</span> not by hand, i thought __attribute__(target) did that behind the scenes
+<a name="l-239"></a><span class="tm">19:48:41</span><span class="nk"> &lt;sipa&gt;</span> target("avx2") just means "this function is compiled as if -mavx2 was passed on the command line
+<a name="l-240"></a><span class="tm">19:49:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> GCC also has target("default"), where you can have multiple versions of the same function... which causes automatic dispatch to be added
+<a name="l-241"></a><span class="tm">19:49:08</span><span class="nk"> &lt;sipa&gt;</span> that's non-portable and has other issues
+<a name="l-242"></a><span class="tm">19:49:09</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> they're setup at load time, yes-- but they're still just a function pointer, which we could also have setup at load time.  Though it is nice that the function override trick can make them run before main.
+<a name="l-243"></a><span class="tm">19:49:11</span><span class="nk"> &lt;wumpus&gt;</span> I'm normally not scared of low level ELF hacking, but for bitcoin, let's try to keep it safe and portable
+<a name="l-244"></a><span class="tm">19:49:12</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> how does it behave if I have an explicit -mno-avx2?
+<a name="l-245"></a><span class="tm">19:49:15</span><span class="nk"> &lt;sipa&gt;</span> (in particular clang doesn't have that)
+<a name="l-246"></a><span class="tm">19:49:17</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> ah yes, that's what i was thinking of.
+<a name="l-247"></a><span class="tm">19:49:33</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">cfields:</span> so i'm not suggesting using that
+<a name="l-248"></a><span class="tm">19:49:39</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> i assume it overrides it
+<a name="l-249"></a><span class="tm">19:49:43</span><span class="nk"> &lt;cfields&gt;</span> ok
+<a name="l-250"></a><span class="tm">19:50:02</span><span class="nk"> &lt;luke-jr&gt;</span> I suppose I can test it
+<a name="l-251"></a><span class="tm">19:50:05</span><span class="nk"> &lt;wumpus&gt;</span> yes, gcc can do it automatically on some platforms, but I'm afraid the only portable way is to make our own dispatch logic
+<a name="l-252"></a><span class="tm">19:50:15</span><span class="nk"> &lt;sipa&gt;</span> yes, we'll want our own dispatch logic anyway
+<a name="l-253"></a><span class="tm">19:50:18</span><span class="nk"> &lt;wumpus&gt;</span> we already have some CPUID bits checking
+<a name="l-254"></a><span class="tm">19:50:20</span><span class="nk"> &lt;sipa&gt;</span> so we can test things
+<a name="l-255"></a><span class="tm">19:50:21</span><span class="nk"> &lt;wumpus&gt;</span> so it's nothing new erally
+<a name="l-256"></a><span class="tm">19:50:25</span><span class="nk"> &lt;sipa&gt;</span> and report which version is being chosen
+<a name="l-257"></a><span class="tm">19:50:29</span><span class="nk"> &lt;cfields&gt;</span> np, i wasn't suggesting. just trying to understand the advantages of one vs the other.
+<a name="l-258"></a><span class="tm">19:50:30</span><span class="nk"> &lt;wumpus&gt;</span> yes, exactly
+<a name="l-259"></a><span class="tm">19:51:01</span><span class="nk"> &lt;sipa&gt;</span> but if possible i'd like to avoid the overhead of needing half a dozen libcrypto_XXX.a things that need to be linked in everywhere
+<a name="l-260"></a><span class="tm">19:51:08</span><span class="nk"> &lt;sipa&gt;</span> though that's really the only advantage
+<a name="l-261"></a><span class="tm">19:51:38</span><span class="nk"> &lt;wumpus&gt;</span> so I'd say: yes, use intrinsics instead of inline/offline asm,  and use our own dispatching, and compile units compiled with appropriate compiler flags
+<a name="l-262"></a><span class="tm">19:51:55</span><span class="nk"> &lt;sipa&gt;</span> okay.
+<a name="l-263"></a><span class="tm">19:52:28</span><span class="nk"> &lt;gmaxwell&gt;</span> can we say prefer intrinsics instead of use? :) I don't think we'd eschew inline asm if we thought it was better in a particular case.
+<a name="l-264"></a><span class="tm">19:52:29</span><span class="nk"> &lt;wumpus&gt;</span> yes regarding build system it's just verbose, not really complex
+<a name="l-265"></a><span class="tm">19:52:41</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">sipa:</span> see my point above about a fallback, though. In the case of mismatch hashes, i think it's worthwhile to re-check with a generic implementation before deciding it's failed.
+<a name="l-266"></a><span class="tm">19:53:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> we should be testing these things in startup tests.
+<a name="l-267"></a><span class="tm">19:53:12</span><span class="nk"> &lt;luke-jr&gt;</span> (yes, it seems to override -mno-*
+<a name="l-268"></a><span class="tm">19:53:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> well if there's a case you can do much better than the compiler, sure...
+<a name="l-269"></a><span class="tm">19:53:37 </span><span class="nka">* BlueMatt</span> <span class="ac">has a weak preference for compile units, but only cause I'd use them in FIBRE for my FEC stuff, too, but thats not much of a reasoning</span>
+<a name="l-270"></a><span class="tm">19:54:26 </span><span class="nka">* luke-jr</span> <span class="ac">hopes we can have POWER9 asm in 0.16 &lt;.&lt;</span>
+<a name="l-271"></a><span class="tm">19:54:32 </span><span class="nka">* BlueMatt</span> <span class="ac">agrees</span>
+<a name="l-272"></a><span class="tm">19:54:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> an implementation bug in some branch of one optimized path is scary...
+<a name="l-273"></a><span class="tm">19:54:56</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> try differently if it fails is just not reasonable in a lot of cases; and often would add a lot of complexity (now you have to not cache hashes, but instead only use hash-verify methods) ... and we don't have expected values for thigns like single transaction hashes, just hash roots.
+<a name="l-274"></a><span class="tm">19:54:57</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> in particular, the crc issue had to do with incoming data alignment on x86_64
+<a name="l-275"></a><span class="tm">19:55:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I agree
+<a name="l-276"></a><span class="tm">19:55:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> I think we should only do asm optimization in cases where it really makes a lot of difference, for that reason, ther risk has to be worth it
+<a name="l-277"></a><span class="tm">19:56:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> yes, thats something that always needs careful review and we should have unit tests that also stress alignment.
+<a name="l-278"></a><span class="tm">19:56:33</span><span class="nk"> &lt;wumpus&gt;</span> special-casing everything makes things a lot harder to review, and test, especially when it starts to need different kinds of hardware
+<a name="l-279"></a><span class="tm">19:56:54</span><span class="nk"> &lt;wumpus&gt;</span> but for testable low-level primitives like SHA256 I'd say it's ok
+<a name="l-280"></a><span class="tm">19:57:11</span><span class="nk"> &lt;gmaxwell&gt;</span> good thing no one is talking about special casing everything. :)
+<a name="l-281"></a><span class="tm">19:57:29</span><span class="nk"> &lt;gmaxwell&gt;</span> yea, sha2 etc have simple testable interfaces.
+<a name="l-282"></a><span class="tm">19:57:37</span><span class="nk"> &lt;wumpus&gt;</span> no, that's just one extreme, I've seen soome graphics drivers which are scary in that regard :)
+<a name="l-283"></a><span class="tm">19:58:09</span><span class="nk"> &lt;gmaxwell&gt;</span> But benchmarks!
+<a name="l-284"></a><span class="tm">19:58:11</span><span class="nk"> &lt;wumpus&gt;</span> oh let's special case 4x4 tiles, 4x5 tiles, 4x6 tiles, ... for 3 different architectures
+<a name="l-285"></a><span class="tm">19:58:20</span><span class="nk"> &lt;wumpus&gt;</span> right :)
+<a name="l-286"></a><span class="tm">19:58:27</span><span class="nk"> &lt;cfields&gt;</span> mmm. I don't see the harm in doing a quick re-check in a few certain cases (merkle mismatch is a good example)
+<a name="l-287"></a><span class="tm">19:58:51</span><span class="nk"> &lt;wumpus&gt;</span> special-casing benchmarks is a curious form of over-learning
+<a name="l-288"></a><span class="tm">19:58:55</span><span class="nk"> &lt;cfields&gt;</span> anyway, i've made my case
+<a name="l-289"></a><span class="tm">19:59:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> because it requires restructing the code to not return hashes but instead only have uncachable hash_Verify methods.
+<a name="l-290"></a><span class="tm">19:59:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> re-check in what case?
+<a name="l-291"></a><span class="tm">19:59:24</span><span class="nk"> &lt;luke-jr&gt;</span> although someone did manage to screw up xpub serialisation at one point IIRC
+<a name="l-292"></a><span class="tm">19:59:25</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> you mean re-run the validation w/ different implementations if an  incoming block fails?
+<a name="l-293"></a><span class="tm">19:59:55</span><span class="nk"> &lt;wumpus&gt;</span> (what about false positives?)
+<a name="l-294"></a><span class="tm">20:00:00</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> that's a big hammer, but yes-ish
+<a name="l-295"></a><span class="tm">20:00:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> and for small functions like a hash a check in an innerloop will measurably lower performance. ... and you also create the opposite problem, what if the alternative function is the wrong one?
+<a name="l-296"></a><span class="tm">20:00:26</span><span class="nk"> &lt;gmaxwell&gt;</span> (I'd actually consider whole block level more reasonable)
+<a name="l-297"></a><span class="tm">20:00:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I think he means on a high level
+<a name="l-298"></a><span class="tm">20:01:02</span><span class="nk"> &lt;wumpus&gt;</span> on the inner level it's just NASA-level crazy, let's run three implementations and see which ones agree
+<a name="l-299"></a><span class="tm">20:01:06</span><span class="nk"> &lt;sipa&gt;</span> i think re-checking a block if it fails is reasonable... but why switch hash functions? it's massively more likely your CPU is fried than that the hash function implementation is wrong all along and you never noticed
+<a name="l-300"></a><span class="tm">20:01:13</span><span class="nk"> &lt;gmaxwell&gt;</span> but then the dispatch is mutable not just set once at init. :(
+<a name="l-301"></a><span class="tm">20:01:28</span><span class="nk"> &lt;wumpus&gt;</span> yeah ... I think we're overdesigning this
+<a name="l-302"></a><span class="tm">20:01:30</span><span class="nk"> &lt;gmaxwell&gt;</span> right we have a constant slow stream of complaints from users whos hosts have falsely rejected the blockchain.
+<a name="l-303"></a><span class="tm">20:01:37</span><span class="nk"> &lt;wumpus&gt;</span> just continue with what you were doing sipa :)
+<a name="l-304"></a><span class="tm">20:01:40</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> just have a generic non-dispatchable one
+<a name="l-305"></a><span class="tm">20:01:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I would like to see that improved somehow.
+<a name="l-306"></a><span class="tm">20:01:43</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-307"></a><span class="tm">20:01:46</span><span class="nk"> &lt;wumpus&gt;</span> oh wait, it's time
+<a name="l-308"></a><span class="tm">20:01:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
