@@ -1,0 +1,343 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:02:17</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:02:17</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Oct 12 19:02:17 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:02:17</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:22</span><span class="nk"> &lt;luke-jr&gt;</span> before we officially start, does anyone mind if I collapse the fixups in #11383 ?
+<a name="l-5"></a><span class="tm">19:02:24</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11383 | Basic Multiwallet GUI support by luke-jr · Pull Request #11383 · bitcoin/bitcoin · GitHub
+<a name="l-6"></a><span class="tm">19:02:40</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-7"></a><span class="tm">19:02:47</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-8"></a><span class="tm">19:03:02</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-9"></a><span class="tm">19:03:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> probably best to do that just before merge
+<a name="l-10"></a><span class="tm">19:03:34</span><span class="nk"> &lt;BlueMatt&gt;</span> suggested topics: backdating segwit/p2sh
+<a name="l-11"></a><span class="tm">19:03:37</span><span class="nk"> &lt;BlueMatt&gt;</span> suggested topics: segwit wallet
+<a name="l-12"></a><span class="tm">19:03:51</span><span class="nk"> &lt;BlueMatt&gt;</span> suggested topics: pre-2x release (possibly with no segwit wallet)?
+<a name="l-13"></a><span class="tm">19:04:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Backdating segwit/p2sh (BlueMatt)</span>
+<a name="l-14"></a><span class="tm">19:04:15 </span><span class="nka">* BlueMatt</span> <span class="ac">nominates sdaftuar/sipa/jl2012 to talk</span>
+<a name="l-15"></a><span class="tm">19:04:15</span><span class="nk"> &lt;sdaftuar&gt;</span> i guess matt wants me to talk about this one
+<a name="l-16"></a><span class="tm">19:04:24 </span><span class="nka">* sipa</span> <span class="ac">listens</span>
+<a name="l-17"></a><span class="tm">19:04:32</span><span class="nk"> &lt;jl2012&gt;</span> hi
+<a name="l-18"></a><span class="tm">19:04:55</span><span class="nk"> &lt;meshcollider&gt;</span> Hello
+<a name="l-19"></a><span class="tm">19:05:17</span><span class="nk"> &lt;gmaxwell&gt;</span> I am pro backdating but wasn't sure how we should handle the rollback and replay. Rolling back the whole chain would be unfortunate. :P
+<a name="l-20"></a><span class="tm">19:05:20</span><span class="nk"> &lt;sdaftuar&gt;</span> in thinking about p2sh and segwit, they both have the property that it doesn't make sense to ever accept blocks that violate those rules
+<a name="l-21"></a><span class="tm">19:05:41</span><span class="nk"> &lt;sdaftuar&gt;</span> in the case of p2sh, there was only one historical block that violated SCRIPT_VERIFY_P2SH
+<a name="l-22"></a><span class="tm">19:05:47</span><span class="nk"> &lt;jl2012&gt;</span> I think backdating segwit is not trivial because the inclusion of witness commitment pre-fork
+<a name="l-23"></a><span class="tm">19:05:56</span><span class="nk"> &lt;sdaftuar&gt;</span> in the case of segwit, no blocks have ever violated the segwit scritp flag SCRIPT_VERIFY_WITNESS
+<a name="l-24"></a><span class="tm">19:06:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jl2012:</span> I thought all the prefork ones were valid.
+<a name="l-25"></a><span class="tm">19:06:15</span><span class="nk"> &lt;sdaftuar&gt;</span> but of course, the witness commitment validation rules don't really work for backdating
+<a name="l-26"></a><span class="tm">19:06:27</span><span class="nk"> &lt;wumpus&gt;</span> backdating to when? to the beginning of the chain?
+<a name="l-27"></a><span class="tm">19:06:27</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> i don't think that is true, though i didn't verify myself
+<a name="l-28"></a><span class="tm">19:06:30</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> yes
+<a name="l-29"></a><span class="tm">19:06:42</span><span class="nk"> &lt;wumpus&gt;</span> interesting
+<a name="l-30"></a><span class="tm">19:06:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">jl2012:</span> i checked the pre-activation commitments on mainnet and found them to all be valid
+<a name="l-31"></a><span class="tm">19:06:48</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> somehow i thought many of them were invalid
+<a name="l-32"></a><span class="tm">19:06:51</span><span class="nk"> &lt;BlueMatt&gt;</span> oh!
+<a name="l-33"></a><span class="tm">19:06:52</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">gmaxwell:</span> not exactly, because of lack of the 0000.....0000 coinbase witness
+<a name="l-34"></a><span class="tm">19:06:53</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">cfields:</span> oh!
+<a name="l-35"></a><span class="tm">19:06:54</span><span class="nk"> &lt;achow101&gt;</span> isn't segwit only backdateable to p2sh activation at earliest?
+<a name="l-36"></a><span class="tm">19:07:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I think in general its cleanest when we can backdate softforks to the start.
+<a name="l-37"></a><span class="tm">19:07:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">achow101:</span> we're talking about backdating p2sh as well (with one exception)
+<a name="l-38"></a><span class="tm">19:07:15</span><span class="nk"> &lt;sdaftuar&gt;</span> yes it would take some work to manufacture the witness nonces as jl2012 points out
+<a name="l-39"></a><span class="tm">19:07:27</span><span class="nk"> &lt;sipa&gt;</span> what is the advantage over just hardcoding a height for segwit and p2sh start?
+<a name="l-40"></a><span class="tm">19:07:30</span><span class="nk"> &lt;sdaftuar&gt;</span> but if it is really true that none were invalid, that might change the way i look at it
+<a name="l-41"></a><span class="tm">19:07:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> no need to handle the non-segwit case for initial validation anymore ,I guess
+<a name="l-42"></a><span class="tm">19:07:49</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> it is a very nice property (imo) that you will *never* accept any chain with invalid segwit/p2sh spends
+<a name="l-43"></a><span class="tm">19:07:57</span><span class="nk"> &lt;BlueMatt&gt;</span> irrespective of reorgs
+<a name="l-44"></a><span class="tm">19:08:03</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">sdaftuar:</span> and for some blocks that was very close to 1MB, adding the coinbase witness will make it over 4M weight
+<a name="l-45"></a><span class="tm">19:08:23</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> sure, but i'm not sure that weighs up against the complication of adding exceptions, make-pretending to have coinbase witnesses nonces, ...
+<a name="l-46"></a><span class="tm">19:08:28</span><span class="nk"> &lt;gmaxwell&gt;</span> it also simplifies reasoning about further changes, e.g. what happens if someone forks early during IBD and feeds us a chain with things we assumed were impossible.
+<a name="l-47"></a><span class="tm">19:08:43</span><span class="nk"> &lt;BlueMatt&gt;</span> in any case, I believe sdaftuar's suggestion was to backdate SCRIPT_VERIFY_WITNESS/P2SH, but dissallow witnesses in blocks pre-activation, effectively disabling segwit
+<a name="l-48"></a><span class="tm">19:08:47</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">gmaxwell:</span> yeah that's basically the reason i started thinking abotu this
+<a name="l-49"></a><span class="tm">19:08:51</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> ugh
+<a name="l-50"></a><span class="tm">19:08:52</span><span class="nk"> &lt;sdaftuar&gt;</span> but i don't feel strongly either way
+<a name="l-51"></a><span class="tm">19:08:57</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> you can skip the witness nonce part
+<a name="l-52"></a><span class="tm">19:09:15</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jl2012:</span> are any of those blocks *also* with the commitment?
+<a name="l-53"></a><span class="tm">19:09:21</span><span class="nk"> &lt;sipa&gt;</span> that's effectively splitting the segwit logic into 2 deployments, with one always active?
+<a name="l-54"></a><span class="tm">19:09:23</span><span class="nk"> &lt;gmaxwell&gt;</span> I don't feel strongly about it except the general principle that it's better to backdate wheverever possible.
+<a name="l-55"></a><span class="tm">19:09:35</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> well I would call that splitting it into one deployment and one consensus rule
+<a name="l-56"></a><span class="tm">19:09:36</span><span class="nk"> &lt;BlueMatt&gt;</span> but ok
+<a name="l-57"></a><span class="tm">19:09:40</span><span class="nk"> &lt;morcos&gt;</span> well an always active deployment is kind of not a deployment
+<a name="l-58"></a><span class="tm">19:09:42</span><span class="nk"> &lt;morcos&gt;</span> right
+<a name="l-59"></a><span class="tm">19:09:45</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">sipa:</span> the branch i have splits the witness commitment rule from the script verification rule, basically
+<a name="l-60"></a><span class="tm">19:09:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> so you're not getting rid of the deployment overhead
+<a name="l-61"></a><span class="tm">19:09:56</span><span class="nk"> &lt;sdaftuar&gt;</span> i was not sure it was an improvement
+<a name="l-62"></a><span class="tm">19:10:15</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> indeed, it does not significantly simplify, it (mostly) just adds a very nice property
+<a name="l-63"></a><span class="tm">19:10:28</span><span class="nk"> &lt;BlueMatt&gt;</span> (and, as gmaxwell points out, may simplify future fork logic)
+<a name="l-64"></a><span class="tm">19:10:36</span><span class="nk"> &lt;sipa&gt;</span> i understand the advantage of making a consensus rule always active, allowing you to get rid of some logic
+<a name="l-65"></a><span class="tm">19:10:42</span><span class="nk"> &lt;jl2012&gt;</span> <span class="hi">luke-jr:</span> I guess so, especially from f2pool. They mine exactly 1MB block quite frequently
+<a name="l-66"></a><span class="tm">19:10:43</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">jl2012:</span> that weight issue is a good point
+<a name="l-67"></a><span class="tm">19:10:47</span><span class="nk"> &lt;sipa&gt;</span> but it doesn't seem that's really possible here without further complication
+<a name="l-68"></a><span class="tm">19:11:00</span><span class="nk"> &lt;BlueMatt&gt;</span> I dont think its adding significant new complication
+<a name="l-69"></a><span class="tm">19:11:01</span><span class="nk"> &lt;gmaxwell&gt;</span> Not just simplfy but reduce the incidence where the community makes design errors due to reasoning from current rules without realizing they don't apply in IBD.
+<a name="l-70"></a><span class="tm">19:11:28</span><span class="nk"> &lt;gmaxwell&gt;</span> but what sipa says, I don't think backdating is worth non-trivial extra complexity.
+<a name="l-71"></a><span class="tm">19:11:32</span><span class="nk"> &lt;luke-jr&gt;</span> what's the downside to allowing witness in pre-activation blocks?
+<a name="l-72"></a><span class="tm">19:11:47</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> makes my head hurt
+<a name="l-73"></a><span class="tm">19:12:07</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> that we'll make changes in the future based on an assumption that they're never there.
+<a name="l-74"></a><span class="tm">19:12:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> I'm looking at https://github.com/sdaftuar/bitcoin/compare/2649d1690ce9458aa344a8ccfb1fa8548b2ac57c...2017-09-p2sh-segwit-from-genesis
+<a name="l-75"></a><span class="tm">19:12:52</span><span class="nk"> &lt;gmaxwell&gt;</span> We also don't have to decide this forever now, we could e.g. set it to activate at the real height now, and then later adjust it further back.
+<a name="l-76"></a><span class="tm">19:12:53</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> i just really hate the attack scenarios that involve feeding alternate chains that eventually get reorged out but possibly with poor consequences...  perhaps this is not a problem with segwit, but perhaps it is... say your wallet loses money in an unexpected way or something?
+<a name="l-77"></a><span class="tm">19:13:14</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> that doesn't look too bad, i guess
+<a name="l-78"></a><span class="tm">19:13:25</span><span class="nk"> &lt;sipa&gt;</span> but i need to think about it
+<a name="l-79"></a><span class="tm">19:13:39</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes, sorry, should have shared the code since we're arguing based on different understandings...anyway, something to think about, I dont think I feel *that* strongly, but I am vaguely in favor
+<a name="l-80"></a><span class="tm">19:13:40</span><span class="nk"> &lt;sdaftuar&gt;</span> if this is worth discussion, i can open a PR
+<a name="l-81"></a><span class="tm">19:13:49</span><span class="nk"> &lt;sdaftuar&gt;</span> i wasn't sure whether to move this forward
+<a name="l-82"></a><span class="tm">19:14:07</span><span class="nk"> &lt;sipa&gt;</span> but in regards to the next topic, do we want all that in 0.15.1?
+<a name="l-83"></a><span class="tm">19:14:20</span><span class="nk"> &lt;morcos&gt;</span> no, i don't
+<a name="l-84"></a><span class="tm">19:14:24</span><span class="nk"> &lt;sdaftuar&gt;</span> i don't think this so either
+<a name="l-85"></a><span class="tm">19:14:25</span><span class="nk"> &lt;BlueMatt&gt;</span> i dont think so?
+<a name="l-86"></a><span class="tm">19:14:29</span><span class="nk"> &lt;sipa&gt;</span> okay
+<a name="l-87"></a><span class="tm">19:14:32</span><span class="nk"> &lt;wumpus&gt;</span> would be kind of hurried IMO
+<a name="l-88"></a><span class="tm">19:14:37</span><span class="nk"> &lt;BlueMatt&gt;</span> very
+<a name="l-89"></a><span class="tm">19:14:39</span><span class="nk"> &lt;gmaxwell&gt;</span> It would be really nice if 0.15.1 were out before the B2X split, but we're on the thin edge of that now I think.
+<a name="l-90"></a><span class="tm">19:14:42</span><span class="nk"> &lt;wumpus&gt;</span> also let's not increase the scope of 0.15.1
+<a name="l-91"></a><span class="tm">19:14:46</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, so #action sdaftuar opens pr? next topic?
+<a name="l-92"></a><span class="tm">19:14:46</span><span class="nk"> &lt;sipa&gt;</span> so this is unrelated to #11389
+<a name="l-93"></a><span class="tm">19:14:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+<a name="l-94"></a><span class="tm">19:14:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">segwit wallet</span>
+<a name="l-95"></a><span class="tm">19:15:20</span><span class="nk"> &lt;achow101&gt;</span> if we want 0.15.1 out before B2X, it probably needs to go into rc's within the next week
+<a name="l-96"></a><span class="tm">19:15:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> For the GUI, I'm working on a Bech32 error pointer (red underlines where errors appear)
+<a name="l-97"></a><span class="tm">19:15:29</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> seems unreasonable
+<a name="l-98"></a><span class="tm">19:15:34</span><span class="nk"> &lt;sipa&gt;</span> i first want to get 11389 in, but there seems to be some discussion about the right approach
+<a name="l-99"></a><span class="tm">19:15:35</span><span class="nk"> &lt;BlueMatt&gt;</span> (which probably means no segwit wallet)
+<a name="l-100"></a><span class="tm">19:15:51</span><span class="nk"> &lt;wumpus&gt;</span> 0.15.0.2? :p
+<a name="l-101"></a><span class="tm">19:15:55</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, that
+<a name="l-102"></a><span class="tm">19:16:03</span><span class="nk"> &lt;sipa&gt;</span> or 0.15.1 without segwit wallet, 0.15.2 with
+<a name="l-103"></a><span class="tm">19:16:13</span><span class="nk"> &lt;wumpus&gt;</span> we'll just do minor-minor releases until we have the damn segwit wallet :)
+<a name="l-104"></a><span class="tm">19:16:18</span><span class="nk"> &lt;BlueMatt&gt;</span> yea, numbers...isnt someone in charge of those so I dont have to think about them?
+<a name="l-105"></a><span class="tm">19:16:18</span><span class="nk"> &lt;sipa&gt;</span> haha
+<a name="l-106"></a><span class="tm">19:16:23</span><span class="nk"> &lt;jnewbery&gt;</span> I think #11389 is related to Suhas's suggested change, no?
+<a name="l-107"></a><span class="tm">19:16:25</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+<a name="l-108"></a><span class="tm">19:16:38</span><span class="nk"> &lt;gmaxwell&gt;</span> well, RC by then at least would be good if not out...
+<a name="l-109"></a><span class="tm">19:16:53</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> wait, so you want to have segwit always active in regtest for segwit wallet, or what am I misunderstanding about the need for segwit-regtest for 0.15.1?
+<a name="l-110"></a><span class="tm">19:16:58</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> yes
+<a name="l-111"></a><span class="tm">19:17:16</span><span class="nk"> &lt;sipa&gt;</span> adapting the tests to deal with segwit activation halfway through them is a giant pain
+<a name="l-112"></a><span class="tm">19:17:23</span><span class="nk"> &lt;wumpus&gt;</span> so if we'd do 0.15.1 without segwit wallet, is there anything that still needs to go in? or can we tag rc1 after the meeting?
+<a name="l-113"></a><span class="tm">19:17:27</span><span class="nk"> &lt;BlueMatt&gt;</span> test_framework().activate_segwit() ?
+<a name="l-114"></a><span class="tm">19:17:31</span><span class="nk"> &lt;morcos&gt;</span> as much as i really want to concentrate on segwit wallet
+<a name="l-115"></a><span class="tm">19:17:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jnewbery:</span> i was starting to respond to you, but to the last point "We already have control to make a BIP9 deployment active at a certain height in regtest using -vbparams. What advantages do you see for making a deployment buried instead of just activated at a height?" -&gt; -vbparams doesn't permit having segwit active before block 432
+<a name="l-116"></a><span class="tm">19:17:50</span><span class="nk"> &lt;achow101&gt;</span> what's the point of doing 0.15.1 without segwit wallet?
+<a name="l-117"></a><span class="tm">19:17:51</span><span class="nk"> &lt;morcos&gt;</span> i think practically speaking we should focus on what would be good to have before 2X
+<a name="l-118"></a><span class="tm">19:17:56</span><span class="nk"> &lt;wumpus&gt;</span> I'm not sure what is the rationale for doing 0.15.1, are there important bugfixes that we need to get out?
+<a name="l-119"></a><span class="tm">19:17:56</span><span class="nk"> &lt;morcos&gt;</span> and we should do that withotu segwit wallet
+<a name="l-120"></a><span class="tm">19:18:13</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> mostly I want https://github.com/bitcoin/bitcoin/pull/11487/commits/09cf35122a219217f841e4e4f7847386eb0b0b8a pre-b2x
+<a name="l-121"></a><span class="tm">19:18:18</span><span class="nk"> &lt;achow101&gt;</span> what needs to be done before 2X then?
+<a name="l-122"></a><span class="tm">19:18:20</span><span class="nk"> &lt;BlueMatt&gt;</span> but dunno if thats a realistic goal (it probably isnt)
+<a name="l-123"></a><span class="tm">19:18:20</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> there are a few edge cases with invalid chains that might cause for annoying behavior
+<a name="l-124"></a><span class="tm">19:18:54</span><span class="nk"> &lt;wumpus&gt;</span> I mean MarcoFalke backported a lot of things, that's nice to have in #11447
+<a name="l-125"></a><span class="tm">19:18:56</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11447 | 0.15.1: Backports by MarcoFalke · Pull Request #11447 · bitcoin/bitcoin · GitHub
+<a name="l-126"></a><span class="tm">19:19:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> so 11487 should get 0.15.1 tag?
+<a name="l-127"></a><span class="tm">19:19:57</span><span class="nk"> &lt;BlueMatt&gt;</span> its not critical, but having edge cases that you may see if you're offline during the fork and suddenly you accept blocks that are on the 2x chain (if they're &lt;4m weight and more work and within our pruning window) thats kinda annoying
+<a name="l-128"></a><span class="tm">19:19:59</span><span class="nk"> &lt;wumpus&gt;</span> or really just that commit?
+<a name="l-129"></a><span class="tm">19:20:02</span><span class="nk"> &lt;gmaxwell&gt;</span> Just for the record I think it is terrible that we're effectively being forced to delay segwit wallet due to this nonsense.
+<a name="l-130"></a><span class="tm">19:20:11</span><span class="nk"> &lt;wumpus&gt;</span> if so, please open a separate PR for that
+<a name="l-131"></a><span class="tm">19:20:14</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> the rest of that pr is just test changes and other tiny things
+<a name="l-132"></a><span class="tm">19:20:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yes, me to, I'd personally prefer not to change our plans for them
+<a name="l-133"></a><span class="tm">19:20:30</span><span class="nk"> &lt;gmaxwell&gt;</span> (even if we don't bump around the versions for it, the fact that people are spending time on these other things creates delays)
+<a name="l-134"></a><span class="tm">19:21:00</span><span class="nk"> &lt;wumpus&gt;</span> but if we need robustness changes now, better to do it
+<a name="l-135"></a><span class="tm">19:21:04</span><span class="nk"> &lt;meshcollider&gt;</span> And add to high priority for review?
+<a name="l-136"></a><span class="tm">19:21:13</span><span class="nk"> &lt;wumpus&gt;</span> yes, and remove the rest probably
+<a name="l-137"></a><span class="tm">19:21:16</span><span class="nk"> &lt;gmaxwell&gt;</span> In any case, so far I haven't seen PRs that we need in advance merged yet, if there were some in, I would support doing a release with them.
+<a name="l-138"></a><span class="tm">19:21:40</span><span class="nk"> &lt;gmaxwell&gt;</span> It's hard to anticipate what we'll need a month in advance...
+<a name="l-139"></a><span class="tm">19:22:05</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> again, I dont think its a "need", but its open for discussion
+<a name="l-140"></a><span class="tm">19:22:07</span><span class="nk"> &lt;wumpus&gt;</span> if we want to do rc1 start of next week we'll really need to hurry
+<a name="l-141"></a><span class="tm">19:22:10</span><span class="nk"> &lt;gmaxwell&gt;</span> esp because B2X has already changed their behavior to undermine our protections in the past... :-/
+<a name="l-142"></a><span class="tm">19:22:18</span><span class="nk"> &lt;BlueMatt&gt;</span> its really gross that we may accept/store blocks on a chain we know is invalid
+<a name="l-143"></a><span class="tm">19:22:25</span><span class="nk"> &lt;BlueMatt&gt;</span> but its not gonna do anything but use a bit more disk
+<a name="l-144"></a><span class="tm">19:22:31</span><span class="nk"> &lt;gmaxwell&gt;</span> Yes, okay, that is a concern.
+<a name="l-145"></a><span class="tm">19:22:59</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="cmd">#11446 </span><span class="cmdline">probably won't make it either will it</span>
+<a name="l-146"></a><span class="tm">19:23:01</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+<a name="l-147"></a><span class="tm">19:23:01</span><span class="nk"> &lt;wumpus&gt;</span> yes that's kind of gross
+<a name="l-148"></a><span class="tm">19:23:28</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">meshcollider:</span> well thats the sort of thing we're talking about right now.
+<a name="l-149"></a><span class="tm">19:23:49</span><span class="nk"> &lt;achow101&gt;</span> I think 11446 would be necessary for a pre-B2X release so that we kick all peers that give us invalid blocks, not just the first
+<a name="l-150"></a><span class="tm">19:23:57</span><span class="nk"> &lt;gmaxwell&gt;</span> basically to do these things we'll need to more or less drop working on SW wallet for a moment, get those things, and RC them. ASAP.
+<a name="l-151"></a><span class="tm">19:24:17</span><span class="nk"> &lt;achow101&gt;</span> and/or maybe #10593
+<a name="l-152"></a><span class="tm">19:24:19</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+<a name="l-153"></a><span class="tm">19:24:22</span><span class="nk"> &lt;meshcollider&gt;</span> Yeah a release including both of those would be worth it if they're ready for merge in time
+<a name="l-154"></a><span class="tm">19:24:50</span><span class="nk"> &lt;gmaxwell&gt;</span> misleading PR title. :P
+<a name="l-155"></a><span class="tm">19:25:03</span><span class="nk"> &lt;wumpus&gt;</span> ok tagged both of them for 0.15.1
+<a name="l-156"></a><span class="tm">19:25:48</span><span class="nk"> &lt;wumpus&gt;</span> will move the rest that's tagged with 0.15.1 and unmerged to 0.15.2 when we actually decide to do the release
+<a name="l-157"></a><span class="tm">19:25:50</span><span class="nk"> &lt;sdaftuar&gt;</span> fyi i have one more pr that is along these same lines that i will be opening shortly... basically trying to implement some of the outbound peer protection we talked abotu last week's meeting
+<a name="l-158"></a><span class="tm">19:26:20</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sdaftuar:</span> I'll put some time into helping review that. (though I'll be in the air much of the weekend...)
+<a name="l-159"></a><span class="tm">19:26:26</span><span class="nk"> &lt;sdaftuar&gt;</span> awesome, thanks
+<a name="l-160"></a><span class="tm">19:26:27</span><span class="nk"> &lt;cfields&gt;</span> sorry, i had to run out for a min.... Lots of people are expecting 0.15.1 as the release that enables more segwit wallet functionality. Releasing without that will be very confusing to lots of people. Is there any reason not to call it 0.15.0.2 ?
+<a name="l-161"></a><span class="tm">19:26:52</span><span class="nk"> &lt;sipa&gt;</span> no opinion on versioning
+<a name="l-162"></a><span class="tm">19:26:57</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> how is it misleading?
+<a name="l-163"></a><span class="tm">19:26:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> agree with cfields
+<a name="l-164"></a><span class="tm">19:27:06</span><span class="nk"> &lt;jnewbery&gt;</span> +1 for 0.15.0.2
+<a name="l-165"></a><span class="tm">19:27:07</span><span class="nk"> &lt;cfields&gt;</span> It's just that they've been told over and ove to wait for 0.15.1...
+<a name="l-166"></a><span class="tm">19:27:08</span><span class="nk"> &lt;meshcollider&gt;</span> Agree with cfields as well
+<a name="l-167"></a><span class="tm">19:27:08</span><span class="nk"> &lt;jl2012&gt;</span> ack 0.15.0.2
+<a name="l-168"></a><span class="tm">19:27:19</span><span class="nk"> &lt;wumpus&gt;</span> no opinion on how to call it either, 0.15.0.2 was really a joke though, usually we do minor-mimor versions only for tiny changes
+<a name="l-169"></a><span class="tm">19:27:31</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd prefer to call 0.15.1 the one with segwit wallet just due to comms reasons.
+<a name="l-170"></a><span class="tm">19:27:40</span><span class="nk"> &lt;luke-jr&gt;</span> personally, I'd prefer to move segwitwallet to 0.16, but it's numbers so who cares
+<a name="l-171"></a><span class="tm">19:27:55</span><span class="nk"> &lt;wumpus&gt;</span> anyhow if everyone wants 0.15.0.2 , we'll have 0.15.0.2
+<a name="l-172"></a><span class="tm">19:27:55</span><span class="nk"> &lt;luke-jr&gt;</span> comms reasons probably outweigh any reason to move it
+<a name="l-173"></a><span class="tm">19:27:57</span><span class="nk"> &lt;meshcollider&gt;</span> Or look at #9653 now and throw everyone into confusion ;)
+<a name="l-174"></a><span class="tm">19:27:58</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/9653 | Versioning convention for Bitcoin Core · Issue #9653 · bitcoin/bitcoin · GitHub
+<a name="l-175"></a><span class="tm">19:28:04</span><span class="nk"> &lt;wumpus&gt;</span> yes, agree with that
+<a name="l-176"></a><span class="tm">19:28:07</span><span class="nk"> &lt;gmaxwell&gt;</span> (comms reasons is that there are a billionity messages on the internet saying 0.15.1 has segwit wallet)
+<a name="l-177"></a><span class="tm">19:28:10</span><span class="nk"> &lt;wumpus&gt;</span> we've kind of promised segwit wallet in 0.15.1
+<a name="l-178"></a><span class="tm">19:28:16</span><span class="nk"> &lt;cfields&gt;</span> right
+<a name="l-179"></a><span class="tm">19:28:28</span><span class="nk"> &lt;achow101&gt;</span> what if we did segwit wallet this weekend? *ducks*
+<a name="l-180"></a><span class="tm">19:28:35</span><span class="nk"> &lt;luke-jr&gt;</span> let's go with 0.15.½ :P
+<a name="l-181"></a><span class="tm">19:28:44</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> if we did that, we'ld not get around to the ultra-high-priority ones that warrant releasing now
+<a name="l-182"></a><span class="tm">19:28:45</span><span class="nk"> &lt;meshcollider&gt;</span> Lol
+<a name="l-183"></a><span class="tm">19:28:49</span><span class="nk"> &lt;gmaxwell&gt;</span> so obviously we release 0.15.3  ... and then 0.15.1 after it...
+<a name="l-184"></a><span class="tm">19:28:56</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> hehe floating point version numbers
+<a name="l-185"></a><span class="tm">19:29:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> eh I mean fractions
+<a name="l-186"></a><span class="tm">19:29:22</span><span class="nk"> &lt;meshcollider&gt;</span> 0.15.0.../.1
+<a name="l-187"></a><span class="tm">19:29:36</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> starting to sound like gcc. Obviously gcc 8.0 is the beta :p
+<a name="l-188"></a><span class="tm">19:30:02</span><span class="nk"> &lt;gmaxwell&gt;</span> 0.15.A
+<a name="l-189"></a><span class="tm">19:30:18</span><span class="nk"> &lt;wumpus&gt;</span> ok, so 0.15.0.2 it is, will create a milestone and change the tags
+<a name="l-190"></a><span class="tm">19:30:24</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, lets worry about that when we're actually ready to release; I think we understand the tradeoffs.
+<a name="l-191"></a><span class="tm">19:30:34</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds good to me
+<a name="l-192"></a><span class="tm">19:30:41</span><span class="nk"> &lt;cfields&gt;</span> sorry for the late chime-in
+<a name="l-193"></a><span class="tm">19:32:18</span><span class="nk"> &lt;wumpus&gt;</span> yeah no problem, I guess we covered both "segwit wallet" and "pre-2x release"  - any other topics?
+<a name="l-194"></a><span class="tm">19:32:37</span><span class="nk"> &lt;morcos&gt;</span> So not clear to me if we've decided
+<a name="l-195"></a><span class="tm">19:32:50</span><span class="nk"> &lt;morcos&gt;</span> Are we doing a pre-2X release or trying to at least
+<a name="l-196"></a><span class="tm">19:33:10</span><span class="nk"> &lt;wumpus&gt;</span> my impression is that we're going to try
+<a name="l-197"></a><span class="tm">19:33:14</span><span class="nk"> &lt;morcos&gt;</span> It would be helpful to note if we're clearly prioritizing that and putting them on high-priority-for-review
+<a name="l-198"></a><span class="tm">19:33:20</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/milestone/32
+<a name="l-199"></a><span class="tm">19:33:39</span><span class="nk"> &lt;wumpus&gt;</span> yes, they should be (and anything else should go for nwo)
+<a name="l-200"></a><span class="tm">19:33:49</span><span class="nk"> &lt;gmaxwell&gt;</span> it sounds like we're going to try...
+<a name="l-201"></a><span class="tm">19:34:24</span><span class="nk"> &lt;gmaxwell&gt;</span> also keep in mind that there is value in having protections in master, even if they're not in a release... a small percentage of nodes in the network being protected can help improve stability for everyone.
+<a name="l-202"></a><span class="tm">19:35:10</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">achow101:</span> can you please update title and description for #11446
+<a name="l-203"></a><span class="tm">19:35:12</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+<a name="l-204"></a><span class="tm">19:35:17</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> hehe sure
+<a name="l-205"></a><span class="tm">19:35:50</span><span class="nk"> &lt;morcos&gt;</span> And do you think we don't need #10593 if we have 11446?
+<a name="l-206"></a><span class="tm">19:35:51</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+<a name="l-207"></a><span class="tm">19:35:56</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, based on CST prices, I think we should focus on protections that help in the case that we have disguised B2X peers and they're getting no blocks at all (Because they've rejected the bitcoin chain).
+<a name="l-208"></a><span class="tm">19:36:19</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> #10953 does something mostly different
+<a name="l-209"></a><span class="tm">19:36:20</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10953 | [Refactor] Combine scriptPubKey and amount as CTxOut in CScriptCheck by jl2012 · Pull Request #10953 · bitcoin/bitcoin · GitHub
+<a name="l-210"></a><span class="tm">19:36:34</span><span class="nk"> &lt;sipa&gt;</span> wrong pr number?
+<a name="l-211"></a><span class="tm">19:36:44</span><span class="nk"> &lt;morcos&gt;</span> 593, see above
+<a name="l-212"></a><span class="tm">19:36:45</span><span class="nk"> &lt;achow101&gt;</span> oops 10593
+<a name="l-213"></a><span class="tm">19:36:52</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="cmd">#10593</span><span class="cmdline"></span>
+<a name="l-214"></a><span class="tm">19:36:54</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+<a name="l-215"></a><span class="tm">19:36:59</span><span class="nk"> &lt;morcos&gt;</span> in 593 you say it does the same as 11446
+<a name="l-216"></a><span class="tm">19:37:00</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/projects/8 updated
+<a name="l-217"></a><span class="tm">19:37:24</span><span class="nk"> &lt;achow101&gt;</span> I suggested it because luke-jr that it would do about the same thing plus some more, but I noticed that it doesn't really
+<a name="l-218"></a><span class="tm">19:37:24</span><span class="nk"> &lt;morcos&gt;</span> basically i'm just trying to get concept acks here on what we're going for
+<a name="l-219"></a><span class="tm">19:37:31</span><span class="nk"> &lt;morcos&gt;</span> ok
+<a name="l-220"></a><span class="tm">19:37:44</span><span class="nk"> &lt;achow101&gt;</span> see https://github.com/bitcoin/bitcoin/pull/10593#issuecomment-334946691
+<a name="l-221"></a><span class="tm">19:38:05</span><span class="nk"> &lt;achow101&gt;</span> I thought luke-jr might change it to include what 11446 does
+<a name="l-222"></a><span class="tm">19:38:38</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> yes, regarding b2x peers that have less hashpower and are disguised, I believe thats what sdaftuar is working on
+<a name="l-223"></a><span class="tm">19:38:50</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> great, okay!
+<a name="l-224"></a><span class="tm">19:38:59</span><span class="nk"> &lt;morcos&gt;</span> OK Can someone motivate 10593 for me
+<a name="l-225"></a><span class="tm">19:39:19</span><span class="nk"> &lt;morcos&gt;</span> I mean not really motivate, but explain why it is important before 2X
+<a name="l-226"></a><span class="tm">19:39:36</span><span class="nk"> &lt;luke-jr&gt;</span> It's more important before the next softfork, not so much before 2X, AFAIK
+<a name="l-227"></a><span class="tm">19:39:48</span><span class="nk"> &lt;morcos&gt;</span> ok, that was my reading...
+<a name="l-228"></a><span class="tm">19:39:56</span><span class="nk"> &lt;luke-jr&gt;</span> (if 2X would accept a reorg, it'd be useful, but 2X doesn't)
+<a name="l-229"></a><span class="tm">19:40:16</span><span class="nk"> &lt;luke-jr&gt;</span> oh, if 2X users want to switch to Bitcoin, it might be useful for them
+<a name="l-230"></a><span class="tm">19:40:16</span><span class="nk"> &lt;gmaxwell&gt;</span> I thought it also added disconnects on invalids that we currently don't have?
+<a name="l-231"></a><span class="tm">19:40:33</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">luke-jr:</span> because it turns some bans into disconnects?
+<a name="l-232"></a><span class="tm">19:40:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> right
+<a name="l-233"></a><span class="tm">19:40:37</span><span class="nk"> &lt;morcos&gt;</span> can we perhaps remove that from high priority and concentrate on the pre-2X things... (hmm, good point i suppose)
+<a name="l-234"></a><span class="tm">19:40:46</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">gmaxwell:</span> IIRC, the disconnect-on-merely-invalid is achow101's PR
+<a name="l-235"></a><span class="tm">19:41:38</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> it turns bans into disconnects, which includes the ban on the first time we see an invalid block
+<a name="l-236"></a><span class="tm">19:43:26</span><span class="nk"> &lt;gmaxwell&gt;</span> I think that in and of itself is less critical.
+<a name="l-237"></a><span class="tm">19:43:48</span><span class="nk"> &lt;luke-jr&gt;</span> so I guess 10593 is a nice-to-have before 2X, but not a must-have
+<a name="l-238"></a><span class="tm">19:43:50</span><span class="nk"> &lt;luke-jr&gt;</span> ?
+<a name="l-239"></a><span class="tm">19:43:57</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> agreed
+<a name="l-240"></a><span class="tm">19:44:24</span><span class="nk"> &lt;morcos&gt;</span> that sounds right to me
+<a name="l-241"></a><span class="tm">19:44:37</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds reasonable to me.
+<a name="l-242"></a><span class="tm">19:45:09</span><span class="nk"> &lt;wumpus&gt;</span> so 10593 is less-than-higher-priority-for-review? :p
+<a name="l-243"></a><span class="tm">19:45:22</span><span class="nk"> &lt;sdaftuar&gt;</span> slightly-higher-priority-for-review
+<a name="l-244"></a><span class="tm">19:45:25</span><span class="nk"> &lt;sipa&gt;</span> elevated-priority
+<a name="l-245"></a><span class="tm">19:45:48</span><span class="nk"> &lt;morcos&gt;</span> or as we used to do it in Core:  14275131000
+<a name="l-246"></a><span class="tm">19:46:09</span><span class="nk"> &lt;sipa&gt;</span> $ date --date "@14275131000"
+<a name="l-247"></a><span class="tm">19:46:09</span><span class="nk"> &lt;sipa&gt;</span> Thu May 12 03:10:00 PDT 2422
+<a name="l-248"></a><span class="tm">19:46:14 </span><span class="nka">* sdaftuar</span> <span class="ac">laughs after alex explained the joke</span>
+<a name="l-249"></a><span class="tm">19:46:31</span><span class="nk"> &lt;achow101&gt;</span> ???
+<a name="l-250"></a><span class="tm">19:46:40</span><span class="nk"> &lt;morcos&gt;</span> heh, i made up the number b/c i was lazy, but there were number ranges.. one was for medium-high priority
+<a name="l-251"></a><span class="tm">19:46:55</span><span class="nk"> &lt;BlueMatt&gt;</span> lol, ok, so did we ever discuss segwit wallet?
+<a name="l-252"></a><span class="tm">19:47:01</span><span class="nk"> &lt;BlueMatt&gt;</span> sorry, I kinda derailed things :(
+<a name="l-253"></a><span class="tm">19:47:07</span><span class="nk"> &lt;sipa&gt;</span> apparently we discussed it being less priority
+<a name="l-254"></a><span class="tm">19:47:11</span><span class="nk"> &lt;sipa&gt;</span> or something
+<a name="l-255"></a><span class="tm">19:47:12</span><span class="nk"> &lt;wumpus&gt;</span> TIL that date command line can convert unix timestamps, thanks sipa
+<a name="l-256"></a><span class="tm">19:47:24</span><span class="nk"> &lt;BlueMatt&gt;</span> noooooo :(
+<a name="l-257"></a><span class="tm">19:47:25</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> also, date "+%s"
+<a name="l-258"></a><span class="tm">19:47:31</span><span class="nk"> &lt;morcos&gt;</span> how did you do that otherwise?
+<a name="l-259"></a><span class="tm">19:47:33</span><span class="nk"> &lt;gmaxwell&gt;</span> 57599999
+<a name="l-260"></a><span class="tm">19:47:46</span><span class="nk"> &lt;morcos&gt;</span> thanks gmax
+<a name="l-261"></a><span class="tm">19:47:46</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">wumpus:</span> oh, another hint, when reading git logs, it is useful to have a vim keybinding to call that command so you can see when it happened :p
+<a name="l-262"></a><span class="tm">19:47:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> time.ctime(n) or time.localtime(n) in python
+<a name="l-263"></a><span class="tm">19:48:01</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> python is pretty useful for date math.
+<a name="l-264"></a><span class="tm">19:48:11</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> i will work on describing the alternatives for segwit wallet support, and some thoughts on wallet/ismine in 0.16
+<a name="l-265"></a><span class="tm">19:48:19</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> but blocker is the always-segwit-active
+<a name="l-266"></a><span class="tm">19:48:26</span><span class="nk"> &lt;gmaxwell&gt;</span> e.g. script I use for IBD benchmarking uses python to difference bitcoin log dates.
+<a name="l-267"></a><span class="tm">19:48:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> exactly
+<a name="l-268"></a><span class="tm">19:48:31</span><span class="nk"> &lt;sipa&gt;</span> so review/discussion can focus on that for now, i think
+<a name="l-269"></a><span class="tm">19:49:03</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> well, at least personally, I'm also fine with taking the always-active-segwit pr and then reverting it if we decide we want something more like jl2012's on master, isnt a big changeset either way
+<a name="l-270"></a><span class="tm">19:49:10</span><span class="nk"> &lt;BlueMatt&gt;</span> so I'm not sure I'd call it a "blocker" in that sense.....
+<a name="l-271"></a><span class="tm">19:49:16</span><span class="nk"> &lt;sipa&gt;</span> fair
+<a name="l-272"></a><span class="tm">19:50:05 </span><span class="nka">* luke-jr</span> <span class="ac">needs to move his bitcoin git to a SSD</span>
+<a name="l-273"></a><span class="tm">19:51:08</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-274"></a><span class="tm">19:51:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#action </span><span class="cmdline">activate segwit</span>
+<a name="l-275"></a><span class="tm">19:51:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> well at least your entire SSD won't be full with one git checkout, as with the linux kernel :-)
+<a name="l-276"></a><span class="tm">19:52:01 </span><span class="nka">* sipa</span> <span class="ac">fetches his DeLorean</span>
+<a name="l-277"></a><span class="tm">19:52:12</span><span class="nk"> &lt;wumpus&gt;</span> activate segwit in 1970
+<a name="l-278"></a><span class="tm">19:52:13</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> git-show of a tag is taking me a full minute here :/
+<a name="l-279"></a><span class="tm">19:52:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> is that on a 10-year-old sd card?!
+<a name="l-280"></a><span class="tm">19:52:31</span><span class="nk"> &lt;gmaxwell&gt;</span> $ git grep -i delorean | wc -l
+<a name="l-281"></a><span class="tm">19:52:31</span><span class="nk"> &lt;gmaxwell&gt;</span> 1
+<a name="l-282"></a><span class="tm">19:52:36</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">BlueMatt:</span> it's on core memory
+<a name="l-283"></a><span class="tm">19:52:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> git show? that just retrieves an object, that's slow even for a mechanical hd
+<a name="l-284"></a><span class="tm">19:52:38</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> pretty sure we did that in a previous meeting. Though we could do it again and make it 2x activations...
+<a name="l-285"></a><span class="tm">19:52:39</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> fairly newish 5400 RPM magnetic drive
+<a name="l-286"></a><span class="tm">19:52:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> it does many many MB of reading for some reason
+<a name="l-287"></a><span class="tm">19:53:01</span><span class="nk"> &lt;wumpus&gt;</span> git log can be kind of slow here, especially when showing branches (as I have about 800 local branches), but show is super quick
+<a name="l-288"></a><span class="tm">19:53:03</span><span class="nk"> &lt;BlueMatt&gt;</span> 5400 RPM? eww
+<a name="l-289"></a><span class="tm">19:53:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> :-)
+<a name="l-290"></a><span class="tm">19:53:19</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> I suspect part of the cause is that I never prune my git repo
+<a name="l-291"></a><span class="tm">19:53:42</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> can you prune a git repo?
+<a name="l-292"></a><span class="tm">19:53:47</span><span class="nk"> &lt;wumpus&gt;</span> (or do you mean gc?)
+<a name="l-293"></a><span class="tm">19:53:47</span><span class="nk"> &lt;sipa&gt;</span> git gc
+<a name="l-294"></a><span class="tm">19:53:59</span><span class="nk"> &lt;wumpus&gt;</span> I interpreted that literally, like converting it to a shallow repo
+<a name="l-295"></a><span class="tm">19:54:09</span><span class="nk"> &lt;sipa&gt;</span> git prune also exists, just removes unreachable objects
+<a name="l-296"></a><span class="tm">19:54:19</span><span class="nk"> &lt;sipa&gt;</span> gc does that + compacting storage
+<a name="l-297"></a><span class="tm">19:54:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> gc
+<a name="l-298"></a><span class="tm">19:54:34</span><span class="nk"> &lt;sipa&gt;</span> shallow repo is something else
+<a name="l-299"></a><span class="tm">19:54:38</span><span class="nk"> &lt;wumpus&gt;</span> git gc --aggresive  --force --prune=all
+<a name="l-300"></a><span class="tm">19:54:41</span><span class="nk"> &lt;luke-jr&gt;</span> my gc is configured to only compress :P
+<a name="l-301"></a><span class="tm">19:54:45</span><span class="nk"> &lt;sipa&gt;</span> why?
+<a name="l-302"></a><span class="tm">19:55:01</span><span class="nk"> &lt;luke-jr&gt;</span> so I can git-show any object hash from any point in time, even if it's long-dead
+<a name="l-303"></a><span class="tm">19:55:21</span><span class="nk"> &lt;CryptAxe&gt;</span> luke-jr I do 2 ssds in raid 0 + rsync backup to disk and it works great
+<a name="l-304"></a><span class="tm">19:55:22</span><span class="nk"> &lt;luke-jr&gt;</span> .git is only 1.1 GB, surprisingly
+<a name="l-305"></a><span class="tm">19:55:27</span><span class="nk"> &lt;sipa&gt;</span> perhaps you can split up your repo in an archive version + working version
+<a name="l-306"></a><span class="tm">19:55:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">sipa:</span> well, I'm hoping simply moving it to SSD will be good enough XD
+<a name="l-307"></a><span class="tm">19:55:51</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="topic">#topic </span><span class="topicline">optimal git workflows for Core memory users</span>
+<a name="l-308"></a><span class="tm">19:55:51</span><span class="nk"> &lt;sipa&gt;</span> seems this meeting is out of topics?
+<a name="l-309"></a><span class="tm">19:56:02</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#link </span><span class="cmdline">https://en.wikipedia.org/wiki/Magnetic-core_memory</span>
+<a name="l-310"></a><span class="tm">19:56:47</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> you suggested waiting to squash fixups into multiwallet until it's about to be merged; but jnewbery is asking for a rebase.. :x
+<a name="l-311"></a><span class="tm">19:57:08</span><span class="nk"> &lt;wumpus&gt;</span> when I started using worktrees I've moved everything to work from a single .git tree (with seaprate checkouts for some branches), but a seperate archive and working copy sounds pretty good
+<a name="l-312"></a><span class="tm">19:57:10</span><span class="nk"> &lt;sipa&gt;</span> if you need a rebase anyway, i generally don't care about squashing fixups
+<a name="l-313"></a><span class="tm">19:57:27</span><span class="nk"> &lt;wumpus&gt;</span> mercury delay line memory ftw
+<a name="l-314"></a><span class="tm">19:57:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> yes in that case feel free to squash
+<a name="l-315"></a><span class="tm">19:58:10</span><span class="nk"> &lt;luke-jr&gt;</span> k, *done*
+<a name="l-316"></a><span class="tm">19:58:39</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

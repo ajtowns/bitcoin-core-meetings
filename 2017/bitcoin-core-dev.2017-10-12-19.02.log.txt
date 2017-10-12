@@ -1,0 +1,316 @@
+19:02:17 <wumpus> #startmeeting
+19:02:17 <lightningbot> Meeting started Thu Oct 12 19:02:17 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:17 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:22 <luke-jr> before we officially start, does anyone mind if I collapse the fixups in #11383 ?
+19:02:24 <gribble> https://github.com/bitcoin/bitcoin/issues/11383 | Basic Multiwallet GUI support by luke-jr · Pull Request #11383 · bitcoin/bitcoin · GitHub
+19:02:40 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:02:47 <kanzure> hi.
+19:03:02 <cfields> hi
+19:03:26 <wumpus> luke-jr: probably best to do that just before merge
+19:03:34 <BlueMatt> suggested topics: backdating segwit/p2sh
+19:03:37 <BlueMatt> suggested topics: segwit wallet
+19:03:51 <BlueMatt> suggested topics: pre-2x release (possibly with no segwit wallet)?
+19:04:05 <wumpus> #topic Backdating segwit/p2sh (BlueMatt)
+19:04:15 * BlueMatt nominates sdaftuar/sipa/jl2012 to talk
+19:04:15 <sdaftuar> i guess matt wants me to talk about this one
+19:04:24 * sipa listens
+19:04:32 <jl2012> hi
+19:04:55 <meshcollider> Hello
+19:05:17 <gmaxwell> I am pro backdating but wasn't sure how we should handle the rollback and replay. Rolling back the whole chain would be unfortunate. :P
+19:05:20 <sdaftuar> in thinking about p2sh and segwit, they both have the property that it doesn't make sense to ever accept blocks that violate those rules
+19:05:41 <sdaftuar> in the case of p2sh, there was only one historical block that violated SCRIPT_VERIFY_P2SH
+19:05:47 <jl2012> I think backdating segwit is not trivial because the inclusion of witness commitment pre-fork
+19:05:56 <sdaftuar> in the case of segwit, no blocks have ever violated the segwit scritp flag SCRIPT_VERIFY_WITNESS
+19:06:13 <gmaxwell> jl2012: I thought all the prefork ones were valid.
+19:06:15 <sdaftuar> but of course, the witness commitment validation rules don't really work for backdating
+19:06:27 <wumpus> backdating to when? to the beginning of the chain?
+19:06:27 <sdaftuar> gmaxwell: i don't think that is true, though i didn't verify myself
+19:06:30 <sdaftuar> wumpus: yes
+19:06:42 <wumpus> interesting
+19:06:42 <cfields> jl2012: i checked the pre-activation commitments on mainnet and found them to all be valid
+19:06:48 <BlueMatt> gmaxwell: somehow i thought many of them were invalid
+19:06:51 <BlueMatt> oh!
+19:06:52 <jl2012> gmaxwell: not exactly, because of lack of the 0000.....0000 coinbase witness
+19:06:53 <sdaftuar> cfields: oh!
+19:06:54 <achow101> isn't segwit only backdateable to p2sh activation at earliest?
+19:07:02 <gmaxwell> I think in general its cleanest when we can backdate softforks to the start.
+19:07:09 <BlueMatt> achow101: we're talking about backdating p2sh as well (with one exception)
+19:07:15 <sdaftuar> yes it would take some work to manufacture the witness nonces as jl2012 points out
+19:07:27 <sipa> what is the advantage over just hardcoding a height for segwit and p2sh start?
+19:07:30 <sdaftuar> but if it is really true that none were invalid, that might change the way i look at it
+19:07:45 <wumpus> sipa: no need to handle the non-segwit case for initial validation anymore ,I guess
+19:07:49 <BlueMatt> sipa: it is a very nice property (imo) that you will *never* accept any chain with invalid segwit/p2sh spends
+19:07:57 <BlueMatt> irrespective of reorgs
+19:08:03 <jl2012> sdaftuar: and for some blocks that was very close to 1MB, adding the coinbase witness will make it over 4M weight
+19:08:23 <sipa> BlueMatt: sure, but i'm not sure that weighs up against the complication of adding exceptions, make-pretending to have coinbase witnesses nonces, ...
+19:08:28 <gmaxwell> it also simplifies reasoning about further changes, e.g. what happens if someone forks early during IBD and feeds us a chain with things we assumed were impossible.
+19:08:43 <BlueMatt> in any case, I believe sdaftuar's suggestion was to backdate SCRIPT_VERIFY_WITNESS/P2SH, but dissallow witnesses in blocks pre-activation, effectively disabling segwit
+19:08:47 <sdaftuar> gmaxwell: yeah that's basically the reason i started thinking abotu this
+19:08:51 <sipa> BlueMatt: ugh
+19:08:52 <sdaftuar> but i don't feel strongly either way
+19:08:57 <BlueMatt> sipa: you can skip the witness nonce part
+19:09:15 <luke-jr> jl2012: are any of those blocks *also* with the commitment?
+19:09:21 <sipa> that's effectively splitting the segwit logic into 2 deployments, with one always active?
+19:09:23 <gmaxwell> I don't feel strongly about it except the general principle that it's better to backdate wheverever possible.
+19:09:35 <BlueMatt> sipa: well I would call that splitting it into one deployment and one consensus rule
+19:09:36 <BlueMatt> but ok
+19:09:40 <morcos> well an always active deployment is kind of not a deployment
+19:09:42 <morcos> right
+19:09:45 <sdaftuar> sipa: the branch i have splits the witness commitment rule from the script verification rule, basically
+19:09:53 <sipa> BlueMatt: so you're not getting rid of the deployment overhead
+19:09:56 <sdaftuar> i was not sure it was an improvement
+19:10:15 <BlueMatt> sipa: indeed, it does not significantly simplify, it (mostly) just adds a very nice property
+19:10:28 <BlueMatt> (and, as gmaxwell points out, may simplify future fork logic)
+19:10:36 <sipa> i understand the advantage of making a consensus rule always active, allowing you to get rid of some logic
+19:10:42 <jl2012> luke-jr: I guess so, especially from f2pool. They mine exactly 1MB block quite frequently
+19:10:43 <sdaftuar> jl2012: that weight issue is a good point
+19:10:47 <sipa> but it doesn't seem that's really possible here without further complication
+19:11:00 <BlueMatt> I dont think its adding significant new complication
+19:11:01 <gmaxwell> Not just simplfy but reduce the incidence where the community makes design errors due to reasoning from current rules without realizing they don't apply in IBD.
+19:11:28 <gmaxwell> but what sipa says, I don't think backdating is worth non-trivial extra complexity.
+19:11:32 <luke-jr> what's the downside to allowing witness in pre-activation blocks?
+19:11:47 <sipa> luke-jr: makes my head hurt
+19:12:07 <gmaxwell> luke-jr: that we'll make changes in the future based on an assumption that they're never there.
+19:12:27 <BlueMatt> sipa: I'm looking at https://github.com/sdaftuar/bitcoin/compare/2649d1690ce9458aa344a8ccfb1fa8548b2ac57c...2017-09-p2sh-segwit-from-genesis
+19:12:52 <gmaxwell> We also don't have to decide this forever now, we could e.g. set it to activate at the real height now, and then later adjust it further back.
+19:12:53 <morcos> sipa: i just really hate the attack scenarios that involve feeding alternate chains that eventually get reorged out but possibly with poor consequences...  perhaps this is not a problem with segwit, but perhaps it is... say your wallet loses money in an unexpected way or something?
+19:13:14 <sipa> BlueMatt: that doesn't look too bad, i guess
+19:13:25 <sipa> but i need to think about it
+19:13:39 <BlueMatt> sipa: yes, sorry, should have shared the code since we're arguing based on different understandings...anyway, something to think about, I dont think I feel *that* strongly, but I am vaguely in favor
+19:13:40 <sdaftuar> if this is worth discussion, i can open a PR
+19:13:49 <sdaftuar> i wasn't sure whether to move this forward
+19:14:07 <sipa> but in regards to the next topic, do we want all that in 0.15.1?
+19:14:20 <morcos> no, i don't
+19:14:24 <sdaftuar> i don't think this so either
+19:14:25 <BlueMatt> i dont think so?
+19:14:29 <sipa> okay
+19:14:32 <wumpus> would be kind of hurried IMO
+19:14:37 <BlueMatt> very
+19:14:39 <gmaxwell> It would be really nice if 0.15.1 were out before the B2X split, but we're on the thin edge of that now I think.
+19:14:42 <wumpus> also let's not increase the scope of 0.15.1
+19:14:46 <BlueMatt> ok, so #action sdaftuar opens pr? next topic?
+19:14:46 <sipa> so this is unrelated to #11389
+19:14:48 <gribble> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+19:14:52 <wumpus> #topic segwit wallet
+19:15:20 <achow101> if we want 0.15.1 out before B2X, it probably needs to go into rc's within the next week
+19:15:27 <jonasschnelli> For the GUI, I'm working on a Bech32 error pointer (red underlines where errors appear)
+19:15:29 <sipa> achow101: seems unreasonable
+19:15:34 <sipa> i first want to get 11389 in, but there seems to be some discussion about the right approach
+19:15:35 <BlueMatt> (which probably means no segwit wallet)
+19:15:51 <wumpus> 0.15.0.2? :p
+19:15:55 <BlueMatt> yea, that
+19:16:03 <sipa> or 0.15.1 without segwit wallet, 0.15.2 with
+19:16:13 <wumpus> we'll just do minor-minor releases until we have the damn segwit wallet :)
+19:16:18 <BlueMatt> yea, numbers...isnt someone in charge of those so I dont have to think about them?
+19:16:18 <sipa> haha
+19:16:23 <jnewbery> I think #11389 is related to Suhas's suggested change, no?
+19:16:25 <gribble> https://github.com/bitcoin/bitcoin/issues/11389 | Support having SegWit always active in regtest by sipa · Pull Request #11389 · bitcoin/bitcoin · GitHub
+19:16:38 <gmaxwell> well, RC by then at least would be good if not out...
+19:16:53 <BlueMatt> sipa: wait, so you want to have segwit always active in regtest for segwit wallet, or what am I misunderstanding about the need for segwit-regtest for 0.15.1?
+19:16:58 <sipa> BlueMatt: yes
+19:17:16 <sipa> adapting the tests to deal with segwit activation halfway through them is a giant pain
+19:17:23 <wumpus> so if we'd do 0.15.1 without segwit wallet, is there anything that still needs to go in? or can we tag rc1 after the meeting?
+19:17:27 <BlueMatt> test_framework().activate_segwit() ?
+19:17:31 <morcos> as much as i really want to concentrate on segwit wallet
+19:17:38 <sipa> jnewbery: i was starting to respond to you, but to the last point "We already have control to make a BIP9 deployment active at a certain height in regtest using -vbparams. What advantages do you see for making a deployment buried instead of just activated at a height?" -> -vbparams doesn't permit having segwit active before block 432
+19:17:50 <achow101> what's the point of doing 0.15.1 without segwit wallet?
+19:17:51 <morcos> i think practically speaking we should focus on what would be good to have before 2X
+19:17:56 <wumpus> I'm not sure what is the rationale for doing 0.15.1, are there important bugfixes that we need to get out?
+19:17:56 <morcos> and we should do that withotu segwit wallet
+19:18:13 <BlueMatt> wumpus: mostly I want https://github.com/bitcoin/bitcoin/pull/11487/commits/09cf35122a219217f841e4e4f7847386eb0b0b8a pre-b2x
+19:18:18 <achow101> what needs to be done before 2X then?
+19:18:20 <BlueMatt> but dunno if thats a realistic goal (it probably isnt)
+19:18:20 <morcos> wumpus: there are a few edge cases with invalid chains that might cause for annoying behavior
+19:18:54 <wumpus> I mean MarcoFalke backported a lot of things, that's nice to have in #11447
+19:18:56 <gribble> https://github.com/bitcoin/bitcoin/issues/11447 | 0.15.1: Backports by MarcoFalke · Pull Request #11447 · bitcoin/bitcoin · GitHub
+19:19:46 <wumpus> BlueMatt: so 11487 should get 0.15.1 tag?
+19:19:57 <BlueMatt> its not critical, but having edge cases that you may see if you're offline during the fork and suddenly you accept blocks that are on the 2x chain (if they're <4m weight and more work and within our pruning window) thats kinda annoying
+19:19:59 <wumpus> or really just that commit?
+19:20:02 <gmaxwell> Just for the record I think it is terrible that we're effectively being forced to delay segwit wallet due to this nonsense.
+19:20:11 <wumpus> if so, please open a separate PR for that
+19:20:14 <BlueMatt> wumpus: the rest of that pr is just test changes and other tiny things
+19:20:29 <wumpus> gmaxwell: yes, me to, I'd personally prefer not to change our plans for them
+19:20:30 <gmaxwell> (even if we don't bump around the versions for it, the fact that people are spending time on these other things creates delays)
+19:21:00 <wumpus> but if we need robustness changes now, better to do it
+19:21:04 <meshcollider> And add to high priority for review?
+19:21:13 <wumpus> yes, and remove the rest probably
+19:21:16 <gmaxwell> In any case, so far I haven't seen PRs that we need in advance merged yet, if there were some in, I would support doing a release with them.
+19:21:40 <gmaxwell> It's hard to anticipate what we'll need a month in advance...
+19:22:05 <BlueMatt> wumpus: again, I dont think its a "need", but its open for discussion
+19:22:07 <wumpus> if we want to do rc1 start of next week we'll really need to hurry
+19:22:10 <gmaxwell> esp because B2X has already changed their behavior to undermine our protections in the past... :-/
+19:22:18 <BlueMatt> its really gross that we may accept/store blocks on a chain we know is invalid
+19:22:25 <BlueMatt> but its not gonna do anything but use a bit more disk
+19:22:31 <gmaxwell> Yes, okay, that is a concern.
+19:22:59 <meshcollider> #11446 probably won't make it either will it
+19:23:01 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:23:01 <wumpus> yes that's kind of gross
+19:23:28 <gmaxwell> meshcollider: well thats the sort of thing we're talking about right now.
+19:23:49 <achow101> I think 11446 would be necessary for a pre-B2X release so that we kick all peers that give us invalid blocks, not just the first
+19:23:57 <gmaxwell> basically to do these things we'll need to more or less drop working on SW wallet for a moment, get those things, and RC them. ASAP.
+19:24:17 <achow101> and/or maybe #10593
+19:24:19 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:24:22 <meshcollider> Yeah a release including both of those would be worth it if they're ready for merge in time
+19:24:50 <gmaxwell> misleading PR title. :P
+19:25:03 <wumpus> ok tagged both of them for 0.15.1
+19:25:48 <wumpus> will move the rest that's tagged with 0.15.1 and unmerged to 0.15.2 when we actually decide to do the release
+19:25:50 <sdaftuar> fyi i have one more pr that is along these same lines that i will be opening shortly... basically trying to implement some of the outbound peer protection we talked abotu last week's meeting
+19:26:20 <gmaxwell> sdaftuar: I'll put some time into helping review that. (though I'll be in the air much of the weekend...)
+19:26:26 <sdaftuar> awesome, thanks
+19:26:27 <cfields> sorry, i had to run out for a min.... Lots of people are expecting 0.15.1 as the release that enables more segwit wallet functionality. Releasing without that will be very confusing to lots of people. Is there any reason not to call it 0.15.0.2 ?
+19:26:52 <sipa> no opinion on versioning
+19:26:57 <luke-jr> gmaxwell: how is it misleading?
+19:26:58 <jonasschnelli> agree with cfields
+19:27:06 <jnewbery> +1 for 0.15.0.2
+19:27:07 <cfields> It's just that they've been told over and ove to wait for 0.15.1...
+19:27:08 <meshcollider> Agree with cfields as well
+19:27:08 <jl2012> ack 0.15.0.2
+19:27:19 <wumpus> no opinion on how to call it either, 0.15.0.2 was really a joke though, usually we do minor-mimor versions only for tiny changes
+19:27:31 <gmaxwell> I'd prefer to call 0.15.1 the one with segwit wallet just due to comms reasons.
+19:27:40 <luke-jr> personally, I'd prefer to move segwitwallet to 0.16, but it's numbers so who cares
+19:27:55 <wumpus> anyhow if everyone wants 0.15.0.2 , we'll have 0.15.0.2
+19:27:55 <luke-jr> comms reasons probably outweigh any reason to move it
+19:27:57 <meshcollider> Or look at #9653 now and throw everyone into confusion ;)
+19:27:58 <gribble> https://github.com/bitcoin/bitcoin/issues/9653 | Versioning convention for Bitcoin Core · Issue #9653 · bitcoin/bitcoin · GitHub
+19:28:04 <wumpus> yes, agree with that
+19:28:07 <gmaxwell> (comms reasons is that there are a billionity messages on the internet saying 0.15.1 has segwit wallet)
+19:28:10 <wumpus> we've kind of promised segwit wallet in 0.15.1
+19:28:16 <cfields> right
+19:28:28 <achow101> what if we did segwit wallet this weekend? *ducks*
+19:28:35 <luke-jr> let's go with 0.15.½ :P
+19:28:44 <wumpus> achow101: if we did that, we'ld not get around to the ultra-high-priority ones that warrant releasing now
+19:28:45 <meshcollider> Lol
+19:28:49 <gmaxwell> so obviously we release 0.15.3  ... and then 0.15.1 after it...
+19:28:56 <wumpus> luke-jr: hehe floating point version numbers
+19:29:15 <wumpus> luke-jr: eh I mean fractions
+19:29:22 <meshcollider> 0.15.0.../.1
+19:29:36 <cfields> gmaxwell: starting to sound like gcc. Obviously gcc 8.0 is the beta :p
+19:30:02 <gmaxwell> 0.15.A
+19:30:18 <wumpus> ok, so 0.15.0.2 it is, will create a milestone and change the tags
+19:30:24 <gmaxwell> in any case, lets worry about that when we're actually ready to release; I think we understand the tradeoffs.
+19:30:34 <gmaxwell> sounds good to me
+19:30:41 <cfields> sorry for the late chime-in
+19:32:18 <wumpus> yeah no problem, I guess we covered both "segwit wallet" and "pre-2x release"  - any other topics?
+19:32:37 <morcos> So not clear to me if we've decided
+19:32:50 <morcos> Are we doing a pre-2X release or trying to at least
+19:33:10 <wumpus> my impression is that we're going to try
+19:33:14 <morcos> It would be helpful to note if we're clearly prioritizing that and putting them on high-priority-for-review
+19:33:20 <wumpus> https://github.com/bitcoin/bitcoin/milestone/32
+19:33:39 <wumpus> yes, they should be (and anything else should go for nwo)
+19:33:49 <gmaxwell> it sounds like we're going to try...
+19:34:24 <gmaxwell> also keep in mind that there is value in having protections in master, even if they're not in a release... a small percentage of nodes in the network being protected can help improve stability for everyone.
+19:35:10 <morcos> achow101: can you please update title and description for #11446
+19:35:12 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | [WIP] Bad block interrogation by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:35:17 <achow101> morcos: hehe sure
+19:35:50 <morcos> And do you think we don't need #10593 if we have 11446?
+19:35:51 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:35:56 <gmaxwell> in any case, based on CST prices, I think we should focus on protections that help in the case that we have disguised B2X peers and they're getting no blocks at all (Because they've rejected the bitcoin chain).
+19:36:19 <achow101> morcos: #10953 does something mostly different
+19:36:20 <gribble> https://github.com/bitcoin/bitcoin/issues/10953 | [Refactor] Combine scriptPubKey and amount as CTxOut in CScriptCheck by jl2012 · Pull Request #10953 · bitcoin/bitcoin · GitHub
+19:36:34 <sipa> wrong pr number?
+19:36:44 <morcos> 593, see above
+19:36:45 <achow101> oops 10593
+19:36:52 <gmaxwell> #10593
+19:36:54 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:36:59 <morcos> in 593 you say it does the same as 11446
+19:37:00 <wumpus> https://github.com/bitcoin/bitcoin/projects/8 updated
+19:37:24 <achow101> I suggested it because luke-jr that it would do about the same thing plus some more, but I noticed that it doesn't really
+19:37:24 <morcos> basically i'm just trying to get concept acks here on what we're going for
+19:37:31 <morcos> ok
+19:37:44 <achow101> see https://github.com/bitcoin/bitcoin/pull/10593#issuecomment-334946691
+19:38:05 <achow101> I thought luke-jr might change it to include what 11446 does
+19:38:38 <BlueMatt> gmaxwell: yes, regarding b2x peers that have less hashpower and are disguised, I believe thats what sdaftuar is working on
+19:38:50 <gmaxwell> BlueMatt: great, okay!
+19:38:59 <morcos> OK Can someone motivate 10593 for me
+19:39:19 <morcos> I mean not really motivate, but explain why it is important before 2X
+19:39:36 <luke-jr> It's more important before the next softfork, not so much before 2X, AFAIK
+19:39:48 <morcos> ok, that was my reading...
+19:39:56 <luke-jr> (if 2X would accept a reorg, it'd be useful, but 2X doesn't)
+19:40:16 <luke-jr> oh, if 2X users want to switch to Bitcoin, it might be useful for them
+19:40:16 <gmaxwell> I thought it also added disconnects on invalids that we currently don't have?
+19:40:33 <gmaxwell> luke-jr: because it turns some bans into disconnects?
+19:40:37 <luke-jr> gmaxwell: right
+19:40:37 <morcos> can we perhaps remove that from high priority and concentrate on the pre-2X things... (hmm, good point i suppose)
+19:40:46 <luke-jr> gmaxwell: IIRC, the disconnect-on-merely-invalid is achow101's PR
+19:41:38 <achow101> gmaxwell: it turns bans into disconnects, which includes the ban on the first time we see an invalid block
+19:43:26 <gmaxwell> I think that in and of itself is less critical.
+19:43:48 <luke-jr> so I guess 10593 is a nice-to-have before 2X, but not a must-have
+19:43:50 <luke-jr> ?
+19:43:57 <achow101> luke-jr: agreed
+19:44:24 <morcos> that sounds right to me
+19:44:37 <gmaxwell> sounds reasonable to me.
+19:45:09 <wumpus> so 10593 is less-than-higher-priority-for-review? :p
+19:45:22 <sdaftuar> slightly-higher-priority-for-review
+19:45:25 <sipa> elevated-priority
+19:45:48 <morcos> or as we used to do it in Core:  14275131000
+19:46:09 <sipa> $ date --date "@14275131000"
+19:46:09 <sipa> Thu May 12 03:10:00 PDT 2422
+19:46:14 * sdaftuar laughs after alex explained the joke
+19:46:31 <achow101> ???
+19:46:40 <morcos> heh, i made up the number b/c i was lazy, but there were number ranges.. one was for medium-high priority
+19:46:55 <BlueMatt> lol, ok, so did we ever discuss segwit wallet?
+19:47:01 <BlueMatt> sorry, I kinda derailed things :(
+19:47:07 <sipa> apparently we discussed it being less priority
+19:47:11 <sipa> or something
+19:47:12 <wumpus> TIL that date command line can convert unix timestamps, thanks sipa
+19:47:24 <BlueMatt> noooooo :(
+19:47:25 <sipa> wumpus: also, date "+%s"
+19:47:31 <morcos> how did you do that otherwise?
+19:47:33 <gmaxwell> 57599999
+19:47:46 <morcos> thanks gmax
+19:47:46 <BlueMatt> wumpus: oh, another hint, when reading git logs, it is useful to have a vim keybinding to call that command so you can see when it happened :p
+19:47:57 <wumpus> morcos: time.ctime(n) or time.localtime(n) in python
+19:48:01 <gmaxwell> morcos: python is pretty useful for date math.
+19:48:11 <sipa> BlueMatt: i will work on describing the alternatives for segwit wallet support, and some thoughts on wallet/ismine in 0.16
+19:48:19 <sipa> BlueMatt: but blocker is the always-segwit-active
+19:48:26 <gmaxwell> e.g. script I use for IBD benchmarking uses python to difference bitcoin log dates.
+19:48:26 <wumpus> gmaxwell: exactly
+19:48:31 <sipa> so review/discussion can focus on that for now, i think
+19:49:03 <BlueMatt> sipa: well, at least personally, I'm also fine with taking the always-active-segwit pr and then reverting it if we decide we want something more like jl2012's on master, isnt a big changeset either way
+19:49:10 <BlueMatt> so I'm not sure I'd call it a "blocker" in that sense.....
+19:49:16 <sipa> fair
+19:50:05 * luke-jr needs to move his bitcoin git to a SSD
+19:51:08 <wumpus> any other topics?
+19:51:44 <BlueMatt> #action activate segwit
+19:51:53 <wumpus> luke-jr: well at least your entire SSD won't be full with one git checkout, as with the linux kernel :-)
+19:52:01 * sipa fetches his DeLorean
+19:52:12 <wumpus> activate segwit in 1970
+19:52:13 <luke-jr> wumpus: git-show of a tag is taking me a full minute here :/
+19:52:27 <BlueMatt> luke-jr: is that on a 10-year-old sd card?!
+19:52:31 <gmaxwell> $ git grep -i delorean | wc -l
+19:52:31 <gmaxwell> 1
+19:52:36 <sipa> BlueMatt: it's on core memory
+19:52:38 <wumpus> luke-jr: git show? that just retrieves an object, that's slow even for a mechanical hd
+19:52:38 <cfields> BlueMatt: pretty sure we did that in a previous meeting. Though we could do it again and make it 2x activations...
+19:52:39 <luke-jr> BlueMatt: fairly newish 5400 RPM magnetic drive
+19:52:52 <luke-jr> wumpus: it does many many MB of reading for some reason
+19:53:01 <wumpus> git log can be kind of slow here, especially when showing branches (as I have about 800 local branches), but show is super quick
+19:53:03 <BlueMatt> 5400 RPM? eww
+19:53:07 <jonasschnelli> :-)
+19:53:19 <luke-jr> wumpus: I suspect part of the cause is that I never prune my git repo
+19:53:42 <wumpus> luke-jr: can you prune a git repo?
+19:53:47 <wumpus> (or do you mean gc?)
+19:53:47 <sipa> git gc
+19:53:59 <wumpus> I interpreted that literally, like converting it to a shallow repo
+19:54:09 <sipa> git prune also exists, just removes unreachable objects
+19:54:19 <sipa> gc does that + compacting storage
+19:54:25 <luke-jr> wumpus: gc
+19:54:34 <sipa> shallow repo is something else
+19:54:38 <wumpus> git gc --aggresive  --force --prune=all
+19:54:41 <luke-jr> my gc is configured to only compress :P
+19:54:45 <sipa> why?
+19:55:01 <luke-jr> so I can git-show any object hash from any point in time, even if it's long-dead
+19:55:21 <CryptAxe> luke-jr I do 2 ssds in raid 0 + rsync backup to disk and it works great
+19:55:22 <luke-jr> .git is only 1.1 GB, surprisingly
+19:55:27 <sipa> perhaps you can split up your repo in an archive version + working version
+19:55:47 <luke-jr> sipa: well, I'm hoping simply moving it to SSD will be good enough XD
+19:55:51 <BlueMatt> #topic optimal git workflows for Core memory users
+19:55:51 <sipa> seems this meeting is out of topics?
+19:56:02 <sipa> #link https://en.wikipedia.org/wiki/Magnetic-core_memory
+19:56:47 <luke-jr> wumpus: you suggested waiting to squash fixups into multiwallet until it's about to be merged; but jnewbery is asking for a rebase.. :x
+19:57:08 <wumpus> when I started using worktrees I've moved everything to work from a single .git tree (with seaprate checkouts for some branches), but a seperate archive and working copy sounds pretty good
+19:57:10 <sipa> if you need a rebase anyway, i generally don't care about squashing fixups
+19:57:27 <wumpus> mercury delay line memory ftw
+19:57:47 <wumpus> luke-jr: yes in that case feel free to squash
+19:58:10 <luke-jr> k, *done*
+19:58:39 <wumpus> #endmeeting
