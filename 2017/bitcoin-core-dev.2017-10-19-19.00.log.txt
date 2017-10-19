@@ -1,0 +1,130 @@
+19:00:32 <wumpus> #startmeeting
+19:00:32 <lightningbot> Meeting started Thu Oct 19 19:00:32 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:32 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:34 <achow101> hi
+19:00:53 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:06 <cfields> hi
+19:01:12 <sipa> mildly present
+19:01:17 <kanzure> hi.
+19:01:20 <wumpus> primary topic I suppose is 0.15.0.2
+19:01:34 <wumpus> https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.15.0.2
+19:02:23 <wumpus> anything that is close to merging, or that needs further discussion?
+19:03:25 <cfields> BlueMatt: are you around to fill in some of the cb interactions with those PRs? They're hard to review because of subtleties I assume I'm not fully accounting for.
+19:03:27 <achow101> I wasn't able to do as much as I wanted to this week because of exams. I'll fix up #11446 later today hopefully
+19:03:29 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | Disconnect Peers for Duplicate Invalid blocks. by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:04:04 <BlueMatt> sdaftuar: (and somewhat I) worked out a replacement for #11487, that I need to rewrite and close the original
+19:04:05 <gribble> https://github.com/bitcoin/bitcoin/issues/11487 | Check that new headers are not a descendant of an invalid block by TheBlueMatt · Pull Request #11487 · bitcoin/bitcoin · GitHub
+19:04:37 <BlueMatt> so I'll do that a bit later
+19:05:02 <wumpus> ok
+19:05:03 <sdaftuar> i updated #11490 with some bug fixes and addressed feedback.  i also added a unit test that passes locally but fails in travis :( workin gon it...
+19:05:05 <gribble> https://github.com/bitcoin/bitcoin/issues/11490 | Disconnect from outbound peers with bad headers chains by sdaftuar · Pull Request #11490 · bitcoin/bitcoin · GitHub
+19:05:43 <wumpus> great!
+19:06:27 <wumpus> travis has been having some issues the last few days, be sure it's related to your pull  and not some intermittent problem
+19:08:28 <wumpus> any other topics?
+19:08:53 <achow101> any updates on segwit wallet stuff?
+19:09:24 <wumpus> I doubt anyone has been working on that w/ the .2 release rushed before
+19:09:40 <sipa> i've been distracted the past week
+19:09:48 <achow101> ok
+19:09:52 <wumpus> will get back to that when sanity has returned
+19:09:58 <jnewbery> topic suggestion: Chaincode Residency (sorry for the shameless plug)
+19:10:08 <sipa> next week i'll have more time (i'm in europe until the end of the month)
+19:10:30 <wumpus> #topic Chaincode Residency
+19:10:40 <jnewbery> Thanks!
+19:10:55 <jnewbery> We're hosting another residency program in Jan/Feb 2018: http://hackerresidency.com/ https://medium.com/@ChaincodeLabs/chaincode-residency-2018-26cd8a65d5f7
+19:11:22 <jnewbery> If you know anyone who might be suitable, please refer them to the website
+19:11:26 <jnewbery> end topic
+19:11:40 <wumpus> ok!
+19:12:00 <cfields> woohoo! We'll be expecting at least 1 new jnewbery and 1 new ryanofsky.
+19:12:11 <jnewbery> 1 jnewbery is quite enough
+19:12:22 <wumpus> hehe
+19:12:34 <jonasschnelli> ;-.)
+19:12:48 <sipa> jnewbery: how do you know? have you ever met one?
+19:12:48 <cfields> heh
+19:13:01 <wumpus> doppelganger
+19:13:09 <wumpus> okay, anyone else have anything to discuss?
+19:14:07 <jnewbery> sipa: I've been informed that 1 is at the upper range of most people's tolerance
+19:15:27 <meshcollider> Hmm might be good to briefly discuss what the plan is for #7729 and #11497
+19:15:30 <gribble> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+19:15:31 <gribble> https://github.com/bitcoin/bitcoin/issues/11497 | Hide accounts system behind deprecation switch by achow101 · Pull Request #11497 · bitcoin/bitcoin · GitHub
+19:15:31 <wumpus> well as long as they keep the great patches coming :)
+19:16:07 <wumpus> needs to be rebased and merged :p
+19:16:21 <achow101> meshcollider: I'm thinking they should probably be done simultaneously. 11947 should probably be part of 7729
+19:16:27 <jonasschnelli> Plans to rebase 7729 or waiting until someone picks it up?
+19:16:41 <wumpus> sorry, yes, I really need to push it the last bit
+19:16:47 <jnewbery> I'm not convinced on the approach for 11497 (using -deprecatedprc)
+19:17:02 <jonasschnelli> wumpus: thanks!
+19:17:24 <wumpus> jnewbery: what is your concern with it?
+19:17:39 <jnewbery> Seems to me that the account/label switch is conceptually on the level of the wallet, not on the level of the node
+19:17:56 <sipa> today again a user on SE who was confused about accounts
+19:18:18 <jnewbery> https://github.com/bitcoin/bitcoin/pull/11497#issuecomment-336991350
+19:18:31 <jonasschnelli> lables / account are completely on the wallet level... yes.
+19:19:15 <wumpus> yes, they're at the wallet level, I agree
+19:19:26 <jnewbery> I don't think 11497 addresses the problem of migrating from an account system to a label system, although I may not have fully understood what the plan is
+19:19:38 <achow101> yeah, I agree with that. 11497 was really just done in a fit of anger after I got too fed up with handling account things
+19:19:39 <wumpus> though from the perspective of the database there's no difference, accounts and labels use the same underlying strucures
+19:19:50 <meshcollider> Agreed but there were concerns bumping the wallet version because of HD wallets right
+19:20:04 <sipa> meshcollider: has nothing to do with accounts
+19:20:22 <wumpus> it doesn't need a  new wallet version
+19:20:23 <jnewbery> meshcollider: yes. Is now a good time to raise the topic of feature flags on wallets?
+19:20:41 <meshcollider> Oh I thought that was discussed in 7729
+19:20:43 <wumpus> accounts do not introduce any new wallet features , at least this first incarnation simply does what the GUI does
+19:20:43 <achow101> meshcollider: it's the same database structures, so that shouldn't matter
+19:21:24 <meshcollider> Yeah I thought 7729 comments were discussing using the version number as a flag for the label/account switch
+19:21:25 <wumpus> people are requesting things like allowing multiple labels for one address, which would need extensions to functionality, but the current one is simply what is already done by the GUI
+19:21:33 <jonasschnelli> (another topic, but): we can bump the wallet version because all new wallets now must be HD, right?
+19:21:34 <wumpus> seems unnecessary
+19:21:37 <sipa> i think using -deprecatedrpc is fine for accounts - it's literally just removing some functionality
+19:21:49 <wumpus> sipa: yeah, it removes functionaltiy from the RPC interface
+19:21:52 <sipa> but we may first need to add label-based RPCs
+19:21:53 <wumpus> it's an RPC interface thing
+19:22:06 <wumpus> sipa: yes, 7729 needs to go in first
+19:22:09 <sipa> okay
+19:22:29 <wumpus> then the flag can select between the old account based interface and the new label based one
+19:22:47 <wumpus> at least for 0.16, in 0.17 I suppose the old interface will simply go away
+19:22:48 <achow101> maybe we should use a different flag than -deprecatedrpc
+19:23:05 <meshcollider> So yeah jnewbery topic suggestion of wallet feature flags?
+19:23:22 <wumpus> this won't lose compatiblity with old wallets
+19:23:30 <wumpus> it just will lose access to any account info in them
+19:23:45 <sipa> right, it's not a wallet feature
+19:23:48 <wumpus> so it's not really a wallet versioning thing
+19:23:49 <jonasschnelli> meshcollider: no flags required for the label/account switch (only changes on functional level)
+19:23:55 <sipa> it's a sofrware feature that can be turned on or off
+19:24:17 <jnewbery> ok, so it sounds like it's not necessary for accounts/labels. I'll go back and look at 7729 again.
+19:24:50 * achow101 is confused now
+19:25:23 <wumpus> #action implement and merge the label api finally
+19:25:26 <wumpus> ok, next topic?
+19:25:28 <sipa> achow101: the big idea is that all accounts functionality remains under the name "label", except the concept of an acount balance
+19:25:47 <achow101> sipa: so it is a node thing and not wallet based?
+19:25:53 <sipa> achow101: wut?
+19:25:59 <sipa> achow101: no, it's an RPC thing
+19:26:07 <sipa> the wallet or node are unaffected
+19:26:12 <wumpus> right
+19:26:24 <achow101> s/node thing/rpc thing/
+19:26:30 <sipa> right
+19:26:33 <jonasschnelli> the wallet structure is unaffected although the wallet code is
+19:26:48 <sipa> is it?
+19:27:04 <sipa> i wouldn't expect it to (until it is deleted entirely)
+19:27:04 <jonasschnelli> if we consider rpcwallet as wallet code
+19:27:04 <wumpus> some small changes are necessary
+19:27:07 <sipa> ok
+19:27:16 <sipa> anyway, details
+19:27:26 <sipa> i'm going off soo
+19:27:31 <jonasschnelli> meshcollider: in case you want to work on wallet flags (there is already a closed PR) #8369
+19:27:31 <wumpus> there's some functionaltiy that would be in the label API but the GUI doesn't use at the moment, from what I remember, but anyhow yeah it's minimal
+19:27:33 <gribble> https://github.com/bitcoin/bitcoin/issues/8369 | [FOR LATER USE][WIP][Wallet] add support for a flexible "set of features" by jonasschnelli · Pull Request #8369 · bitcoin/bitcoin · GitHub
+19:28:00 <jnewbery> Last comment from wumpus in 7729 included "Either label or account RPCs could be usable based on the wallet version." I think we probably need to look at that PR again to refresh our memories (I certainly do)
+19:28:11 <meshcollider> jonasschnelli: Oh right, I'll have a look
+19:28:14 <sipa> okay
+19:28:16 <wumpus> jnewbery: what a dumb comment!
+19:28:34 <wumpus> going to remove it immediately :-)
+19:28:34 <jnewbery> I think it was in response to me, more as a 'this is how it could possibly work'
+19:28:41 <sipa> pffft, fact based analysis, how boring
+19:28:48 <meshcollider> Yeah that comments probably what I was thinking of
+19:29:36 <wumpus> back then I probably thought using the wallet version was a useful way of doing that flagging, but I reconsider
+19:29:49 <achow101> well now we have -deprecatedrpc
+19:30:03 <sipa> right
+19:30:07 <wumpus> yes
+19:30:58 <sipa> no more topics?
+19:31:06 <wumpus> nope
+19:31:18 <sipa> #halfameeting
+19:31:27 <wumpus> #endmeeting

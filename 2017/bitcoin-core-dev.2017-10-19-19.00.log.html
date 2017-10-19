@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:00:32</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:00:32</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Oct 19 19:00:32 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:00:32</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:00:34</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:00:53</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101</span>
+<a name="l-6"></a><span class="tm">19:01:06</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:12</span><span class="nk"> &lt;sipa&gt;</span> mildly present
+<a name="l-8"></a><span class="tm">19:01:17</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-9"></a><span class="tm">19:01:20</span><span class="nk"> &lt;wumpus&gt;</span> primary topic I suppose is 0.15.0.2
+<a name="l-10"></a><span class="tm">19:01:34</span><span class="nk"> &lt;wumpus&gt;</span> https://github.com/bitcoin/bitcoin/pulls?q=is%3Aopen+is%3Apr+milestone%3A0.15.0.2
+<a name="l-11"></a><span class="tm">19:02:23</span><span class="nk"> &lt;wumpus&gt;</span> anything that is close to merging, or that needs further discussion?
+<a name="l-12"></a><span class="tm">19:03:25</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">BlueMatt:</span> are you around to fill in some of the cb interactions with those PRs? They're hard to review because of subtleties I assume I'm not fully accounting for.
+<a name="l-13"></a><span class="tm">19:03:27</span><span class="nk"> &lt;achow101&gt;</span> I wasn't able to do as much as I wanted to this week because of exams. I'll fix up #11446 later today hopefully
+<a name="l-14"></a><span class="tm">19:03:29</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11446 | Disconnect Peers for Duplicate Invalid blocks. by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+<a name="l-15"></a><span class="tm">19:04:04</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sdaftuar:</span> (and somewhat I) worked out a replacement for #11487, that I need to rewrite and close the original
+<a name="l-16"></a><span class="tm">19:04:05</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11487 | Check that new headers are not a descendant of an invalid block by TheBlueMatt · Pull Request #11487 · bitcoin/bitcoin · GitHub
+<a name="l-17"></a><span class="tm">19:04:37</span><span class="nk"> &lt;BlueMatt&gt;</span> so I'll do that a bit later
+<a name="l-18"></a><span class="tm">19:05:02</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-19"></a><span class="tm">19:05:03</span><span class="nk"> &lt;sdaftuar&gt;</span> i updated #11490 with some bug fixes and addressed feedback.  i also added a unit test that passes locally but fails in travis :( workin gon it...
+<a name="l-20"></a><span class="tm">19:05:05</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11490 | Disconnect from outbound peers with bad headers chains by sdaftuar · Pull Request #11490 · bitcoin/bitcoin · GitHub
+<a name="l-21"></a><span class="tm">19:05:43</span><span class="nk"> &lt;wumpus&gt;</span> great!
+<a name="l-22"></a><span class="tm">19:06:27</span><span class="nk"> &lt;wumpus&gt;</span> travis has been having some issues the last few days, be sure it's related to your pull  and not some intermittent problem
+<a name="l-23"></a><span class="tm">19:08:28</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-24"></a><span class="tm">19:08:53</span><span class="nk"> &lt;achow101&gt;</span> any updates on segwit wallet stuff?
+<a name="l-25"></a><span class="tm">19:09:24</span><span class="nk"> &lt;wumpus&gt;</span> I doubt anyone has been working on that w/ the .2 release rushed before
+<a name="l-26"></a><span class="tm">19:09:40</span><span class="nk"> &lt;sipa&gt;</span> i've been distracted the past week
+<a name="l-27"></a><span class="tm">19:09:48</span><span class="nk"> &lt;achow101&gt;</span> ok
+<a name="l-28"></a><span class="tm">19:09:52</span><span class="nk"> &lt;wumpus&gt;</span> will get back to that when sanity has returned
+<a name="l-29"></a><span class="tm">19:09:58</span><span class="nk"> &lt;jnewbery&gt;</span> topic suggestion: Chaincode Residency (sorry for the shameless plug)
+<a name="l-30"></a><span class="tm">19:10:08</span><span class="nk"> &lt;sipa&gt;</span> next week i'll have more time (i'm in europe until the end of the month)
+<a name="l-31"></a><span class="tm">19:10:30</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Chaincode Residency</span>
+<a name="l-32"></a><span class="tm">19:10:40</span><span class="nk"> &lt;jnewbery&gt;</span> Thanks!
+<a name="l-33"></a><span class="tm">19:10:55</span><span class="nk"> &lt;jnewbery&gt;</span> We're hosting another residency program in Jan/Feb 2018: http://hackerresidency.com/ https://medium.com/@ChaincodeLabs/chaincode-residency-2018-26cd8a65d5f7
+<a name="l-34"></a><span class="tm">19:11:22</span><span class="nk"> &lt;jnewbery&gt;</span> If you know anyone who might be suitable, please refer them to the website
+<a name="l-35"></a><span class="tm">19:11:26</span><span class="nk"> &lt;jnewbery&gt;</span> end topic
+<a name="l-36"></a><span class="tm">19:11:40</span><span class="nk"> &lt;wumpus&gt;</span> ok!
+<a name="l-37"></a><span class="tm">19:12:00</span><span class="nk"> &lt;cfields&gt;</span> woohoo! We'll be expecting at least 1 new jnewbery and 1 new ryanofsky.
+<a name="l-38"></a><span class="tm">19:12:11</span><span class="nk"> &lt;jnewbery&gt;</span> 1 jnewbery is quite enough
+<a name="l-39"></a><span class="tm">19:12:22</span><span class="nk"> &lt;wumpus&gt;</span> hehe
+<a name="l-40"></a><span class="tm">19:12:34</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;-.)
+<a name="l-41"></a><span class="tm">19:12:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jnewbery:</span> how do you know? have you ever met one?
+<a name="l-42"></a><span class="tm">19:12:48</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-43"></a><span class="tm">19:13:01</span><span class="nk"> &lt;wumpus&gt;</span> doppelganger
+<a name="l-44"></a><span class="tm">19:13:09</span><span class="nk"> &lt;wumpus&gt;</span> okay, anyone else have anything to discuss?
+<a name="l-45"></a><span class="tm">19:14:07</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">sipa:</span> I've been informed that 1 is at the upper range of most people's tolerance
+<a name="l-46"></a><span class="tm">19:15:27</span><span class="nk"> &lt;meshcollider&gt;</span> Hmm might be good to briefly discuss what the plan is for #7729 and #11497
+<a name="l-47"></a><span class="tm">19:15:30</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/7729 | rpc: introduce label API for wallet by laanwj · Pull Request #7729 · bitcoin/bitcoin · GitHub
+<a name="l-48"></a><span class="tm">19:15:31</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11497 | Hide accounts system behind deprecation switch by achow101 · Pull Request #11497 · bitcoin/bitcoin · GitHub
+<a name="l-49"></a><span class="tm">19:15:31</span><span class="nk"> &lt;wumpus&gt;</span> well as long as they keep the great patches coming :)
+<a name="l-50"></a><span class="tm">19:16:07</span><span class="nk"> &lt;wumpus&gt;</span> needs to be rebased and merged :p
+<a name="l-51"></a><span class="tm">19:16:21</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">meshcollider:</span> I'm thinking they should probably be done simultaneously. 11947 should probably be part of 7729
+<a name="l-52"></a><span class="tm">19:16:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> Plans to rebase 7729 or waiting until someone picks it up?
+<a name="l-53"></a><span class="tm">19:16:41</span><span class="nk"> &lt;wumpus&gt;</span> sorry, yes, I really need to push it the last bit
+<a name="l-54"></a><span class="tm">19:16:47</span><span class="nk"> &lt;jnewbery&gt;</span> I'm not convinced on the approach for 11497 (using -deprecatedprc)
+<a name="l-55"></a><span class="tm">19:17:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> thanks!
+<a name="l-56"></a><span class="tm">19:17:24</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> what is your concern with it?
+<a name="l-57"></a><span class="tm">19:17:39</span><span class="nk"> &lt;jnewbery&gt;</span> Seems to me that the account/label switch is conceptually on the level of the wallet, not on the level of the node
+<a name="l-58"></a><span class="tm">19:17:56</span><span class="nk"> &lt;sipa&gt;</span> today again a user on SE who was confused about accounts
+<a name="l-59"></a><span class="tm">19:18:18</span><span class="nk"> &lt;jnewbery&gt;</span> https://github.com/bitcoin/bitcoin/pull/11497#issuecomment-336991350
+<a name="l-60"></a><span class="tm">19:18:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> lables / account are completely on the wallet level... yes.
+<a name="l-61"></a><span class="tm">19:19:15</span><span class="nk"> &lt;wumpus&gt;</span> yes, they're at the wallet level, I agree
+<a name="l-62"></a><span class="tm">19:19:26</span><span class="nk"> &lt;jnewbery&gt;</span> I don't think 11497 addresses the problem of migrating from an account system to a label system, although I may not have fully understood what the plan is
+<a name="l-63"></a><span class="tm">19:19:38</span><span class="nk"> &lt;achow101&gt;</span> yeah, I agree with that. 11497 was really just done in a fit of anger after I got too fed up with handling account things
+<a name="l-64"></a><span class="tm">19:19:39</span><span class="nk"> &lt;wumpus&gt;</span> though from the perspective of the database there's no difference, accounts and labels use the same underlying strucures
+<a name="l-65"></a><span class="tm">19:19:50</span><span class="nk"> &lt;meshcollider&gt;</span> Agreed but there were concerns bumping the wallet version because of HD wallets right
+<a name="l-66"></a><span class="tm">19:20:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> has nothing to do with accounts
+<a name="l-67"></a><span class="tm">19:20:22</span><span class="nk"> &lt;wumpus&gt;</span> it doesn't need a  new wallet version
+<a name="l-68"></a><span class="tm">19:20:23</span><span class="nk"> &lt;jnewbery&gt;</span> <span class="hi">meshcollider:</span> yes. Is now a good time to raise the topic of feature flags on wallets?
+<a name="l-69"></a><span class="tm">19:20:41</span><span class="nk"> &lt;meshcollider&gt;</span> Oh I thought that was discussed in 7729
+<a name="l-70"></a><span class="tm">19:20:43</span><span class="nk"> &lt;wumpus&gt;</span> accounts do not introduce any new wallet features , at least this first incarnation simply does what the GUI does
+<a name="l-71"></a><span class="tm">19:20:43</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">meshcollider:</span> it's the same database structures, so that shouldn't matter
+<a name="l-72"></a><span class="tm">19:21:24</span><span class="nk"> &lt;meshcollider&gt;</span> Yeah I thought 7729 comments were discussing using the version number as a flag for the label/account switch
+<a name="l-73"></a><span class="tm">19:21:25</span><span class="nk"> &lt;wumpus&gt;</span> people are requesting things like allowing multiple labels for one address, which would need extensions to functionality, but the current one is simply what is already done by the GUI
+<a name="l-74"></a><span class="tm">19:21:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> (another topic, but): we can bump the wallet version because all new wallets now must be HD, right?
+<a name="l-75"></a><span class="tm">19:21:34</span><span class="nk"> &lt;wumpus&gt;</span> seems unnecessary
+<a name="l-76"></a><span class="tm">19:21:37</span><span class="nk"> &lt;sipa&gt;</span> i think using -deprecatedrpc is fine for accounts - it's literally just removing some functionality
+<a name="l-77"></a><span class="tm">19:21:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yeah, it removes functionaltiy from the RPC interface
+<a name="l-78"></a><span class="tm">19:21:52</span><span class="nk"> &lt;sipa&gt;</span> but we may first need to add label-based RPCs
+<a name="l-79"></a><span class="tm">19:21:53</span><span class="nk"> &lt;wumpus&gt;</span> it's an RPC interface thing
+<a name="l-80"></a><span class="tm">19:22:06</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes, 7729 needs to go in first
+<a name="l-81"></a><span class="tm">19:22:09</span><span class="nk"> &lt;sipa&gt;</span> okay
+<a name="l-82"></a><span class="tm">19:22:29</span><span class="nk"> &lt;wumpus&gt;</span> then the flag can select between the old account based interface and the new label based one
+<a name="l-83"></a><span class="tm">19:22:47</span><span class="nk"> &lt;wumpus&gt;</span> at least for 0.16, in 0.17 I suppose the old interface will simply go away
+<a name="l-84"></a><span class="tm">19:22:48</span><span class="nk"> &lt;achow101&gt;</span> maybe we should use a different flag than -deprecatedrpc
+<a name="l-85"></a><span class="tm">19:23:05</span><span class="nk"> &lt;meshcollider&gt;</span> So yeah jnewbery topic suggestion of wallet feature flags?
+<a name="l-86"></a><span class="tm">19:23:22</span><span class="nk"> &lt;wumpus&gt;</span> this won't lose compatiblity with old wallets
+<a name="l-87"></a><span class="tm">19:23:30</span><span class="nk"> &lt;wumpus&gt;</span> it just will lose access to any account info in them
+<a name="l-88"></a><span class="tm">19:23:45</span><span class="nk"> &lt;sipa&gt;</span> right, it's not a wallet feature
+<a name="l-89"></a><span class="tm">19:23:48</span><span class="nk"> &lt;wumpus&gt;</span> so it's not really a wallet versioning thing
+<a name="l-90"></a><span class="tm">19:23:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">meshcollider:</span> no flags required for the label/account switch (only changes on functional level)
+<a name="l-91"></a><span class="tm">19:23:55</span><span class="nk"> &lt;sipa&gt;</span> it's a sofrware feature that can be turned on or off
+<a name="l-92"></a><span class="tm">19:24:17</span><span class="nk"> &lt;jnewbery&gt;</span> ok, so it sounds like it's not necessary for accounts/labels. I'll go back and look at 7729 again.
+<a name="l-93"></a><span class="tm">19:24:50 </span><span class="nka">* achow101</span> <span class="ac">is confused now</span>
+<a name="l-94"></a><span class="tm">19:25:23</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">implement and merge the label api finally</span>
+<a name="l-95"></a><span class="tm">19:25:26</span><span class="nk"> &lt;wumpus&gt;</span> ok, next topic?
+<a name="l-96"></a><span class="tm">19:25:28</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> the big idea is that all accounts functionality remains under the name "label", except the concept of an acount balance
+<a name="l-97"></a><span class="tm">19:25:47</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">sipa:</span> so it is a node thing and not wallet based?
+<a name="l-98"></a><span class="tm">19:25:53</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> wut?
+<a name="l-99"></a><span class="tm">19:25:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> no, it's an RPC thing
+<a name="l-100"></a><span class="tm">19:26:07</span><span class="nk"> &lt;sipa&gt;</span> the wallet or node are unaffected
+<a name="l-101"></a><span class="tm">19:26:12</span><span class="nk"> &lt;wumpus&gt;</span> right
+<a name="l-102"></a><span class="tm">19:26:24</span><span class="nk"> &lt;achow101&gt;</span> s/node thing/rpc thing/
+<a name="l-103"></a><span class="tm">19:26:30</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-104"></a><span class="tm">19:26:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> the wallet structure is unaffected although the wallet code is
+<a name="l-105"></a><span class="tm">19:26:48</span><span class="nk"> &lt;sipa&gt;</span> is it?
+<a name="l-106"></a><span class="tm">19:27:04</span><span class="nk"> &lt;sipa&gt;</span> i wouldn't expect it to (until it is deleted entirely)
+<a name="l-107"></a><span class="tm">19:27:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> if we consider rpcwallet as wallet code
+<a name="l-108"></a><span class="tm">19:27:04</span><span class="nk"> &lt;wumpus&gt;</span> some small changes are necessary
+<a name="l-109"></a><span class="tm">19:27:07</span><span class="nk"> &lt;sipa&gt;</span> ok
+<a name="l-110"></a><span class="tm">19:27:16</span><span class="nk"> &lt;sipa&gt;</span> anyway, details
+<a name="l-111"></a><span class="tm">19:27:26</span><span class="nk"> &lt;sipa&gt;</span> i'm going off soo
+<a name="l-112"></a><span class="tm">19:27:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">meshcollider:</span> in case you want to work on wallet flags (there is already a closed PR) #8369
+<a name="l-113"></a><span class="tm">19:27:31</span><span class="nk"> &lt;wumpus&gt;</span> there's some functionaltiy that would be in the label API but the GUI doesn't use at the moment, from what I remember, but anyhow yeah it's minimal
+<a name="l-114"></a><span class="tm">19:27:33</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/8369 | [FOR LATER USE][WIP][Wallet] add support for a flexible "set of features" by jonasschnelli · Pull Request #8369 · bitcoin/bitcoin · GitHub
+<a name="l-115"></a><span class="tm">19:28:00</span><span class="nk"> &lt;jnewbery&gt;</span> Last comment from wumpus in 7729 included "Either label or account RPCs could be usable based on the wallet version." I think we probably need to look at that PR again to refresh our memories (I certainly do)
+<a name="l-116"></a><span class="tm">19:28:11</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="hi">jonasschnelli:</span> Oh right, I'll have a look
+<a name="l-117"></a><span class="tm">19:28:14</span><span class="nk"> &lt;sipa&gt;</span> okay
+<a name="l-118"></a><span class="tm">19:28:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jnewbery:</span> what a dumb comment!
+<a name="l-119"></a><span class="tm">19:28:34</span><span class="nk"> &lt;wumpus&gt;</span> going to remove it immediately :-)
+<a name="l-120"></a><span class="tm">19:28:34</span><span class="nk"> &lt;jnewbery&gt;</span> I think it was in response to me, more as a 'this is how it could possibly work'
+<a name="l-121"></a><span class="tm">19:28:41</span><span class="nk"> &lt;sipa&gt;</span> pffft, fact based analysis, how boring
+<a name="l-122"></a><span class="tm">19:28:48</span><span class="nk"> &lt;meshcollider&gt;</span> Yeah that comments probably what I was thinking of
+<a name="l-123"></a><span class="tm">19:29:36</span><span class="nk"> &lt;wumpus&gt;</span> back then I probably thought using the wallet version was a useful way of doing that flagging, but I reconsider
+<a name="l-124"></a><span class="tm">19:29:49</span><span class="nk"> &lt;achow101&gt;</span> well now we have -deprecatedrpc
+<a name="l-125"></a><span class="tm">19:30:03</span><span class="nk"> &lt;sipa&gt;</span> right
+<a name="l-126"></a><span class="tm">19:30:07</span><span class="nk"> &lt;wumpus&gt;</span> yes
+<a name="l-127"></a><span class="tm">19:30:58</span><span class="nk"> &lt;sipa&gt;</span> no more topics?
+<a name="l-128"></a><span class="tm">19:31:06</span><span class="nk"> &lt;wumpus&gt;</span> nope
+<a name="l-129"></a><span class="tm">19:31:18</span><span class="nk"> &lt;sipa&gt;</span> <span class="cmd">#halfameeting</span><span class="cmdline"></span>
+<a name="l-130"></a><span class="tm">19:31:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>
