@@ -1,0 +1,293 @@
+19:00:53 <wumpus> #startmeeting
+19:00:53 <lightningbot> Meeting started Thu Oct 26 19:00:53 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:53 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:10 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101
+19:01:17 <achow101> hi
+19:01:19 <meshcollider> Hi
+19:01:49 <kanzure> hi.
+19:02:04 <wumpus> #topic 0.15.0.2
+19:02:18 <cfields> hi
+19:02:38 <wumpus> anything ready for merge there?
+19:02:42 <maaku> present
+19:02:48 <sdaftuar> i think #11490 is ready?  maybe needs another ACK?
+19:02:51 <gribble> https://github.com/bitcoin/bitcoin/issues/11490 | Disconnect from outbound peers with bad headers chains by sdaftuar · Pull Request #11490 · bitcoin/bitcoin · GitHub
+19:03:21 <jtimon> hi
+19:03:38 <wumpus> ok, good to know
+19:03:50 <wumpus> #action merge 11490
+19:03:51 <gmaxwell> Hi.
+19:04:19 <cfields> 11490 looked good last i looked, will take a quick look at the last changes and re-ack
+19:04:26 <gmaxwell> sdaftuar: I already ACKed it.  I think it's pretty great.
+19:04:29 <sdaftuar> thanks!
+19:04:32 <achow101> gmaxwell: found a peer that his node with 11490 kicked. we're not sure whether it was kicked for being brain dead or spynode
+19:04:39 <achow101> or ibd
+19:04:48 <gmaxwell> but is should have been kicked regardless.
+19:05:02 <wumpus> yes was about to say that
+19:05:18 <wumpus> seems an improvement in any case to kick it :)
+19:05:21 <jtimon> I was going to say if there was anything stopping 8994, but it needs rebase...
+19:05:24 <achow101> ok, I just wasn't sure that it would effect nodes in inbd
+19:05:34 <gmaxwell> Yes, I've had a node running the patch for a few days and after the first day I started cycling out all my outbounds every few hours with the hopes of hitting some broken peers.
+19:05:49 <gmaxwell> achow101: yes, it should-- they're useless to us as outbound targets.
+19:06:09 <achow101> oh right, duh. outbound..
+19:06:17 <gmaxwell> .yes, this is outbound only
+19:06:44 <gmaxwell> and it avoids acting on 4 peers. so even if it goes nuts and kicks things it shouldn't the damage is limited.
+19:08:02 <bitcoin-git> [13bitcoin] 15sdaftuar opened pull request #11568: Disconnect outbound peers on invalid chains (06master...062017-10-disconnect-outbound-peers-on-invalid-chains) 02https://github.com/bitcoin/bitcoin/pull/11568
+19:08:14 <sdaftuar> also i think i have a fix to #11446 that should satisfy concerns raised in that PR ^^^
+19:08:16 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | Disconnect Peers for Duplicate Invalid blocks. by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:08:24 <achow101> sdaftuar: yay
+19:08:30 <cfields> tangentially, does it not make sense to take their blockheight in version into consideration? sure it can be spoofed higher, but if it's low and we're in IBD (and presumably they are too), is it worth it to hang around?
+19:08:35 <gmaxwell> to reiterite why this specific patch is important; beyond general braindead peer elimination, it addresses the case where you have peers on incompatible consensus rules which you aren't discovering because their chain has less work, so you aren't fetching their invalid blocks.
+19:08:48 <sdaftuar> it's a refactor unfortunately, so not sure it is a good candidate for backport to 0.15.  but it was simple to do
+19:09:01 <gmaxwell> cfields: well someone could have a lower height but more work chain
+19:09:29 <wumpus> yes, so for 0.15.0.2 we have open at the moment, apart from the one just discussed:  #11560 #11446 #10593
+19:09:30 <gribble> https://github.com/bitcoin/bitcoin/issues/11560 | Connect to a new outbound peer if our tip is stale by sdaftuar · Pull Request #11560 · bitcoin/bitcoin · GitHub
+19:09:32 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | Disconnect Peers for Duplicate Invalid blocks. by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:09:34 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:09:57 <sdaftuar> #11560 as well
+19:09:59 <gribble> https://github.com/bitcoin/bitcoin/issues/11560 | Connect to a new outbound peer if our tip is stale by sdaftuar · Pull Request #11560 · bitcoin/bitcoin · GitHub
+19:10:03 <sdaftuar> oh nvm you had that
+19:10:07 <wumpus> #11446 has some doubts from BlueMatt
+19:10:09 <gribble> https://github.com/bitcoin/bitcoin/issues/11446 | Disconnect Peers for Duplicate Invalid blocks. by achow101 · Pull Request #11446 · bitcoin/bitcoin · GitHub
+19:10:47 <meshcollider> Is #11531 also aimed for 0.15.0.2?
+19:10:48 <gribble> https://github.com/bitcoin/bitcoin/issues/11531 | Check that new headers are not a descendant of an invalid block (more effeciently) by TheBlueMatt · Pull Request #11531 · bitcoin/bitcoin · GitHub
+19:10:58 <jnewbery> #10593 seems to be reverting unrelated code with no rationale, so I think that can be untagged
+19:11:00 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:11:18 <achow101> I guess 11446 has some edge cases that could be problematic
+19:11:27 <gmaxwell> for some reason I thought what we were doing in 11446 was outbound only. I agree that our agressiveness increases here should be outbound only.
+19:11:45 <luke-jr> jnewbery: reverting what? it removes tests that check for the behaviour that is being removed
+19:11:47 <wumpus> ok added 11531
+19:11:47 <gmaxwell> it's important that we don't fully partition old nodes during a softfork.
+19:12:01 <achow101> it would be better if we could get more granular errors from processnewblockheaders
+19:12:02 <wumpus> how much time do we have left?
+19:12:07 <sdaftuar> 11568 is the same as 11446, except it avoids disconnecting hb compact block peers, and only applies to outbound peers
+19:12:22 <wumpus> sdaftuar: ok we should remove one, then :)
+19:12:43 <sdaftuar> agreed :)
+19:12:56 <wumpus> eh wait 11568 isn't tagged 0.15.0.2 at all
+19:13:00 <cfields> heh, it's getting hard to keep up with these
+19:13:04 <achow101> wumpus: it was just made
+19:13:17 <sdaftuar> i was trying to open it before the meeting started, doh
+19:13:27 <wumpus> cfields: very hard, yes
+19:13:29 <achow101> if 11568 is 11446 but only for outbound peers, I'm fine with that
+19:13:42 <jnewbery> luke-jr: I haven't fully dug into it, but it regresses #8305, no?
+19:13:44 <gribble> https://github.com/bitcoin/bitcoin/issues/8305 | Improve handling of unconnecting headers by sdaftuar · Pull Request #8305 · bitcoin/bitcoin · GitHub
+19:13:56 <wumpus> ok, replacing 11446 then
+19:13:59 <BlueMatt> I mean if we want a 0.15.0.2 we literally need to rc tomorrow or this weekend, imo
+19:14:48 <gmaxwell> 11568 looks good on first run through.
+19:15:04 <cfields> disclosure there: I'll be away after tomorrow night until tuesday morning
+19:15:24 <wumpus> BlueMatt: what can we realistically merge before that time?
+19:15:40 <luke-jr> jnewbery: I don't think so - 8305 disconnects under certain conditions, but 10593 disconnects a superset of those conditions
+19:15:42 <cfields> i can make plans to be available for building if really necessary
+19:15:55 <BlueMatt> wumpus: I dont think a sufficient set to make 0.15.0.2 worth it
+19:16:08 <gmaxwell> I think probably if you try you can merge one PR per minute... we could empty out github by then, no problem.. just lots of button pushing!
+19:16:21 <meshcollider> lol
+19:16:23 <wumpus> well we have some fixes on the 0.15 branch already that are nice
+19:16:24 <BlueMatt> heh
+19:16:34 <wumpus> but I agree it kind of misses the point
+19:16:39 <BlueMatt> wumpus: anything worth an 0.15.0.2?
+19:17:05 <wumpus> BlueMatt: well it's a minor-minor release, that's not a high bar, but yes
+19:17:19 <BlueMatt> I mean things like #11531, which may be important as far as our b2x-shitshow fixes go, are smack-dab in the middle of consensus code and have not review yet?
+19:17:21 <gribble> https://github.com/bitcoin/bitcoin/issues/11531 | Check that new headers are not a descendant of an invalid block (more effeciently) by TheBlueMatt · Pull Request #11531 · bitcoin/bitcoin · GitHub
+19:17:24 <wumpus> BlueMatt: nothing that warrants hurring it though
+19:17:44 <BlueMatt> I suppose it may be worth it to get an 0.15.0.2 out like day-before b2x-shitshow
+19:17:58 <gmaxwell> even a small portion of the network running it is protective.
+19:18:00 <BlueMatt> then at least if some asshat spins up a billion stupid sybil nodes there is a response
+19:18:12 <morcos> BlueMatt: +1
+19:18:20 <BlueMatt> but we need to be clear what our target is here
+19:18:22 <gmaxwell> at least if we cover the major possible cases:  Fork has low to no hashpower, fork has higher hashpower for the case where we're completely partitioned by surrounded by forknodes or where we're partially surrounded.
+19:18:23 <BlueMatt> and really focus on it
+19:18:29 <BlueMatt> there hasnt been much progress the last 3 weeks
+19:18:45 <BlueMatt> (I'm to blame there, too, I've been mostly mia)
+19:18:46 <gmaxwell> I think there has been a lot of progress.
+19:18:59 <gmaxwell> sdaftuar has been right on top of making changes.
+19:19:07 <BlueMatt> sorry, lots of progress on making new prs, rewriting prs, talking about issues, lack of *merge* progress
+19:19:14 <wumpus> yes there absolutely has been a lot of progress, PR after PR
+19:19:15 <BlueMatt> or finalizing review for things to get merged
+19:19:25 <wumpus> but very little merging, yeah
+19:19:38 <morcos> have we finalized the list
+19:19:43 <morcos> lets focus on that
+19:19:55 <morcos> and then everyone commit to reviewing 2 of them over the next 24 hours
+19:19:58 <BlueMatt> well one thing on it was opened today cause it was decided to also be important/replace other things
+19:19:58 <morcos> and we'll see where we stand
+19:20:05 <wumpus> no, it seems to change every week
+19:20:11 <morcos> wumpus: exactly
+19:20:18 <BlueMatt> but, yea, I think if we want to see hhis happen, we can get it out day-or-two-before-ish, but we need review *today*
+19:20:25 <cfields> agree with gmaxwell about focusing on those things that may actually be of significance in the next month
+19:20:26 <wumpus> as cfieds said it's hard to keep track of
+19:20:35 <BlueMatt> I think they're all tagged now, no?
+19:20:40 <gmaxwell> To get the full coverage of those sets of cases, we need 11490, 11560, and 11568-or-11446
+19:20:45 <morcos> focus... BlueMatt, sipa, gmaxwell, sdaftuar you guys have been thinking abou tthis the most... look at the list right now and be confident it is right and if not fix it
+19:20:48 <BlueMatt> except #10593, ignore that
+19:20:50 <gribble> https://github.com/bitcoin/bitcoin/issues/10593 | Relax punishment for peers relaying invalid blocks and headers by luke-jr · Pull Request #10593 · bitcoin/bitcoin · GitHub
+19:20:52 <achow101> I think we can remove 10593
+19:21:00 <morcos> stop arguing with Belshe on the web
+19:21:06 <sdaftuar> :)
+19:21:24 <wumpus> ok removed 10593
+19:21:25 <BlueMatt> yea, 10593 got nack'ed (correctly, imo) a while ago
+19:21:29 <gmaxwell> 11490 covers the case where fork has lower hashpower and doesn't completely surround you,  11560 covers where it has higher hashpower, 11568-or-11446 covers where it has lower and may completely surround you.
+19:21:36 <luke-jr> does something else cover the cases 10593 does?
+19:21:57 <rafalcpp> sorry if stupid question,  but re   `semOutbound = new CSemaphore(std::min((nMaxOutbound + nMaxFeeler + nMaxExtraOutbound), nMaxConnections));`   if we're at nMaxOutbound == nMaxConnections  doesn't it mean node in such conditin will not try to resolve being stalled?  dunno if that's any issue
+19:22:03 <morcos> luke-jr: explicit case you're worried about not being covered (soft forks? , we can worry abou tthose later)
+19:22:04 <BlueMatt> luke-jr: tbh, I dont actually have any fucking clue what that pr is *supposed* to do in the context on b2x-shitshow
+19:22:09 <achow101> rafalcpp: not now
+19:22:29 <sdaftuar> rafalcpp: let's discuss after (thanks for taking a look!)
+19:22:36 <BlueMatt> rafalcpp: sorry, mid-meeting atm
+19:22:44 <morcos> rafalcpp: hi
+19:23:01 <gmaxwell> achow101: that was related to the PR that adds an extra connection
+19:23:10 <luke-jr> morcos: Bitcoin is almost a softfork relative to 2X
+19:23:28 <luke-jr> BlueMatt: it is necessary for people to switch from 2X to Bitcoin, or run them both
+19:23:46 <IniGit> hello
+19:23:48 <BlueMatt> luke-jr: you cannot switch back and forth, your blockindex will be corrupt (yay shitty fork developers)
+19:24:00 <IniGit> I read the whitepaper of ethereum and I have a question (it is the same for bitcoin):
+19:24:00 <IniGit> APPLY(S,TX) -> S'
+19:24:00 <IniGit> My question is since S is defined as a set of UTXO, but the blockchain does not store each balance in a block, is this set of UTXO only preset in RAM and not on the blockchain. Is it calculated by the node by going thhrough each block since the genesis block and only present in RAM?
+19:24:00 <luke-jr> BlueMatt: different datadirs..
+19:24:12 <luke-jr> or even different machines
+19:24:14 <wumpus> IniGit: not here, not now
+19:24:18 <morcos> luke-jr has a bit of a point there
+19:24:30 <gmaxwell> luke-jr: it's unclear of specifically what you're turned about, don't get into an argument in the weeds, state what the overall concern is.
+19:24:43 <IniGit> where can I ask this question and get more knowledge?
+19:24:52 <gmaxwell> IniGit: #bitcoin
+19:24:53 <sdaftuar> are we talking about relaxing bans to be disconnects instead?  i generally agree with that
+19:24:55 <BlueMatt> luke-jr: tbh, so what? our banning is deliberately slow, if you get banned from some small percentage of the network, slowly, over time, for running 2x, sucks for you
+19:24:56 <morcos> gmaxwell: if someone on your IP runs a 2X node, your IP gets banned, and you cna't then run or simulataneiously run a core node
+19:25:02 <luke-jr> gmaxwell: right now, we can peers that send invalid blocks, which means their Bitcoin nodes will get rejected from the p2p network too
+19:25:06 <BlueMatt> (like one peer per block kinda slow)
+19:25:06 <achow101> gmaxwell: I think the concern is if someone runs 2x and gets themselves banned, if they switch back to bitcoin they can't connect to the network anymore
+19:25:22 <luke-jr> ban*
+19:25:30 <gmaxwell> morcos: nothign we can do about that now regardless; as it's a property of the widely deployed network.
+19:25:44 <wumpus> achow101: only if *everyone* banned them, which is unlikely as hell!
+19:25:58 <wumpus> achow101: if a few nodes they were connected to banned them they will certainly find others
+19:26:04 <luke-jr> wumpus: when 2X gets banned from Peer A, it will move on to Peer B, etc
+19:26:09 <morcos> gmaxwell: hmm.. ok fair, and it'll take a lot of blocks to get banned by most of the network...
+19:26:29 <gmaxwell> luke-jr: yes, but this takes longer than a day to cycle through all reachable nodes that way.
+19:26:30 <luke-jr> gmaxwell: so long as not all peers ban, they will eventually find ones with the newer code..
+19:26:31 <morcos> luke-jr's pull should be maybe considered for soon release, in case there is extended period of two chains
+19:26:35 <karelb> sorry for breaking in, the plan is that you cannot simultaneously run 2x and btc on the same IP? that is unfortunate
+19:26:40 <morcos> but maybe 0.15.1 espeically if its not ready yet
+19:26:47 <wumpus> gmaxwell: and by that time the first ones will have unbanned them again
+19:26:51 <luke-jr> gmaxwell: even with the peers banning them?
+19:27:04 <morcos> karelb: that's not the plan, thats an unfortunate side effect of the existing software
+19:27:10 <gmaxwell> luke-jr: yes, because the banning goes slowly.
+19:27:38 <gmaxwell> karelb: 2x foolishly connects to non-2x nodes and will relay them invalid blocks, so it will get itself banned.
+19:27:42 <achow101> banning also requires blocks to be found, so ...
+19:28:17 <achow101> that means 144 peers to switch through per day, on average
+19:28:39 <luke-jr> gmaxwell: just because it hits 20% DoS penalty each header?
+19:28:46 <wumpus> karelb: it could have been resolved with e.g. service bits if 2x was willing, but they're insisting on making this a mess, so we have to do the least harmful thing for the existing bitcoin network
+19:28:48 <karelb> oh OK. That happens with the current core node
+19:28:53 <BlueMatt> karelb: if you run 2x nodes without their broken -pretendimnot2x then no, you cannot, if you dont use that option, you should be fine
+19:28:57 <gmaxwell> karelb: yes.
+19:29:18 <wumpus> BlueMatt: exactly
+19:29:23 <karelb> BlueMatt  👍  great
+19:29:36 <BlueMatt> (which is another point against 10593)
+19:29:39 <gmaxwell> luke-jr: also as matt points out, if you don't undermine service flag disconnects you won't get banned by bitcoin 0.15+ peers, so I think that answers your concern/.
+19:29:45 <luke-jr> ok
+19:30:10 <BlueMatt> if you run with -imstupidandignorereason, you should get banned, thats your problem, not mine
+19:30:12 <karelb> what would be the reason of running that option? what is the incentive for the 2x node to connect to core nodes?
+19:30:25 <gmaxwell> in the long run I want to move away from banning more or less entirely but that isn't a thing to worry about for now.
+19:30:26 <BlueMatt> karelb: please not mid-meeting
+19:30:28 <karelb> ok
+19:30:30 <morcos> ok yes, thats a good point that we should publish, unfortunately lots of companies will need to run both
+19:30:30 <karelb> sorry
+19:30:53 <BlueMatt> gmaxwell: lots to be fixed in our dos/ban/disconnect logic, indeed
+19:31:12 <morcos> ok back to question... list is good, please ack if you know what you're talking about.   alex was here.
+19:31:20 <sdaftuar> getting back to 0.15.0.2 -- i think the currently tagged PRs cover all the cases i think we would ideally cover pre-b2x
+19:31:24 <achow101> list looks good to me
+19:31:35 <wumpus> sdaftuar: great!
+19:31:46 <gmaxwell> What sdaftuar said
+19:31:50 <wumpus> let's focus on getting these reviewed and merged as soon as possible then
+19:31:56 <achow101> +1
+19:31:57 <wumpus> and lot's not add any new ones unless absolutely necessary
+19:32:19 <gmaxwell> unless some interesting bug crops up I don't see why we would.
+19:32:24 <meshcollider> Sounds good
+19:32:26 <BlueMatt> ok, so #action 24-hour review sprint?
+19:32:36 <gmaxwell> like maybe B2X's developer tells us about this mysterious instability in 0.15. :)
+19:32:53 <morcos> i can't wait to tell them about my embargoed accidental hard fork
+19:33:00 <BlueMatt> gmaxwell: lol, uh huhhhhh
+19:33:55 <luke-jr> FTR, the problematic option is -advertise2x=0 or -noadvertise2x
+19:34:21 <BlueMatt> aka -shootmeinthefacekthx
+19:34:24 <cfields> BlueMatt: i'll commit to a 24hr sprint, at least ack/nack/cfields was here on all of those PRs.
+19:34:56 <wumpus> I'll try
+19:34:57 <gmaxwell> I'll test and review all that I haven't yet, of course.
+19:35:15 <BlueMatt> ok, just gotta finish caching debug.log writing on fibre nodes then I'll do it
+19:35:31 <BlueMatt> 30+ms pauses fron debug.log prints, ftr...........
+19:35:42 <gmaxwell> BlueMatt: we could also release note this point-- that running -shootmeinthefacekthx will cause your IP to get banned by bitcoin nodes when the fork happens and make it harder to switch back or run both.
+19:35:52 <gmaxwell> so uh. I hate to do this.
+19:35:54 <gmaxwell> but
+19:35:58 <achow101> oh no
+19:36:27 <gmaxwell> ... I believe a one liner is possible to detect if our chainstate DB has been corrupted by running b2x post fork... would it be worthwhile to have that?
+19:36:44 <gmaxwell> e.g. check out block at the fork height and see if its too big.
+19:36:47 <kanzure> detect and warn?
+19:36:54 <wumpus> yes, that would be worth it
+19:36:58 <gmaxwell> and then shut down with a polite fuck you instead of just sitting stuck.
+19:37:03 <kanzure> detect and exit?
+19:37:06 <wumpus> yes
+19:37:08 <BlueMatt> yea, I think so :'(
+19:37:10 <cfields> gmaxwell: that sounds like exactly the kind of thing we should be aiming for in 0.15.0.2 :(
+19:37:13 <gmaxwell> all we can do is exit and tell you to reindex.
+19:37:15 <achow101> I guess..
+19:37:17 <morcos> in my opinion it'll be more than 24 hours until we agree if a 1-liner makes sense.  i think we should just tell people you must reindex chainstate if you switch back...
+19:37:18 <jnewbery> polite fuck you == "please use invalidateblock RPC" ?
+19:37:19 <BlueMatt> i guess at least thats easy to review
+19:37:28 <luke-jr> gmaxwell: why shut down? we can already rewind..
+19:37:29 <gmaxwell> oaky I'm sorry for the scope creep. It should be a near oneliner.
+19:37:40 <luke-jr> jnewbery: need to automatic it, because RPC won't work if we shutdown
+19:37:49 <BlueMatt> jnewbery: no, I think probably easier to just printf("please reindex") exit();
+19:37:57 <wumpus> that's more work
+19:37:59 <gmaxwell> it's not easy to test unfortunately.
+19:38:04 <luke-jr> BlueMatt: we already have code to rewind for segwit rechecking
+19:38:05 <wumpus> for master it probably makes sense to make it automatic
+19:38:10 <wumpus> but that's not realistic for 0.15.0.2
+19:38:13 <BlueMatt> yea, i dont want to test any of this, or think about complicated interactions
+19:38:17 <BlueMatt> just printf and exit
+19:38:21 <wumpus> as gmaxwell says, warn+exit is better than mystieriously getting stuck
+19:38:23 <wumpus> that's the aim here
+19:38:36 <achow101> I support the thing that requires less work to review
+19:38:54 <sdaftuar> i don't know that i think it's worth it, but i don't object i guess if other people want to add this "feature"
+19:39:11 <gmaxwell> okay, I'll do the simplest possible first we could also consider others for master/later/etc...
+19:39:15 <BlueMatt> morcos: points out this does not work on a pruned node, i forgot about that....
+19:39:18 <wumpus> sdaftuar: less mysterious bug reports...
+19:39:22 <wumpus> sdaftuar: that's always a plus
+19:39:30 <morcos> can we agree that this extra PR is lower priority than the others, lets not risk getting 0 of them out
+19:39:39 <gmaxwell> SURE
+19:39:40 <wumpus> morcos: I agree with that too
+19:39:55 <gmaxwell> I don't even 'want' it so much as I realized it was a problem people will encounter which we could address.
+19:39:56 <wumpus> I think it's worth doing in general, don't care if it doesn't get into 0.15.0.2
+19:39:57 <morcos> tag it "Extra Credit"
+19:40:05 <sdaftuar> haha sounds good to me
+19:40:13 <wumpus> fine for 0.15.1 too
+19:40:20 <wumpus> heh
+19:40:34 <gmaxwell> well I'll try something. decide if you want to review it or not.
+19:40:40 <kanzure> might make sense for flip floppers later
+19:41:08 <gmaxwell> after the fork it can just hardcode the hash. :)
+19:41:17 <wumpus> yep
+19:41:29 <gmaxwell> e.g. like doing an invalidateblock <b2xcrap> at startup.
+19:42:18 <gmaxwell> I agree it's certantly less important in part because we can address with announcements/release notes-- don't do this.
+19:42:42 * sipa here for a minute
+19:43:02 <BlueMatt> sipa: we're doing 24 hour code review spring for 0.15.0.2, you owe us review on 4 prs today! :p
+19:43:53 <sipa> BlueMatt: i'll try!
+19:44:15 <achow101> not just 4 PRs, the 4 PRs tagged for 0.15.0.2
+19:45:46 <luke-jr> we could make a BLOCK_OPT_WITNESS-like thing and require it for the 2X height block only.. but that'll break normal upgrades too
+19:45:51 <luke-jr> not sure it's worth it
+19:46:01 <spudowiar> Which PRs are those? https://github.com/bitcoin/bitcoin/projects/8 shows one PR under "Review priority for 0.15.0.2"
+19:46:11 <achow101> spudowiar: https://github.com/bitcoin/bitcoin/milestone/32
+19:46:16 <wumpus> spudowiar: just use the milestone https://github.com/bitcoin/bitcoin/milestone/32
+19:46:20 <spudowiar> Thanks, sorry
+19:46:35 <wumpus> yeah no problem, I'll update review priority too
+19:47:01 <achow101> other topics?
+19:49:15 <wumpus> apparently not
+19:49:16 <achow101> In other news, I got someone to write meeting notes for the website. we'll try to get through all of the meetings missed too
+19:49:26 <wumpus> achow101: that's great news!
+19:49:33 <meshcollider> \o/
+19:50:07 <gmaxwell> bad news is that the someone is roger ver.
+19:50:12 <gmaxwell> :P
+19:50:23 <achow101> lol. no
+19:50:24 <wumpus> hahahaha
+19:50:59 <luke-jr> XD
+19:51:10 <luke-jr> achow101: you've checked?
+19:51:25 <meshcollider> Comic relief would be the whole meeting notes
+19:51:37 <achow101> luke-jr: unless I am blind, I am pretty sure the person writing the notes next to me is roger ver
+19:51:43 <achow101> *is not
+19:51:47 <gmaxwell> uh oh.
+19:51:52 <luke-jr> achow101: maybe on his payroll :P
+19:52:07 * gmaxwell imagines the delayed correction coming after a sharp poke to the ribs
+19:52:11 <achow101> now we got our comic relief :p
+19:52:51 <wumpus> #endmeeting
