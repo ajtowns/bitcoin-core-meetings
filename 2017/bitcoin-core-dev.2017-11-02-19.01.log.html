@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:01:26</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:01:26</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov  2 19:01:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:01:26</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:01:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> hi
+<a name="l-5"></a><span class="tm">19:01:36</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-6"></a><span class="tm">19:01:42</span><span class="nk"> &lt;meshcollider&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:01:47</span><span class="nk"> &lt;jtimon&gt;</span> hi
+<a name="l-8"></a><span class="tm">19:01:58</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag</span>
+<a name="l-9"></a><span class="tm">19:02:06</span><span class="nk"> &lt;instagibbs&gt;</span> here
+<a name="l-10"></a><span class="tm">19:02:10</span><span class="nk"> &lt;sdaftuar&gt;</span> hello
+<a name="l-11"></a><span class="tm">19:02:12</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:02:17</span><span class="nk"> &lt;BlueMatt&gt;</span> 15.0.2
+<a name="l-13"></a><span class="tm">19:02:28</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="topic">#topic </span><span class="topicline">0.15.0.2</span>
+<a name="l-14"></a><span class="tm">19:02:38</span><span class="nk"> &lt;wumpus&gt;</span> yes, good idea
+<a name="l-15"></a><span class="tm">19:02:48</span><span class="nk"> &lt;achow101&gt;</span> it seems like things keep getting added to the milestone
+<a name="l-16"></a><span class="tm">19:02:54</span><span class="nk"> &lt;cfields&gt;</span> i think the outstanding PRs are pretty much ready to go
+<a name="l-17"></a><span class="tm">19:03:02</span><span class="nk"> &lt;wumpus&gt;</span> great!
+<a name="l-18"></a><span class="tm">19:03:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> only cfields's libevent fix
+<a name="l-19"></a><span class="tm">19:03:26</span><span class="nk"> &lt;BlueMatt&gt;</span> 11593 needs more review, 11560 could just be merged
+<a name="l-20"></a><span class="tm">19:03:35</span><span class="nk"> &lt;morcos&gt;</span> there are 3 PR's left in question: #11100 #11560 #11593
+<a name="l-21"></a><span class="tm">19:03:37</span><span class="nk"> &lt;BlueMatt&gt;</span> though I think 11593 is pretty reviewable
+<a name="l-22"></a><span class="tm">19:03:38</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11100 | Fix confusing blockmax{size,weight} options, dont default to throwing away money by TheBlueMatt · Pull Request #11100 · bitcoin/bitcoin · GitHub
+<a name="l-23"></a><span class="tm">19:03:38</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-24"></a><span class="tm">19:03:38</span><span class="nk"> &lt;meshcollider&gt;</span> and more backports
+<a name="l-25"></a><span class="tm">19:03:40</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11560 | Connect to a new outbound peer if our tip is stale by sdaftuar · Pull Request #11560 · bitcoin/bitcoin · GitHub
+<a name="l-26"></a><span class="tm">19:03:41</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11593 | rpc: work-around an upstream libevent bug by theuni · Pull Request #11593 · bitcoin/bitcoin · GitHub
+<a name="l-27"></a><span class="tm">19:03:46</span><span class="nk"> &lt;BlueMatt&gt;</span> plus backports needs fixing
+<a name="l-28"></a><span class="tm">19:03:53</span><span class="nk"> &lt;wumpus&gt;</span> the other one is just the backports which need to be done to support all that
+<a name="l-29"></a><span class="tm">19:03:55</span><span class="nk"> &lt;morcos&gt;</span> i think whichever we can't merge to master and backport right now, we need to just skip..
+<a name="l-30"></a><span class="tm">19:04:12</span><span class="nk"> &lt;achow101&gt;</span> backports is failing travis right now
+<a name="l-31"></a><span class="tm">19:04:15</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">BlueMatt:</span> backports for all others are fine... sdaftuar has tiny test fix
+<a name="l-32"></a><span class="tm">19:04:38</span><span class="nk"> &lt;BlueMatt&gt;</span> yea
+<a name="l-33"></a><span class="tm">19:04:52</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-34"></a><span class="tm">19:04:52</span><span class="nk"> &lt;morcos&gt;</span> although they could use more review, both sdaftuar and ryanofsky are reviewing now
+<a name="l-35"></a><span class="tm">19:05:35</span><span class="nk"> &lt;morcos&gt;</span> so we should just make decisions on those last 3 PR's..  11100 is in master, so question is only whether to add it to backports?   any objections?
+<a name="l-36"></a><span class="tm">19:06:10</span><span class="nk"> &lt;wumpus&gt;</span> none apparently
+<a name="l-37"></a><span class="tm">19:06:11</span><span class="nk"> &lt;gmaxwell&gt;</span> I really want to see 11100 appear in a release.
+<a name="l-38"></a><span class="tm">19:06:17</span><span class="nk"> &lt;BlueMatt&gt;</span> backports are already huge, but thats a simple pr and would be very nice to have
+<a name="l-39"></a><span class="tm">19:06:43</span><span class="nk"> &lt;gmaxwell&gt;</span> It's not the only misconfig now (I see blocks that clearly have minrelay fee cranked up-- e.g. legacy of 0.11-era mempool bloat attacks) but it's the biggest one.
+<a name="l-40"></a><span class="tm">19:06:44</span><span class="nk"> &lt;wumpus&gt;</span> although I think we should stop moving the goalposts
+<a name="l-41"></a><span class="tm">19:06:50</span><span class="nk"> &lt;MarcoFalke&gt;</span> ok, will amend the pull with sdaftuar's fix and 11100
+<a name="l-42"></a><span class="tm">19:07:01</span><span class="nk"> &lt;sipa&gt;</span> 11560 is mergable i think
+<a name="l-43"></a><span class="tm">19:07:07</span><span class="nk"> &lt;gmaxwell&gt;</span> Well, if there are any issues in backporting, feel free to drop IMO.
+<a name="l-44"></a><span class="tm">19:07:08</span><span class="nk"> &lt;BlueMatt&gt;</span> agreed
+<a name="l-45"></a><span class="tm">19:07:20</span><span class="nk"> &lt;wumpus&gt;</span> the point of 0.15.0.2 is to protect against an immediate problem, and we should release it if it improves the situation anything from 0.15.0.1
+<a name="l-46"></a><span class="tm">19:07:39</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, last point of order then is the libevent fix
+<a name="l-47"></a><span class="tm">19:07:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">cfields:</span> you want to say anything?
+<a name="l-48"></a><span class="tm">19:08:37</span><span class="nk"> &lt;jtimon&gt;</span> ack on #11100 backport
+<a name="l-49"></a><span class="tm">19:08:40</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11100 | Fix confusing blockmax{size,weight} options, dont default to throwing away money by TheBlueMatt · Pull Request #11100 · bitcoin/bitcoin · GitHub
+<a name="l-50"></a><span class="tm">19:08:58</span><span class="nk"> &lt;cfields&gt;</span> i've narrowed the workaround even further, it basically just affects a single stable release
+<a name="l-51"></a><span class="tm">19:09:15</span><span class="nk"> &lt;jtimon&gt;</span> curious, why backport all in one pr?
+<a name="l-52"></a><span class="tm">19:09:15</span><span class="nk"> &lt;BlueMatt&gt;</span> (the release that people have been switching to as they upgrade ubuntu, afaiu, fwiw)
+<a name="l-53"></a><span class="tm">19:09:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> because many things depend on each other
+<a name="l-54"></a><span class="tm">19:09:28</span><span class="nk"> &lt;promag&gt;</span> hi
+<a name="l-55"></a><span class="tm">19:09:43</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jtimon:</span> I am not going to push to non-master branches
+<a name="l-56"></a><span class="tm">19:09:45</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> many of them are not trivial, stand-alone backports... if only
+<a name="l-57"></a><span class="tm">19:09:55</span><span class="nk"> &lt;MarcoFalke&gt;</span> also what wumpus said
+<a name="l-58"></a><span class="tm">19:10:31</span><span class="nk"> &lt;cfields&gt;</span> grr, sorry, irc client fell off
+<a name="l-59"></a><span class="tm">19:10:37</span><span class="nk"> &lt;wumpus&gt;</span> this way there's at least the chance to review, and for travis to test the backported code
+<a name="l-60"></a><span class="tm">19:10:53 </span><span class="nka">* sipa</span> <span class="ac">picks up the irc lcient and hands it to cfields</span>
+<a name="l-61"></a><span class="tm">19:10:54</span><span class="nk"> &lt;MarcoFalke&gt;</span> So action merge and bp 11560?
+<a name="l-62"></a><span class="tm">19:11:04</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">MarcoFalke:</span> ack
+<a name="l-63"></a><span class="tm">19:11:07</span><span class="nk"> &lt;achow101&gt;</span> +1
+<a name="l-64"></a><span class="tm">19:11:31</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BTW:</span> should we also consider upgrading depends openssl due to CVE-2017-3736?
+<a name="l-65"></a><span class="tm">19:11:36</span><span class="nk"> &lt;jonasschnelli&gt;</span> Only BIP70 stuff is affected though
+<a name="l-66"></a><span class="tm">19:11:37</span><span class="nk"> &lt;BlueMatt&gt;</span> +merge and bp 11560
+<a name="l-67"></a><span class="tm">19:11:44</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 3 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/bfb270acfa30...7008b07005c5
+<a name="l-68"></a><span class="tm">19:11:45</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 146b58360 15Cory Fields: rpc: work-around an upstream libevent bug...
+<a name="l-69"></a><span class="tm">19:11:45</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 1497932cd 15Cory Fields: rpc: further constrain the libevent workaround...
+<a name="l-70"></a><span class="tm">19:11:46</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 147008b07 15Wladimir J. van der Laan: Merge #11593: rpc: work-around an upstream libevent bug...
+<a name="l-71"></a><span class="tm">19:12:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> how dangerous is that?
+<a name="l-72"></a><span class="tm">19:12:10</span><span class="nk"> &lt;jonasschnelli&gt;</span> Not really...
+<a name="l-73"></a><span class="tm">19:12:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> dangerous
+<a name="l-74"></a><span class="tm">19:12:13</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> man, openssl upgrades are really hard to review. :(
+<a name="l-75"></a><span class="tm">19:12:21</span><span class="nk"> &lt;wumpus&gt;</span> if not, let postpone it to 0.15.1?
+<a name="l-76"></a><span class="tm">19:12:21</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj closed pull request #11593: rpc: work-around an upstream libevent bug (06master...06fix-libevent-cb) 02https://github.com/bitcoin/bitcoin/pull/11593
+<a name="l-77"></a><span class="tm">19:12:27</span><span class="nk"> &lt;jonasschnelli&gt;</span> but we are using open ssl 1.0.1k which is no longer maintained
+<a name="l-78"></a><span class="tm">19:12:30</span><span class="nk"> &lt;sipa&gt;</span> The amount of resources
+<a name="l-79"></a><span class="tm">19:12:30</span><span class="nk"> &lt;sipa&gt;</span> required for such an attack would be very significant and likely only
+<a name="l-80"></a><span class="tm">19:12:30</span><span class="nk"> &lt;sipa&gt;</span> accessible to a limited number of attackers. An attacker would
+<a name="l-81"></a><span class="tm">19:12:30</span><span class="nk"> &lt;sipa&gt;</span> additionally need online access to an unpatched system using the target
+<a name="l-82"></a><span class="tm">19:12:33</span><span class="nk"> &lt;sipa&gt;</span> private key in a scenario with persistent DH parameters and a private
+<a name="l-83"></a><span class="tm">19:12:35</span><span class="nk"> &lt;sipa&gt;</span> key that is shared between multiple clients.
+<a name="l-84"></a><span class="tm">19:12:41</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd rather be spending effort into further eliminating openssl. :)
+<a name="l-85"></a><span class="tm">19:12:46</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.15.1 should be fine IMO
+<a name="l-86"></a><span class="tm">19:12:47</span><span class="nk"> &lt;jtimon&gt;</span> is anybody using bip70?
+<a name="l-87"></a><span class="tm">19:12:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> BIP70 without openssl is non-trivial to impossible
+<a name="l-88"></a><span class="tm">19:13:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> we could remove BIP70 support... *duck* (luke-jr)
+<a name="l-89"></a><span class="tm">19:13:22</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">jtimon:</span> I'm pretty sure bitpay does
+<a name="l-90"></a><span class="tm">19:13:23</span><span class="nk"> &lt;BlueMatt&gt;</span> we could remove the ssl-checking part of bip70
+<a name="l-91"></a><span class="tm">19:13:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> (no tests, no active maintenance)
+<a name="l-92"></a><span class="tm">19:13:25</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> are there any changes to our httpserver/libevent code between master and 0.15, or its fine to just backport 11593 without thinking abou tit
+<a name="l-93"></a><span class="tm">19:13:30</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">achow101:</span> thanks
+<a name="l-94"></a><span class="tm">19:13:34</span><span class="nk"> &lt;BlueMatt&gt;</span> and just treat it as a "better payment field"
+<a name="l-95"></a><span class="tm">19:13:49</span><span class="nk"> &lt;gmaxwell&gt;</span> meh, lets not discuss that now.
+<a name="l-96"></a><span class="tm">19:13:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes
+<a name="l-97"></a><span class="tm">19:13:58</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">morcos:</span> i'll double-check, but 99% a dumb backport is enough
+<a name="l-98"></a><span class="tm">19:14:08</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 6 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/7008b07005c5...2f959a58744d
+<a name="l-99"></a><span class="tm">19:14:08</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 142d4327d 15Suhas Daftuar: net: Allow connecting to extra outbound peers
+<a name="l-100"></a><span class="tm">19:14:09</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14db32a65 15Suhas Daftuar: Track tip update time and last new block announcement from each peer
+<a name="l-101"></a><span class="tm">19:14:10</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/06master 14ac7b37c 15Suhas Daftuar: Connect to an extra outbound peer if our tip is stale...
+<a name="l-102"></a><span class="tm">19:14:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd say action: upgrade openssl depends for 0.15.1 or 0.16
+<a name="l-103"></a><span class="tm">19:14:37</span><span class="nk"> &lt;morcos&gt;</span> woohoo!
+<a name="l-104"></a><span class="tm">19:14:38</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj closed pull request #11560: Connect to a new outbound peer if our tip is stale (06master...062017-10-stale-tip-new-peer) 02https://github.com/bitcoin/bitcoin/pull/11560
+<a name="l-105"></a><span class="tm">19:14:43</span><span class="nk"> &lt;achow101&gt;</span> oh, look at that!
+<a name="l-106"></a><span class="tm">19:14:48</span><span class="nk"> &lt;jonasschnelli&gt;</span> \o/
+<a name="l-107"></a><span class="tm">19:14:52</span><span class="nk"> &lt;sdaftuar&gt;</span> yay!
+<a name="l-108"></a><span class="tm">19:14:54</span><span class="nk"> &lt;gmaxwell&gt;</span> our work here is done.
+<a name="l-109"></a><span class="tm">19:14:55</span><span class="nk"> &lt;wumpus&gt;</span> whee
+<a name="l-110"></a><span class="tm">19:14:59</span><span class="nk"> &lt;wumpus&gt;</span> yep, ship it
+<a name="l-111"></a><span class="tm">19:15:02</span><span class="nk"> &lt;sdaftuar&gt;</span> we're shipping master right
+<a name="l-112"></a><span class="tm">19:15:09</span><span class="nk"> &lt;cfields&gt;</span> "This only affects processors that support the BMI1, BMI2 and ADX extensions like
+<a name="l-113"></a><span class="tm">19:15:10</span><span class="nk"> &lt;cfields&gt;</span> Intel Broadwell (5th generation) and later or AMD Ryzen."
+<a name="l-114"></a><span class="tm">19:15:10</span><span class="nk"> &lt;gmaxwell&gt;</span> :P
+<a name="l-115"></a><span class="tm">19:15:11</span><span class="nk"> &lt;achow101&gt;</span> it compiles, shit it
+<a name="l-116"></a><span class="tm">19:15:16</span><span class="nk"> &lt;achow101&gt;</span> *ship
+<a name="l-117"></a><span class="tm">19:15:17</span><span class="nk"> &lt;sipa&gt;</span> ok, backports are go
+<a name="l-118"></a><span class="tm">19:15:20</span><span class="nk"> &lt;wumpus&gt;</span> yes, we're releasing 0.16.0.2 instead of 0.15.0.2 :p
+<a name="l-119"></a><span class="tm">19:15:21</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">achow101:</span> exactly
+<a name="l-120"></a><span class="tm">19:15:38</span><span class="nk"> &lt;sipa&gt;</span> i do want to stress that these backports may be non-trivial compared to most point releases
+<a name="l-121"></a><span class="tm">19:15:50</span><span class="nk"> &lt;wumpus&gt;</span> yes, definitely
+<a name="l-122"></a><span class="tm">19:15:57</span><span class="nk"> &lt;BlueMatt&gt;</span> yea :(
+<a name="l-123"></a><span class="tm">19:16:00</span><span class="nk"> &lt;sipa&gt;</span> and we should review the patches, and possibly still decide to drop some
+<a name="l-124"></a><span class="tm">19:16:06</span><span class="nk"> &lt;gmaxwell&gt;</span> all the more reason to get a RC out stat.
+<a name="l-125"></a><span class="tm">19:16:08</span><span class="nk"> &lt;cfields&gt;</span> right. in addition to the usual checks, everyone should check their own fixes
+<a name="l-126"></a><span class="tm">19:16:10</span><span class="nk"> &lt;meshcollider&gt;</span> its massive for a point-point release lol
+<a name="l-127"></a><span class="tm">19:16:17</span><span class="nk"> &lt;wumpus&gt;</span> yes, that's what rcs are for
+<a name="l-128"></a><span class="tm">19:16:24</span><span class="nk"> &lt;sipa&gt;</span> absolutely
+<a name="l-129"></a><span class="tm">19:16:29</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">meshcollider:</span> it's completely silly for a .0.2
+<a name="l-130"></a><span class="tm">19:16:29</span><span class="nk"> &lt;achow101&gt;</span> we've got two weeks
+<a name="l-131"></a><span class="tm">19:16:31</span><span class="nk"> &lt;MarcoFalke&gt;</span> its not even a point-release
+<a name="l-132"></a><span class="tm">19:16:35</span><span class="nk"> &lt;sipa&gt;</span> just pointing out that we're not really done
+<a name="l-133"></a><span class="tm">19:16:54</span><span class="nk"> &lt;meshcollider&gt;</span> so rc today?
+<a name="l-134"></a><span class="tm">19:17:00</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> don't forget the version bumps :)
+<a name="l-135"></a><span class="tm">19:17:02</span><span class="nk"> &lt;BlueMatt&gt;</span> hopefully? review backports
+<a name="l-136"></a><span class="tm">19:17:09</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> review backports first
+<a name="l-137"></a><span class="tm">19:17:15</span><span class="nk"> &lt;gmaxwell&gt;</span> it's only a pointpoint release because we communicated the extended SW wallet support would be in 0.15.1. Otherwise this would be 0.15.1.
+<a name="l-138"></a><span class="tm">19:17:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> good point
+<a name="l-139"></a><span class="tm">19:17:17</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="cmd">#11592</span><span class="cmdline"></span>
+<a name="l-140"></a><span class="tm">19:17:18</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11592 | WIP 0.15: Backports by MarcoFalke · Pull Request #11592 · bitcoin/bitcoin · GitHub
+<a name="l-141"></a><span class="tm">19:17:21</span><span class="nk"> &lt;achow101&gt;</span> so review backports and rc tomorrow?
+<a name="l-142"></a><span class="tm">19:17:35</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I understand, but I expected a much smaller release
+<a name="l-143"></a><span class="tm">19:17:59</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">wumpus:</span> so did we all, i think
+<a name="l-144"></a><span class="tm">19:18:16</span><span class="nk"> &lt;wumpus&gt;</span> normally we don't even publically announce minor-minor releases, let alone have an extended rc cycle
+<a name="l-145"></a><span class="tm">19:18:41</span><span class="nk"> &lt;wumpus&gt;</span> but that's definitely needed now
+<a name="l-146"></a><span class="tm">19:18:47</span><span class="nk"> &lt;achow101&gt;</span> note to self for future: don't promise things in version numbers
+<a name="l-147"></a><span class="tm">19:19:04</span><span class="nk"> &lt;jtimon&gt;</span> achow101:
+<a name="l-148"></a><span class="tm">19:19:06</span><span class="nk"> &lt;jtimon&gt;</span> +1
+<a name="l-149"></a><span class="tm">19:19:07</span><span class="nk"> &lt;sipa&gt;</span> we should have called it 0.15.$SEGWIT
+<a name="l-150"></a><span class="tm">19:19:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> good point
+<a name="l-151"></a><span class="tm">19:19:17</span><span class="nk"> &lt;gmaxwell&gt;</span> beyond the B2X split fix, I think this release is pretty trivial.
+<a name="l-152"></a><span class="tm">19:19:18</span><span class="nk"> &lt;sipa&gt;</span> but i agree, achow101
+<a name="l-153"></a><span class="tm">19:19:32</span><span class="nk"> &lt;gmaxwell&gt;</span> fixes*
+<a name="l-154"></a><span class="tm">19:19:35</span><span class="nk"> &lt;wumpus&gt;</span> don't promise things, period :)
+<a name="l-155"></a><span class="tm">19:20:03</span><span class="nk"> &lt;jonasschnelli&gt;</span> ^ (especially not on a timeline)
+<a name="l-156"></a><span class="tm">19:20:17</span><span class="nk"> &lt;gmaxwell&gt;</span> well if you'd be more comfortable calling it 0.15.1 I'd support that too. it's not like it's a big deal to say 'nope segwit stuff got pushed back due to snafu-mitigation'
+<a name="l-157"></a><span class="tm">19:20:58</span><span class="nk"> &lt;jtimon&gt;</span> I would prefer to call it 0.15.1, but not a big deal\
+<a name="l-158"></a><span class="tm">19:20:59</span><span class="nk"> &lt;cfields&gt;</span> from now on, we'll promise new features at block heights rather than timestamps :p
+<a name="l-159"></a><span class="tm">19:21:08</span><span class="nk"> &lt;sipa&gt;</span> we could of course also include #11167 (support for sending to bech32) and call it 0.15.1 *ducks*
+<a name="l-160"></a><span class="tm">19:21:14</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11167 | Full BIP173 (Bech32) support by sipa · Pull Request #11167 · bitcoin/bitcoin · GitHub
+<a name="l-161"></a><span class="tm">19:21:22</span><span class="nk"> &lt;gmaxwell&gt;</span> too bad that has a bunch of refactors.
+<a name="l-162"></a><span class="tm">19:21:24</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj pushed 1 new commit to 060.15: 02https://github.com/bitcoin/bitcoin/commit/01e173f5b8985ad5ec14c1621531a003635f9800
+<a name="l-163"></a><span class="tm">19:21:24</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/060.15 1401e173f 15Wladimir J. van der Laan: build: Bump version to 0.15.0.2...
+<a name="l-164"></a><span class="tm">19:21:35</span><span class="nk"> &lt;sipa&gt;</span> (that's not a serious suggestion, please let's not delay things further)
+<a name="l-165"></a><span class="tm">19:22:00</span><span class="nk"> &lt;wumpus&gt;</span> oh okay, calling it 0.15.1 is also ok with me
+<a name="l-166"></a><span class="tm">19:22:09</span><span class="nk"> &lt;gmaxwell&gt;</span> for some context there, new electrum shipped that has 'segwit wallet support' -- which for them is BIP173 only.
+<a name="l-167"></a><span class="tm">19:22:17</span><span class="nk"> &lt;jonasschnelli&gt;</span> 0.15.1 seems to make more sense to me... I don't think many people do expect SW Wallet support
+<a name="l-168"></a><span class="tm">19:22:22</span><span class="nk"> &lt;wumpus&gt;</span> ok
+<a name="l-169"></a><span class="tm">19:22:35</span><span class="nk"> &lt;gmaxwell&gt;</span> so already getting some reports of not being able to send to it from Bitcoin Core, ::sigh:: :)
+<a name="l-170"></a><span class="tm">19:22:38</span><span class="nk"> &lt;wumpus&gt;</span> yes, definitely better
+<a name="l-171"></a><span class="tm">19:22:48</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">gmaxwell:</span> well, electrum's problem
+<a name="l-172"></a><span class="tm">19:23:06</span><span class="nk"> &lt;jonasschnelli&gt;</span> Slow transition.... no hurry
+<a name="l-173"></a><span class="tm">19:23:42</span><span class="nk"> &lt;wumpus&gt;</span> indeed, just a matter of time
+<a name="l-174"></a><span class="tm">19:23:59</span><span class="nk"> &lt;wumpus&gt;</span> some software can be ahead of others, that's what you'll always have
+<a name="l-175"></a><span class="tm">19:24:19</span><span class="nk"> &lt;instagibbs&gt;</span> Electrum supports multiwallet, it's fine
+<a name="l-176"></a><span class="tm">19:25:27</span><span class="nk"> &lt;wumpus&gt;</span> great
+<a name="l-177"></a><span class="tm">19:25:46</span><span class="nk"> &lt;sdaftuar&gt;</span> release notes?  anyone started that?
+<a name="l-178"></a><span class="tm">19:25:46</span><span class="nk"> &lt;wumpus&gt;</span> so, everyone agree that the release will be 0.15.1?
+<a name="l-179"></a><span class="tm">19:25:51</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">wumpus:</span> sounds good
+<a name="l-180"></a><span class="tm">19:26:00</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">wumpus:</span> ack
+<a name="l-181"></a><span class="tm">19:26:06</span><span class="nk"> &lt;gmaxwell&gt;</span> sounds fine.
+<a name="l-182"></a><span class="tm">19:26:11</span><span class="nk"> &lt;promag&gt;</span> lgtm
+<a name="l-183"></a><span class="tm">19:26:45</span><span class="nk"> &lt;sipa&gt;</span> ack
+<a name="l-184"></a><span class="tm">19:26:55</span><span class="nk"> &lt;meshcollider&gt;</span> is there a TODO for release notes 0.15.0.2?
+<a name="l-185"></a><span class="tm">19:26:59</span><span class="nk"> &lt;meshcollider&gt;</span> can only find 16.0
+<a name="l-186"></a><span class="tm">19:27:05</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">meshcollider:</span> on the 0.15 branch
+<a name="l-187"></a><span class="tm">19:27:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> [13bitcoin] 15laanwj 04force-pushed 060.15 from 1401e173f to 14f224cbc: 02https://github.com/bitcoin/bitcoin/commits/0.15
+<a name="l-188"></a><span class="tm">19:27:34</span><span class="nk"> &lt;bitcoin-git&gt;</span> 13bitcoin/060.15 14f224cbc 15Wladimir J. van der Laan: build: Bump version to 0.15.1...
+<a name="l-189"></a><span class="tm">19:27:57</span><span class="nk"> &lt;achow101&gt;</span> 0.15.1 is fine with me
+<a name="l-190"></a><span class="tm">19:28:38</span><span class="nk"> &lt;wumpus&gt;</span> an actual point release, this feels much better
+<a name="l-191"></a><span class="tm">19:28:38</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="hi">wumpus:</span> I mean an issue like 11054
+<a name="l-192"></a><span class="tm">19:28:46</span><span class="nk"> &lt;wumpus&gt;</span> release notes are certainly important, though they don't need to be ready for rc1
+<a name="l-193"></a><span class="tm">19:28:49</span><span class="nk"> &lt;morcos&gt;</span> one comment about the version
+<a name="l-194"></a><span class="tm">19:28:56</span><span class="nk"> &lt;morcos&gt;</span> i talked to Alyssa from CoinDesk abou tthis
+<a name="l-195"></a><span class="tm">19:29:04</span><span class="nk"> &lt;morcos&gt;</span> not sure if they published an article or about to
+<a name="l-196"></a><span class="tm">19:29:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">meshcollider:</span> no, we don't make topics that for minor releases generally
+<a name="l-197"></a><span class="tm">19:29:20</span><span class="nk"> &lt;meshcollider&gt;</span> ah ok
+<a name="l-198"></a><span class="tm">19:30:23</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">morcos:</span> should be easy to correct their article, no?
+<a name="l-199"></a><span class="tm">19:30:44</span><span class="nk"> &lt;wumpus&gt;</span> if you're in contact with them please let them know this is not the .1 they're expecting
+<a name="l-200"></a><span class="tm">19:30:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> Maybe tell here that the SW2X aware version is now 0.15.1 and SW wallet version is *unknown" for now?
+<a name="l-201"></a><span class="tm">19:30:56</span><span class="nk"> &lt;morcos&gt;</span> yeah i don't see anything majorly published, i'll tell her now
+<a name="l-202"></a><span class="tm">19:31:03</span><span class="nk"> &lt;morcos&gt;</span> who knows if she was going to even say anything
+<a name="l-203"></a><span class="tm">19:31:37</span><span class="nk"> &lt;jtimon&gt;</span> just s/0.15.1/0.15.2 and s/0.15.0.2/0.15.1/
+<a name="l-204"></a><span class="tm">19:31:46</span><span class="nk"> &lt;wumpus&gt;</span> yes, segwit wallet delayed due to necessary s2x preparations :(
+<a name="l-205"></a><span class="tm">19:32:09</span><span class="nk"> &lt;BlueMatt&gt;</span> s/necessary/hopefully unecessary, though possibly necessary/
+<a name="l-206"></a><span class="tm">19:32:16</span><span class="nk"> &lt;sipa&gt;</span> arguably these were necessary preprations anyway - they're not specific to 2X
+<a name="l-207"></a><span class="tm">19:32:23</span><span class="nk"> &lt;BlueMatt&gt;</span> indeed
+<a name="l-208"></a><span class="tm">19:32:27</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">BlueMatt:</span> better to be prepared at least
+<a name="l-209"></a><span class="tm">19:32:27</span><span class="nk"> &lt;BlueMatt&gt;</span> we now have outbound peer rotation!
+<a name="l-210"></a><span class="tm">19:32:30</span><span class="nk"> &lt;sipa&gt;</span> we just had to prioritize these P2P improvements
+<a name="l-211"></a><span class="tm">19:32:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> but more pressing since SW2X
+<a name="l-212"></a><span class="tm">19:32:33</span><span class="nk"> &lt;BlueMatt&gt;</span> :bottlepop emoji"
+<a name="l-213"></a><span class="tm">19:32:35</span><span class="nk"> &lt;BlueMatt&gt;</span> :
+<a name="l-214"></a><span class="tm">19:32:41</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> sure, but the reason this was prioeritized over segwit I mean
+<a name="l-215"></a><span class="tm">19:32:42</span><span class="nk"> &lt;gmaxwell&gt;</span> yes, are generally good improvements which we should have done eventually regardless.
+<a name="l-216"></a><span class="tm">19:33:04</span><span class="nk"> &lt;morcos&gt;</span> ok i emailed her, i'm fine to switch it, i just wanted to be sure there wasn't already some article out there
+<a name="l-217"></a><span class="tm">19:33:21</span><span class="nk"> &lt;jonasschnelli&gt;</span> Who cares. :)
+<a name="l-218"></a><span class="tm">19:33:22</span><span class="nk"> &lt;sipa&gt;</span> i went back and edited some reddit comments i made about 0.15.1
+<a name="l-219"></a><span class="tm">19:33:27</span><span class="nk"> &lt;sipa&gt;</span> i think it's fine
+<a name="l-220"></a><span class="tm">19:33:38</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> inaccurate details in a press article about bitcoin?! Good thing you prevent that from ever happening.
+<a name="l-221"></a><span class="tm">19:33:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> Things are in-move....
+<a name="l-222"></a><span class="tm">19:33:51</span><span class="nk"> &lt;BlueMatt&gt;</span> lolol
+<a name="l-223"></a><span class="tm">19:33:52</span><span class="nk"> &lt;wumpus&gt;</span> then after this we can do segwit wallet as 0.15.2, or 0.16.0, depending on what makes sense in the time frame that things are ready
+<a name="l-224"></a><span class="tm">19:34:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yeah.. I would not promis 0.15.2 now (even if it's very likely to happen with SW Wallet)
+<a name="l-225"></a><span class="tm">19:34:36</span><span class="nk"> &lt;sipa&gt;</span> ya
+<a name="l-226"></a><span class="tm">19:34:52</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> indeed
+<a name="l-227"></a><span class="tm">19:35:13</span><span class="nk"> &lt;jtimon&gt;</span> perhaps we could consider doing 0.16 faster instead of doing a 0.15.2 release with segwit?
+<a name="l-228"></a><span class="tm">19:35:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> features are not tied to releases... releases are tied to the planed timeframe
+<a name="l-229"></a><span class="tm">19:35:37</span><span class="nk"> &lt;jtimon&gt;</span> I guess it would be a bad precedent
+<a name="l-230"></a><span class="tm">19:35:43</span><span class="nk"> &lt;BlueMatt&gt;</span> ok, more topics?
+<a name="l-231"></a><span class="tm">19:35:47</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> I'm ok with that - though the original reasoning was exactly opposite, add some time to 0.16 to be able to do a segwit release in between - but yeah, things have changed
+<a name="l-232"></a><span class="tm">19:36:03</span><span class="nk"> &lt;gmaxwell&gt;</span> so 0.16 release next week?
+<a name="l-233"></a><span class="tm">19:36:09 </span><span class="nka">* gmaxwell</span> <span class="ac">ducks</span>
+<a name="l-234"></a><span class="tm">19:36:09</span><span class="nk"> &lt;jonasschnelli&gt;</span> ;-)
+<a name="l-235"></a><span class="tm">19:36:16</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#action </span><span class="cmdline">activate segwit?</span>
+<a name="l-236"></a><span class="tm">19:36:31</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jtimon:</span> also to not have another hairy, big set of backports
+<a name="l-237"></a><span class="tm">19:36:43</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> always optimistic :)
+<a name="l-238"></a><span class="tm">19:36:57</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">wumpus:</span> yeah I'm perhaps more worried about the latter
+<a name="l-239"></a><span class="tm">19:37:20 </span><span class="nka">* MarcoFalke</span> <span class="ac">have been obtained by ChainCode</span>
+<a name="l-240"></a><span class="tm">19:37:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> \o/
+<a name="l-241"></a><span class="tm">19:37:38</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">MarcoFalke:</span> congrats!
+<a name="l-242"></a><span class="tm">19:37:40</span><span class="nk"> &lt;wumpus&gt;</span> congratulations MarcoFalke
+<a name="l-243"></a><span class="tm">19:37:41</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">MarcoFalke:</span> congrats :)
+<a name="l-244"></a><span class="tm">19:37:42</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">MarcoFalke:</span> congrats.
+<a name="l-245"></a><span class="tm">19:37:53</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">MarcoFalke:</span> Congrats. Have fun in NY!
+<a name="l-246"></a><span class="tm">19:37:55</span><span class="nk"> &lt;sdaftuar&gt;</span> <span class="hi">MarcoFalke:</span> welcome! :)
+<a name="l-247"></a><span class="tm">19:37:55</span><span class="nk"> &lt;instagibbs&gt;</span> what does that bring the commit % to :P
+<a name="l-248"></a><span class="tm">19:38:01</span><span class="nk"> &lt;jtimon&gt;</span> yeah, cool
+<a name="l-249"></a><span class="tm">19:38:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">instagibbs:</span> shhhhhhhhhhh
+<a name="l-250"></a><span class="tm">19:38:10</span><span class="nk"> &lt;instagibbs&gt;</span> congrats!
+<a name="l-251"></a><span class="tm">19:38:15</span><span class="nk"> &lt;cfields&gt;</span> heh
+<a name="l-252"></a><span class="tm">19:38:25</span><span class="nk"> &lt;BlueMatt&gt;</span> in the future, all coredev.tech events are required to occur in ny to minimize total flight time =D
+<a name="l-253"></a><span class="tm">19:38:26</span><span class="nk"> &lt;meshcollider&gt;</span> \o/
+<a name="l-254"></a><span class="tm">19:38:27</span><span class="nk"> &lt;instagibbs&gt;</span> Eastern US powerhouse too :)
+<a name="l-255"></a><span class="tm">19:38:27</span><span class="nk"> &lt;jtimon&gt;</span> chaincode conspiracies coming...
+<a name="l-256"></a><span class="tm">19:38:32</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">instagibbs:</span> It's not retroactive ;)
+<a name="l-257"></a><span class="tm">19:38:33</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">instagibbs:</span> which ones, the ones we do ourselves or the ones under our blockstream contract?
+<a name="l-258"></a><span class="tm">19:38:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> ChainCodeLabs marketing departure must confront now with new ChainCode Core conspiracy
+<a name="l-259"></a><span class="tm">19:38:44</span><span class="nk"> &lt;instagibbs&gt;</span> morcos, one and the same, right?
+<a name="l-260"></a><span class="tm">19:38:47</span><span class="nk"> &lt;jtimon&gt;</span> <span class="hi">BlueMatt:</span> lol
+<a name="l-261"></a><span class="tm">19:38:49</span><span class="nk"> &lt;achow101&gt;</span> chaincore
+<a name="l-262"></a><span class="tm">19:39:01</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-263"></a><span class="tm">19:39:09</span><span class="nk"> &lt;cfields&gt;</span> BlockChain
+<a name="l-264"></a><span class="tm">19:39:10</span><span class="nk"> &lt;cfields&gt;</span> wait...
+<a name="l-265"></a><span class="tm">19:39:17</span><span class="nk"> &lt;sdaftuar&gt;</span> lol
+<a name="l-266"></a><span class="tm">19:39:18</span><span class="nk"> &lt;gmaxwell&gt;</span> lol
+<a name="l-267"></a><span class="tm">19:39:19</span><span class="nk"> &lt;morcos&gt;</span> took you long enough
+<a name="l-268"></a><span class="tm">19:39:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> lol
+<a name="l-269"></a><span class="tm">19:39:33</span><span class="nk"> &lt;sipa&gt;</span> ChainStream
+<a name="l-270"></a><span class="tm">19:39:40</span><span class="nk"> &lt;wumpus&gt;</span> hah!
+<a name="l-271"></a><span class="tm">19:39:41</span><span class="nk"> &lt;jtimon&gt;</span> codestream
+<a name="l-272"></a><span class="tm">19:39:49</span><span class="nk"> &lt;jtimon&gt;</span> anyway, other topics?
+<a name="l-273"></a><span class="tm">19:40:35</span><span class="nk"> &lt;wumpus&gt;</span> let's get backporting then
+<a name="l-274"></a><span class="tm">19:40:52</span><span class="nk"> &lt;gmaxwell&gt;</span> I thought we were gonna ship master! :P
+<a name="l-275"></a><span class="tm">19:41:21</span><span class="nk"> &lt;jtimon&gt;</span> but that's afterwards, release 0.15.1, then rc master the day after, no?
+<a name="l-276"></a><span class="tm">19:41:21</span><span class="nk"> &lt;wumpus&gt;</span> we coulld do that too and make people choose :p
+<a name="l-277"></a><span class="tm">19:41:43</span><span class="nk"> &lt;gmaxwell&gt;</span> WE HERD U LIK CHOICES
+<a name="l-278"></a><span class="tm">19:41:53</span><span class="nk"> &lt;wumpus&gt;</span> YAH
+<a name="l-279"></a><span class="tm">19:42:15</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

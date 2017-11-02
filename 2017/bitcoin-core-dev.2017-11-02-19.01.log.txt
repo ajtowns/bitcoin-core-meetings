@@ -1,0 +1,279 @@
+19:01:26 <wumpus> #startmeeting
+19:01:26 <lightningbot> Meeting started Thu Nov  2 19:01:26 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:26 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:33 <jonasschnelli> hi
+19:01:36 <achow101> hi
+19:01:42 <meshcollider> hi
+19:01:47 <jtimon> hi
+19:01:58 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag
+19:02:06 <instagibbs> here
+19:02:10 <sdaftuar> hello
+19:02:12 <cfields> hi
+19:02:17 <BlueMatt> 15.0.2
+19:02:28 <MarcoFalke> #topic 0.15.0.2
+19:02:38 <wumpus> yes, good idea
+19:02:48 <achow101> it seems like things keep getting added to the milestone
+19:02:54 <cfields> i think the outstanding PRs are pretty much ready to go
+19:03:02 <wumpus> great!
+19:03:18 <wumpus> achow101: only cfields's libevent fix
+19:03:26 <BlueMatt> 11593 needs more review, 11560 could just be merged
+19:03:35 <morcos> there are 3 PR's left in question: #11100 #11560 #11593
+19:03:37 <BlueMatt> though I think 11593 is pretty reviewable
+19:03:38 <gribble> https://github.com/bitcoin/bitcoin/issues/11100 | Fix confusing blockmax{size,weight} options, dont default to throwing away money by TheBlueMatt · Pull Request #11100 · bitcoin/bitcoin · GitHub
+19:03:38 <kanzure> hi.
+19:03:38 <meshcollider> and more backports
+19:03:40 <gribble> https://github.com/bitcoin/bitcoin/issues/11560 | Connect to a new outbound peer if our tip is stale by sdaftuar · Pull Request #11560 · bitcoin/bitcoin · GitHub
+19:03:41 <gribble> https://github.com/bitcoin/bitcoin/issues/11593 | rpc: work-around an upstream libevent bug by theuni · Pull Request #11593 · bitcoin/bitcoin · GitHub
+19:03:46 <BlueMatt> plus backports needs fixing
+19:03:53 <wumpus> the other one is just the backports which need to be done to support all that
+19:03:55 <morcos> i think whichever we can't merge to master and backport right now, we need to just skip..
+19:04:12 <achow101> backports is failing travis right now
+19:04:15 <morcos> BlueMatt: backports for all others are fine... sdaftuar has tiny test fix
+19:04:38 <BlueMatt> yea
+19:04:52 <wumpus> ok
+19:04:52 <morcos> although they could use more review, both sdaftuar and ryanofsky are reviewing now
+19:05:35 <morcos> so we should just make decisions on those last 3 PR's..  11100 is in master, so question is only whether to add it to backports?   any objections?
+19:06:10 <wumpus> none apparently
+19:06:11 <gmaxwell> I really want to see 11100 appear in a release.
+19:06:17 <BlueMatt> backports are already huge, but thats a simple pr and would be very nice to have
+19:06:43 <gmaxwell> It's not the only misconfig now (I see blocks that clearly have minrelay fee cranked up-- e.g. legacy of 0.11-era mempool bloat attacks) but it's the biggest one.
+19:06:44 <wumpus> although I think we should stop moving the goalposts
+19:06:50 <MarcoFalke> ok, will amend the pull with sdaftuar's fix and 11100
+19:07:01 <sipa> 11560 is mergable i think
+19:07:07 <gmaxwell> Well, if there are any issues in backporting, feel free to drop IMO.
+19:07:08 <BlueMatt> agreed
+19:07:20 <wumpus> the point of 0.15.0.2 is to protect against an immediate problem, and we should release it if it improves the situation anything from 0.15.0.1
+19:07:39 <BlueMatt> ok, last point of order then is the libevent fix
+19:07:43 <BlueMatt> cfields: you want to say anything?
+19:08:37 <jtimon> ack on #11100 backport
+19:08:40 <gribble> https://github.com/bitcoin/bitcoin/issues/11100 | Fix confusing blockmax{size,weight} options, dont default to throwing away money by TheBlueMatt · Pull Request #11100 · bitcoin/bitcoin · GitHub
+19:08:58 <cfields> i've narrowed the workaround even further, it basically just affects a single stable release
+19:09:15 <jtimon> curious, why backport all in one pr?
+19:09:15 <BlueMatt> (the release that people have been switching to as they upgrade ubuntu, afaiu, fwiw)
+19:09:27 <wumpus> jtimon: because many things depend on each other
+19:09:28 <promag> hi
+19:09:43 <MarcoFalke> jtimon: I am not going to push to non-master branches
+19:09:45 <wumpus> jtimon: many of them are not trivial, stand-alone backports... if only
+19:09:55 <MarcoFalke> also what wumpus said
+19:10:31 <cfields> grr, sorry, irc client fell off
+19:10:37 <wumpus> this way there's at least the chance to review, and for travis to test the backported code
+19:10:53 * sipa picks up the irc lcient and hands it to cfields
+19:10:54 <MarcoFalke> So action merge and bp 11560?
+19:11:04 <sipa> MarcoFalke: ack
+19:11:07 <achow101> +1
+19:11:31 <jonasschnelli> BTW: should we also consider upgrading depends openssl due to CVE-2017-3736?
+19:11:36 <jonasschnelli> Only BIP70 stuff is affected though
+19:11:37 <BlueMatt> +merge and bp 11560
+19:11:44 <bitcoin-git> [13bitcoin] 15laanwj pushed 3 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/bfb270acfa30...7008b07005c5
+19:11:45 <bitcoin-git> 13bitcoin/06master 146b58360 15Cory Fields: rpc: work-around an upstream libevent bug...
+19:11:45 <bitcoin-git> 13bitcoin/06master 1497932cd 15Cory Fields: rpc: further constrain the libevent workaround...
+19:11:46 <bitcoin-git> 13bitcoin/06master 147008b07 15Wladimir J. van der Laan: Merge #11593: rpc: work-around an upstream libevent bug...
+19:12:04 <wumpus> jonasschnelli: how dangerous is that?
+19:12:10 <jonasschnelli> Not really...
+19:12:12 <jonasschnelli> dangerous
+19:12:13 <gmaxwell> jonasschnelli: man, openssl upgrades are really hard to review. :(
+19:12:21 <wumpus> if not, let postpone it to 0.15.1?
+19:12:21 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #11593: rpc: work-around an upstream libevent bug (06master...06fix-libevent-cb) 02https://github.com/bitcoin/bitcoin/pull/11593
+19:12:27 <jonasschnelli> but we are using open ssl 1.0.1k which is no longer maintained
+19:12:30 <sipa> The amount of resources
+19:12:30 <sipa> required for such an attack would be very significant and likely only
+19:12:30 <sipa> accessible to a limited number of attackers. An attacker would
+19:12:30 <sipa> additionally need online access to an unpatched system using the target
+19:12:33 <sipa> private key in a scenario with persistent DH parameters and a private
+19:12:35 <sipa> key that is shared between multiple clients.
+19:12:41 <gmaxwell> I'd rather be spending effort into further eliminating openssl. :)
+19:12:46 <jonasschnelli> 0.15.1 should be fine IMO
+19:12:47 <jtimon> is anybody using bip70?
+19:12:57 <jonasschnelli> BIP70 without openssl is non-trivial to impossible
+19:13:08 <jonasschnelli> we could remove BIP70 support... *duck* (luke-jr)
+19:13:22 <achow101> jtimon: I'm pretty sure bitpay does
+19:13:23 <BlueMatt> we could remove the ssl-checking part of bip70
+19:13:25 <jonasschnelli> (no tests, no active maintenance)
+19:13:25 <morcos> cfields: are there any changes to our httpserver/libevent code between master and 0.15, or its fine to just backport 11593 without thinking abou tit
+19:13:30 <jtimon> achow101: thanks
+19:13:34 <BlueMatt> and just treat it as a "better payment field"
+19:13:49 <gmaxwell> meh, lets not discuss that now.
+19:13:54 <jonasschnelli> Yes
+19:13:58 <cfields> morcos: i'll double-check, but 99% a dumb backport is enough
+19:14:08 <bitcoin-git> [13bitcoin] 15laanwj pushed 6 new commits to 06master: 02https://github.com/bitcoin/bitcoin/compare/7008b07005c5...2f959a58744d
+19:14:08 <bitcoin-git> 13bitcoin/06master 142d4327d 15Suhas Daftuar: net: Allow connecting to extra outbound peers
+19:14:09 <bitcoin-git> 13bitcoin/06master 14db32a65 15Suhas Daftuar: Track tip update time and last new block announcement from each peer
+19:14:10 <bitcoin-git> 13bitcoin/06master 14ac7b37c 15Suhas Daftuar: Connect to an extra outbound peer if our tip is stale...
+19:14:18 <jonasschnelli> I'd say action: upgrade openssl depends for 0.15.1 or 0.16
+19:14:37 <morcos> woohoo!
+19:14:38 <bitcoin-git> [13bitcoin] 15laanwj closed pull request #11560: Connect to a new outbound peer if our tip is stale (06master...062017-10-stale-tip-new-peer) 02https://github.com/bitcoin/bitcoin/pull/11560
+19:14:43 <achow101> oh, look at that!
+19:14:48 <jonasschnelli> \o/
+19:14:52 <sdaftuar> yay!
+19:14:54 <gmaxwell> our work here is done.
+19:14:55 <wumpus> whee
+19:14:59 <wumpus> yep, ship it
+19:15:02 <sdaftuar> we're shipping master right
+19:15:09 <cfields> "This only affects processors that support the BMI1, BMI2 and ADX extensions like
+19:15:10 <cfields> Intel Broadwell (5th generation) and later or AMD Ryzen."
+19:15:10 <gmaxwell> :P
+19:15:11 <achow101> it compiles, shit it
+19:15:16 <achow101> *ship
+19:15:17 <sipa> ok, backports are go
+19:15:20 <wumpus> yes, we're releasing 0.16.0.2 instead of 0.15.0.2 :p
+19:15:21 <morcos> achow101: exactly
+19:15:38 <sipa> i do want to stress that these backports may be non-trivial compared to most point releases
+19:15:50 <wumpus> yes, definitely
+19:15:57 <BlueMatt> yea :(
+19:16:00 <sipa> and we should review the patches, and possibly still decide to drop some
+19:16:06 <gmaxwell> all the more reason to get a RC out stat.
+19:16:08 <cfields> right. in addition to the usual checks, everyone should check their own fixes
+19:16:10 <meshcollider> its massive for a point-point release lol
+19:16:17 <wumpus> yes, that's what rcs are for
+19:16:24 <sipa> absolutely
+19:16:29 <wumpus> meshcollider: it's completely silly for a .0.2
+19:16:29 <achow101> we've got two weeks
+19:16:31 <MarcoFalke> its not even a point-release
+19:16:35 <sipa> just pointing out that we're not really done
+19:16:54 <meshcollider> so rc today?
+19:17:00 <cfields> wumpus: don't forget the version bumps :)
+19:17:02 <BlueMatt> hopefully? review backports
+19:17:09 <sipa> meshcollider: review backports first
+19:17:15 <gmaxwell> it's only a pointpoint release because we communicated the extended SW wallet support would be in 0.15.1. Otherwise this would be 0.15.1.
+19:17:15 <wumpus> cfields: good point
+19:17:17 <sdaftuar> #11592
+19:17:18 <gribble> https://github.com/bitcoin/bitcoin/issues/11592 | WIP 0.15: Backports by MarcoFalke · Pull Request #11592 · bitcoin/bitcoin · GitHub
+19:17:21 <achow101> so review backports and rc tomorrow?
+19:17:35 <wumpus> gmaxwell: I understand, but I expected a much smaller release
+19:17:59 <sipa> wumpus: so did we all, i think
+19:18:16 <wumpus> normally we don't even publically announce minor-minor releases, let alone have an extended rc cycle
+19:18:41 <wumpus> but that's definitely needed now
+19:18:47 <achow101> note to self for future: don't promise things in version numbers
+19:19:04 <jtimon> achow101:
+19:19:06 <jtimon> +1
+19:19:07 <sipa> we should have called it 0.15.$SEGWIT
+19:19:08 <wumpus> achow101: good point
+19:19:17 <gmaxwell> beyond the B2X split fix, I think this release is pretty trivial.
+19:19:18 <sipa> but i agree, achow101
+19:19:32 <gmaxwell> fixes*
+19:19:35 <wumpus> don't promise things, period :)
+19:20:03 <jonasschnelli> ^ (especially not on a timeline)
+19:20:17 <gmaxwell> well if you'd be more comfortable calling it 0.15.1 I'd support that too. it's not like it's a big deal to say 'nope segwit stuff got pushed back due to snafu-mitigation'
+19:20:58 <jtimon> I would prefer to call it 0.15.1, but not a big deal\
+19:20:59 <cfields> from now on, we'll promise new features at block heights rather than timestamps :p
+19:21:08 <sipa> we could of course also include #11167 (support for sending to bech32) and call it 0.15.1 *ducks*
+19:21:14 <gribble> https://github.com/bitcoin/bitcoin/issues/11167 | Full BIP173 (Bech32) support by sipa · Pull Request #11167 · bitcoin/bitcoin · GitHub
+19:21:22 <gmaxwell> too bad that has a bunch of refactors.
+19:21:24 <bitcoin-git> [13bitcoin] 15laanwj pushed 1 new commit to 060.15: 02https://github.com/bitcoin/bitcoin/commit/01e173f5b8985ad5ec14c1621531a003635f9800
+19:21:24 <bitcoin-git> 13bitcoin/060.15 1401e173f 15Wladimir J. van der Laan: build: Bump version to 0.15.0.2...
+19:21:35 <sipa> (that's not a serious suggestion, please let's not delay things further)
+19:22:00 <wumpus> oh okay, calling it 0.15.1 is also ok with me
+19:22:09 <gmaxwell> for some context there, new electrum shipped that has 'segwit wallet support' -- which for them is BIP173 only.
+19:22:17 <jonasschnelli> 0.15.1 seems to make more sense to me... I don't think many people do expect SW Wallet support
+19:22:22 <wumpus> ok
+19:22:35 <gmaxwell> so already getting some reports of not being able to send to it from Bitcoin Core, ::sigh:: :)
+19:22:38 <wumpus> yes, definitely better
+19:22:48 <sipa> gmaxwell: well, electrum's problem
+19:23:06 <jonasschnelli> Slow transition.... no hurry
+19:23:42 <wumpus> indeed, just a matter of time
+19:23:59 <wumpus> some software can be ahead of others, that's what you'll always have
+19:24:19 <instagibbs> Electrum supports multiwallet, it's fine
+19:25:27 <wumpus> great
+19:25:46 <sdaftuar> release notes?  anyone started that?
+19:25:46 <wumpus> so, everyone agree that the release will be 0.15.1?
+19:25:51 <sdaftuar> wumpus: sounds good
+19:26:00 <jonasschnelli> wumpus: ack
+19:26:06 <gmaxwell> sounds fine.
+19:26:11 <promag> lgtm
+19:26:45 <sipa> ack
+19:26:55 <meshcollider> is there a TODO for release notes 0.15.0.2?
+19:26:59 <meshcollider> can only find 16.0
+19:27:05 <wumpus> meshcollider: on the 0.15 branch
+19:27:34 <bitcoin-git> [13bitcoin] 15laanwj 04force-pushed 060.15 from 1401e173f to 14f224cbc: 02https://github.com/bitcoin/bitcoin/commits/0.15
+19:27:34 <bitcoin-git> 13bitcoin/060.15 14f224cbc 15Wladimir J. van der Laan: build: Bump version to 0.15.1...
+19:27:57 <achow101> 0.15.1 is fine with me
+19:28:38 <wumpus> an actual point release, this feels much better
+19:28:38 <meshcollider> wumpus: I mean an issue like 11054
+19:28:46 <wumpus> release notes are certainly important, though they don't need to be ready for rc1
+19:28:49 <morcos> one comment about the version
+19:28:56 <morcos> i talked to Alyssa from CoinDesk abou tthis
+19:29:04 <morcos> not sure if they published an article or about to
+19:29:08 <wumpus> meshcollider: no, we don't make topics that for minor releases generally
+19:29:20 <meshcollider> ah ok
+19:30:23 <jtimon> morcos: should be easy to correct their article, no?
+19:30:44 <wumpus> if you're in contact with them please let them know this is not the .1 they're expecting
+19:30:49 <jonasschnelli> morcos: Maybe tell here that the SW2X aware version is now 0.15.1 and SW wallet version is *unknown" for now?
+19:30:56 <morcos> yeah i don't see anything majorly published, i'll tell her now
+19:31:03 <morcos> who knows if she was going to even say anything
+19:31:37 <jtimon> just s/0.15.1/0.15.2 and s/0.15.0.2/0.15.1/
+19:31:46 <wumpus> yes, segwit wallet delayed due to necessary s2x preparations :(
+19:32:09 <BlueMatt> s/necessary/hopefully unecessary, though possibly necessary/
+19:32:16 <sipa> arguably these were necessary preprations anyway - they're not specific to 2X
+19:32:23 <BlueMatt> indeed
+19:32:27 <wumpus> BlueMatt: better to be prepared at least
+19:32:27 <BlueMatt> we now have outbound peer rotation!
+19:32:30 <sipa> we just had to prioritize these P2P improvements
+19:32:32 <jonasschnelli> but more pressing since SW2X
+19:32:33 <BlueMatt> :bottlepop emoji"
+19:32:35 <BlueMatt> :
+19:32:41 <wumpus> sipa: sure, but the reason this was prioeritized over segwit I mean
+19:32:42 <gmaxwell> yes, are generally good improvements which we should have done eventually regardless.
+19:33:04 <morcos> ok i emailed her, i'm fine to switch it, i just wanted to be sure there wasn't already some article out there
+19:33:21 <jonasschnelli> Who cares. :)
+19:33:22 <sipa> i went back and edited some reddit comments i made about 0.15.1
+19:33:27 <sipa> i think it's fine
+19:33:38 <gmaxwell> morcos: inaccurate details in a press article about bitcoin?! Good thing you prevent that from ever happening.
+19:33:42 <jonasschnelli> Things are in-move....
+19:33:51 <BlueMatt> lolol
+19:33:52 <wumpus> then after this we can do segwit wallet as 0.15.2, or 0.16.0, depending on what makes sense in the time frame that things are ready
+19:34:35 <jonasschnelli> Yeah.. I would not promis 0.15.2 now (even if it's very likely to happen with SW Wallet)
+19:34:36 <sipa> ya
+19:34:52 <wumpus> jonasschnelli: indeed
+19:35:13 <jtimon> perhaps we could consider doing 0.16 faster instead of doing a 0.15.2 release with segwit?
+19:35:16 <jonasschnelli> features are not tied to releases... releases are tied to the planed timeframe
+19:35:37 <jtimon> I guess it would be a bad precedent
+19:35:43 <BlueMatt> ok, more topics?
+19:35:47 <wumpus> jtimon: I'm ok with that - though the original reasoning was exactly opposite, add some time to 0.16 to be able to do a segwit release in between - but yeah, things have changed
+19:36:03 <gmaxwell> so 0.16 release next week?
+19:36:09 * gmaxwell ducks
+19:36:09 <jonasschnelli> ;-)
+19:36:16 <BlueMatt> #action activate segwit?
+19:36:31 <wumpus> jtimon: also to not have another hairy, big set of backports
+19:36:43 <wumpus> gmaxwell: always optimistic :)
+19:36:57 <jtimon> wumpus: yeah I'm perhaps more worried about the latter
+19:37:20 * MarcoFalke have been obtained by ChainCode
+19:37:30 <jonasschnelli> \o/
+19:37:38 <sipa> MarcoFalke: congrats!
+19:37:40 <wumpus> congratulations MarcoFalke
+19:37:41 <cfields> MarcoFalke: congrats :)
+19:37:42 <gmaxwell> MarcoFalke: congrats.
+19:37:53 <jonasschnelli> MarcoFalke: Congrats. Have fun in NY!
+19:37:55 <sdaftuar> MarcoFalke: welcome! :)
+19:37:55 <instagibbs> what does that bring the commit % to :P
+19:38:01 <jtimon> yeah, cool
+19:38:02 <BlueMatt> instagibbs: shhhhhhhhhhh
+19:38:10 <instagibbs> congrats!
+19:38:15 <cfields> heh
+19:38:25 <BlueMatt> in the future, all coredev.tech events are required to occur in ny to minimize total flight time =D
+19:38:26 <meshcollider> \o/
+19:38:27 <instagibbs> Eastern US powerhouse too :)
+19:38:27 <jtimon> chaincode conspiracies coming...
+19:38:32 <MarcoFalke> instagibbs: It's not retroactive ;)
+19:38:33 <morcos> instagibbs: which ones, the ones we do ourselves or the ones under our blockstream contract?
+19:38:42 <jonasschnelli> ChainCodeLabs marketing departure must confront now with new ChainCode Core conspiracy
+19:38:44 <instagibbs> morcos, one and the same, right?
+19:38:47 <jtimon> BlueMatt: lol
+19:38:49 <achow101> chaincore
+19:39:01 <jonasschnelli> heh
+19:39:09 <cfields> BlockChain
+19:39:10 <cfields> wait...
+19:39:17 <sdaftuar> lol
+19:39:18 <gmaxwell> lol
+19:39:19 <morcos> took you long enough
+19:39:20 <jonasschnelli> lol
+19:39:33 <sipa> ChainStream
+19:39:40 <wumpus> hah!
+19:39:41 <jtimon> codestream
+19:39:49 <jtimon> anyway, other topics?
+19:40:35 <wumpus> let's get backporting then
+19:40:52 <gmaxwell> I thought we were gonna ship master! :P
+19:41:21 <jtimon> but that's afterwards, release 0.15.1, then rc master the day after, no?
+19:41:21 <wumpus> we coulld do that too and make people choose :p
+19:41:43 <gmaxwell> WE HERD U LIK CHOICES
+19:41:53 <wumpus> YAH
+19:42:15 <wumpus> #endmeeting
