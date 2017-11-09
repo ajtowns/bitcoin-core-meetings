@@ -1,0 +1,317 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>#bitcoin-core-dev log</title>
+<style type="text/css">
+/* For the .log.html */
+pre { /*line-height: 125%;*/
+      white-space: pre-wrap; }
+body { background: #f0f0f0; }
+
+body .tm  { color: #007020 }                      /* time */
+body .nk  { color: #062873; font-weight: bold }   /* nick, regular */
+body .nka { color: #007020; font-weight: bold }  /* action nick */
+body .ac  { color: #00A000 }                      /* action line */
+body .hi  { color: #4070a0 }                 /* hilights */
+/* Things to make particular MeetBot commands stick out */
+body .topic     { color: #007020; font-weight: bold }
+body .topicline { color: #000080; font-weight: bold }
+body .cmd       { color: #007020; font-weight: bold }
+body .cmdline  { font-weight: bold }
+
+</style>
+</head>
+
+<body>
+<pre><a name="l-1"></a><span class="tm">19:02:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#startmeeting</span><span class="cmdline"></span>
+<a name="l-2"></a><span class="tm">19:02:18</span><span class="nk"> &lt;lightningbot&gt;</span> Meeting started Thu Nov  9 19:02:18 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+<a name="l-3"></a><span class="tm">19:02:18</span><span class="nk"> &lt;lightningbot&gt;</span> Useful Commands: #action #agreed #help #info #idea #link #topic.
+<a name="l-4"></a><span class="tm">19:02:21</span><span class="nk"> &lt;MarcoFalke&gt;</span> proposed short topic "Signing key for gitian executables"
+<a name="l-5"></a><span class="tm">19:02:27</span><span class="nk"> &lt;meshcollider&gt;</span> Hi
+<a name="l-6"></a><span class="tm">19:02:31</span><span class="nk"> &lt;achow101&gt;</span> hi
+<a name="l-7"></a><span class="tm">19:02:34</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#bitcoin-core-dev </span><span class="cmdline">Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag</span>
+<a name="l-8"></a><span class="tm">19:02:34</span><span class="nk"> &lt;Provoostenator&gt;</span> Hi
+<a name="l-9"></a><span class="tm">19:02:42</span><span class="nk"> &lt;sdaftuar&gt;</span> oh hi
+<a name="l-10"></a><span class="tm">19:02:50</span><span class="nk"> &lt;cfields&gt;</span> hi
+<a name="l-11"></a><span class="tm">19:02:52</span><span class="nk"> &lt;morcos&gt;</span> hi
+<a name="l-12"></a><span class="tm">19:03:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">0.15.1</span>
+<a name="l-13"></a><span class="tm">19:03:05</span><span class="nk"> &lt;instagibbs&gt;</span> hi
+<a name="l-14"></a><span class="tm">19:03:13</span><span class="nk"> &lt;morcos&gt;</span> Release!
+<a name="l-15"></a><span class="tm">19:03:15</span><span class="nk"> &lt;sdaftuar&gt;</span> does it work?
+<a name="l-16"></a><span class="tm">19:03:15</span><span class="nk"> &lt;wumpus&gt;</span> anyone had any bug reports regarding the rc?
+<a name="l-17"></a><span class="tm">19:03:22</span><span class="nk"> &lt;BlueMatt&gt;</span> Release!
+<a name="l-18"></a><span class="tm">19:03:25</span><span class="nk"> &lt;instagibbs&gt;</span> I have not seen any...
+<a name="l-19"></a><span class="tm">19:03:33</span><span class="nk"> &lt;MarcoFalke&gt;</span> release notes missing?
+<a name="l-20"></a><span class="tm">19:03:38</span><span class="nk"> &lt;wumpus&gt;</span> seems that was a short rc cycle then
+<a name="l-21"></a><span class="tm">19:03:43</span><span class="nk"> &lt;achow101&gt;</span> I haven't seen any, but I also don't know how many people are testing it out
+<a name="l-22"></a><span class="tm">19:03:50</span><span class="nk"> &lt;sipa&gt;</span> yes, i think we need a writeup on the P2P changes at least
+<a name="l-23"></a><span class="tm">19:03:50</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> no? I think we have them?
+<a name="l-24"></a><span class="tm">19:03:57</span><span class="nk"> &lt;meshcollider&gt;</span> MarcoFalke I wrote release notes and wumpus already merged
+<a name="l-25"></a><span class="tm">19:04:03</span><span class="nk"> &lt;MarcoFalke&gt;</span> great
+<a name="l-26"></a><span class="tm">19:04:09</span><span class="nk"> &lt;MarcoFalke&gt;</span> Tag and release?
+<a name="l-27"></a><span class="tm">19:04:16</span><span class="nk"> &lt;BlueMatt&gt;</span> there's no release notes on the p2p changes, I think
+<a name="l-28"></a><span class="tm">19:04:18</span><span class="nk"> &lt;BlueMatt&gt;</span> as sipa points out
+<a name="l-29"></a><span class="tm">19:04:21</span><span class="nk"> &lt;sdaftuar&gt;</span> yes there are some
+<a name="l-30"></a><span class="tm">19:04:22</span><span class="nk"> &lt;morcos&gt;</span> yeah i think actually we might as well not release yet, there is no big rush now, so might as well see if any bugs pop up?
+<a name="l-31"></a><span class="tm">19:04:22</span><span class="nk"> &lt;BlueMatt&gt;</span> though that may be fine
+<a name="l-32"></a><span class="tm">19:04:28</span><span class="nk"> &lt;cfields&gt;</span> i suspect many of the people who might've usually been testing rc1 got stuck dealing with drama instead :(
+<a name="l-33"></a><span class="tm">19:04:32</span><span class="nk"> &lt;wumpus&gt;</span> I don't think we should hold up a minor on release notes tbh, unless something really important is missing\
+<a name="l-34"></a><span class="tm">19:05:21</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">morcos:</span> I'm not sure we should drop our guard so easily
+<a name="l-35"></a><span class="tm">19:05:23</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">morcos:</span> there's still a possibility that some miner goes ahead and forks anyways
+<a name="l-36"></a><span class="tm">19:05:28</span><span class="nk"> &lt;BlueMatt&gt;</span> we can tag an rc2 with no changes to encourage testing :p
+<a name="l-37"></a><span class="tm">19:05:29</span><span class="nk"> &lt;wumpus&gt;</span> if it's ready we should just release and move on
+<a name="l-38"></a><span class="tm">19:05:38</span><span class="nk"> &lt;achow101&gt;</span> like these guys: https://lists.linuxfoundation.org/pipermail/bitcoin-segwit2x/2017-November/000689.html
+<a name="l-39"></a><span class="tm">19:05:39</span><span class="nk"> &lt;BlueMatt&gt;</span> but, yea, I think we should release
+<a name="l-40"></a><span class="tm">19:05:42</span><span class="nk"> &lt;jonasschnelli&gt;</span> ack
+<a name="l-41"></a><span class="tm">19:05:44</span><span class="nk"> &lt;meshcollider&gt;</span> Hmm did I miss something? I thought I wrote up
+<a name="l-42"></a><span class="tm">19:05:52</span><span class="nk"> &lt;BlueMatt&gt;</span> even the idiots running a few hundred btc1 nodes may cause disruption and 15.1 can help
+<a name="l-43"></a><span class="tm">19:05:55</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> in fact, at least one mining pool has announced they intend to
+<a name="l-44"></a><span class="tm">19:06:09</span><span class="nk"> &lt;meshcollider&gt;</span> ACK on release though, can just do 0.15.1.1 if it's got a bug ;)
+<a name="l-45"></a><span class="tm">19:06:13</span><span class="nk"> &lt;sdaftuar&gt;</span> lol
+<a name="l-46"></a><span class="tm">19:06:15</span><span class="nk"> &lt;wumpus&gt;</span> yes would be a waste if we get disruption anyway
+<a name="l-47"></a><span class="tm">19:06:20</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">meshcollider:</span> god damn it
+<a name="l-48"></a><span class="tm">19:06:23</span><span class="nk"> &lt;wumpus&gt;</span> because some people fork anyway
+<a name="l-49"></a><span class="tm">19:06:24</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">meshcollider:</span> oh, i missed those notes!
+<a name="l-50"></a><span class="tm">19:06:37</span><span class="nk"> &lt;Provoostenator&gt;</span> This being Bitcoin, _someone_ is going to fork...
+<a name="l-51"></a><span class="tm">19:06:38 </span><span class="nka">* BlueMatt</span> <span class="ac">proposes from here on out all version numbers must be majorversion.some.series.of.0s.and.1s :p</span>
+<a name="l-52"></a><span class="tm">19:06:41</span><span class="nk"> &lt;wumpus&gt;</span> and we have a release ready but decide to delay it because 'no rush'
+<a name="l-53"></a><span class="tm">19:06:42</span><span class="nk"> &lt;morcos&gt;</span> ok ok..  i have no problem releasing
+<a name="l-54"></a><span class="tm">19:06:50</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">meshcollider:</span> if we make 0.15.2 another bugfix-only, we can do segwit wallet in 0.15.pi
+<a name="l-55"></a><span class="tm">19:06:55</span><span class="nk"> &lt;sdaftuar&gt;</span> release!
+<a name="l-56"></a><span class="tm">19:06:59</span><span class="nk"> &lt;kanzure&gt;</span> hi.
+<a name="l-57"></a><span class="tm">19:06:59</span><span class="nk"> &lt;wumpus&gt;</span> ok!
+<a name="l-58"></a><span class="tm">19:07:01</span><span class="nk"> &lt;BlueMatt&gt;</span> Relese!
+<a name="l-59"></a><span class="tm">19:07:04</span><span class="nk"> &lt;BlueMatt&gt;</span> e
+<a name="l-60"></a><span class="tm">19:07:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#action </span><span class="cmdline">release 0.15.1</span>
+<a name="l-61"></a><span class="tm">19:07:11</span><span class="nk"> &lt;achow101&gt;</span> ack release
+<a name="l-62"></a><span class="tm">19:07:18</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">HIgh priority for review</span>
+<a name="l-63"></a><span class="tm">19:07:32</span><span class="nk"> &lt;wumpus&gt;</span> I think https://github.com/bitcoin/bitcoin/projects/8 is stale now
+<a name="l-64"></a><span class="tm">19:08:02</span><span class="nk"> &lt;achow101&gt;</span> so back to doing segwit wallet stuff?
+<a name="l-65"></a><span class="tm">19:08:07</span><span class="nk"> &lt;wumpus&gt;</span> the blockers were those that were already there before we started working on 0.15.1, so probably needs a update
+<a name="l-66"></a><span class="tm">19:08:14</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">achow101:</span> yes
+<a name="l-67"></a><span class="tm">19:08:25</span><span class="nk"> &lt;wumpus&gt;</span> we should at least have segwit wallet in 0.16.0
+<a name="l-68"></a><span class="tm">19:08:40</span><span class="nk"> &lt;sipa&gt;</span> yes
+<a name="l-69"></a><span class="tm">19:08:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> Yes. SW wallet support should be in projects/8
+<a name="l-70"></a><span class="tm">19:08:54</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">sipa:</span> did you ever write up that document?
+<a name="l-71"></a><span class="tm">19:08:54</span><span class="nk"> &lt;meshcollider&gt;</span> C.f. #11403
+<a name="l-72"></a><span class="tm">19:08:57</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+<a name="l-73"></a><span class="tm">19:08:57</span><span class="nk"> &lt;BlueMatt&gt;</span> speaking of segwit wallet......sipa where are we?
+<a name="l-74"></a><span class="tm">19:09:01</span><span class="nk"> &lt;sipa&gt;</span> no, sorry, distracted
+<a name="l-75"></a><span class="tm">19:09:07</span><span class="nk"> &lt;sipa&gt;</span> been thinking a lot about it though...
+<a name="l-76"></a><span class="tm">19:09:12</span><span class="nk"> &lt;morcos&gt;</span> i don't think i had any concerns about the last plan as i understood it.. but would be nice to sort of have it written out
+<a name="l-77"></a><span class="tm">19:09:22</span><span class="nk"> &lt;wumpus&gt;</span> added
+<a name="l-78"></a><span class="tm">19:09:26</span><span class="nk"> &lt;sipa&gt;</span> agree, i'll try to write things up today
+<a name="l-79"></a><span class="tm">19:09:49</span><span class="nk"> &lt;morcos&gt;</span> have we decided that barring bugs, the next release will be 0.16 with segwit wallet?
+<a name="l-80"></a><span class="tm">19:09:51</span><span class="nk"> &lt;achow101&gt;</span> is 11403 all that's left for segwit wallet? (besides the fact that it is the segwit wallet PR)
+<a name="l-81"></a><span class="tm">19:10:01</span><span class="nk"> &lt;morcos&gt;</span> and then the new and improved segwit wallet will be left for 0.1&amp;?
+<a name="l-82"></a><span class="tm">19:10:05</span><span class="nk"> &lt;morcos&gt;</span> 0.17
+<a name="l-83"></a><span class="tm">19:10:05</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">achow101:</span> there are some TODOs left
+<a name="l-84"></a><span class="tm">19:10:20</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">morcos:</span> I think that's sensible
+<a name="l-85"></a><span class="tm">19:10:21</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">morcos:</span> i'm going to stop thinking in terms of specific releases
+<a name="l-86"></a><span class="tm">19:10:25</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> makes sense
+<a name="l-87"></a><span class="tm">19:10:31 </span><span class="nka">* BlueMatt</span> <span class="ac">was concerned about the approach but there's lots of tradeoffs, so really wanted to see the aforementioned doc</span>
+<a name="l-88"></a><span class="tm">19:10:32</span><span class="nk"> &lt;wumpus&gt;</span> just do an early 0.16 release if it's finished early
+<a name="l-89"></a><span class="tm">19:10:47</span><span class="nk"> &lt;sipa&gt;</span> but short term, 11403 + its todos
+<a name="l-90"></a><span class="tm">19:10:52</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">wumpus:</span> yes thats what i mean.. ok good.
+<a name="l-91"></a><span class="tm">19:10:52</span><span class="nk"> &lt;wumpus&gt;</span> I'm kind of tired of holding off changes because backports to 0.15 need to be easier
+<a name="l-92"></a><span class="tm">19:10:55</span><span class="nk"> &lt;sipa&gt;</span> long term, rework ismine etc
+<a name="l-93"></a><span class="tm">19:11:08</span><span class="nk"> &lt;sipa&gt;</span> and release whatever is ready
+<a name="l-94"></a><span class="tm">19:11:32</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">wumpus:</span> Are we still doing a 0.15 with segwit wallet?
+<a name="l-95"></a><span class="tm">19:11:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">MarcoFalke:</span> no, I don't think so (or at least that's what we discussed last meeting)
+<a name="l-96"></a><span class="tm">19:11:52</span><span class="nk"> &lt;cfields&gt;</span> ack 0.16 whenever segwit wallet is ready
+<a name="l-97"></a><span class="tm">19:11:56</span><span class="nk"> &lt;promag&gt;</span> sorry, multi wallet also for 0.16?
+<a name="l-98"></a><span class="tm">19:12:04</span><span class="nk"> &lt;sipa&gt;</span> multiwallet is in 0.15, no?
+<a name="l-99"></a><span class="tm">19:12:09</span><span class="nk"> &lt;meshcollider&gt;</span> Dynamic multiwallet?
+<a name="l-100"></a><span class="tm">19:12:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">promag:</span> if it's ready... you mean dynamic loading/unloading?
+<a name="l-101"></a><span class="tm">19:12:17</span><span class="nk"> &lt;promag&gt;</span> yes
+<a name="l-102"></a><span class="tm">19:12:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">MarcoFalke:</span> same plan, different versioning
+<a name="l-103"></a><span class="tm">19:12:25</span><span class="nk"> &lt;wumpus&gt;</span> if it's ready in time, sure
+<a name="l-104"></a><span class="tm">19:12:26</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">promag:</span> Should be possible
+<a name="l-105"></a><span class="tm">19:12:36</span><span class="nk"> &lt;wumpus&gt;</span> not going to hold it up on that though, if the explicit goal is segwit wallet
+<a name="l-106"></a><span class="tm">19:12:44</span><span class="nk"> &lt;promag&gt;</span> not project 8 thou?
+<a name="l-107"></a><span class="tm">19:12:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed
+<a name="l-108"></a><span class="tm">19:12:54</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">promag:</span> it is there
+<a name="l-109"></a><span class="tm">19:13:02</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">put segwit wallet in the next major release</span>
+<a name="l-110"></a><span class="tm">19:13:21</span><span class="nk"> &lt;wumpus&gt;</span> yes, anything else for high priority for review?
+<a name="l-111"></a><span class="tm">19:13:44</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="cmd">#10286 </span><span class="cmdline">:(</span>
+<a name="l-112"></a><span class="tm">19:13:48</span><span class="nk"> &lt;gribble&gt;</span> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+<a name="l-113"></a><span class="tm">19:13:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'd like to see BIP159 in 0.16... but it's already in the HP list
+<a name="l-114"></a><span class="tm">19:14:09</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> needs rebase and I left you comments :p
+<a name="l-115"></a><span class="tm">19:14:14</span><span class="nk"> &lt;wumpus&gt;</span> 10286 is already on there
+<a name="l-116"></a><span class="tm">19:14:34</span><span class="nk"> &lt;meshcollider&gt;</span> Any label stuff to replace accounts in there?
+<a name="l-117"></a><span class="tm">19:14:35</span><span class="nk"> &lt;sipa&gt;</span> bip159 would be nice, indeed
+<a name="l-118"></a><span class="tm">19:14:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">BlueMatt:</span> yes. Saw that.. will work on it asap
+<a name="l-119"></a><span class="tm">19:14:56 </span><span class="nka">* jonasschnelli</span> <span class="ac">has 14.4k connection this week</span>
+<a name="l-120"></a><span class="tm">19:15:22</span><span class="nk"> &lt;promag&gt;</span> btw, I think it would be cool to have some diagram of the current thread model and what should be the ideal model
+<a name="l-121"></a><span class="tm">19:15:36</span><span class="nk"> &lt;wumpus&gt;</span> thread model?
+<a name="l-122"></a><span class="tm">19:15:39</span><span class="nk"> &lt;promag&gt;</span> I think BlueMatt has some things in mind
+<a name="l-123"></a><span class="tm">19:15:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> I think promag means the general concurrency concept, right?
+<a name="l-124"></a><span class="tm">19:16:04</span><span class="nk"> &lt;promag&gt;</span> sure
+<a name="l-125"></a><span class="tm">19:16:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">promag:</span> my model is CValidationInterface
+<a name="l-126"></a><span class="tm">19:16:26</span><span class="nk"> &lt;BlueMatt&gt;</span> :p
+<a name="l-127"></a><span class="tm">19:16:32</span><span class="nk"> &lt;promag&gt;</span> well BlueMatt keeps saying he wants to refactor in some way, but would be cool to actually "see" the big picture
+<a name="l-128"></a><span class="tm">19:16:37</span><span class="nk"> &lt;jonasschnelli&gt;</span> We move away from topics... MarcoFalke had a proposed topic
+<a name="l-129"></a><span class="tm">19:16:43</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">promag:</span> CValidationInterface :p
+<a name="l-130"></a><span class="tm">19:16:57</span><span class="nk"> &lt;meshcollider&gt;</span> Signing keys for binaries?
+<a name="l-131"></a><span class="tm">19:16:58</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">promag:</span> +1
+<a name="l-132"></a><span class="tm">19:17:32</span><span class="nk"> &lt;jonasschnelli&gt;</span> [09:02:17]  &lt;MarcoFalke&gt;	proposed short topic "Signing key for gitian executables"
+<a name="l-133"></a><span class="tm">19:17:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="topic">#topic </span><span class="topicline">Signing key for gitian executables (MarcoFalke)</span>
+<a name="l-134"></a><span class="tm">19:17:43</span><span class="nk"> &lt;MarcoFalke&gt;</span> Background is that the current key expires Q1 2018, so we should come up with something for the 0.16 release. Someone had the idea to ask MIT to apply for a key, as individuals can not apply AFAICT.
+<a name="l-135"></a><span class="tm">19:17:49</span><span class="nk"> &lt;jonasschnelli&gt;</span> can you elaborate MarcoFalke?
+<a name="l-136"></a><span class="tm">19:18:04</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">MarcoFalke:</span> you mean the Apple/WINDOWS code signing keys?
+<a name="l-137"></a><span class="tm">19:18:08</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">MarcoFalke:</span> there was some discussion of doing a split rsa key here.... gmaxwell around?
+<a name="l-138"></a><span class="tm">19:18:12</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">jonasschnelli:</span> jup
+<a name="l-139"></a><span class="tm">19:18:13</span><span class="nk"> &lt;luke-jr&gt;</span> would be good to have a key that is explicitly used for not only Core releases (eg, Knots too)
+<a name="l-140"></a><span class="tm">19:18:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Apple is still the Bitcoin Foundatiomn, right?
+<a name="l-141"></a><span class="tm">19:18:23</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> I have code for mpc generation of rsa keys and signing.
+<a name="l-142"></a><span class="tm">19:18:24</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="hi">BlueMatt:</span> That would require some more time?
+<a name="l-143"></a><span class="tm">19:18:30</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> no, only Core
+<a name="l-144"></a><span class="tm">19:18:34</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> why?
+<a name="l-145"></a><span class="tm">19:18:41</span><span class="nk"> &lt;cfields&gt;</span> yes, both are btcf atm
+<a name="l-146"></a><span class="tm">19:18:42</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> no
+<a name="l-147"></a><span class="tm">19:18:49</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> (by I have, I mean it's on github, and I've used it... works fine)
+<a name="l-148"></a><span class="tm">19:19:07</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> its about trust... I don't know if I would sign something I havev't reviewd
+<a name="l-149"></a><span class="tm">19:19:31</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> deals well with csr? I have no idea if that complicates things.
+<a name="l-150"></a><span class="tm">19:19:55</span><span class="nk"> &lt;achow101&gt;</span> the windows cert expires in 2019
+<a name="l-151"></a><span class="tm">19:19:57</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">MarcoFalke:</span> individuals can apply for keys (Apple and Windows)
+<a name="l-152"></a><span class="tm">19:20:02</span><span class="nk"> &lt;jonasschnelli&gt;</span> But not sure if we should do individuals...
+<a name="l-153"></a><span class="tm">19:20:03</span><span class="nk"> &lt;instagibbs&gt;</span> jonasschnelli, mmm not sure if gitian is about you "trusting" the binary, so much as it matches others'?
+<a name="l-154"></a><span class="tm">19:20:06</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">cfields:</span> it deals with RSA numbers, someone would need to do the hacking to stuff the rsa number it generates into a CSR and whatnot.
+<a name="l-155"></a><span class="tm">19:20:27</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> ok
+<a name="l-156"></a><span class="tm">19:20:48</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> I see it as dealing with backward OS policies that make it hard for users to run stuff.
+<a name="l-157"></a><span class="tm">19:20:55</span><span class="nk"> &lt;morcos&gt;</span> Does anyone think its best to just get BTCF to renew for now?
+<a name="l-158"></a><span class="tm">19:21:02</span><span class="nk"> &lt;gmaxwell&gt;</span> I think it's _really_ unfortunate to have any name except the project name on the binaries, causes a drama and stupidity.  There are still people that think the bitcoin foundation controls bitcoin just because of that existing cert. :(
+<a name="l-159"></a><span class="tm">19:21:02</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> it basically is
+<a name="l-160"></a><span class="tm">19:21:02</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">todo:</span> cfields creates an rsa # -&gt; csr program :p
+<a name="l-161"></a><span class="tm">19:21:12</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">morcos:</span> thats the obvious thing to do.
+<a name="l-162"></a><span class="tm">19:21:18</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">luke-jr:</span> yes. But applying for you own key is maybe 300USD/year,.... so possible IMO
+<a name="l-163"></a><span class="tm">19:21:33</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">gmaxwell:</span> so can I just legally change my name to Bitcoin Core, get a cert, and then change it back?
+<a name="l-164"></a><span class="tm">19:21:34</span><span class="nk"> &lt;BlueMatt&gt;</span> :p
+<a name="l-165"></a><span class="tm">19:21:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">morcos:</span> renaming with the APPLE Developer Portal is almost impossible
+<a name="l-166"></a><span class="tm">19:21:43</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">BlueMatt:</span> lol
+<a name="l-167"></a><span class="tm">19:21:45</span><span class="nk"> &lt;meshcollider&gt;</span> lol
+<a name="l-168"></a><span class="tm">19:21:57</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">jonasschnelli:</span> huh?
+<a name="l-169"></a><span class="tm">19:21:58</span><span class="nk"> &lt;jonasschnelli&gt;</span> changing name requires legal documents, etc.
+<a name="l-170"></a><span class="tm">19:22:03</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">BlueMatt:</span> well the other option is that we just register a bitcoin core org someplace and have it get the key. But I wouldn't want to suggest that for a key that is expiring soon.
+<a name="l-171"></a><span class="tm">19:22:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's all by approval basis through apple
+<a name="l-172"></a><span class="tm">19:22:16</span><span class="nk"> &lt;gmaxwell&gt;</span> it's not terribly hard, just requires a bit of money.
+<a name="l-173"></a><span class="tm">19:22:19</span><span class="nk"> &lt;jonasschnelli&gt;</span> you need a D.U.N.S number as well
+<a name="l-174"></a><span class="tm">19:22:21</span><span class="nk"> &lt;BlueMatt&gt;</span> I mean it doesnt take long to create an LLC that holds $0
+<a name="l-175"></a><span class="tm">19:22:34</span><span class="nk"> &lt;kanzure&gt;</span> would chaincode do it?
+<a name="l-176"></a><span class="tm">19:22:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> But plase... don't set up an orga called "Bitcoin Core"
+<a name="l-177"></a><span class="tm">19:22:57</span><span class="nk"> &lt;meshcollider&gt;</span> Then bitcoin core really would be a company and you'd set off all the conspiracy theorists
+<a name="l-178"></a><span class="tm">19:22:57</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> agree
+<a name="l-179"></a><span class="tm">19:22:58</span><span class="nk"> &lt;gmaxwell&gt;</span> Bitcoin Core Code Signing Key inc.
+<a name="l-180"></a><span class="tm">19:22:58</span><span class="nk"> &lt;morcos&gt;</span> I'm happy to have an official Bitcoin Core org established if we want that, but it does seem like there are downsides to that
+<a name="l-181"></a><span class="tm">19:23:07</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> yeah
+<a name="l-182"></a><span class="tm">19:23:12</span><span class="nk"> &lt;jonasschnelli&gt;</span> Id rather use an individual then ChainCodeLabs for it's own protection
+<a name="l-183"></a><span class="tm">19:23:13</span><span class="nk"> &lt;morcos&gt;</span> unless we specifically limited its purpose very narrowly
+<a name="l-184"></a><span class="tm">19:23:18</span><span class="nk"> &lt;cfields&gt;</span> ugh
+<a name="l-185"></a><span class="tm">19:23:23</span><span class="nk"> &lt;kanzure&gt;</span> yes if it's a "bitoin core org" then it should be named "bitcoin core code signing key holding only and nothing else, llc."
+<a name="l-186"></a><span class="tm">19:23:24</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">wumpus:</span> jonasschnelli: then I see no reason not to use a common key for both Core and Knots..
+<a name="l-187"></a><span class="tm">19:23:24</span><span class="nk"> &lt;wumpus&gt;</span> CoreSign
+<a name="l-188"></a><span class="tm">19:23:40</span><span class="nk"> &lt;jonasschnelli&gt;</span> I could provide my own personal APPL key...
+<a name="l-189"></a><span class="tm">19:23:43 </span><span class="nka">* BlueMatt</span> <span class="ac">votes for someone to just create Bitcoin Core Code Signing, LLC</span>
+<a name="l-190"></a><span class="tm">19:23:44</span><span class="nk"> &lt;gmaxwell&gt;</span> Bitcoin Release signing key incorporated.
+<a name="l-191"></a><span class="tm">19:23:46</span><span class="nk"> &lt;achow101&gt;</span> BTW the apple key expires Jan 11 2018, Windows March 5 2019, so we would need to do this soon
+<a name="l-192"></a><span class="tm">19:23:50</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">luke-jr:</span> stop..  please bring up knots later .  it has nothing to do with the Core meeting
+<a name="l-193"></a><span class="tm">19:23:56</span><span class="nk"> &lt;jonasschnelli&gt;</span> (OSX only)
+<a name="l-194"></a><span class="tm">19:24:11</span><span class="nk"> &lt;jonasschnelli&gt;</span> heh
+<a name="l-195"></a><span class="tm">19:24:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> or just renew the apple one then, and continue on with doing something sensible.
+<a name="l-196"></a><span class="tm">19:24:32</span><span class="nk"> &lt;cfields&gt;</span> ok, in parallel to whatever else, I'll work on trying to get our current apple cert renewed
+<a name="l-197"></a><span class="tm">19:24:41</span><span class="nk"> &lt;wumpus&gt;</span> makes sense
+<a name="l-198"></a><span class="tm">19:24:43</span><span class="nk"> &lt;morcos&gt;</span> <span class="hi">cfields:</span> i think it makes most sense to do that.
+<a name="l-199"></a><span class="tm">19:25:11</span><span class="nk"> &lt;wumpus&gt;</span> any name would give conspiracy theories anyway, I don't really think it's so bad to have TBF as signing organization
+<a name="l-200"></a><span class="tm">19:25:14</span><span class="nk"> &lt;Provoostenator&gt;</span> Or Gitan Code Signing LLC, if other projects want their stuff signed too?
+<a name="l-201"></a><span class="tm">19:25:19</span><span class="nk"> &lt;gmaxwell&gt;</span> If someone wants to work on stuffing rsa numbers into CSRs, I can show them out to use the RSA MPC code (have to remember it myself first, but it's not hard)
+<a name="l-202"></a><span class="tm">19:25:22</span><span class="nk"> &lt;cfields&gt;</span> but i think we need a plan b. no clue if the resources/accounts/etc. are still live and available
+<a name="l-203"></a><span class="tm">19:25:25</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">Provoostenator:</span> good idea
+<a name="l-204"></a><span class="tm">19:25:33</span><span class="nk"> &lt;jonasschnelli&gt;</span> I kinda like the idea of a "Bitcoin Core Code Signing Assoc."
+<a name="l-205"></a><span class="tm">19:25:37</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> yes, i'd very very much like to do that
+<a name="l-206"></a><span class="tm">19:25:42</span><span class="nk"> &lt;cfields&gt;</span> so i'll volunteer for that
+<a name="l-207"></a><span class="tm">19:25:49</span><span class="nk"> &lt;achow101&gt;</span> do we really need code signed binaries though?
+<a name="l-208"></a><span class="tm">19:25:55</span><span class="nk"> &lt;cfields&gt;</span> tired of 10hr builds and signing on my damn laptop
+<a name="l-209"></a><span class="tm">19:26:11</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">wumpus:</span> well at least TBF isn't any _new_ conspiracy theories... though it does kinda suck. :)
+<a name="l-210"></a><span class="tm">19:26:19</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">achow101:</span> yea. necessary evil, im afraid
+<a name="l-211"></a><span class="tm">19:26:29</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">achow101:</span> some variants of Mac and Windows won't let users run unsigned stuff or something like that
+<a name="l-212"></a><span class="tm">19:26:33</span><span class="nk"> &lt;wumpus&gt;</span> yes, otherwise all virus scanners will trigger on it and such
+<a name="l-213"></a><span class="tm">19:26:37</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">luke-jr:</span> well that's annoying
+<a name="l-214"></a><span class="tm">19:26:49</span><span class="nk"> &lt;Provoostenator&gt;</span> As an aside: has any one ever tried submitting to the Mac App Store?
+<a name="l-215"></a><span class="tm">19:27:08</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">Provoostenator:</span> no.. we won't
+<a name="l-216"></a><span class="tm">19:27:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> This means the binaries are under APPLs control
+<a name="l-217"></a><span class="tm">19:27:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> Would someone disagree on founding a "Bitcoin Core Code Signing Association" based in Switzerland?...
+<a name="l-218"></a><span class="tm">19:27:44</span><span class="nk"> &lt;jonasschnelli&gt;</span> (we could just try and also follow the path of renewing the current cert)
+<a name="l-219"></a><span class="tm">19:27:49</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">jonasschnelli:</span> no, would be great
+<a name="l-220"></a><span class="tm">19:27:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">jonasschnelli:</span> "Gitian Code Signing" would be better as Provoostenator suggested
+<a name="l-221"></a><span class="tm">19:28:05</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">jonasschnelli:</span> sounds fine to me, whatever is the path of least resistance.
+<a name="l-222"></a><span class="tm">19:28:08</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> I think that makes the scope too wide
+<a name="l-223"></a><span class="tm">19:28:13</span><span class="nk"> &lt;gmaxwell&gt;</span> I'd rather not introduce a new word 'gitian' to users.
+<a name="l-224"></a><span class="tm">19:28:15</span><span class="nk"> &lt;morcos&gt;</span> Let's please leave whatever we do focused on Bitcoin Core
+<a name="l-225"></a><span class="tm">19:28:17</span><span class="nk"> &lt;BlueMatt&gt;</span> it should probably have "Bitcoin Core" in the name
+<a name="l-226"></a><span class="tm">19:28:25</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">jonasschnelli:</span> yes, please register, thanks!
+<a name="l-227"></a><span class="tm">19:28:41</span><span class="nk"> &lt;MarcoFalke&gt;</span> <span class="cmd">#action </span><span class="cmdline">Register "Bitcoin Core Code Signing Association"</span>
+<a name="l-228"></a><span class="tm">19:28:44</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> then you'll whine that it can't be shared
+<a name="l-229"></a><span class="tm">19:28:51</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">luke-jr:</span> I don't personally have a problem with signing knots executables, but making it soo general means we'll have a bureaucracy about what to sign blabla, and btw devrandom owns the name gitian :)
+<a name="l-230"></a><span class="tm">19:28:52</span><span class="nk"> &lt;sipa&gt;</span> and then we'd apply for code signing keys under that association's name, using the MPC RSA scheme?
+<a name="l-231"></a><span class="tm">19:28:53</span><span class="nk"> &lt;meshcollider&gt;</span> <span class="hi">jonasschnelli:</span> sounds good to me
+<a name="l-232"></a><span class="tm">19:29:05</span><span class="nk"> &lt;jonasschnelli&gt;</span> Okay... I'll let that happen and register with apple
+<a name="l-233"></a><span class="tm">19:29:05</span><span class="nk"> &lt;sipa&gt;</span> (or at least eventually)
+<a name="l-234"></a><span class="tm">19:29:13</span><span class="nk"> &lt;Provoostenator&gt;</span> Decentralized Code Signers LLC?
+<a name="l-235"></a><span class="tm">19:29:16</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">sipa:</span> yes, at least eventually
+<a name="l-236"></a><span class="tm">19:29:17</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">luke-jr:</span> I object to it being shared, it is not *that* hard for you to get your own cert for your own project.....
+<a name="l-237"></a><span class="tm">19:29:17</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">sipa:</span> yes, thats the idea.
+<a name="l-238"></a><span class="tm">19:29:20</span><span class="nk"> &lt;jonasschnelli&gt;</span> <span class="hi">sipa:</span> not sure it that is possible with apples key enrolling process
+<a name="l-239"></a><span class="tm">19:29:27</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> i don't see why not
+<a name="l-240"></a><span class="tm">19:29:27</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">sipa:</span> yes
+<a name="l-241"></a><span class="tm">19:29:30</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">wumpus:</span> exactly. The question to ask is: would we want btc1 signed with the same key?
+<a name="l-242"></a><span class="tm">19:29:45</span><span class="nk"> &lt;jonasschnelli&gt;</span> I'll focus on the legal association stuff maybe someone can try to look into the MPC RSA sheme with apple OSX signing keys
+<a name="l-243"></a><span class="tm">19:29:45</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">jonasschnelli:</span> assuming all the plumbing work is done
+<a name="l-244"></a><span class="tm">19:29:46</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> right, no we don't :)
+<a name="l-245"></a><span class="tm">19:29:52</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">BlueMatt:</span> it's a waste of money to a bad corp and a waste of time, at the very least
+<a name="l-246"></a><span class="tm">19:29:52</span><span class="nk"> &lt;achow101&gt;</span> does anyone have a link to the rsa mpc thing?
+<a name="l-247"></a><span class="tm">19:29:54</span><span class="nk"> &lt;gmaxwell&gt;</span> I wouldn't want any of us us wasting time helping with an adversarial project.
+<a name="l-248"></a><span class="tm">19:29:57</span><span class="nk"> &lt;morcos&gt;</span> Guys, if you are signing code, you are responsible for that code.  If we are signing it in the name of Bitcoin Core we are all taking responsibility.  Please let's limit this discussion to the code we all work on together
+<a name="l-249"></a><span class="tm">19:30:09</span><span class="nk"> &lt;Provoostenator&gt;</span> Makes sense
+<a name="l-250"></a><span class="tm">19:30:13</span><span class="nk"> &lt;sipa&gt;</span> well, in the MPC setting, the group of signers would be fixed
+<a name="l-251"></a><span class="tm">19:30:17</span><span class="nk"> &lt;morcos&gt;</span> someone can always separately create a more general entity to sign other projects, but thats not related to Core
+<a name="l-252"></a><span class="tm">19:30:30</span><span class="nk"> &lt;sipa&gt;</span> the project should be signing the things that group of signers is jointly interested in signing
+<a name="l-253"></a><span class="tm">19:30:32</span><span class="nk"> &lt;wumpus&gt;</span> yeah it's typical scope creep
+<a name="l-254"></a><span class="tm">19:30:37</span><span class="nk"> &lt;gmaxwell&gt;</span> <span class="hi">achow101:</span> I'll give you the link after the meeting.
+<a name="l-255"></a><span class="tm">19:30:40</span><span class="nk"> &lt;kanzure&gt;</span> or bike shedding on name
+<a name="l-256"></a><span class="tm">19:30:42</span><span class="nk"> &lt;wumpus&gt;</span> let's sign the entire world :p
+<a name="l-257"></a><span class="tm">19:30:42</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">gmaxwell:</span> right. I was making the point that it would be impossible to draw the line unless core-specific.
+<a name="l-258"></a><span class="tm">19:30:45</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">gmaxwell:</span> k, thanks
+<a name="l-259"></a><span class="tm">19:31:14</span><span class="nk"> &lt;MarcoFalke&gt;</span> Any other topics?
+<a name="l-260"></a><span class="tm">19:31:21</span><span class="nk"> &lt;BlueMatt&gt;</span> <span class="hi">promag:</span> CValidationInterface is where you learn things from consensus code (ie from CChainState after 10279 or validation.cpp otherwise) - its also where you learn about mempool things but I have a branch which comes after 10286 that splits the interface up between the two to differentiate a little bit....wrt threading, CValidationInterface listeners all move into the scheduler, which means you dont have any deadlocking issues since
+<a name="l-261"></a><span class="tm">19:31:22</span><span class="nk"> &lt;BlueMatt&gt;</span> they're all just called async, this is mostly complete in 10286, but cleaning up the remaining few isnt too hard...thats pretty much it, there's not much to it...net/net_processing is a different issue, and is mostly around moving things from CNode to CNodeState and disconnecting those two things being so closely joined, but the threading issues there are less of the primary concern (except for cs_main being too heavily shared between
+<a name="l-262"></a><span class="tm">19:31:22</span><span class="nk"> &lt;BlueMatt&gt;</span> net_processing for mapNodeState and everything else)
+<a name="l-263"></a><span class="tm">19:31:28</span><span class="nk"> &lt;gmaxwell&gt;</span> it is unfortunate that e.g. knots has an uphill time there, it's a barrier to entry that shouldn't exist. But it's also not one we created.
+<a name="l-264"></a><span class="tm">19:31:37</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> except Knots and Core have the same developers
+<a name="l-265"></a><span class="tm">19:31:38</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">gmaxwell:</span> I agree
+<a name="l-266"></a><span class="tm">19:31:53</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> as does btc1...
+<a name="l-267"></a><span class="tm">19:31:56</span><span class="nk"> &lt;sipa&gt;</span> <span class="hi">luke-jr:</span> they don't have the same maintainers
+<a name="l-268"></a><span class="tm">19:31:58</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> hardly
+<a name="l-269"></a><span class="tm">19:32:35</span><span class="nk"> &lt;sipa&gt;</span> i don't think everyone who is interested in signing off on core releases is interested in doing the same work for knots - and perhaps the other way around
+<a name="l-270"></a><span class="tm">19:32:58</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> i hope it's clear that I'm not trying to lump you in with an adversarial fork. Just making the point that the distinction in terms of signing is hard to draw.
+<a name="l-271"></a><span class="tm">19:32:59</span><span class="nk"> &lt;luke-jr&gt;</span> "We Just Codesign Stuff We Want, LLC" XD
+<a name="l-272"></a><span class="tm">19:33:15</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> that's my end goal, actually
+<a name="l-273"></a><span class="tm">19:33:15</span><span class="nk"> &lt;jonasschnelli&gt;</span> Indeed
+<a name="l-274"></a><span class="tm">19:33:16</span><span class="nk"> &lt;jonasschnelli&gt;</span> It's one entity luke-jr
+<a name="l-275"></a><span class="tm">19:33:22</span><span class="nk"> &lt;wumpus&gt;</span> well adversarial versus consensus-compatible is easy to draw
+<a name="l-276"></a><span class="tm">19:33:24</span><span class="nk"> &lt;gmaxwell&gt;</span> there is another issue, I'm pretty sure that apple will not grant a key to "I sign random shit LLC"
+<a name="l-277"></a><span class="tm">19:33:35</span><span class="nk"> &lt;jonasschnelli&gt;</span> You can found a "Knots Code Signing Assoc"
+<a name="l-278"></a><span class="tm">19:33:36</span><span class="nk"> &lt;promag&gt;</span> thanks BlueMatt, I'll read that in a bit
+<a name="l-279"></a><span class="tm">19:33:38</span><span class="nk"> &lt;cfields&gt;</span> to create a body like Let's Encrypt, which attests to the fact that code -&gt; binary.
+<a name="l-280"></a><span class="tm">19:34:04</span><span class="nk"> &lt;wumpus&gt;</span> <span class="hi">cfields:</span> that would be awesome
+<a name="l-281"></a><span class="tm">19:34:06</span><span class="nk"> &lt;luke-jr&gt;</span> <span class="hi">cfields:</span> well, how to stop malware from using it?
+<a name="l-282"></a><span class="tm">19:34:13</span><span class="nk"> &lt;achow101&gt;</span> <span class="hi">cfields:</span> well that's a whole separate thing which we can join once it exists :)
+<a name="l-283"></a><span class="tm">19:34:20</span><span class="nk"> &lt;wumpus&gt;</span> but it's outside the scope of the bitcoin core project
+<a name="l-284"></a><span class="tm">19:34:23</span><span class="nk"> &lt;wumpus&gt;</span> any other topics?
+<a name="l-285"></a><span class="tm">19:34:24</span><span class="nk"> &lt;cfields&gt;</span> <span class="hi">luke-jr:</span> deterministic malware would have to be welcome, unfortunately
+<a name="l-286"></a><span class="tm">19:34:51</span><span class="nk"> &lt;luke-jr&gt;</span> that'd just get the key revoked
+<a name="l-287"></a><span class="tm">19:34:55</span><span class="nk"> &lt;gmaxwell&gt;</span> not like this stuff actually stops malware, snake oil security. alas.
+<a name="l-288"></a><span class="tm">19:35:07</span><span class="nk"> &lt;gmaxwell&gt;</span> in any case, a discussion for another time.
+<a name="l-289"></a><span class="tm">19:36:11</span><span class="nk"> &lt;wumpus&gt;</span> ok, no other topics
+<a name="l-290"></a><span class="tm">19:36:19</span><span class="nk"> &lt;wumpus&gt;</span> <span class="cmd">#endmeeting</span><span class="cmdline"></span></pre>
+</body></html>

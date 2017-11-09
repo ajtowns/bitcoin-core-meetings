@@ -1,0 +1,290 @@
+19:02:18 <wumpus> #startmeeting
+19:02:18 <lightningbot> Meeting started Thu Nov  9 19:02:18 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:02:18 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:02:21 <MarcoFalke> proposed short topic "Signing key for gitian executables"
+19:02:27 <meshcollider> Hi
+19:02:31 <achow101> hi
+19:02:34 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag
+19:02:34 <Provoostenator> Hi
+19:02:42 <sdaftuar> oh hi
+19:02:50 <cfields> hi
+19:02:52 <morcos> hi
+19:03:04 <wumpus> #topic 0.15.1
+19:03:05 <instagibbs> hi
+19:03:13 <morcos> Release!
+19:03:15 <sdaftuar> does it work?
+19:03:15 <wumpus> anyone had any bug reports regarding the rc?
+19:03:22 <BlueMatt> Release!
+19:03:25 <instagibbs> I have not seen any...
+19:03:33 <MarcoFalke> release notes missing?
+19:03:38 <wumpus> seems that was a short rc cycle then
+19:03:43 <achow101> I haven't seen any, but I also don't know how many people are testing it out
+19:03:50 <sipa> yes, i think we need a writeup on the P2P changes at least
+19:03:50 <wumpus> MarcoFalke: no? I think we have them?
+19:03:57 <meshcollider> MarcoFalke I wrote release notes and wumpus already merged
+19:04:03 <MarcoFalke> great
+19:04:09 <MarcoFalke> Tag and release?
+19:04:16 <BlueMatt> there's no release notes on the p2p changes, I think
+19:04:18 <BlueMatt> as sipa points out
+19:04:21 <sdaftuar> yes there are some
+19:04:22 <morcos> yeah i think actually we might as well not release yet, there is no big rush now, so might as well see if any bugs pop up?
+19:04:22 <BlueMatt> though that may be fine
+19:04:28 <cfields> i suspect many of the people who might've usually been testing rc1 got stuck dealing with drama instead :(
+19:04:32 <wumpus> I don't think we should hold up a minor on release notes tbh, unless something really important is missing\
+19:05:21 <luke-jr> morcos: I'm not sure we should drop our guard so easily
+19:05:23 <achow101> morcos: there's still a possibility that some miner goes ahead and forks anyways
+19:05:28 <BlueMatt> we can tag an rc2 with no changes to encourage testing :p
+19:05:29 <wumpus> if it's ready we should just release and move on
+19:05:38 <achow101> like these guys: https://lists.linuxfoundation.org/pipermail/bitcoin-segwit2x/2017-November/000689.html
+19:05:39 <BlueMatt> but, yea, I think we should release
+19:05:42 <jonasschnelli> ack
+19:05:44 <meshcollider> Hmm did I miss something? I thought I wrote up
+19:05:52 <BlueMatt> even the idiots running a few hundred btc1 nodes may cause disruption and 15.1 can help
+19:05:55 <luke-jr> achow101: in fact, at least one mining pool has announced they intend to
+19:06:09 <meshcollider> ACK on release though, can just do 0.15.1.1 if it's got a bug ;)
+19:06:13 <sdaftuar> lol
+19:06:15 <wumpus> yes would be a waste if we get disruption anyway
+19:06:20 <BlueMatt> meshcollider: god damn it
+19:06:23 <wumpus> because some people fork anyway
+19:06:24 <sipa> meshcollider: oh, i missed those notes!
+19:06:37 <Provoostenator> This being Bitcoin, _someone_ is going to fork...
+19:06:38 * BlueMatt proposes from here on out all version numbers must be majorversion.some.series.of.0s.and.1s :p
+19:06:41 <wumpus> and we have a release ready but decide to delay it because 'no rush'
+19:06:42 <morcos> ok ok..  i have no problem releasing
+19:06:50 <luke-jr> meshcollider: if we make 0.15.2 another bugfix-only, we can do segwit wallet in 0.15.pi
+19:06:55 <sdaftuar> release!
+19:06:59 <kanzure> hi.
+19:06:59 <wumpus> ok!
+19:07:01 <BlueMatt> Relese!
+19:07:04 <BlueMatt> e
+19:07:08 <wumpus> #action release 0.15.1
+19:07:11 <achow101> ack release
+19:07:18 <wumpus> #topic HIgh priority for review
+19:07:32 <wumpus> I think https://github.com/bitcoin/bitcoin/projects/8 is stale now
+19:08:02 <achow101> so back to doing segwit wallet stuff?
+19:08:07 <wumpus> the blockers were those that were already there before we started working on 0.15.1, so probably needs a update
+19:08:14 <wumpus> achow101: yes
+19:08:25 <wumpus> we should at least have segwit wallet in 0.16.0
+19:08:40 <sipa> yes
+19:08:49 <jonasschnelli> Yes. SW wallet support should be in projects/8
+19:08:54 <morcos> sipa: did you ever write up that document?
+19:08:54 <meshcollider> C.f. #11403
+19:08:57 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:08:57 <BlueMatt> speaking of segwit wallet......sipa where are we?
+19:09:01 <sipa> no, sorry, distracted
+19:09:07 <sipa> been thinking a lot about it though...
+19:09:12 <morcos> i don't think i had any concerns about the last plan as i understood it.. but would be nice to sort of have it written out
+19:09:22 <wumpus> added
+19:09:26 <sipa> agree, i'll try to write things up today
+19:09:49 <morcos> have we decided that barring bugs, the next release will be 0.16 with segwit wallet?
+19:09:51 <achow101> is 11403 all that's left for segwit wallet? (besides the fact that it is the segwit wallet PR)
+19:10:01 <morcos> and then the new and improved segwit wallet will be left for 0.1&?
+19:10:05 <morcos> 0.17
+19:10:05 <sipa> achow101: there are some TODOs left
+19:10:20 <wumpus> morcos: I think that's sensible
+19:10:21 <sipa> morcos: i'm going to stop thinking in terms of specific releases
+19:10:25 <jonasschnelli> morcos: makes sense
+19:10:31 * BlueMatt was concerned about the approach but there's lots of tradeoffs, so really wanted to see the aforementioned doc
+19:10:32 <wumpus> just do an early 0.16 release if it's finished early
+19:10:47 <sipa> but short term, 11403 + its todos
+19:10:52 <morcos> wumpus: yes thats what i mean.. ok good.
+19:10:52 <wumpus> I'm kind of tired of holding off changes because backports to 0.15 need to be easier
+19:10:55 <sipa> long term, rework ismine etc
+19:11:08 <sipa> and release whatever is ready
+19:11:32 <MarcoFalke> wumpus: Are we still doing a 0.15 with segwit wallet?
+19:11:49 <wumpus> MarcoFalke: no, I don't think so (or at least that's what we discussed last meeting)
+19:11:52 <cfields> ack 0.16 whenever segwit wallet is ready
+19:11:56 <promag> sorry, multi wallet also for 0.16?
+19:12:04 <sipa> multiwallet is in 0.15, no?
+19:12:09 <meshcollider> Dynamic multiwallet?
+19:12:11 <jonasschnelli> promag: if it's ready... you mean dynamic loading/unloading?
+19:12:17 <promag> yes
+19:12:24 <luke-jr> MarcoFalke: same plan, different versioning
+19:12:25 <wumpus> if it's ready in time, sure
+19:12:26 <jonasschnelli> promag: Should be possible
+19:12:36 <wumpus> not going to hold it up on that though, if the explicit goal is segwit wallet
+19:12:44 <promag> not project 8 thou?
+19:12:49 <jonasschnelli> Indeed
+19:12:54 <jonasschnelli> promag: it is there
+19:13:02 <MarcoFalke> #action put segwit wallet in the next major release
+19:13:21 <wumpus> yes, anything else for high priority for review?
+19:13:44 <BlueMatt> #10286 :(
+19:13:48 <gribble> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+19:13:56 <jonasschnelli> I'd like to see BIP159 in 0.16... but it's already in the HP list
+19:14:09 <BlueMatt> jonasschnelli: needs rebase and I left you comments :p
+19:14:14 <wumpus> 10286 is already on there
+19:14:34 <meshcollider> Any label stuff to replace accounts in there?
+19:14:35 <sipa> bip159 would be nice, indeed
+19:14:37 <jonasschnelli> BlueMatt: yes. Saw that.. will work on it asap
+19:14:56 * jonasschnelli has 14.4k connection this week
+19:15:22 <promag> btw, I think it would be cool to have some diagram of the current thread model and what should be the ideal model
+19:15:36 <wumpus> thread model?
+19:15:39 <promag> I think BlueMatt has some things in mind
+19:15:57 <jonasschnelli> I think promag means the general concurrency concept, right?
+19:16:04 <promag> sure
+19:16:25 <BlueMatt> promag: my model is CValidationInterface
+19:16:26 <BlueMatt> :p
+19:16:32 <promag> well BlueMatt keeps saying he wants to refactor in some way, but would be cool to actually "see" the big picture
+19:16:37 <jonasschnelli> We move away from topics... MarcoFalke had a proposed topic
+19:16:43 <BlueMatt> promag: CValidationInterface :p
+19:16:57 <meshcollider> Signing keys for binaries?
+19:16:58 <morcos> promag: +1
+19:17:32 <jonasschnelli> [09:02:17]  <MarcoFalke>	proposed short topic "Signing key for gitian executables"
+19:17:38 <wumpus> #topic Signing key for gitian executables (MarcoFalke)
+19:17:43 <MarcoFalke> Background is that the current key expires Q1 2018, so we should come up with something for the 0.16 release. Someone had the idea to ask MIT to apply for a key, as individuals can not apply AFAICT.
+19:17:49 <jonasschnelli> can you elaborate MarcoFalke?
+19:18:04 <jonasschnelli> MarcoFalke: you mean the Apple/WINDOWS code signing keys?
+19:18:08 <BlueMatt> MarcoFalke: there was some discussion of doing a split rsa key here.... gmaxwell around?
+19:18:12 <MarcoFalke> jonasschnelli: jup
+19:18:13 <luke-jr> would be good to have a key that is explicitly used for not only Core releases (eg, Knots too)
+19:18:15 <jonasschnelli> Apple is still the Bitcoin Foundatiomn, right?
+19:18:23 <gmaxwell> BlueMatt: I have code for mpc generation of rsa keys and signing.
+19:18:24 <MarcoFalke> BlueMatt: That would require some more time?
+19:18:30 <jonasschnelli> luke-jr: no, only Core
+19:18:34 <luke-jr> jonasschnelli: why?
+19:18:41 <cfields> yes, both are btcf atm
+19:18:42 <BlueMatt> luke-jr: no
+19:18:49 <gmaxwell> BlueMatt: (by I have, I mean it's on github, and I've used it... works fine)
+19:19:07 <jonasschnelli> luke-jr: its about trust... I don't know if I would sign something I havev't reviewd
+19:19:31 <cfields> gmaxwell: deals well with csr? I have no idea if that complicates things.
+19:19:55 <achow101> the windows cert expires in 2019
+19:19:57 <jonasschnelli> MarcoFalke: individuals can apply for keys (Apple and Windows)
+19:20:02 <jonasschnelli> But not sure if we should do individuals...
+19:20:03 <instagibbs> jonasschnelli, mmm not sure if gitian is about you "trusting" the binary, so much as it matches others'?
+19:20:06 <gmaxwell> cfields: it deals with RSA numbers, someone would need to do the hacking to stuff the rsa number it generates into a CSR and whatnot.
+19:20:27 <cfields> gmaxwell: ok
+19:20:48 <luke-jr> jonasschnelli: I see it as dealing with backward OS policies that make it hard for users to run stuff.
+19:20:55 <morcos> Does anyone think its best to just get BTCF to renew for now?
+19:21:02 <gmaxwell> I think it's _really_ unfortunate to have any name except the project name on the binaries, causes a drama and stupidity.  There are still people that think the bitcoin foundation controls bitcoin just because of that existing cert. :(
+19:21:02 <wumpus> luke-jr: it basically is
+19:21:02 <BlueMatt> todo: cfields creates an rsa # -> csr program :p
+19:21:12 <gmaxwell> morcos: thats the obvious thing to do.
+19:21:18 <jonasschnelli> luke-jr: yes. But applying for you own key is maybe 300USD/year,.... so possible IMO
+19:21:33 <BlueMatt> gmaxwell: so can I just legally change my name to Bitcoin Core, get a cert, and then change it back?
+19:21:34 <BlueMatt> :p
+19:21:40 <jonasschnelli> morcos: renaming with the APPLE Developer Portal is almost impossible
+19:21:43 <achow101> BlueMatt: lol
+19:21:45 <meshcollider> lol
+19:21:57 <morcos> jonasschnelli: huh?
+19:21:58 <jonasschnelli> changing name requires legal documents, etc.
+19:22:03 <gmaxwell> BlueMatt: well the other option is that we just register a bitcoin core org someplace and have it get the key. But I wouldn't want to suggest that for a key that is expiring soon.
+19:22:11 <jonasschnelli> It's all by approval basis through apple
+19:22:16 <gmaxwell> it's not terribly hard, just requires a bit of money.
+19:22:19 <jonasschnelli> you need a D.U.N.S number as well
+19:22:21 <BlueMatt> I mean it doesnt take long to create an LLC that holds $0
+19:22:34 <kanzure> would chaincode do it?
+19:22:44 <jonasschnelli> But plase... don't set up an orga called "Bitcoin Core"
+19:22:57 <meshcollider> Then bitcoin core really would be a company and you'd set off all the conspiracy theorists
+19:22:57 <wumpus> jonasschnelli: agree
+19:22:58 <gmaxwell> Bitcoin Core Code Signing Key inc.
+19:22:58 <morcos> I'm happy to have an official Bitcoin Core org established if we want that, but it does seem like there are downsides to that
+19:23:07 <wumpus> gmaxwell: yeah
+19:23:12 <jonasschnelli> Id rather use an individual then ChainCodeLabs for it's own protection
+19:23:13 <morcos> unless we specifically limited its purpose very narrowly
+19:23:18 <cfields> ugh
+19:23:23 <kanzure> yes if it's a "bitoin core org" then it should be named "bitcoin core code signing key holding only and nothing else, llc."
+19:23:24 <luke-jr> wumpus: jonasschnelli: then I see no reason not to use a common key for both Core and Knots..
+19:23:24 <wumpus> CoreSign
+19:23:40 <jonasschnelli> I could provide my own personal APPL key...
+19:23:43 * BlueMatt votes for someone to just create Bitcoin Core Code Signing, LLC
+19:23:44 <gmaxwell> Bitcoin Release signing key incorporated.
+19:23:46 <achow101> BTW the apple key expires Jan 11 2018, Windows March 5 2019, so we would need to do this soon
+19:23:50 <morcos> luke-jr: stop..  please bring up knots later .  it has nothing to do with the Core meeting
+19:23:56 <jonasschnelli> (OSX only)
+19:24:11 <jonasschnelli> heh
+19:24:17 <gmaxwell> achow101: or just renew the apple one then, and continue on with doing something sensible.
+19:24:32 <cfields> ok, in parallel to whatever else, I'll work on trying to get our current apple cert renewed
+19:24:41 <wumpus> makes sense
+19:24:43 <morcos> cfields: i think it makes most sense to do that.
+19:25:11 <wumpus> any name would give conspiracy theories anyway, I don't really think it's so bad to have TBF as signing organization
+19:25:14 <Provoostenator> Or Gitan Code Signing LLC, if other projects want their stuff signed too?
+19:25:19 <gmaxwell> If someone wants to work on stuffing rsa numbers into CSRs, I can show them out to use the RSA MPC code (have to remember it myself first, but it's not hard)
+19:25:22 <cfields> but i think we need a plan b. no clue if the resources/accounts/etc. are still live and available
+19:25:25 <luke-jr> Provoostenator: good idea
+19:25:33 <jonasschnelli> I kinda like the idea of a "Bitcoin Core Code Signing Assoc."
+19:25:37 <cfields> gmaxwell: yes, i'd very very much like to do that
+19:25:42 <cfields> so i'll volunteer for that
+19:25:49 <achow101> do we really need code signed binaries though?
+19:25:55 <cfields> tired of 10hr builds and signing on my damn laptop
+19:26:11 <gmaxwell> wumpus: well at least TBF isn't any _new_ conspiracy theories... though it does kinda suck. :)
+19:26:19 <cfields> achow101: yea. necessary evil, im afraid
+19:26:29 <luke-jr> achow101: some variants of Mac and Windows won't let users run unsigned stuff or something like that
+19:26:33 <wumpus> yes, otherwise all virus scanners will trigger on it and such
+19:26:37 <achow101> luke-jr: well that's annoying
+19:26:49 <Provoostenator> As an aside: has any one ever tried submitting to the Mac App Store?
+19:27:08 <jonasschnelli> Provoostenator: no.. we won't
+19:27:35 <jonasschnelli> This means the binaries are under APPLs control
+19:27:35 <jonasschnelli> Would someone disagree on founding a "Bitcoin Core Code Signing Association" based in Switzerland?...
+19:27:44 <jonasschnelli> (we could just try and also follow the path of renewing the current cert)
+19:27:49 <wumpus> jonasschnelli: no, would be great
+19:27:58 <luke-jr> jonasschnelli: "Gitian Code Signing" would be better as Provoostenator suggested
+19:28:05 <gmaxwell> jonasschnelli: sounds fine to me, whatever is the path of least resistance.
+19:28:08 <wumpus> luke-jr: I think that makes the scope too wide
+19:28:13 <gmaxwell> I'd rather not introduce a new word 'gitian' to users.
+19:28:15 <morcos> Let's please leave whatever we do focused on Bitcoin Core
+19:28:17 <BlueMatt> it should probably have "Bitcoin Core" in the name
+19:28:25 <BlueMatt> jonasschnelli: yes, please register, thanks!
+19:28:41 <MarcoFalke> #action Register "Bitcoin Core Code Signing Association"
+19:28:44 <luke-jr> BlueMatt: then you'll whine that it can't be shared
+19:28:51 <wumpus> luke-jr: I don't personally have a problem with signing knots executables, but making it soo general means we'll have a bureaucracy about what to sign blabla, and btw devrandom owns the name gitian :)
+19:28:52 <sipa> and then we'd apply for code signing keys under that association's name, using the MPC RSA scheme?
+19:28:53 <meshcollider> jonasschnelli: sounds good to me
+19:29:05 <jonasschnelli> Okay... I'll let that happen and register with apple
+19:29:05 <sipa> (or at least eventually)
+19:29:13 <Provoostenator> Decentralized Code Signers LLC?
+19:29:16 <wumpus> sipa: yes, at least eventually
+19:29:17 <BlueMatt> luke-jr: I object to it being shared, it is not *that* hard for you to get your own cert for your own project.....
+19:29:17 <gmaxwell> sipa: yes, thats the idea.
+19:29:20 <jonasschnelli> sipa: not sure it that is possible with apples key enrolling process
+19:29:27 <sipa> jonasschnelli: i don't see why not
+19:29:27 <BlueMatt> sipa: yes
+19:29:30 <cfields> wumpus: exactly. The question to ask is: would we want btc1 signed with the same key?
+19:29:45 <jonasschnelli> I'll focus on the legal association stuff maybe someone can try to look into the MPC RSA sheme with apple OSX signing keys
+19:29:45 <sipa> jonasschnelli: assuming all the plumbing work is done
+19:29:46 <wumpus> cfields: right, no we don't :)
+19:29:52 <luke-jr> BlueMatt: it's a waste of money to a bad corp and a waste of time, at the very least
+19:29:52 <achow101> does anyone have a link to the rsa mpc thing?
+19:29:54 <gmaxwell> I wouldn't want any of us us wasting time helping with an adversarial project.
+19:29:57 <morcos> Guys, if you are signing code, you are responsible for that code.  If we are signing it in the name of Bitcoin Core we are all taking responsibility.  Please let's limit this discussion to the code we all work on together
+19:30:09 <Provoostenator> Makes sense
+19:30:13 <sipa> well, in the MPC setting, the group of signers would be fixed
+19:30:17 <morcos> someone can always separately create a more general entity to sign other projects, but thats not related to Core
+19:30:30 <sipa> the project should be signing the things that group of signers is jointly interested in signing
+19:30:32 <wumpus> yeah it's typical scope creep
+19:30:37 <gmaxwell> achow101: I'll give you the link after the meeting.
+19:30:40 <kanzure> or bike shedding on name
+19:30:42 <wumpus> let's sign the entire world :p
+19:30:42 <cfields> gmaxwell: right. I was making the point that it would be impossible to draw the line unless core-specific.
+19:30:45 <achow101> gmaxwell: k, thanks
+19:31:14 <MarcoFalke> Any other topics?
+19:31:21 <BlueMatt> promag: CValidationInterface is where you learn things from consensus code (ie from CChainState after 10279 or validation.cpp otherwise) - its also where you learn about mempool things but I have a branch which comes after 10286 that splits the interface up between the two to differentiate a little bit....wrt threading, CValidationInterface listeners all move into the scheduler, which means you dont have any deadlocking issues since
+19:31:22 <BlueMatt> they're all just called async, this is mostly complete in 10286, but cleaning up the remaining few isnt too hard...thats pretty much it, there's not much to it...net/net_processing is a different issue, and is mostly around moving things from CNode to CNodeState and disconnecting those two things being so closely joined, but the threading issues there are less of the primary concern (except for cs_main being too heavily shared between
+19:31:22 <BlueMatt> net_processing for mapNodeState and everything else)
+19:31:28 <gmaxwell> it is unfortunate that e.g. knots has an uphill time there, it's a barrier to entry that shouldn't exist. But it's also not one we created.
+19:31:37 <luke-jr> cfields: except Knots and Core have the same developers
+19:31:38 <wumpus> gmaxwell: I agree
+19:31:53 <cfields> luke-jr: as does btc1...
+19:31:56 <sipa> luke-jr: they don't have the same maintainers
+19:31:58 <luke-jr> cfields: hardly
+19:32:35 <sipa> i don't think everyone who is interested in signing off on core releases is interested in doing the same work for knots - and perhaps the other way around
+19:32:58 <cfields> luke-jr: i hope it's clear that I'm not trying to lump you in with an adversarial fork. Just making the point that the distinction in terms of signing is hard to draw.
+19:32:59 <luke-jr> "We Just Codesign Stuff We Want, LLC" XD
+19:33:15 <cfields> luke-jr: that's my end goal, actually
+19:33:15 <jonasschnelli> Indeed
+19:33:16 <jonasschnelli> It's one entity luke-jr
+19:33:22 <wumpus> well adversarial versus consensus-compatible is easy to draw
+19:33:24 <gmaxwell> there is another issue, I'm pretty sure that apple will not grant a key to "I sign random shit LLC"
+19:33:35 <jonasschnelli> You can found a "Knots Code Signing Assoc"
+19:33:36 <promag> thanks BlueMatt, I'll read that in a bit
+19:33:38 <cfields> to create a body like Let's Encrypt, which attests to the fact that code -> binary.
+19:34:04 <wumpus> cfields: that would be awesome
+19:34:06 <luke-jr> cfields: well, how to stop malware from using it?
+19:34:13 <achow101> cfields: well that's a whole separate thing which we can join once it exists :)
+19:34:20 <wumpus> but it's outside the scope of the bitcoin core project
+19:34:23 <wumpus> any other topics?
+19:34:24 <cfields> luke-jr: deterministic malware would have to be welcome, unfortunately
+19:34:51 <luke-jr> that'd just get the key revoked
+19:34:55 <gmaxwell> not like this stuff actually stops malware, snake oil security. alas.
+19:35:07 <gmaxwell> in any case, a discussion for another time.
+19:36:11 <wumpus> ok, no other topics
+19:36:19 <wumpus> #endmeeting
