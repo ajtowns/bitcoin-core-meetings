@@ -1,0 +1,349 @@
+19:01:04 <wumpus> #startmeeting
+19:01:04 <lightningbot> Meeting started Thu Nov 16 19:01:04 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:01:04 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:01:22 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag
+19:01:30 <sipa> present
+19:01:33 <achow101> hi
+19:01:34 <jtimon> hi
+19:01:35 <meshcollider> hello
+19:01:41 <gmaxwell> hi
+19:01:45 <sdaftuar> ack
+19:01:48 <jonasschnelli> hi
+19:01:56 <gmaxwell> will be back in 10 minutes, maybe the meeting won't be over by then. :P
+19:02:11 <wumpus> #topic high priority for review
+19:02:16 <BlueMatt> new high-priority for me: #11639
+19:02:18 <gribble> https://github.com/bitcoin/bitcoin/issues/11639 | Rewrite the interface between validation and net_processing wrt DoS by TheBlueMatt · Pull Request #11639 · bitcoin/bitcoin · GitHub
+19:02:32 <kanzure> hi.
+19:02:55 <wumpus> only four things left https://github.com/bitcoin/bitcoin/projects/8
+19:03:23 <BlueMatt> also probably worth a post-merge review: #10286 (note that this will likely make lots of open wallet-rpc change conflict silently - you need to add the new BlockUntilSyncedToCurrentChain call in some wallet rpc functions as boiler plate, see dev docs for more)
+19:03:27 <gribble> https://github.com/bitcoin/bitcoin/issues/10286 | Call wallet notify callbacks in scheduler thread (without cs_main) by TheBlueMatt · Pull Request #10286 · bitcoin/bitcoin · GitHub
+19:03:37 <wumpus> added 11639
+19:03:42 <promag> Hi
+19:04:15 <luke-jr> should #11383 be on there? I can rebase after the meeting
+19:04:18 <gribble> https://github.com/bitcoin/bitcoin/issues/11383 | Basic Multiwallet GUI support by luke-jr · Pull Request #11383 · bitcoin/bitcoin · GitHub
+19:05:12 <wumpus> luke-jr: added
+19:05:16 <bitcoin-git> [13bitcoin] 15luke-jr closed pull request #10391: OP_CHECKBLOCKATHEIGHT anti-replay (BIP 115; logic only) (06master...06cbah) 02https://github.com/bitcoin/bitcoin/pull/10391
+19:06:07 <promag> Rpc console still only for 1st wallet right?
+19:06:33 <luke-jr> promag: that PR has an independent combobox for the debug window
+19:06:46 <luke-jr> (including a "no wallet" option)
+19:07:01 <promag> Should rebase on dynamic wallet loading? Or vice-versa?
+19:07:01 <wumpus> #topic rpc console for multi wallet
+19:07:16 <jonasschnelli> The dropdown seems okay isch.
+19:07:23 <luke-jr> promag: IMO GUI should go before dynamic loading
+19:07:28 <jonasschnelli> Ideally we would have a higher-level visual selector
+19:07:31 <promag> Kk
+19:07:38 <luke-jr> jonasschnelli: ?
+19:07:41 <jonasschnelli> luke-jr: agree
+19:08:09 <jonasschnelli> luke-jr: it confusing to have a wallet level switch in the console
+19:08:24 <jtimon> what's wrong with the combobox ?
+19:08:30 <jonasschnelli> But I don't see another simple way
+19:08:41 <promag> One thing that bothers me with the combo is that the gui state is lost
+19:08:45 <luke-jr> maybe improvements there can be made after merge, if someone thinks of a better way
+19:08:52 <luke-jr> promag: ?
+19:08:56 <achow101> I think it might be confusing to users to have the debug window possibly be for a different wallet than the main wallet gui
+19:09:12 <wumpus> the combobox is ok
+19:09:16 <jonasschnelli> I think its an acceptable first step
+19:09:22 <promag> Like list scroll position, selection, focus, etc
+19:09:24 <sipa> pieter was here
+19:09:38 <wumpus> the debug window is supposed to be separate from the main GUI, having it influence what wallet is selected is even more confusing
+19:09:40 <jtimon> I think it's perfectly fine for the debug console to be flexible like this. seems just handy to put it there
+19:09:50 <wumpus> yes
+19:09:56 <promag> Another option is one tab per wallet
+19:10:02 <wumpus> no, please not
+19:10:14 <luke-jr> maybe (post-merge) an idea might be to have a red alert icon next to the combobox if it doesn't match the main window
+19:10:43 <achow101> I was thinking that when you first opened the debug window it could default to the wallet that was in use in the main window
+19:10:44 <wumpus> meh
+19:10:54 <achow101> then users can change the wallet if they want to
+19:11:13 <jonasschnelli> I think the dropbox is still the best solution on the table,... (even if not ideal)
+19:11:14 <jtimon> that sounds reasonable to me
+19:11:18 <wumpus> I really think having the debug window and main window interact in that way is a mess both in code and in interaction, but anyhow
+19:11:40 <wumpus> okay, any other topic?
+19:11:41 <luke-jr> sounds like we at least agree it's a post-merge topic XD
+19:11:45 <jonasschnelli> ack
+19:11:48 <jtimon> oh, if it's a mess in the code, I'm not sure it's worth it. I'll shut up
+19:11:52 <promag> wumpus: btw why not tabs?
+19:12:07 <wumpus> promag: multiple tabs with the same console just pointing at a different wallet sounds terrible to me
+19:12:08 <jtimon> spaces are better
+19:12:11 <jonasschnelli> promag: most calls are pure node calls...
+19:12:11 * jtimon hidfdes
+19:12:22 <wumpus> promag: the tabs are supposed to be for essentially different things
+19:12:33 <promag> At least you keep track of the correct log
+19:12:36 <wumpus> e.g. more charts, more pages of debug info, etc
+19:12:42 <jnewbery> promag: multiwallet comes first, dynamic loading later
+19:13:04 <jnewbery> *multiwallet GUI comes first
+19:13:17 <promag> Anyway, ack on the order
+19:13:24 <luke-jr> promag: perhaps a log entry after you execute a command on a different wallet than previously (post-merge stuff)
+19:13:42 <promag> Ok ok
+19:13:47 <wumpus> why not a command to switch between wallets, btw?
+19:14:10 <wumpus> the combobox is great to show what the current wallet is, but shouldn't the wallet be switchable with typing?
+19:14:12 <luke-jr> /wallet <name> ?
+19:14:16 <wumpus> for ex.
+19:14:23 <jonasschnelli> yes... ideally it would be stateless.
+19:14:30 <jonasschnelli> to ensure one is not executing on the wrong wallet
+19:14:31 <achow101> so it would be a gui only command?
+19:14:37 <jonasschnelli> wallet:xyz getnewaddress
+19:14:38 <wumpus> achow101: yes
+19:14:54 <jonasschnelli> if wallet:<filename> is missing, we get the standard rpcish reject
+19:14:55 <wumpus> jonasschnelli: type the wallet name for every command? yes, maybe
+19:14:57 <promag> It could be part of the "prompt"
+19:15:08 <MarcoFalke> Needs autocomplete!
+19:15:17 <jonasschnelli> I think the wallet-selected-state can be dangerous
+19:15:18 <wumpus> jonasschnelli: that's absolutely safest
+19:15:23 <wumpus> jonasschnelli: agree
+19:15:26 <jonasschnelli> and it's RPC like
+19:15:35 <wumpus> yes
+19:15:39 <jonasschnelli> one can still use arrow-up edit
+19:15:43 <jtimon> a gui only command doesn't feel right
+19:16:07 <luke-jr> nesting is already GUI-only
+19:16:21 <wumpus> jtimon: no, agree, jonasschnelli's proposal to make it stateless and have to provide it for every command is better, that's the same as needs tobe done for bitcoin-cli
+19:16:22 <jonasschnelli> yes. It's fine
+19:16:59 <luke-jr> is this still post-merge, or have we un-concept-ack'd the MW GUI PR?
+19:17:01 <promag> Even when there is 1 wallet only?
+19:17:13 <MarcoFalke> promag: No
+19:17:17 <wumpus> promag: that's the exception
+19:17:22 <jonasschnelli> luke-jr: both would be okay for me (post merge or now)
+19:17:24 <wumpus> if it is unambigious then why not
+19:17:36 <wumpus> wallet needs to be provided if multiple wallets are loaded
+19:17:47 <promag> Ack
+19:17:53 <luke-jr> wumpus: because it'd be really annoying to use?
+19:17:54 <wumpus> if no wallet is loaded, there's no problem, if one wallet is loaded, then it's clear which one is meant
+19:18:14 <wumpus> if mutliple are loaded then wallet commands are ambigious
+19:18:19 <promag> It's the same with cli
+19:18:26 <wumpus> yes, it's the same with bitcoin-cli
+19:18:28 <jonasschnelli> It's maybe annoying... but it's the wallet. Safety first
+19:18:36 <luke-jr> cli is just a testing tool though; it doesn't need to be convenient
+19:18:36 <gmaxwell> why wouldn't the debug window just have a combo box
+19:18:49 <luke-jr> gmaxwell: that's the current code
+19:18:57 <jonasschnelli> gmaxwell: I think you will quickly choose the wrong wallet
+19:19:11 <wumpus> gmaxwell: it's somewhat dangerous; easy to type a command with the wrong one selected
+19:19:17 <jtimon> gmaxwell: some people are worried about a state, not sure what the problem is either
+19:19:23 <gmaxwell> luke-jr: that is not true. cli is probably about as frequently used for using the software as the gui (this probably says some unfortunate things about the gui, but.. :P )
+19:19:33 <luke-jr> could do both, I guess
+19:19:37 <luke-jr> gmaxwell: I highly doubt that!
+19:19:46 <achow101> luke-jr: I think there could be some weird interactions with doing both
+19:19:55 <wumpus> gmaxwell: there is no clear visual link between what you type and the combobox, though it could be somehow improved by logging in big colorful letters when a different wallet is selected
+19:19:58 <luke-jr> both = combobox with in-command override only when no-wallet selected
+19:20:03 <wumpus> e.g. ============ current wallet: blabla.dat ===============
+19:20:10 <gmaxwell> wumpus: thats a point, the prompt to could also show the wallet.
+19:20:21 <wumpus> gmaxwell: yes, indeed
+19:20:21 <gmaxwell> and there could be a line written in when it chages, like that.
+19:20:31 <jtimon> how is it going to be with the cli again?
+19:20:41 <luke-jr> jtimon: no changes needed there
+19:20:57 <wumpus> jtimon: for the cli you have to provide the wallet name on every call to select the endpoint ,if it's ambigious, nothing will change there
+19:21:11 <gmaxwell> jtimon: cli makes you specify it as a dashed argument to bitcoin-cli, which is a bit obnoxious but works.
+19:21:12 <wumpus> decision is to be made about the console
+19:21:16 <wumpus> but seems a combobox will do for now
+19:21:21 <wumpus> so leave it like that for now luke-jr
+19:21:24 <luke-jr> k
+19:21:41 <promag> Next?
+19:21:41 <jtimon> I see, thanks. just like you have to provide testnet or regtest every time but you don't need that in the GUI
+19:21:49 <wumpus> jtimon: yep
+19:21:58 <wumpus> GUI can keep state for you that the cli cannot
+19:22:11 <wumpus> because it 'captures' the user, unlike a command that's launched every time
+19:22:25 <wumpus> yes, other topics?
+19:22:50 <achow101> topic suggestion: encrypted wallets by default
+19:22:51 <promag> Flat options in rpc?
+19:23:11 <wumpus> #topic encrypted wallets by default
+19:23:18 <jtimon> I wanted to ask jl2012 about #11398
+19:23:20 <gribble> https://github.com/bitcoin/bitcoin/issues/11398 | Hardcode CSV and SEGWIT deployment by jl2012 · Pull Request #11398 · bitcoin/bitcoin · GitHub
+19:23:26 <wumpus> ... why??
+19:23:38 <morcos> can someone open an issue about deciding wallet access from the console, i think shipping with it as i understand it to be now seems terrible, but i agree no reason to hold up progress on merging
+19:23:43 <jonasschnelli> achow101: with an option to unencrypt later?
+19:23:59 <achow101> jonasschnelli: I guess?
+19:24:03 <sipa> wumpus: why what?
+19:24:09 <wumpus> why encrypt the wallet by default?
+19:24:14 <jonasschnelli> achow101: I think that would be great.
+19:24:24 <gmaxwell> If you have users encrypt wallets when they open one without any value in it they will reliably lose the key.  The positive confirmation that the user is backed up like electrum has reduces that sort of risk.
+19:24:31 <wumpus> it forces people to choose a passphrase which they'll probably forget
+19:24:33 <achow101> a lot of wallet software do this now and I don't think people necessarily realize that their wallets are unencrypted until they go to the encrypt wallet option or rpc
+19:24:40 <wumpus> I think most people lose money because of losing wallets or losing passphrases not theft
+19:24:51 <wumpus> what thread model does encrypting wallets protect against anyhow?
+19:24:52 <jonasschnelli> that true on the other hand
+19:25:10 <jonasschnelli> Those who have access to support ticket systems of consumer wallets do know that
+19:25:21 <luke-jr> wumpus: bad PR
+19:25:29 <gmaxwell> Wallet encryption is mostly a tool for people to lose their money but feel better about it because its their own fault.    The great advantage of wallet encryption by default, as I'd see it, is resolving this mess of having to preserve unencrypted keys.
+19:25:34 <morcos> couldn't we encrypt the wallet by default but not create the wallet by default
+19:25:45 <morcos> so you solve the problem of them just clicking through the encryption aspect
+19:25:50 <achow101> morcos: that was the idea I was thinking about
+19:25:57 <gmaxwell> But for that advantage I would recommend a late initilization that doesn't create a wallet until you ask for an address... or go to encrypt it.
+19:26:06 <achow101> you don't make the wallet until it is actually used, and only then do you prompt the user to make a wallet
+19:26:11 <wumpus> I mean, the only use for encrypting wallets I see is: other people use your computer, and you're afraid of them copying the wallet but not installing a keylogger
+19:26:20 <gmaxwell> +1 on the late initilization.
+19:26:24 <wumpus> I don't think it protects against any other attacks
+19:26:46 <morcos> wumpus: you dont think its useful for backups?
+19:26:48 <gmaxwell> wumpus: well I really like encryption so that I know that I'm not accidentally going to send funds, but for that it's sufficient to make the key "yes" :P
+19:26:59 <luke-jr> morcos: for backups you really want to encrypt the whole thing anyway
+19:27:06 <gmaxwell> morcos: ^
+19:27:07 <achow101> I have a branch for late initialiation: https://github.com/achow101/bitcoin/tree/start-no-wallet
+19:27:09 <morcos> i suppose, maybe backups wasn't the right word
+19:27:10 <achow101> it doesn't work right now
+19:27:30 <morcos> maybe i meant having the wallet to check on things but not worrying too much about it
+19:27:34 <wumpus> or maybe the case where e.g. malware in the browser sandbox can grab a fixed file from your computer, but there's no persistent access
+19:27:39 <achow101> also encryption reduces the file size by like half because unencrypted keys are massive for some reason
+19:28:08 <wumpus> another thing that will cause confusion is that for other wallets, the passphrase is the seed
+19:28:15 <luke-jr> wumpus: even when it was introduced, it was acknowledged as mostly just a PR stunt
+19:28:20 <wumpus> so people will think that only keeping the passphrase is enough to keep access to their funds
+19:28:20 <jtimon> gmaxwell: I was actually scared to suggest a default key for "resolving this mess of having to preserve unencrypted keys"
+19:28:31 <wumpus> there are already peple making that mistake now but it's rarer
+19:28:37 <wumpus> (because you only have to choose it explicitly)
+19:28:40 <luke-jr> achow101: huh? how?
+19:28:45 <gmaxwell> +1 for late init,  +1 for positive confirmation recovery backup (like electrum);  -1 for more pressure to encrypt unless the last step is done, +1 for it if the last step is done.
+19:28:50 <morcos> also, this might sound stupid, but if you have a Core-encrypted wallet, you at least know the balance, so you know whether it's worth trying to figure out how to unencrypt it
+19:29:01 <wumpus> so no, I think focing people to choose a passphrase when first creating their wallet is a bad idea
+19:29:07 <achow101> luke-jr: encrypted keys are way smaller than unencrypted ones
+19:29:14 <morcos> +1 gmaxwells +/-1's
+19:29:20 <luke-jr> how is that even possible?
+19:29:33 <promag> Sorry have to be afk
+19:29:38 <gmaxwell> luke-jr: because the unencryted keys use some brain damaged openssl encoding
+19:29:43 <gmaxwell> that encludes all the curve parameters.
+19:29:44 <wumpus> that's just an implementation detail htough; unencrypted keys could be stored smaller, too
+19:29:51 <achow101> luke-jr: the format. unencrypted keys are DER format or something. they have the curve params in them
+19:29:55 <wumpus> we could encrypt the wallet by default, with an empty passphrase
+19:30:02 <luke-jr> ew
+19:30:04 <gmaxwell> right, thats a reason to change the format, not a reason to encrypt.
+19:30:09 <sipa> achow101: they have field params, curve params, generator, public key and private key in them :)
+19:30:17 <sipa> and all of that in inefficient DER
+19:30:24 <sipa> 279 bytes total, iirc
+19:30:45 <wumpus> yes it's terrible
+19:31:26 <wumpus> and doesn't help with anything, if you're going to store the keys in redundant format at least pad it with something that provides error correction
+19:31:54 <luke-jr> XD
+19:31:54 <BlueMatt> I mean its error correction in case we forget our curve parameters...or something
+19:32:03 <sipa> BlueMatt: we actually hardly look at it
+19:32:05 <gmaxwell> wumpus: What are your thoughts on, long term:  delayed creation, at create time in the GUI force the user to write down a recovery code (like electrum does; force via reentry and copy/paste jamming).. and have a checkbox to encrypt there too?   recovery code would greatly offset all risks of loss, including lost the passphrase.
+19:32:17 <luke-jr> at that size, just store 8 copies of it
+19:32:48 <wumpus> gmaxwell: the recovery code would be the HD seed?
+19:32:53 <gmaxwell> luke-jr: storing N copies of a key right next to each other hardly helps since disks tend to die a physical sector at a time.
+19:32:56 <achow101> gmaxwell: recovery code as in something like bip39?
+19:32:58 <gmaxwell> wumpus: yea, an encoding of the HD seed.
+19:33:03 <wumpus> gmaxwell: that sounds great to me
+19:33:06 <morcos> gmaxwell: encryption using recovery code?
+19:33:17 <luke-jr> gmaxwell: sure, but in that case you're screwed with checksums too
+19:33:20 <gmaxwell> achow101: not bip39 as it's a brainwallet scheme that can't encode arbritary data, but yes.
+19:33:30 <morcos> i also like that idea, but i worry about the importing of private keys...  we'd have to put in a whole lot of warnings about that
+19:33:36 <wumpus> achow101: more like other wallets lke electrum's seed phrase
+19:33:49 <achow101> wumpus: yes, I would prefer using Electrum's scheme
+19:33:53 <wumpus> achow101: (there's a BIP for it but I don't know the number)
+19:33:54 <gmaxwell> morcos: I think we need to get to having an import tainted flag on wallets, and warnings about that.
+19:33:54 <achow101> that's what we plan to do for Armory
+19:34:08 <luke-jr> morcos: importing private keys is already considered dangerous and "never do this"
+19:34:21 <wumpus> gmaxwell: I also greatly like the idea of not creating a wallet by default, so starting in no-wallet mode
+19:34:22 <jtimon> so what's wrong with the "yes"/default/empty passphrase/key?
+19:34:32 <jonasschnelli> the recovery phrase would be unencrypted?
+19:34:40 <gmaxwell> achow101: ugg electrum itself. can't encode arbritary data, so it can't work with existing wallets. at least it's better than bip39.
+19:34:55 <achow101> jonasschnelli: it would have to be to be able to recover from forgotten passwords
+19:35:25 <achow101> gmaxwell: it can't? (I haven't really looked at it)
+19:35:27 <jtimon> jonasschnelli: yes, would be public knowledge (and for the user it would be like if none was set) unless you actively set one
+19:35:32 <jonasschnelli> achow101: I just worry about people storing those recovery phrases on phones and "plaintext "papers
+19:35:34 <gmaxwell> jonasschnelli: I have mixed feelings about that.  I think a best practice is to have your recovery keys encrypted with a WEAK key,  like that insecure password your whole family knows; and there is no risk of it being forgotten... but which a burgler would likely be thwarted, but thats too complex to communicate.
+19:36:12 <gmaxwell> jonasschnelli: but we should realize that risk of users losing a strong password is likely orders of magnitude more likely than a local in person attack.
+19:36:27 <wumpus> it gets quite complex to manage if the recovery key is encrypted too
+19:36:33 * BlueMatt notes that if we do some kind of default-encryption-with-weak-password we should have a clear tag on keys to help out the "shitsihitshit, please scan entire raw disk for anything that looks like a key" use-case
+19:36:37 <jonasschnelli> gmaxwell: Indeed. Though people who can take care of a passphase should not be punished
+19:36:40 <wumpus> there's the recovery key passphrase, the wallet passphrase,...
+19:36:46 <gmaxwell> achow101: unless I'm confused (always likely) it's just a minor fixup of BIP39.
+19:37:15 <luke-jr> BlueMatt: +1
+19:37:16 <wumpus> BlueMatt: that's where the redundant key format is useful :)
+19:37:32 <wumpus> BlueMatt: it greatly helps efficiently scanning for private keys on a disk :p
+19:37:38 <BlueMatt> heh, I know
+19:37:49 <gmaxwell> BlueMatt: yea, sure, anything key format should have e.g. somethin like the network magic then the private key then a 64 bit crc... and then its cheap to scan the media looking for it.
+19:37:54 <wumpus> I don't think you can do a similar thing for the encrypted keys right now
+19:38:00 <wumpus> not that they're any use without the master key
+19:38:27 <BlueMatt> i mean ideally we'd have a clear tag on both so that such software can prompt the user with "found a wallet, please enter passphrase"
+19:38:35 <BlueMatt> but now we're going down a rewrite-wallet-format rabbit hole
+19:38:38 <gmaxwell> jonasschnelli: I don't know how to manage the multiple keys case. One possiblity would be to make the recovery key unencrypted by default, and have an advanced dialog that lets you set encryption for it. And support reading in encrypted ones.
+19:38:54 <jonasschnelli> Yes. That would be great
+19:39:04 <gmaxwell> jonasschnelli: I have a lovely suggestion for hardware wallet friendly KDFs for these things too.
+19:39:06 <achow101> BlueMatt: I propose that we just deprecate the wallet :p
+19:39:09 <morcos> May I make a meta suggestion.. I think we often lose progress on ideas like this by not having someone document what we discussed.  could we ask for volunteer every time we have a good discussion like this to draft up a plan.
+19:39:16 <luke-jr> achow101: I get the feeling often
+19:39:16 <jtimon> ack on starting in no-wallet mode
+19:39:22 <jonasschnelli> gmaxwell: +1 (happy to hear)
+19:39:33 <achow101> morcos: meeting notes writer
+19:39:49 <achow101> morcos: he'll write the meeting notes sometime after exams this week
+19:39:52 <wumpus> achow101: and then what, change it into an art project where you can look at blocks drifting by, without being able to do anything? :p
+19:40:22 <luke-jr> wumpus: write a new one :p
+19:40:36 <morcos> yeah but i mena more a focused thing... like after SF devcore -> plan for Segwit wallet  ;   this meeting -> plan for wallet encryption recovery code
+19:40:36 <wumpus> luke-jr: you can do that without deprecating anything
+19:40:51 <gmaxwell> the block drifting UI should play https://www.youtube.com/watch?v=8Z-fyNdnOKE in a loop.
+19:41:00 <achow101> I'm scared to click that link
+19:41:05 <gmaxwell> it's just music.
+19:41:17 <gmaxwell> but we've trained you well.
+19:41:52 <sipa> morcos: i've just posted a bit of a writeup/rant on wallet design and segwit support: https://gist.github.com/sipa/125cfa1615946d0c3f3eec2ad7f250a2
+19:41:54 <wumpus> morcos: yes, we shouldn't forget segwit wallet
+19:41:59 <morcos> woohoo!
+19:42:02 <wumpus> morcos: that's the thing people are actually waiting for now :)
+19:42:05 <sdaftuar> sipa: thanks!
+19:42:08 <gmaxwell> FWIW, sipa has been working on a stronger base=32 BCH code for things like private keys and stealth addresses; which could be an option for recovery codes.
+19:42:12 <wumpus> sipa: nice!
+19:42:13 <luke-jr> clicking that link won't have permissions for my audio :p
+19:42:22 <BlueMatt> when segwit wallet
+19:42:30 <achow101> sipa: cool!
+19:42:51 <achow101> BlueMatt: soon(tm)
+19:43:20 <luke-jr> (mini rant: using #include <…> for our own files is stupid)
+19:44:23 <wumpus> luke-jr: sigh, the other alternative would have been to fix all relative includes, but that was discussed in detail in the PR and the one before it
+19:45:23 <wumpus> luke-jr: so using #include "../primitive/block.h" in e.g. the wallet. This roots everything at the project root, which is just as unambigious and shorter...
+19:45:54 <luke-jr> I just hope /usr/include/primitive/block.h gets ignored
+19:46:08 <wumpus> that doesn't get ignored either with ""
+19:46:20 <luke-jr> :|
+19:47:06 <gmaxwell> obviously we need to rename every header file to filename_bitcoin_core_is_awesome.h
+19:47:08 <wumpus> at least not the way we were using it, which is essentially as <>, I think if you use "" relatively you can avoid it
+19:48:03 <wumpus> yep!
+19:48:03 <luke-jr> gmaxwell: I'm thinking more of malware infecting builds this way
+19:48:19 <wumpus> well if your build root is infected you're fucked anyway
+19:48:29 <jnewbery> luke-jr: in any case, the PRs were open for a few months (much longer than I would have liked in fact). There was opportunity to comment on those PRs. I think the ship has sailed now.
+19:48:40 <luke-jr> true
+19:48:57 <wumpus> protecting against that is even more questionable than encrypting your wallet, against any possible realistic threat model
+19:49:45 <gmaxwell> luke-jr: well if your host is compromised it's pretty unlikely that it would be limited to only tripping you up with shadowed include files.
+19:49:47 <wumpus> jnewbery: indeed, it's almost as if he waited for it to be merged
+19:49:57 * BlueMatt nominates #11363 for cfields' high-priority-for-review, cause he apparently isnt here...
+19:49:59 <gribble> https://github.com/bitcoin/bitcoin/issues/11363 | net: Split socket create/connect by theuni · Pull Request #11363 · bitcoin/bitcoin · GitHub
+19:50:10 <luke-jr> wumpus: just didn't notice it until rebasing on top of the merged code
+19:51:05 <luke-jr> anyhow, #11383 rebase is done
+19:51:07 <gribble> https://github.com/bitcoin/bitcoin/issues/11383 | Basic Multiwallet GUI support by luke-jr · Pull Request #11383 · bitcoin/bitcoin · GitHub
+19:51:16 <jonasschnelli> ^^
+19:52:33 <jonasschnelli> thanks.. will test
+19:52:34 <Dizzle> I like multiwallet. Thanks for working on it, luke-jr. I miss the classic multibit bulk walletting.
+19:52:41 <wumpus> luke-jr: anyhow C/C++ including is fragile that way; possible modules https://clang.llvm.org/docs/Modules.html will improve that in the future
+19:53:13 <sipa> yay c++20... which we'll switch to in 20125?
+19:53:19 <sipa> *2025
+19:53:24 <wumpus> yes, in 20125
+19:53:31 <luke-jr> :x
+19:53:33 <Chris_Stewart_5> ack
+19:53:36 <meshcollider> lol
+19:53:39 <jonasschnelli> heh
+19:53:53 <gmaxwell> change in topic, anyone have recent stats for the number of remaining btc1 nodes-- which are likely about to become a distributed DOS attack on the bitcoin network?
+19:53:56 <wumpus> BlueMatt: will add that one
+19:54:40 <wumpus> #topic DDoS network stats
+19:54:59 <meshcollider> gmaxwell:  https://coin.dance/nodes says 139 but maybe not what you're after?
+19:55:12 <luke-jr> (I'm going to drop as soon as the meeting is officially over. I'll be back a few minutes later in case there's stuff to talk about)
+19:55:19 <jonasschnelli> I can filter my seed crawler for uagent string?
+19:55:23 <gmaxwell> meshcollider: ha. I didn't expect them to shut off that fast, I guess they were really almost all just a couple people sybling.
+19:55:35 <gmaxwell> meshcollider: okay, probably not much to worry about.
+19:56:24 <meshcollider> gmaxwell yeah lol there was a Reddit post which went into some detail showing 90% were hosted by AWS
+19:56:35 <wumpus> PSA before the meeting is over: I want to collect corrupted leveldb files, if you have a leveldb corruption please patch https://github.com/bitcoin/bitcoin/pull/11674 and send me the indicated corrupted file.
+19:57:10 <jonasschnelli> 861 peers with "Bitcoin ABC" and 100% uptime during last two hours.
+19:57:24 <luke-jr> jonasschnelli: that's just BCH
+19:57:25 <achow101> gmaxwell: my btc1 node is connected to 34 other btc1 nodes, so at least 35
+19:57:26 <meshcollider> ABC is not btc1
+19:57:35 <BlueMatt> i mean its what we did 0.15.1 for, no?
+19:58:10 <gmaxwell> BlueMatt: yes, sure I wanted to know how many there weer because if there were thousands I'd make a post on reddit to urge people to upgrade to 0.15+ seems it might not be needed.
+19:58:11 <jonasschnelli> meshcollider: what uagent does btc1 uses?
+19:58:25 <luke-jr> jonasschnelli: /Satoshi:1.*/
+19:58:30 <jonasschnelli> ah
+19:58:41 <achow101> jonasschnelli: most have a uacomment with "2x"
+19:58:46 <jonasschnelli> 107
+19:58:55 <gmaxwell> with only 140ish it's pretty unlikely many nodes will get isolated behind them.
+19:59:25 <achow101> what block were they forking at?
+19:59:30 <achow101> (I need to add it to my site)
+19:59:34 <gmaxwell> 494784
+19:59:55 <jtimon> weren't they using a naming just the same as bitcoin core but increasing a version? (ie 0.14.3)
+20:00:03 <gmaxwell> hopefully someone will mine a couple blocks on that fork to help get those nodes disconnected.
+20:00:21 <gmaxwell> jtimon: they made the major version 1.
+20:00:26 <achow101> gmaxwell: a mining pool announced that they would go with the 2x fork regardless
+20:00:27 <jtimon> oh, right
+20:00:27 <jnewbery> won't they disconnect themselves once a valid block is found?
+20:00:34 <wumpus> ding dong
+20:00:40 <gmaxwell> achow101: that was 'bitpico' who is crazy.
+20:00:53 <gmaxwell> it's meaningless.
+20:00:59 <achow101> oh
+20:01:11 <wumpus> #endmeeting
