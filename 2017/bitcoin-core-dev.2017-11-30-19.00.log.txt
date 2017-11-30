@@ -1,0 +1,421 @@
+19:00:03 <wumpus> #startmeeting
+19:00:03 <lightningbot> Meeting started Thu Nov 30 19:00:03 2017 UTC.  The chair is wumpus. Information about MeetBot at http://wiki.debian.org/MeetBot.
+19:00:03 <lightningbot> Useful Commands: #action #agreed #help #info #idea #link #topic.
+19:00:23 <wumpus> #bitcoin-core-dev Meeting: wumpus sipa gmaxwell jonasschnelli morcos luke-jr btcdrak sdaftuar jtimon cfields petertodd kanzure bluematt instagibbs phantomcircuit codeshark michagogo marcofalke paveljanik NicolasDorier jl2012 achow101 meshcollider jnewbery maaku fanquake promag
+19:00:32 <cfields> hi
+19:00:35 <sipa> hi
+19:00:36 <CodeShark> hello
+19:00:44 <achow101> hi
+19:00:46 <Provoostenator> hi
+19:00:51 <instagibbs> hi
+19:00:55 <jonasschnelli> hi
+19:00:59 <wumpus> #topic high priority for review
+19:01:01 <meshcollider> hi
+19:01:16 <luke-jr> hi
+19:01:20 <wumpus> 8 PRs have been tagged for https://github.com/bitcoin/bitcoin/projects/8
+19:01:39 <BlueMatt> why does cfields have 2?
+19:01:44 <wumpus> I added cfields's BanMan last week as it's blocking his further net refactoring
+19:01:59 <cfields> BlueMatt: wasn't me, but i'll take it :)
+19:02:06 <wumpus> ohh is it unfair?
+19:02:09 * jonasschnelli also have two :|
+19:02:18 <instagibbs> achow101, i see you rebased yours? we shooting for post-0.16?
+19:02:21 <BlueMatt> i think we try to have only one per person
+19:02:24 <jtimon> hi
+19:02:34 <BlueMatt> well i suggested we include jonasschnelli's other one as its kinda a segwit-wallet-blocker imo
+19:02:38 <BlueMatt> or at least in-same-release
+19:02:42 <achow101> instagibbs: I'm shooting for 0.16
+19:02:47 <achow101> but it may not make it
+19:03:04 <instagibbs> ok, I can give it more love, though I think I've given a lot already, probably needs others....
+19:03:21 <achow101> still some segwit related things to do and runn1ng wants simulations
+19:03:31 <achow101> also been busy with exams and classwork
+19:03:37 <wumpus> well, good solution for that, review and merge one of cfields's PRs and there will be only one left :)
+19:03:44 <karelb> achow101: I came just in time :) yes I wanted some simulations
+19:03:51 <jonasschnelli> wumpus: heh
+19:03:57 <sipa> so i think we're maybe unintentionally moving from a "we release regularly with whatever is finished" to "X is a blocker for release Y"
+19:04:10 <BlueMatt> oh, wait, i dont have one...hmmmm, I'd say #10279
+19:04:13 <wumpus> sipa: segwit is the only exception to that
+19:04:14 <cfields> i have no problem with removing one of mine if it's an issue. But yes, I think 11363 is ready/easy to review
+19:04:15 <gribble> https://github.com/bitcoin/bitcoin/issues/10279 | Add a CChainState class to validation.cpp to take another step towards clarifying internal interfaces by TheBlueMatt · Pull Request #10279 · bitcoin/bitcoin · GitHub
+19:04:23 <BlueMatt> sipa: I think we'll go back to that post-segwit-wallet, no?
+19:04:25 <wumpus> sipa: for the rest, releases are only ever blocked on bugfixes not features
+19:04:29 <achow101> sipa: I think 0.16 is the exception? because segwit wallet
+19:04:35 <wumpus> yes
+19:04:36 <jtimon> sipa: what is the blocker for 0.16 ?
+19:04:41 <sipa> okay, that's fine - i'm not saying it's a bad thing
+19:04:50 <instagibbs> i think it's openly acknowledged
+19:04:55 <wumpus> and segwit wallet is not intended as a *blocker* for 0.16
+19:05:07 <wumpus> we intend to release 0.16 early after that's in
+19:05:13 <wumpus> so it's more like a trigger
+19:05:13 <sipa> fair enough
+19:05:20 <sipa> but it still changes prioritization a bit
+19:05:28 <BlueMatt> indeed
+19:05:32 <instagibbs> i think the segwit pr is shaping up nicely at least
+19:05:34 <wumpus> if segwit wallet takes longer than the 0.16 release window, then IMO we should release 0.16 without it
+19:05:43 <wumpus> but I don't expect that
+19:05:48 <BlueMatt> wumpus: agreed
+19:06:09 <jtimon> oh, I see, we want to release 0.16 soon after segwit wallet gets in
+19:06:14 <wumpus> jtimon: yep
+19:06:26 <sipa> i'm about to push some review fixes to #11403
+19:06:30 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:06:31 <wumpus> jtimon: seems more advisable than trying to backport the whole lot + dependencies to 0.15
+19:06:34 <cfields> sipa: not sure if you've clarified somewhere, do you consider all of the listed TODOs in 11403 blockers for release as well?
+19:06:53 <jtimon> wumpus: yeah, I think I suggested that, eithe way it makes sense to me
+19:07:18 <wumpus> jtimon: thanks in that case :)
+19:07:26 <luke-jr> branch 0.15 into 0.16 ;)
+19:07:32 <sipa> cfields: yes
+19:07:48 <cfields> ok, thanks
+19:08:03 <gmaxwell> So, segwit-wallet is done?
+19:08:15 <jtimon> I'm not following review on the segwit wallet pr, how is it going?
+19:08:31 <sipa> i think #11403 is pretty much done - just nits in command line option handling and output
+19:08:34 <gribble> https://github.com/bitcoin/bitcoin/issues/11403 | SegWit wallet support by sipa · Pull Request #11403 · bitcoin/bitcoin · GitHub
+19:08:45 <jtimon> great
+19:08:55 <achow101> I tried reviewing it but it's big and scary
+19:09:10 <wumpus> awesome
+19:09:23 <sipa> we may want to discuss what to do with things like how dumpprivkey and signmessage should work in a post-segwit world
+19:09:29 * Randolf congratulates achow101 for trying
+19:09:30 <cfields> i found it reasonable review on a per-commit basis
+19:09:37 <instagibbs> cfields, same
+19:09:40 <sipa> as i believe some projects have come up with formats on their own
+19:09:41 <cfields> *to review
+19:09:55 <achow101> sipa: trezor has implemented their own segwit message signing thing
+19:09:59 <jtimon> I guess I need tofix the nits in #8994 and #10757 if I want them to have a chance to get merged before 0.16 then
+19:10:02 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:10:03 <achow101> I think that might be the only one though
+19:10:07 <gribble> https://github.com/bitcoin/bitcoin/issues/10757 | RPC: Introduce getblockstats to plot things by jtimon · Pull Request #10757 · bitcoin/bitcoin · GitHub
+19:10:22 <sipa> achow101: perhaps we can just adopt that
+19:10:25 <jtimon> what are we referring to by "soon after"?
+19:10:30 <wumpus> sipa: well if other project's import/export formats make sense, it'd be good to use them for interchangeability
+19:10:45 <achow101> sipa: I don't think it's documented anywhere though
+19:10:48 <meshcollider> Should there be a BIP to formalise it
+19:10:48 <achow101> at least not yet
+19:10:52 <Provoostenator> Is there a good standard for message signing?
+19:10:53 <sipa> longer term i think a script-based signing would nice, but i don't think we're ready to adopt something like that
+19:10:59 <gmaxwell> I thought they did but backed it out because it wasn't standardized yet. What they did didn't seem to awful, though I feel a little uneasy about the mutability between keytypes.
+19:11:00 <karelb> sipa: ad sign message - in trezor we changed v constant - https://github.com/bitcoin/bitcoin/issues/10542#issuecomment-316032523 - no BIP, no time :(
+19:11:13 <sipa> karelb: ok, i'll have a look
+19:11:22 <sipa> the original bitcoin core message signing doesn't have a bip either
+19:11:33 <luke-jr> Provoostenator: no
+19:11:40 <wumpus> a BIP is not a requirement for us implementing it, though in parallel it'd be nice
+19:11:43 <BlueMatt> sipa: it probably should if we change it, though
+19:11:45 <achow101> sipa: perhaps it should? retcon one :p
+19:11:56 <sipa> seems reasonable
+19:11:57 <wumpus> good to already have implementations and the BIP just formalizes it
+19:12:08 <gmaxwell> Well, signmessage is generally not very good; but fixing it should be a longer term thing.
+19:12:09 <Provoostenator> I vaguely remember trying to implement / refactor signing and being not amused by the lack of a standard.
+19:12:16 <luke-jr> current signed messages get very little real use, and most "usage" is based on misconceptions
+19:12:23 <karelb> sipa yes good point. I wanted to write up a document that describes both current and segwit message signing, but I got stuck on how ecdsa signing actually works :)
+19:12:24 <wumpus> luke-jr: agree
+19:12:26 <luke-jr> IMO it'd make sense to just deprecate it until a better replacement is made
+19:12:29 <wumpus> luke-jr: it's not a priority at least
+19:12:33 <instagibbs> luke-jr, it's used for airdrops :P
+19:12:40 <sipa> luke-jr: i agree it's not all that useful
+19:12:44 <Provoostenator> Can it be made coin-agnostic as well?
+19:12:48 <wumpus> certainly shouldn't be a blocker for 0.16
+19:12:50 <luke-jr> instagibbs: that's a misuse, since it doesn't prove you have funds ;)
+19:12:51 <gmaxwell> Provoostenator: no.
+19:13:09 <karelb> we didn't have segwit message signing in web wallet, but users repeatedly demanded it
+19:13:12 <instagibbs> luke-jr, but i profit from it, how can it be misuse ;P
+19:13:19 <instagibbs> +1 tho
+19:13:21 <gmaxwell> The fact that it's inherently incompatible with multisig is a real bummer.
+19:13:22 <luke-jr> karelb: for what, though?
+19:13:27 <achow101> instagibbs: lol
+19:13:31 <gmaxwell> luke-jr: airdrops
+19:13:35 <luke-jr> XD
+19:13:49 <wumpus> using bitcoin keys for anything else than signing transactions continues to make me uneasy
+19:13:50 <jtimon> yeah, +1 to move to signing messages based on scripts
+19:14:09 <luke-jr> MAST-based signmessage would be a sensible replacement
+19:14:14 <Provoostenator> jtimon: what would that look like?
+19:14:44 <wumpus> do hardware wallets even support it?
+19:14:51 <luke-jr> Provoostenator: you could have a MAST if-branch that is always false for transactions, and then true for meta uses
+19:14:53 <gmaxwell> wumpus: If I were to it again, I'd make signmessage work by just creating a transaction which is inherently unminable. It would make it a lot more compatible, though somewhat larger.
+19:14:53 <CodeShark> gmaxwell: a general solution for airdrops seems extremely difficult
+19:15:29 <jtimon> Provoostenator: like we sign txs but signing any message, in elements we sign blocks so perhaps you want to take a look (since there's generic functions to sign stuff, but they're not exposed and only used for blocks)
+19:15:30 <gmaxwell> In elements sipa wrote a patch for a script based signmessage; but we ran into ... challenges.. with how softforks would be handled.
+19:15:50 <wumpus> gmaxwell: that'd have been better; at least the keys would only be used to sign things in one format
+19:15:56 <gmaxwell> Segwit script versioning would fix those challenges.
+19:15:57 <CodeShark> yes, two chains might have very different redemption conditions for the same utxo
+19:16:02 <Provoostenator> Hah, so you can do multisig messages? :-)
+19:16:07 <sipa> Provoostenator: yes
+19:16:15 <sipa> Provoostenator: and timelocked signatures :p
+19:16:16 <Provoostenator> Or even partial messages?
+19:16:20 <jtimon> gmaxwell: I think they should be handled with flags
+19:16:43 <sipa> jtimon: yes, but the general property of softforks doesn't apply
+19:16:45 <jtimon> oh, right, script versioning solves it too
+19:16:56 <sipa> you don't want a "oh, i don't know this signature version! it's valid!!"
+19:17:01 <gmaxwell> jtimon: the 'pubkey' needs to commit to the rules. pre-segwit style softforks don't.
+19:17:16 <gmaxwell> Well you can tristate:  Valid, invalid, unknown public key version.
+19:17:48 <wumpus> right
+19:17:50 <luke-jr> sipa: that's a risk for txs too, though
+19:17:54 <jtimon> sipa: sure, I mean, this is out of the blockchain, so you just need to know which flags to use when validating...what gmaxwell said, commit to the rules
+19:18:06 <gmaxwell> prior to having the explicit versions we couldn't do that, which is why we never even merged the patch in elements, much less brought it to bitcoin.
+19:18:07 <luke-jr> why sighash flags can't fail valid
+19:18:24 <gmaxwell> luke-jr: attacker controls signature side flags.
+19:18:32 <luke-jr> gmaxwell: right, that's my point
+19:19:15 <gmaxwell> same reason sighash flags can fail valid in bitcoin: If I pick an out of range sighash flag I could forge signatures for your pubkeys.
+19:19:38 <sipa> ?
+19:20:24 <CodeShark> I also don't follow
+19:20:49 <luke-jr> [19:16:56] <sipa> you don't want a "oh, i don't know this signature version! it's valid‼" <-- this is a problem for transactions just as much as for signed messages
+19:20:50 <wumpus> are there any topics we really want to discuss in this meeting? I think we're drifting off a bit
+19:21:00 <gmaxwell> You cannot trigger "unknown behavior, I'll let it pass" based on sighash flags like you can based on the content of public keys.
+19:21:06 <cfields> next (quick) topic suggestion: codesigning keys update
+19:21:07 <jnewbery> Other PRs I'd love to see merged for v0.16 are #10583 #10579 #11415 . They're all removing wallet dependencies from server, but are API changes so have a one release deprecation lag time before the dependency can actually be removed.
+19:21:10 <gribble> https://github.com/bitcoin/bitcoin/issues/10583 | [RPC] Split part of validateaddress into getaddressinfo by achow101 · Pull Request #10583 · bitcoin/bitcoin · GitHub
+19:21:14 <gribble> https://github.com/bitcoin/bitcoin/issues/10579 | [RPC] Split signrawtransaction into wallet and non-wallet RPC command by achow101 · Pull Request #10579 · bitcoin/bitcoin · GitHub
+19:21:17 <gribble> https://github.com/bitcoin/bitcoin/issues/11415 | [RPC] Disallow using addresses in createmultisig by achow101 · Pull Request #11415 · bitcoin/bitcoin · GitHub
+19:21:18 <jtimon> yeah, how about what "shortly after" means for 0.16 ?
+19:21:24 <jonasschnelli> Two topic proposals: 1) review "nits" reduction, 2) bitcoin core code signing assoc.
+19:21:39 <jonasschnelli> 2) goes in hand with cfields topicp.
+19:22:07 <wumpus> jnewbery: thanks, I think adding all of them to high priority is a bit much, but we could add one
+19:22:09 <wumpus> #topic codesigning
+19:22:17 <cfields> I just wanted to point out that after researching for a bit, there's no painless way to renew our osx cert (without involving the btcf), so I think it's prudent that we explore other options.
+19:22:22 * cfields passes the mic to jonasschnelli
+19:22:28 <jonasschnelli> https://github.com/bitcoincore-codesigning-association
+19:22:44 <achow101> wumpus: it seems like some of those are ready to be merged. they have utACKs and no comments left
+19:22:45 <jonasschnelli> https://bitcoincorecodesigning.org
+19:22:45 <jonasschnelli> The association stands and apple has accepted the entity
+19:22:57 <jonasschnelli> Code sining certificates are ready (need to setup the key)
+19:23:12 <cfields> jonasschnelli: oh that's fantastic! nice work :)
+19:23:15 <wumpus> achow101: if they're ready for merge even better, please notify me of those things outside the meeting
+19:23:16 <jnewbery> wumpus: thanks. I think they're all pretty much ready for merge. achow101 has been doing a great job maintaining and rebasing them - perhaps just a bit more ACKing and they can go in
+19:23:47 <jonasschnelli> We need a windows code signing cert... have never done that but I'm ready to order if someone gives instructions where and how
+19:24:00 <wumpus> PSA: if something is ready for merge just let me know here instead of waiting for me to stumble on it accidentally :)
+19:24:17 <BlueMatt> jnewbery: afaict only maybe the last is ready? the second only has one ack?
+19:24:22 <achow101> wumpus: ok!
+19:24:25 <BlueMatt> jonasschnelli: that was fast!
+19:24:36 <wumpus> jonasschnelli: oh great!
+19:24:37 <achow101> jonasschnelli: https://docs.microsoft.com/en-us/windows-hardware/drivers/dashboard/get-a-code-signing-certificate
+19:25:15 <cfields> achow101: note that a driver cert is different. More requirements.
+19:25:28 <wumpus> getting a driver cert is much more difficult
+19:25:42 <achow101> oh, didn't see that that was for drivers
+19:25:47 <wumpus> I guess it should be, with the privilege level it operates at
+19:26:01 <jonasschnelli> The question is if we want to try that distributed RSA key
+19:26:09 <wumpus> we do
+19:26:26 <BlueMatt> gmaxwell: mic?
+19:26:48 <BlueMatt> or who was it who said they were gonna look into hooking it into a reasonable way to use it?
+19:26:54 <cfields> I'll work on the CSR handling as promised. I assume we'll just have to shove the result back into the expected format.
+19:27:21 <gmaxwell> I didn't think we were going to bother to do it for the first one. but this is going faster than expected! :)
+19:27:22 <jonasschnelli> cfields: Yeah. Apple needs that -----BEGIN CERTIFICATE REQUEST-----
+19:27:23 <achow101> BlueMatt: that was gmaxwell. I also wanted to take a look at it. it looked painful
+19:27:58 <gmaxwell> it's not so painful but we need a process for converting raw RSA numbers into csrs and what not, which cfields was going to look into.
+19:28:30 <gmaxwell> The easiest thing to do may be to just do trusted setup: generate the key normally on an offline machine, and we can split it after the the fact.
+19:28:48 <BlueMatt> ugh
+19:28:50 <gmaxwell> the MPC signing is radically simple and faster than MPC key generation.
+19:29:01 <BlueMatt> i thought the mpc generation was implemented?
+19:29:08 <gmaxwell> Though the stuff I linked to does both. (though it's setup for only three parties atm)
+19:29:17 <BlueMatt> i mean thats probably fine?
+19:29:22 <BlueMatt> 3/3, I assume?
+19:29:22 <achow101> gmaxwell: can it be done faster than what is already implemented?
+19:29:35 <gmaxwell> achow101: of course, but do we care if it takes hours?
+19:30:12 <wumpus> if it's a one-time thing we don't
+19:30:15 <cfields> jonasschnelli: let's talk after the meeting. It'd be great if we could get a dummy to test with.
+19:30:19 <gmaxwell> BlueMatt: yes 3/3. Generation you'd always do as n/n then potentially reshare to a different threshold.
+19:30:25 <jonasschnelli> cfields: sure
+19:30:27 <BlueMatt> its not like this is holding a zksnark trusted-setup for all btc
+19:30:37 <gmaxwell> How big are the keys they use for these things? 2kbit or 4kbit?
+19:31:02 <Provoostenator> BlueMatt: would be nice to get another blog from P
+19:31:02 <Provoostenator> l
+19:31:11 <sipa> ?
+19:31:13 <BlueMatt> ?
+19:31:19 <Provoostenator> Peter todd riding down Canada to generate his signing key.
+19:31:29 <jonasschnelli> gmaxwell: 2048 is what my apple RSA keys are
+19:31:33 <Provoostenator> And then bragging that's more secure than Zcash
+19:31:36 <wumpus> indeed, it's just code signing, for one OS, if something is signed that is not validated by the gitian process that's discovered soon enough anyway
+19:31:38 <gmaxwell> Provoostenator: it's totally unrelated.
+19:31:58 <jonasschnelli> Code signing won't give a lot of additional security...
+19:32:02 <jonasschnelli> It's just a UX thing IMO
+19:32:07 <gmaxwell> zcash has a backdoor for the whole system, this is just some code signing crud.
+19:32:25 <wumpus> right
+19:32:29 <Provoostenator> I know.
+19:32:43 <gmaxwell> the users shouldn't care AT ALL about the MPC we use for it, the purpose of the MPC is to protect the developers personally from being implicated in the unfortunate case their own computers get hacked.
+19:32:53 <sipa> does the MPC generation have a trusted setup?
+19:32:59 <gmaxwell> sipa: no.
+19:33:07 <sipa> i assume not - if you're fine with trusted setup, just generate a single key and split it layer
+19:33:13 <sipa> ok, so it is entirely unrelated
+19:33:15 * jtimon is curious about the "review nits reduction" topic...
+19:33:25 <wumpus> yes it's just to prevent the person doing the code signing from becoming a specific target
+19:34:12 <jonasschnelli> review nit reduction topic?
+19:34:25 <gmaxwell> sipa: it just uses paillier, and lots of roundtrips. it's pretty simple.
+19:34:48 <wumpus> #topic review nit reduction
+19:35:10 <jonasschnelli> I just feel that we spend a lot of time in finding code-style nits, fixing code-style nits and some of the PRs are almost a single wall of nits... It doesn't seem to be efficient... I think..
+19:35:30 <jonasschnelli> We should enforce the rules... ( I know I already brought that up )
+19:36:03 <jonasschnelli> The libcurl project does that... it won't compile (make) if the code style doesn't matches
+19:36:10 <jonasschnelli> It would reduce the review time a lot...
+19:36:20 <jonasschnelli> And we apperently fixing the nits anyways at some point in time
+19:36:52 <jtimon> you mean getting travis to complain about style nits?
+19:36:56 <Provoostenator> Currently we're only running whitespace linter?
+19:37:10 <jonasschnelli> jtimon: travis already does this... (whitespace)
+19:37:18 <BlueMatt> if there were an easy way to apply it to new code only, I'd say thats probably fine
+19:37:27 <jonasschnelli> I just want to get the code styling nits away from github comments
+19:37:28 * jtimon nods
+19:37:33 <BlueMatt> but it was my impression we were not able to find a way to do so
+19:37:42 <jonasschnelli> BlueMatt: only new code. Yes.
+19:37:47 <jtimon> BlueMatt: that was my understanding too
+19:38:03 <wumpus> so have e.g. clang-format check the diff of pull requests?
+19:38:12 <sipa> jonasschnelli: (brainstorming) or we could have a bot that marks a PR ready for review only after all nits are fixed
+19:38:15 <jonasschnelli> wumpus: Yes. Can we enforce that somehow?
+19:38:28 <jonasschnelli> sipa: Would also be something.. yes.
+19:38:31 <sipa> so that people know not to look at something while there is still automated review going on
+19:38:32 <wumpus> jonasschnelli: I don't know...
+19:38:33 <Provoostenator> It would also help to offer some hints for developers how to run linters in their editor. I'll add an entry for OSX Atom once I figure it out myself.
+19:38:35 <jtimon> didn't someone wrote something like that at some point?
+19:38:41 <wumpus> sipa: as long as it doesn't generate noise (posts) that's ok with me
+19:38:55 <wumpus> sipa: so if it works like travis, just adds another cross to the status
+19:38:59 <jonasschnelli> Would something speak against enforcing the clang-format-diff check during make?
+19:39:02 <wumpus> w/ a link to the list of problems
+19:39:02 <sipa> wumpus: right,t hat would be nice
+19:39:08 <meshcollider> BlueMatt: adding new linters to Travis would only affect PRs now since #11699
+19:39:10 <gribble> https://github.com/bitcoin/bitcoin/issues/11699 | [travis-ci] Only run linters on Pull Requests by jnewbery · Pull Request #11699 · bitcoin/bitcoin · GitHub
+19:39:14 <wumpus> but I don't want any bots that generate notifications in my mail
+19:39:32 <sipa> right
+19:39:33 <jonasschnelli> wumpus: Yes, That would disturb even more
+19:39:46 <jonasschnelli> Just an indication if its ready to review...
+19:39:59 <jonasschnelli> And so we can have less of those "brackets, spaces missing blabla"
+19:40:32 * BlueMatt was always in favor, did we find out if we could get a reasonably stable output out of clang-format?
+19:40:38 <BlueMatt> or was it always very version-dependant?
+19:40:47 <jonasschnelli> It just feels some reviews are more or less a "clang-format diff output"
+19:40:52 <wumpus> I like how golang handles that, they just have one true style
+19:41:12 <wumpus> and their linter can be safely used in e.g. pull request checks, w/ no ambiguity
+19:41:14 <jtimon> jonasschnelli: wouldn't we need to comply with clang format in the whole project before doing the clang check in make? has anyone seen haw many changes trying to apply clang-format to the whole project produces right now?
+19:41:29 <morcos> do we have good developer documentation on how to do the right thing locally (not what the rules are, but how to check them?)
+19:41:32 <sipa> you can apply clang-format on just the diffs
+19:41:37 <meshcollider> jtimon: not if it's only run on the diff
+19:41:44 <jonasschnelli> yes
+19:41:47 <sipa> but clang-format only checks whitespace/newlines
+19:41:47 <wumpus> morcos: good point!
+19:41:55 <sipa> it doesn't check variable names etc
+19:41:56 <jonasschnelli> morcos: we should focus on that
+19:41:57 <gmaxwell> A small amount of code style nits on github are probably good for teamwork.
+19:42:03 <wumpus> sipa: I think that's fine, those are the ones we want out of the way
+19:42:04 <jonasschnelli> sipa: not sure if that is possible
+19:42:06 <jtimon> meshcollider: right, only for pr diffs, yeah, I thought he meant every time you build locally
+19:42:11 <wumpus> sipa: variable names are more of a human thing anyhow
+19:42:17 <wumpus> sipa: so it's fine if humans comment on them
+19:42:29 <morcos> i'd be happy to do more locally, i'm sure my PR's are disasters, but it would be nice if a good workflow was spelled out
+19:42:44 <jonasschnelli> morcos: Indeed
+19:42:48 <meshcollider> Scripted diffs will probably regularly require style change commits too to keep Travis happy
+19:42:57 <jtimon> gmaxwell: there's always style nits that go beyond clang-format
+19:43:05 <wumpus> I mean it could check basic things like is_this_snake_case for variable names in theory, but not whether it's a good name in the first place...
+19:43:13 <sipa> sur
+19:43:16 <jonasschnelli> yes
+19:43:35 <jonasschnelli> It's more about the naming convenction (m_, snake_case, CONSTANTS, etc,)
+19:43:36 <wumpus> and the latter is much more important for maintainablility :-)
+19:43:48 <kanzure> do we have a clang-format file
+19:43:49 <MarcoFalke> meshcollider: I'd prefer if we didn't use clang-format in scripted diffs. Makes it impossible to reproduce ...
+19:43:50 <gmaxwell> jtimon: yes true enough, I guess my point was that they're not all bad.
+19:43:52 <wumpus> kanzure: yes
+19:43:53 <jonasschnelli> kanzure: yes
+19:44:15 <wumpus> contrib/devtools/clang-format-diff.py
+19:44:15 <wumpus> src/.clang-format
+19:44:25 <kanzure> ah thanks.
+19:44:39 <cfields> i assume it'd be possible to setup a git alias that shows the current diff, diff'd against the clang-format result
+19:44:43 * cfields plays around
+19:44:44 <jonasschnelli> MarcoFalke: are you up to write a higher level documentation for the clang-format-diff.py workflow?
+19:44:49 * MarcoFalke proposed to add '.style.yapf' and hides
+19:44:56 <jtimon> wumpus: right, that's what I remember being written
+19:44:57 <MarcoFalke> jonasschnelli: I did
+19:45:06 <MarcoFalke> git diff | cfd
+19:45:18 <wumpus> yapf?
+19:45:23 <gmaxwell> general problem with clang format is that it isn't stable across versions, or at least hasn't been historically. In general we don't have a highly consistent enviroment htat people contribute from.
+19:45:29 <ryanofsky> fwiw, i am not bothered by nits whatsoever. at the very least they mean somebody is actually looking at my pr. i also use clang-format and clang-format diff all the time
+19:45:36 <wumpus> gmaxwell: right, that has always bothered about it
+19:45:37 <jonasschnelli> gmaxwell: yeah. that
+19:45:39 <MarcoFalke> also what gmaxwell said
+19:45:51 <MarcoFalke> wumpus: The same thing for python
+19:45:59 <jtimon> well, the version can be fixed on travis, though
+19:46:02 <wumpus> MarcoFalke: that's not very shocking
+19:46:21 <jonasschnelli> ryanofsky: nits should still remain... just not stuff that computers can find and are covered by our code styling rules
+19:46:23 <sipa> jtimon: right, but that makes travis effectively part of your workflow, which is unfortunate
+19:46:42 <wumpus> you need to be able to run any checks that travis does locally
+19:46:43 <sipa> jtimon: as in, you won't really know a PR is acceptable before pushing and waiting for travis
+19:46:47 <gmaxwell> We could give developers a VM image or equivilent, but it's asking a lot.
+19:46:48 <jtimon> sipa: right, or the concrete version if I want to run it locally first
+19:47:19 <luke-jr> Travis is slow, too
+19:47:30 <sipa> maybe someone should investigate how stable clang-format/ clang-tidy/ iwyu/ ... are
+19:47:33 <morcos> my issue with the nits on PR's is it leads to sloppier review.  When nits get fixed and potentially rebased.  Prior reviewers can get sloppy about assuming that the final version is well reviewed, especially if its happened repeatedly
+19:47:39 <jonasschnelli> Could we not do a check with clang-format-diff.py during "make" and at least place a bold warning (or even refuse to compile *duck*)
+19:48:00 <achow101> jonasschnelli: it would blow up on existing code
+19:48:07 <sipa> jonasschnelli: the problem is that different clang-format versions say different things
+19:48:20 <jonasschnelli> sipa: significant?
+19:48:26 <sipa> jonasschnelli: irrelevant, i think
+19:48:29 <wumpus> jonasschnelli: 'make lint' would be nice
+19:48:45 <sipa> and making something work on your own system, and then seeing travis complain about the exact same things but requiring something else would be pretty demotivating
+19:48:49 <wumpus> jonasschnelli: that would just run all the checks, for C/C++, for python, for whitespace in docs, etc
+19:48:49 <cfields> wumpus: +1
+19:48:57 <gmaxwell> morcos: that is more a problem with the intermixing of nits and serious review, and also how github handles tracking comments (them magically vanishing when the code changes)
+19:49:08 <jonasschnelli> wumpus: Maybe it should by bypassable, but the novice contributor should get warned if he uses invalid code-styling
+19:49:15 <sipa> gmaxwell: that's no longer true with the 'review' function
+19:49:28 <gmaxwell> Obviously we should just pull clang into our code tree and ship it too. :P
+19:49:28 <sipa> you can see all former review comments, and the code they apply on
+19:49:30 <wumpus> jonasschnelli: well, travis and the person that merge can also check
+19:49:37 <jtimon> sipa: oh, that's what is for...
+19:49:37 <instagibbs> sipa, interesting, more reason to use it
+19:49:38 <wumpus> jonasschnelli: it just should be possible to do it locally too
+19:49:49 <morcos> gmaxwell: yes, i'd argue that once serious review stars, nits should not be squashed, but should be left as a cleanup commit at the end.  (at least of some kinds)
+19:49:51 <sipa> jtimon: yes, you should use it :)
+19:49:54 <wumpus> jonasschnelli: I'm not so much concerned with forcing people to run it but making it easy
+19:50:08 <jonasschnelli> wumpus: yes. Travis code style check is not what we want in the first place (it helps,.. but you want to catch it before)
+19:50:33 <wumpus> jonasschnelli: well if you don't do it before, travis will stop you and you need to wait longer, simple as that :)
+19:50:33 <sipa> something i have noticed is that sometimes 'nit' reviews start on PRs which are far from certain they'll be even concept ACKed
+19:50:39 <instagibbs> morcos, we might need to have guidelines for "ACK lockin"
+19:50:44 <jonasschnelli> Okay... I'll have a look at lint and something simple within the make-process
+19:50:46 <jonasschnelli> sipa: that also
+19:50:52 <cfields> morcos: i have no problem with squashing nits as the pre/post-squash can be diff'd locally. It's rebasing to master that makes re-review a challenge imo.
+19:51:05 <wumpus> sipa: yeah... then it adds even more nosie
+19:51:07 <instagibbs> cfields, can be diffed if you locally checked
+19:51:20 <sipa> cfields: right, i try to avoid rebasing, but i pretty liberally squash nits
+19:51:21 <instagibbs> many times im just reading off of github(lazy)
+19:51:36 <sipa> cfields: and i don't mind others doing that too, except for very complicated PRs
+19:51:38 <instagibbs> unless it's a particularly intense series of commits
+19:51:41 <achow101> instagibbs: that kind of breaks when there's lots of merge conflicts
+19:51:51 <wumpus> sometimes I wish 'git fetch' could fetch by commit id to fetch individual commits, unfortunately that doesn't work
+19:52:00 <cfields> pretty sure github can show the diff from a squash a well, you just have to come up with the url for it
+19:52:03 <gmaxwell> well we have contributors who don't feel comfortable (or just don't have the expirence) to do much other than nit reviews. Their contributions are usually pretty helpful and I wouldn't want to ask most of them to stop. We could perhaps ask them to wait a day on new PRs so that there is at least time for Concept NAKs to show up first.
+19:52:05 <wumpus> it can only be used with branch names
+19:52:38 <wumpus> github can give you the patch for an arbitrary commit id though, but it's kind of annoying to do automatically
+19:52:54 <gmaxwell> it is a little sad for someone to show up with a change, and then have two cycles on trivial changes before someone more expirenced comes in and says no-way-because-x.
+19:53:02 <wumpus> gmaxwell: yeah...
+19:53:04 <aj> gmaxwell: might be helpful to tag PRs as looking for concept acks vs looking for nits and style vs looking for tested acks and merging?
+19:53:08 <MarcoFalke> wumpus: We could set up a bot to create branches for each utACK that is posted to gh
+19:53:13 <instagibbs> not nitting a PR that doens't have any ACKs of any kind seems like a decent rule
+19:53:16 <MarcoFalke> on a separate repo that is
+19:53:23 <wumpus> MarcoFalke: that'd be kind of nice
+19:53:28 <jtimon> cfields: at the same time rebasing is often good, for example, #8994 could unexpectedly start failing tests even if no new conflicts appear and github says it's all ready to merge it
+19:53:32 <gribble> https://github.com/bitcoin/bitcoin/issues/8994 | Testchains: Introduce custom chain whose constructor... by jtimon · Pull Request #8994 · bitcoin/bitcoin · GitHub
+19:53:48 <wumpus> rebasing is often necessary
+19:53:52 <jonasschnelli> Yes. What aj says. The things is just, unenforced user rules tend to get ignored. :)
+19:53:54 <Provoostenator> gmaxwell: as long as you learn something from the nits, it's not the end of the world having them concept-nacked later, imo
+19:54:00 <MarcoFalke> then `git fetch bitcoin_reviewed_commits` will get you all the reviews
+19:54:01 <gmaxwell> sometimes you don't know what you're going to do when you read it.. there are certantly PRs where I read them and then come away with no real opinions on it other than "you missed some braces here and there"
+19:54:13 <wumpus> some files are hotspots and generate a lot of merge conflicts
+19:54:28 <wumpus> although it's better now that main.cpp is dead
+19:54:32 <gmaxwell> Provoostenator: no, but some people find it demotivating; 'they made me do more work then threw it out'. :)
+19:54:52 <Provoostenator> True
+19:55:10 <wumpus> Provoostenator: these are not the kind of nits that help you learn btter programming :)
+19:55:30 <gmaxwell> Provoostenator: that can be resolved with a better perspective; bitcoin development is a distributed process, your effort is your contribution not the fact that it was merged, etc.
+19:55:48 <jonasschnelli> gmaxwell: indeed
+19:55:52 <gmaxwell> Provoostenator: but we can't really send every new contributor to a zen mastery class before they contribute.
+19:56:10 <Provoostenator> Well, we could... but that would be flagged as spam :-)
+19:56:11 <wumpus> Provoostenator: if it's a nit like 'it's better to use build in function X' or 'the loop can be more efficiently written like this' then I think it's great
+19:57:17 <cfields> a slightly different work-flow might be: create a "fixed nits" commit on top of the branch, and squash all nits into that as they arise. Then merge that in without squashing.
+19:57:40 <cfields> it makes for ugly commits getting merged in, but avoids the re-review after squash-for-nits issue.
+19:57:41 <Provoostenator> So far I find most of the nits I received useful. They either taught me to look up coding practices, or motivated me to figure out how to run a linter.
+19:57:44 <gmaxwell> a challenge with that is that we do get new contributions from people with zero git expirence.
+19:58:10 <sipa> who think they need to open a new PR to fix a nit :)
+19:58:10 <wumpus> the git basics stuff is explained pretty well in the contributing doc nowadays
+19:58:27 <aj> do people think the +1, +0, -1, concept nak/ack thing from https://github.com/bitcoin/bitcoin/pull/11426#issuecomment-334091207 is good btw?
+19:58:29 <wumpus> I've not gotten the question on how to squash a commit for a long time now
+19:58:41 <gmaxwell> wumpus: I've noticed that, I wondered why.
+19:59:03 <instagibbs> oh that's where -0 came from
+19:59:03 <Provoostenator> Some projects make a giant squashed merge commit and just point to the original PR (e.g. AngularJS), but that's not ideal for other reasons.
+19:59:33 <BlueMatt> aj: yes, I'm a fan
+19:59:37 <wumpus> Provoostenator: we only want to encourage squashing when it's iterative changes, not atomic separate changes
+19:59:40 <jtimon> aj: I would have preffered that BlueMatt had maintained a nack but answered my questions/rebute, to be honest
+19:59:42 <BlueMatt> specifically caues we end up with lots of need for concept review
+20:00:13 <BlueMatt> we have lots of prs where lots of folks are +0/-0 and dont think its worth review
+20:00:16 <BlueMatt> but they sit open for months
+20:00:17 <BlueMatt> which is bad
+20:00:24 <MarcoFalke> +0 on end meeting
+20:00:29 <BlueMatt> +1
+20:00:29 <instagibbs> -0
+20:00:31 <wumpus> oh, it's that time already
+20:00:33 <wumpus> #endmeeting
